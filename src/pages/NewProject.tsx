@@ -22,6 +22,7 @@ import {
   FileText,
   AlertTriangle,
   Check,
+  Upload,
   Save,
   Send,
   ChevronLeft,
@@ -451,6 +452,74 @@ ${infoAdicionais || 'Não informado'}`;
                 <strong>Obrigatório:</strong> É necessário anexar um croqui com as marcações e confirmar que os pontos foram marcados para enviar o projeto.
               </AlertDescription>
             </Alert>
+
+            {/* Upload de Croqui */}
+            <div className="space-y-3">
+              <Label className="text-base font-medium">Arquivo do Croqui *</Label>
+              <div 
+                className={cn(
+                  "border-2 border-dashed rounded-lg p-6 text-center transition-colors cursor-pointer",
+                  hasCroquiAttachment 
+                    ? "border-success bg-success/5" 
+                    : "border-border hover:border-primary hover:bg-accent"
+                )}
+                onClick={() => document.getElementById('croqui-upload')?.click()}
+              >
+                <input
+                  id="croqui-upload"
+                  type="file"
+                  accept="image/*,.pdf"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      const nome = file.name;
+                      setAttachments(prev => {
+                        // Remove croqui anterior se existir
+                        const filtered = prev.filter(a => a.tipo !== 'CROQUI');
+                        return [...filtered, { tipo: 'CROQUI', nome }];
+                      });
+                      toast({
+                        title: 'Croqui anexado',
+                        description: `${nome} foi adicionado com sucesso.`,
+                      });
+                    }
+                    e.target.value = '';
+                  }}
+                />
+                {hasCroquiAttachment ? (
+                  <div className="flex flex-col items-center gap-2">
+                    <Check className="w-10 h-10 text-success" />
+                    <p className="font-medium text-success">Croqui anexado</p>
+                    <p className="text-sm text-muted-foreground">
+                      {attachments.find(a => a.tipo === 'CROQUI')?.nome}
+                    </p>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="mt-2"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setAttachments(prev => prev.filter(a => a.tipo !== 'CROQUI'));
+                      }}
+                    >
+                      Remover e enviar outro
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center gap-2">
+                    <div className="p-3 bg-secondary rounded-full">
+                      <Upload className="w-6 h-6 text-muted-foreground" />
+                    </div>
+                    <p className="font-medium text-foreground">Clique para enviar o croqui</p>
+                    <p className="text-sm text-muted-foreground">
+                      Imagem (JPG, PNG) ou PDF • Máx. 10MB
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
 
             <div className="space-y-4">
               <h3 className="font-medium text-foreground">Itens Marcados no Croqui</h3>

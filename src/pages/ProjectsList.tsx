@@ -132,13 +132,13 @@ export default function ProjectsList() {
               </Select>
 
               {/* City */}
-              <Select value={cidadeFilter} onValueChange={setCidadeFilter}>
+              <Select value={cidadeFilter || "ALL"} onValueChange={(v) => setCidadeFilter(v === "ALL" ? "" : v)}>
                 <SelectTrigger className="w-[180px]">
                   <MapPin className="w-4 h-4 mr-2" />
                   <SelectValue placeholder="Cidade" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todas as cidades</SelectItem>
+                  <SelectItem value="ALL">Todas as cidades</SelectItem>
                   {cities.map(city => (
                     <SelectItem key={city} value={city}>{city}</SelectItem>
                   ))}

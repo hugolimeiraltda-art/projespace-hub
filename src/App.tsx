@@ -11,7 +11,8 @@ import Dashboard from "./pages/Dashboard";
 import ProjectsList from "./pages/ProjectsList";
 import NewProject from "./pages/NewProject";
 import ProjectDetail from "./pages/ProjectDetail";
-import Form2Placeholder from "./pages/Form2Placeholder";
+import SaleCompletedForm from "./pages/SaleCompletedForm";
+import MeusChamados from "./pages/MeusChamados";
 import Configuracoes from "./pages/Configuracoes";
 import NotFound from "./pages/NotFound";
 
@@ -58,7 +59,11 @@ function AppRoutes() {
       />
       <Route 
         path="/projetos/:id/form2" 
-        element={<ProtectedRoute><Form2Placeholder /></ProtectedRoute>} 
+        element={<ProtectedRoute><SaleCompletedForm /></ProtectedRoute>} 
+      />
+      <Route 
+        path="/chamados" 
+        element={<ProtectedRoute><MeusChamados /></ProtectedRoute>} 
       />
       <Route 
         path="/configuracoes" 

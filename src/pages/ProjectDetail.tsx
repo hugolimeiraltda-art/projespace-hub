@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useProjects } from '@/contexts/ProjectsContext';
 import { Layout } from '@/components/Layout';
 import { StatusBadge } from '@/components/StatusBadge';
+import { EngineeringTimeline } from '@/components/EngineeringTimeline';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
@@ -24,16 +25,18 @@ import {
   User,
   Check,
   AlertTriangle,
-  Lock
+  CheckCircle2,
+  ShoppingCart,
+  Upload
 } from 'lucide-react';
-import { ProjectStatus, STATUS_LABELS, ATTACHMENT_TYPE_LABELS, PORTARIA_VIRTUAL_LABELS, CFTV_ELEVADOR_LABELS } from '@/types/project';
+import { ProjectStatus, STATUS_LABELS, ATTACHMENT_TYPE_LABELS, PORTARIA_VIRTUAL_LABELS, CFTV_ELEVADOR_LABELS, ENGINEERING_STATUS_LABELS, EngineeringStatus, SALE_STATUS_LABELS } from '@/types/project';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 export default function ProjectDetail() {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
-  const { getProject, updateStatus, addComment } = useProjects();
+  const { getProject, updateStatus, updateEngineeringStatus, addComment, markProjectCompleted, addAttachment } = useProjects();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -42,6 +45,7 @@ export default function ProjectDetail() {
   const [newComment, setNewComment] = useState('');
   const [isInternalComment, setIsInternalComment] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState<ProjectStatus | ''>('');
+  const [selectedEngineeringStatus, setSelectedEngineeringStatus] = useState<EngineeringStatus | ''>('');
 
   if (!project) {
     return (
@@ -58,6 +62,9 @@ export default function ProjectDetail() {
 
   const canEdit = user?.role === 'vendedor' && ['RASCUNHO', 'PENDENTE_INFO'].includes(project.status);
   const canChangeStatus = user?.role === 'projetos' || user?.role === 'admin';
+  const canMarkCompleted = canChangeStatus && project.engineering_status !== 'CONCLUIDO';
+  const canStartSaleForm = user?.role === 'vendedor' && project.engineering_status === 'CONCLUIDO' && project.sale_status === 'NAO_INICIADO';
+  const canViewSaleForm = project.sale_status && project.sale_status !== 'NAO_INICIADO';
 
   const handleCopyEmail = () => {
     if (project.email_padrao_gerado) {
@@ -83,6 +90,45 @@ export default function ProjectDetail() {
     }
   };
 
+  const handleDownloadPDF = () => {
+    // For now, download as text - in production would generate PDF
+    const content = `
+PROJETO: ${project.cliente_condominio_nome}
+============================================
+
+Vendedor: ${project.vendedor_nome}
+Email: ${project.vendedor_email}
+Cidade: ${project.cliente_cidade}, ${project.cliente_estado}
+Endereço: ${project.endereco_condominio}
+
+Status: ${STATUS_LABELS[project.status]}
+${project.engineering_status ? `Status Engenharia: ${ENGINEERING_STATUS_LABELS[project.engineering_status]}` : ''}
+
+${project.prazo_entrega_projeto ? `Prazo de Entrega: ${format(parseISO(project.prazo_entrega_projeto), "dd/MM/yyyy", { locale: ptBR })}` : ''}
+
+============================================
+CONTEÚDO DO E-MAIL
+============================================
+
+${project.email_padrao_gerado || 'E-mail não gerado'}
+    `.trim();
+
+    const blob = new Blob([content], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `projeto_${project.cliente_condominio_nome.replace(/\s+/g, '_')}_completo.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    toast({
+      title: 'Download iniciado',
+      description: 'O arquivo do projeto foi baixado com sucesso.',
+    });
+  };
+
   const handleStatusChange = () => {
     if (!selectedStatus || !user) return;
     updateStatus(project.id, selectedStatus, user.id, user.nome);
@@ -90,6 +136,25 @@ export default function ProjectDetail() {
     toast({
       title: 'Status atualizado',
       description: `O projeto foi marcado como "${STATUS_LABELS[selectedStatus]}".`,
+    });
+  };
+
+  const handleEngineeringStatusChange = () => {
+    if (!selectedEngineeringStatus || !user) return;
+    updateEngineeringStatus(project.id, selectedEngineeringStatus, user.id, user.nome);
+    setSelectedEngineeringStatus('');
+    toast({
+      title: 'Status de engenharia atualizado',
+      description: `O status foi alterado para "${ENGINEERING_STATUS_LABELS[selectedEngineeringStatus]}".`,
+    });
+  };
+
+  const handleMarkCompleted = () => {
+    if (!user) return;
+    markProjectCompleted(project.id, user.id, user.nome);
+    toast({
+      title: 'Projeto concluído!',
+      description: 'O solicitante será notificado sobre a conclusão do projeto.',
     });
   };
 
@@ -107,6 +172,24 @@ export default function ProjectDetail() {
     });
   };
 
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files) {
+      Array.from(files).forEach(file => {
+        addAttachment(project.id, {
+          tipo: 'OUTROS',
+          arquivo_url: URL.createObjectURL(file),
+          nome_arquivo: file.name,
+        });
+      });
+      toast({
+        title: 'Arquivos anexados',
+        description: `${files.length} arquivo(s) adicionado(s).`,
+      });
+    }
+    e.target.value = '';
+  };
+
   const tap = project.tap_form;
 
   return (
@@ -121,6 +204,11 @@ export default function ProjectDetail() {
             <div className="flex items-center gap-3 mb-1">
               <h1 className="text-2xl font-bold text-foreground">{project.cliente_condominio_nome}</h1>
               <StatusBadge status={project.status} />
+              {project.sale_status && project.sale_status !== 'NAO_INICIADO' && (
+                <span className="text-xs px-2 py-1 bg-primary/10 text-primary rounded-full">
+                  Venda: {SALE_STATUS_LABELS[project.sale_status]}
+                </span>
+              )}
             </div>
             <div className="flex items-center gap-4 text-sm text-muted-foreground">
               <span className="flex items-center gap-1">
@@ -140,17 +228,55 @@ export default function ProjectDetail() {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={handleDownloadPDF}>
+              <Download className="w-4 h-4 mr-2" />
+              Baixar PDF
+            </Button>
             {canEdit && (
               <Button variant="outline" onClick={() => navigate(`/projetos/${project.id}/editar`)}>
                 Editar TAP
               </Button>
             )}
-            <Button variant="outline" disabled>
-              <Lock className="w-4 h-4 mr-2" />
-              Iniciar Venda Concluída (Form 2)
-            </Button>
+            {canStartSaleForm && (
+              <Button 
+                className="bg-status-approved hover:bg-status-approved/90"
+                onClick={() => navigate(`/projetos/${project.id}/form2`)}
+              >
+                <ShoppingCart className="w-4 h-4 mr-2" />
+                Projeto Vendido
+              </Button>
+            )}
+            {canViewSaleForm && (
+              <Button 
+                variant="outline"
+                onClick={() => navigate(`/projetos/${project.id}/form2`)}
+              >
+                <FileText className="w-4 h-4 mr-2" />
+                Ver Venda Concluída
+              </Button>
+            )}
           </div>
         </div>
+
+        {/* Notification for completed project */}
+        {project.engineering_status === 'CONCLUIDO' && user?.role === 'vendedor' && project.sale_status === 'NAO_INICIADO' && (
+          <Alert className="mb-6 bg-status-approved-bg border-status-approved/30">
+            <CheckCircle2 className="w-4 h-4 text-status-approved" />
+            <AlertDescription className="text-foreground flex items-center justify-between">
+              <span>
+                <strong>Projeto concluído pela engenharia!</strong> Você pode agora informar que o projeto foi vendido.
+              </span>
+              <Button 
+                size="sm" 
+                className="bg-status-approved hover:bg-status-approved/90"
+                onClick={() => navigate(`/projetos/${project.id}/form2`)}
+              >
+                <ShoppingCart className="w-4 h-4 mr-2" />
+                Projeto Vendido
+              </Button>
+            </AlertDescription>
+          </Alert>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Main Content */}
@@ -205,9 +331,9 @@ export default function ProjectDetail() {
                       <p className="text-xs text-muted-foreground uppercase">Croqui Confirmado</p>
                       <p className="font-medium flex items-center gap-1">
                         {tap.marcacao_croqui_confirmada ? (
-                          <><Check className="w-4 h-4 text-success" /> Sim</>
+                          <><Check className="w-4 h-4 text-status-approved" /> Sim</>
                         ) : (
-                          <><AlertTriangle className="w-4 h-4 text-warning" /> Não</>
+                          <><AlertTriangle className="w-4 h-4 text-status-pending" /> Não</>
                         )}
                       </p>
                     </div>
@@ -253,8 +379,28 @@ export default function ProjectDetail() {
 
             {/* Attachments */}
             <Card className="shadow-card">
-              <CardHeader>
+              <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle className="text-lg">Anexos</CardTitle>
+                {canChangeStatus && (
+                  <div>
+                    <input
+                      id="file-upload"
+                      type="file"
+                      multiple
+                      accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.dwg,video/*"
+                      className="hidden"
+                      onChange={handleFileUpload}
+                    />
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => document.getElementById('file-upload')?.click()}
+                    >
+                      <Upload className="w-4 h-4 mr-2" />
+                      Adicionar Arquivos
+                    </Button>
+                  </div>
+                )}
               </CardHeader>
               <CardContent>
                 {project.attachments.length === 0 ? (
@@ -341,6 +487,65 @@ export default function ProjectDetail() {
 
           {/* Sidebar */}
           <div className="space-y-6">
+            {/* Engineering Timeline */}
+            <Card className="shadow-card">
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Clock className="w-5 h-5" />
+                  Timeline Engenharia
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <EngineeringTimeline
+                  currentStatus={project.engineering_status}
+                  receivedAt={project.engineering_received_at}
+                  productionAt={project.engineering_production_at}
+                  completedAt={project.engineering_completed_at}
+                />
+                
+                {canChangeStatus && project.engineering_status !== 'CONCLUIDO' && (
+                  <div className="mt-4 pt-4 border-t border-border space-y-3">
+                    <Select 
+                      value={selectedEngineeringStatus} 
+                      onValueChange={(v) => setSelectedEngineeringStatus(v as EngineeringStatus)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Alterar status engenharia" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Object.entries(ENGINEERING_STATUS_LABELS).map(([value, label]) => (
+                          <SelectItem 
+                            key={value} 
+                            value={value} 
+                            disabled={value === project.engineering_status}
+                          >
+                            {label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Button 
+                      className="w-full" 
+                      onClick={handleEngineeringStatusChange} 
+                      disabled={!selectedEngineeringStatus}
+                    >
+                      Atualizar
+                    </Button>
+                  </div>
+                )}
+
+                {canMarkCompleted && (
+                  <Button 
+                    className="w-full mt-4 bg-status-approved hover:bg-status-approved/90"
+                    onClick={handleMarkCompleted}
+                  >
+                    <CheckCircle2 className="w-4 h-4 mr-2" />
+                    Marcar Projeto Concluído
+                  </Button>
+                )}
+              </CardContent>
+            </Card>
+
             {/* Status Change */}
             {canChangeStatus && (
               <Card className="shadow-card">
@@ -420,6 +625,10 @@ export default function ProjectDetail() {
                   <p className="font-medium">{project.endereco_condominio || '-'}</p>
                 </div>
                 <div>
+                  <p className="text-muted-foreground">E-mail do Vendedor</p>
+                  <p className="font-medium">{project.vendedor_email}</p>
+                </div>
+                <div>
                   <p className="text-muted-foreground">Criado em</p>
                   <p className="font-medium">
                     {format(parseISO(project.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
@@ -433,7 +642,7 @@ export default function ProjectDetail() {
                 </div>
                 {project.data_assembleia && (
                   <div>
-                    <p className="text-muted-foreground">Data Assembleia</p>
+                    <p className="text-muted-foreground">Data da Assembleia</p>
                     <p className="font-medium">
                       {format(parseISO(project.data_assembleia), "dd/MM/yyyy", { locale: ptBR })}
                     </p>

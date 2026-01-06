@@ -110,15 +110,22 @@ export function Layout({ children }: LayoutProps) {
 
         {/* User */}
         <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-border bg-card">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="flex items-center justify-center w-9 h-9 rounded-full bg-secondary">
-              <User className="w-4 h-4 text-secondary-foreground" />
+          <Link 
+            to="/meu-perfil"
+            className="flex items-center gap-3 mb-3 p-2 -mx-2 rounded-lg hover:bg-accent transition-colors"
+          >
+            <div className="flex items-center justify-center w-9 h-9 rounded-full bg-secondary overflow-hidden">
+              {user?.foto ? (
+                <img src={user.foto} alt="Foto do perfil" className="w-full h-full object-cover" />
+              ) : (
+                <User className="w-4 h-4 text-secondary-foreground" />
+              )}
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-foreground truncate">{user?.nome}</p>
               <p className="text-xs text-muted-foreground capitalize">{user?.role}</p>
             </div>
-          </div>
+          </Link>
           <Button 
             variant="ghost" 
             size="sm" 

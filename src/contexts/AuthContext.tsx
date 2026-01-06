@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
-import { User } from '@/types/project';
+import { User, UserRole } from '@/types/project';
 
 interface AuthContextType {
   user: User | null;
@@ -7,6 +7,11 @@ interface AuthContextType {
   logout: () => void;
   changePassword: (newPassword: string) => Promise<boolean>;
   updateProfile: (data: { telefone?: string; filial?: string; foto?: string }) => Promise<boolean>;
+  getAllUsers: () => User[];
+  addUser: (data: { nome: string; email: string; role: UserRole; filial?: string; telefone?: string }) => Promise<boolean>;
+  updateUser: (userId: string, data: { nome: string; email: string; role: UserRole; filial?: string; telefone?: string }) => Promise<boolean>;
+  deleteUser: (userId: string) => Promise<boolean>;
+  resetPassword: (userId: string) => Promise<boolean>;
   isAuthenticated: boolean;
 }
 
@@ -94,13 +99,81 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return true;
   };
 
+  const getAllUsers = (): User[] => {
+    return users;
+  };
+
+  const addUser = async (data: { nome: string; email: string; role: UserRole; filial?: string; telefone?: string }): Promise<boolean> => {
+    const newUser: User = {
+      id: crypto.randomUUID(),
+      ...data,
+      password: '123456',
+      mustChangePassword: true,
+    };
+    
+    const updatedUsers = [...users, newUser];
+    setUsers(updatedUsers);
+    localStorage.setItem('portaria_users', JSON.stringify(updatedUsers));
+    
+    return true;
+  };
+
+  const updateUser = async (userId: string, data: { nome: string; email: string; role: UserRole; filial?: string; telefone?: string }): Promise<boolean> => {
+    const updatedUsers = users.map(u => 
+      u.id === userId ? { ...u, ...data } : u
+    );
+    
+    setUsers(updatedUsers);
+    localStorage.setItem('portaria_users', JSON.stringify(updatedUsers));
+    
+    // Update current user if editing self
+    if (user?.id === userId) {
+      const updatedUser = { ...user, ...data };
+      setUser(updatedUser);
+      localStorage.setItem('portaria_user', JSON.stringify(updatedUser));
+    }
+    
+    return true;
+  };
+
+  const deleteUser = async (userId: string): Promise<boolean> => {
+    const updatedUsers = users.filter(u => u.id !== userId);
+    setUsers(updatedUsers);
+    localStorage.setItem('portaria_users', JSON.stringify(updatedUsers));
+    
+    return true;
+  };
+
+  const resetPassword = async (userId: string): Promise<boolean> => {
+    const updatedUsers = users.map(u => 
+      u.id === userId ? { ...u, password: '123456', mustChangePassword: true } : u
+    );
+    
+    setUsers(updatedUsers);
+    localStorage.setItem('portaria_users', JSON.stringify(updatedUsers));
+    
+    return true;
+  };
+
   const logout = () => {
     setUser(null);
     localStorage.removeItem('portaria_user');
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, changePassword, updateProfile, isAuthenticated: !!user }}>
+    <AuthContext.Provider value={{ 
+      user, 
+      login, 
+      logout, 
+      changePassword, 
+      updateProfile, 
+      getAllUsers,
+      addUser,
+      updateUser,
+      deleteUser,
+      resetPassword,
+      isAuthenticated: !!user 
+    }}>
       {children}
     </AuthContext.Provider>
   );

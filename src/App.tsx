@@ -16,6 +16,7 @@ import SaleCompletedForm from "./pages/SaleCompletedForm";
 import MeusChamados from "./pages/MeusChamados";
 import MeuPerfil from "./pages/MeuPerfil";
 import Configuracoes from "./pages/Configuracoes";
+import GestaoUsuarios from "./pages/GestaoUsuarios";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -83,6 +84,10 @@ function AppRoutes() {
       <Route 
         path="/configuracoes" 
         element={<ProtectedRoute><Configuracoes /></ProtectedRoute>} 
+      />
+      <Route 
+        path="/configuracoes/usuarios" 
+        element={<ProtectedRoute><GestaoUsuarios /></ProtectedRoute>} 
       />
       <Route path="*" element={<NotFound />} />
     </Routes>

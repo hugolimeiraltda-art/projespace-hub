@@ -7,6 +7,7 @@ import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { ProjectsProvider } from "@/contexts/ProjectsContext";
 
 import Login from "./pages/Login";
+import ChangePassword from "./pages/ChangePassword";
 import Dashboard from "./pages/Dashboard";
 import ProjectsList from "./pages/ProjectsList";
 import NewProject from "./pages/NewProject";
@@ -19,10 +20,15 @@ import NotFound from "./pages/NotFound";
 const queryClient = new QueryClient();
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
+  }
+
+  // Force password change if required (but not on the change password page itself)
+  if (user?.mustChangePassword && window.location.pathname !== '/alterar-senha') {
+    return <Navigate to="/alterar-senha" replace />;
   }
   
   return <>{children}</>;
@@ -36,6 +42,10 @@ function AppRoutes() {
       <Route 
         path="/login" 
         element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <Login />} 
+      />
+      <Route 
+        path="/alterar-senha" 
+        element={isAuthenticated ? <ChangePassword /> : <Navigate to="/login" replace />} 
       />
       <Route 
         path="/" 

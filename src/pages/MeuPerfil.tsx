@@ -11,11 +11,10 @@ import { useToast } from '@/hooks/use-toast';
 import { User, Camera, Building2, Phone, Lock, Save } from 'lucide-react';
 
 const FILIAIS = [
-  { id: 'natal', nome: 'Natal - RN' },
-  { id: 'joao-pessoa', nome: 'João Pessoa - PB' },
-  { id: 'recife', nome: 'Recife - PE' },
-  { id: 'fortaleza', nome: 'Fortaleza - CE' },
-  { id: 'maceio', nome: 'Maceió - AL' },
+  { id: 'belo-horizonte', nome: 'Belo Horizonte - MG' },
+  { id: 'vitoria', nome: 'Vitória - ES' },
+  { id: 'rio-de-janeiro', nome: 'Rio de Janeiro - RJ' },
+  { id: 'sao-paulo', nome: 'São Paulo - SP' },
 ];
 
 export default function MeuPerfil() {

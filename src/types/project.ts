@@ -77,6 +77,9 @@ export interface User {
   role: UserRole;
   password: string;
   mustChangePassword: boolean;
+  foto?: string;
+  filial?: string;
+  telefone?: string;
 }
 
 export interface Project {

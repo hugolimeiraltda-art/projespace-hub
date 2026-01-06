@@ -14,6 +14,7 @@ import NewProject from "./pages/NewProject";
 import ProjectDetail from "./pages/ProjectDetail";
 import SaleCompletedForm from "./pages/SaleCompletedForm";
 import MeusChamados from "./pages/MeusChamados";
+import MeuPerfil from "./pages/MeuPerfil";
 import Configuracoes from "./pages/Configuracoes";
 import NotFound from "./pages/NotFound";
 
@@ -74,6 +75,10 @@ function AppRoutes() {
       <Route 
         path="/chamados" 
         element={<ProtectedRoute><MeusChamados /></ProtectedRoute>} 
+      />
+      <Route 
+        path="/meu-perfil" 
+        element={<ProtectedRoute><MeuPerfil /></ProtectedRoute>} 
       />
       <Route 
         path="/configuracoes" 

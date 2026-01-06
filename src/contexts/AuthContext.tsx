@@ -6,6 +6,7 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<{ success: boolean; mustChangePassword?: boolean }>;
   logout: () => void;
   changePassword: (newPassword: string) => Promise<boolean>;
+  updateProfile: (data: { telefone?: string; filial?: string; foto?: string }) => Promise<boolean>;
   isAuthenticated: boolean;
 }
 
@@ -77,13 +78,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return true;
   };
 
+  const updateProfile = async (data: { telefone?: string; filial?: string; foto?: string }): Promise<boolean> => {
+    if (!user) return false;
+    
+    const updatedUser = { ...user, ...data };
+    const updatedUsers = users.map(u => 
+      u.id === user.id ? updatedUser : u
+    );
+    
+    setUsers(updatedUsers);
+    setUser(updatedUser);
+    localStorage.setItem('portaria_users', JSON.stringify(updatedUsers));
+    localStorage.setItem('portaria_user', JSON.stringify(updatedUser));
+    
+    return true;
+  };
+
   const logout = () => {
     setUser(null);
     localStorage.removeItem('portaria_user');
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, changePassword, isAuthenticated: !!user }}>
+    <AuthContext.Provider value={{ user, login, logout, changePassword, updateProfile, isAuthenticated: !!user }}>
       {children}
     </AuthContext.Provider>
   );

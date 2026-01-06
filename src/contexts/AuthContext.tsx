@@ -15,6 +15,7 @@ const MOCK_USERS: User[] = [
   { id: '1', email: 'vendedor@empresa.com', nome: 'João Vendedor', role: 'vendedor' },
   { id: '2', email: 'projetos@empresa.com', nome: 'Maria Projetos', role: 'projetos' },
   { id: '3', email: 'admin@empresa.com', nome: 'Admin Sistema', role: 'admin' },
+  { id: '4', email: 'henrique.macedo@emive.com.br', nome: 'Henrique Macedo', role: 'projetos' },
 ];
 
 export function AuthProvider({ children }: { children: ReactNode }) {

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import jsPDF from 'jspdf';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProjects } from '@/contexts/ProjectsContext';
@@ -91,41 +92,83 @@ export default function ProjectDetail() {
   };
 
   const handleDownloadPDF = () => {
-    // For now, download as text - in production would generate PDF
-    const content = `
-PROJETO: ${project.cliente_condominio_nome}
-============================================
+    const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.getWidth();
+    let yPosition = 20;
 
-Vendedor: ${project.vendedor_nome}
-Email: ${project.vendedor_email}
-Cidade: ${project.cliente_cidade}, ${project.cliente_estado}
-Endereço: ${project.endereco_condominio}
+    // Title
+    doc.setFontSize(18);
+    doc.setFont('helvetica', 'bold');
+    doc.text('DETALHES DO PROJETO', pageWidth / 2, yPosition, { align: 'center' });
+    yPosition += 15;
 
-Status: ${STATUS_LABELS[project.status]}
-${project.engineering_status ? `Status Engenharia: ${ENGINEERING_STATUS_LABELS[project.engineering_status]}` : ''}
+    // Project name
+    doc.setFontSize(14);
+    doc.text(project.cliente_condominio_nome, pageWidth / 2, yPosition, { align: 'center' });
+    yPosition += 15;
 
-${project.prazo_entrega_projeto ? `Prazo de Entrega: ${format(parseISO(project.prazo_entrega_projeto), "dd/MM/yyyy", { locale: ptBR })}` : ''}
+    // Line separator
+    doc.setLineWidth(0.5);
+    doc.line(20, yPosition, pageWidth - 20, yPosition);
+    yPosition += 10;
 
-============================================
-CONTEÚDO DO E-MAIL
-============================================
+    // Info section
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'normal');
+    
+    const addField = (label: string, value: string) => {
+      if (yPosition > 270) {
+        doc.addPage();
+        yPosition = 20;
+      }
+      doc.setFont('helvetica', 'bold');
+      doc.text(`${label}:`, 20, yPosition);
+      doc.setFont('helvetica', 'normal');
+      doc.text(value || '-', 70, yPosition);
+      yPosition += 8;
+    };
 
-${project.email_padrao_gerado || 'E-mail não gerado'}
-    `.trim();
+    addField('Vendedor', project.vendedor_nome);
+    addField('Email', project.vendedor_email);
+    addField('Cidade', `${project.cliente_cidade}, ${project.cliente_estado}`);
+    addField('Endereço', project.endereco_condominio);
+    addField('Status', STATUS_LABELS[project.status]);
+    if (project.engineering_status) {
+      addField('Engenharia', ENGINEERING_STATUS_LABELS[project.engineering_status]);
+    }
+    if (project.prazo_entrega_projeto) {
+      addField('Prazo', format(parseISO(project.prazo_entrega_projeto), "dd/MM/yyyy", { locale: ptBR }));
+    }
 
-    const blob = new Blob([content], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `projeto_${project.cliente_condominio_nome.replace(/\s+/g, '_')}_completo.txt`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    yPosition += 10;
+
+    // Email content section
+    if (project.email_padrao_gerado) {
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(12);
+      doc.text('CONTEÚDO DO E-MAIL', 20, yPosition);
+      yPosition += 8;
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(10);
+      
+      const emailLines = doc.splitTextToSize(project.email_padrao_gerado, pageWidth - 40);
+      emailLines.forEach((line: string) => {
+        if (yPosition > 280) {
+          doc.addPage();
+          yPosition = 20;
+        }
+        doc.text(line, 20, yPosition);
+        yPosition += 5;
+      });
+    }
+
+    // Save PDF
+    doc.save(`projeto_${project.cliente_condominio_nome.replace(/\s+/g, '_')}.pdf`);
 
     toast({
       title: 'Download iniciado',
-      description: 'O arquivo do projeto foi baixado com sucesso.',
+      description: 'O PDF do projeto foi baixado com sucesso.',
     });
   };
 

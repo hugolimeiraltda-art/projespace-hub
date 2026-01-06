@@ -1,6 +1,7 @@
 import { ReactNode } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { useProjects } from '@/contexts/ProjectsContext';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import {
@@ -11,6 +12,8 @@ import {
   LogOut,
   Building2,
   User,
+  ClipboardList,
+  Bell,
 } from 'lucide-react';
 
 interface LayoutProps {
@@ -19,8 +22,11 @@ interface LayoutProps {
 
 export function Layout({ children }: LayoutProps) {
   const { user, logout } = useAuth();
+  const { getUnreadNotifications } = useProjects();
   const location = useLocation();
   const navigate = useNavigate();
+
+  const unreadCount = user ? getUnreadNotifications(user.id).length : 0;
 
   const handleLogout = () => {
     logout();
@@ -30,7 +36,9 @@ export function Layout({ children }: LayoutProps) {
   const navItems = [
     { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { path: '/projetos/novo', label: 'Novo Projeto', icon: FolderPlus, roles: ['vendedor', 'admin'] },
-    { path: '/projetos', label: 'Projetos', icon: List },
+    { path: '/projetos', label: 'Meus Projetos', icon: List, roles: ['vendedor'] },
+    { path: '/projetos', label: 'Projetos', icon: List, roles: ['projetos', 'admin'], exact: true },
+    { path: '/chamados', label: 'Meus Chamados', icon: ClipboardList, roles: ['projetos', 'admin'] },
     { path: '/configuracoes', label: 'Configurações', icon: Settings, roles: ['admin'] },
   ];
 
@@ -38,6 +46,15 @@ export function Layout({ children }: LayoutProps) {
     if (!item.roles) return true;
     return user && item.roles.includes(user.role);
   });
+
+  // Remove duplicates based on path for the same role
+  const uniqueNavItems = filteredNavItems.reduce((acc, item) => {
+    const existing = acc.find(i => i.path === item.path);
+    if (!existing) {
+      acc.push(item);
+    }
+    return acc;
+  }, [] as typeof filteredNavItems);
 
   return (
     <div className="min-h-screen bg-background">
@@ -56,14 +73,14 @@ export function Layout({ children }: LayoutProps) {
 
         {/* Navigation */}
         <nav className="px-3 py-4 space-y-1">
-          {filteredNavItems.map((item) => {
+          {uniqueNavItems.map((item) => {
             const Icon = item.icon;
             const isActive = location.pathname === item.path || 
-              (item.path !== '/dashboard' && location.pathname.startsWith(item.path));
+              (item.path !== '/dashboard' && !item.exact && location.pathname.startsWith(item.path));
             
             return (
               <Link
-                key={item.path}
+                key={`${item.path}-${item.label}`}
                 to={item.path}
                 className={cn(
                   'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
@@ -78,6 +95,18 @@ export function Layout({ children }: LayoutProps) {
             );
           })}
         </nav>
+
+        {/* Notifications indicator */}
+        {unreadCount > 0 && (
+          <div className="mx-3 mb-2">
+            <div className="flex items-center gap-2 px-3 py-2 bg-status-approved-bg rounded-lg">
+              <Bell className="w-4 h-4 text-status-approved" />
+              <span className="text-sm text-foreground">
+                {unreadCount} notificação(ões)
+              </span>
+            </div>
+          </div>
+        )}
 
         {/* User */}
         <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-border bg-card">

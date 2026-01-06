@@ -2,11 +2,15 @@ import React, { createContext, useContext, useState, ReactNode } from 'react';
 import { 
   Project, 
   TapForm, 
+  SaleCompletedForm,
   Attachment, 
   Comment, 
   StatusChange,
   ProjectStatus,
-  ProjectWithDetails 
+  EngineeringStatus,
+  SaleStatus,
+  ProjectWithDetails,
+  Notification
 } from '@/types/project';
 
 interface ProjectsContextType {
@@ -18,7 +22,18 @@ interface ProjectsContextType {
   removeAttachment: (projectId: string, attachmentId: string) => void;
   addComment: (projectId: string, comment: Omit<Comment, 'id' | 'project_id' | 'created_at'>) => void;
   updateStatus: (projectId: string, newStatus: ProjectStatus, userId: string, userName: string) => void;
+  updateEngineeringStatus: (projectId: string, newStatus: EngineeringStatus, userId: string, userName: string) => void;
   getProjectsByUser: (userId: string) => ProjectWithDetails[];
+  // Sale Form functions
+  initSaleForm: (projectId: string) => void;
+  updateSaleForm: (projectId: string, saleForm: Partial<SaleCompletedForm>) => void;
+  submitSaleForm: (projectId: string) => void;
+  // Notification functions
+  addNotification: (projectId: string, notification: Omit<Notification, 'id' | 'created_at'>) => void;
+  markNotificationRead: (projectId: string, notificationId: string) => void;
+  getUnreadNotifications: (userId: string) => Notification[];
+  // Project completion
+  markProjectCompleted: (projectId: string, userId: string, userName: string) => void;
 }
 
 const ProjectsContext = createContext<ProjectsContextType | undefined>(undefined);
@@ -38,8 +53,12 @@ const generateMockProjects = (): ProjectWithDetails[] => {
       cliente_estado: 'SP',
       endereco_condominio: 'Rua das Flores, 123 - Jardim América',
       status: 'EM_ANALISE',
+      engineering_status: 'EM_PRODUCAO',
+      engineering_received_at: '2024-01-15T10:30:00Z',
+      engineering_production_at: '2024-01-16T08:00:00Z',
       prazo_entrega_projeto: '2024-02-15',
       data_assembleia: '2024-02-01',
+      sale_status: 'NAO_INICIADO',
       tap_form: {
         project_id: 'proj-001',
         solicitacao_origem: 'EMAIL',
@@ -108,6 +127,7 @@ const generateMockProjects = (): ProjectWithDetails[] => {
           created_at: '2024-01-16T08:00:00Z',
         },
       ],
+      notifications: [],
     },
     {
       id: 'proj-002',
@@ -121,7 +141,12 @@ const generateMockProjects = (): ProjectWithDetails[] => {
       cliente_estado: 'SP',
       endereco_condominio: 'Av. Brasil, 500 - Centro',
       status: 'APROVADO_PROJETO',
+      engineering_status: 'CONCLUIDO',
+      engineering_received_at: '2024-01-10T08:30:00Z',
+      engineering_production_at: '2024-01-11T09:00:00Z',
+      engineering_completed_at: '2024-01-18T11:00:00Z',
       prazo_entrega_projeto: '2024-01-20',
+      sale_status: 'NAO_INICIADO',
       tap_form: {
         project_id: 'proj-002',
         solicitacao_origem: 'FORMS',
@@ -159,6 +184,16 @@ const generateMockProjects = (): ProjectWithDetails[] => {
           created_at: '2024-01-18T11:00:00Z',
         },
       ],
+      notifications: [
+        {
+          id: 'notif-001',
+          type: 'PROJECT_COMPLETED',
+          message: 'O projeto Edifício Torre Alta foi concluído pela engenharia.',
+          read: false,
+          created_at: '2024-01-18T11:00:00Z',
+          project_id: 'proj-002',
+        },
+      ],
     },
     {
       id: 'proj-003',
@@ -172,6 +207,7 @@ const generateMockProjects = (): ProjectWithDetails[] => {
       cliente_estado: 'SP',
       endereco_condominio: 'Rua da Praia, 789 - Gonzaga',
       status: 'RASCUNHO',
+      sale_status: 'NAO_INICIADO',
       tap_form: {
         project_id: 'proj-003',
         solicitacao_origem: 'EMAIL',
@@ -186,6 +222,7 @@ const generateMockProjects = (): ProjectWithDetails[] => {
       attachments: [],
       comments: [],
       status_history: [],
+      notifications: [],
     },
   ];
 };
@@ -193,7 +230,17 @@ const generateMockProjects = (): ProjectWithDetails[] => {
 export function ProjectsProvider({ children }: { children: ReactNode }) {
   const [projects, setProjects] = useState<ProjectWithDetails[]>(() => {
     const saved = localStorage.getItem('portaria_projects');
-    return saved ? JSON.parse(saved) : generateMockProjects();
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      // Ensure all projects have the new fields
+      return parsed.map((p: ProjectWithDetails) => ({
+        ...p,
+        engineering_status: p.engineering_status || (p.status === 'ENVIADO' ? 'EM_RECEBIMENTO' : p.status === 'EM_ANALISE' ? 'EM_PRODUCAO' : p.status === 'APROVADO_PROJETO' ? 'CONCLUIDO' : undefined),
+        sale_status: p.sale_status || 'NAO_INICIADO',
+        notifications: p.notifications || [],
+      }));
+    }
+    return generateMockProjects();
   });
 
   const saveProjects = (newProjects: ProjectWithDetails[]) => {
@@ -213,10 +260,12 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
       id,
       created_at: now,
       updated_at: now,
+      sale_status: 'NAO_INICIADO',
       tap_form: { ...tapForm, project_id: id },
       attachments: [],
       comments: [],
       status_history: [],
+      notifications: [],
     };
 
     saveProjects([...projects, newProject]);
@@ -307,9 +356,25 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
           new_status: newStatus,
           created_at: new Date().toISOString(),
         };
+        
+        // Auto-set engineering status based on project status
+        let engineeringStatus = p.engineering_status;
+        let engineeringReceivedAt = p.engineering_received_at;
+        let engineeringProductionAt = p.engineering_production_at;
+        let engineeringCompletedAt = p.engineering_completed_at;
+        
+        if (newStatus === 'ENVIADO' && !engineeringStatus) {
+          engineeringStatus = 'EM_RECEBIMENTO';
+          engineeringReceivedAt = new Date().toISOString();
+        }
+        
         return {
           ...p,
           status: newStatus,
+          engineering_status: engineeringStatus,
+          engineering_received_at: engineeringReceivedAt,
+          engineering_production_at: engineeringProductionAt,
+          engineering_completed_at: engineeringCompletedAt,
           updated_at: new Date().toISOString(),
           status_history: [...p.status_history, statusChange],
         };
@@ -319,8 +384,154 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
     saveProjects(updated);
   };
 
+  const updateEngineeringStatus = (projectId: string, newStatus: EngineeringStatus, userId: string, userName: string) => {
+    const updated = projects.map(p => {
+      if (p.id === projectId) {
+        const now = new Date().toISOString();
+        let updates: Partial<ProjectWithDetails> = {
+          engineering_status: newStatus,
+          updated_at: now,
+        };
+        
+        if (newStatus === 'EM_RECEBIMENTO') {
+          updates.engineering_received_at = now;
+        } else if (newStatus === 'EM_PRODUCAO') {
+          updates.engineering_production_at = now;
+        } else if (newStatus === 'CONCLUIDO') {
+          updates.engineering_completed_at = now;
+        }
+        
+        return { ...p, ...updates };
+      }
+      return p;
+    });
+    saveProjects(updated);
+  };
+
   const getProjectsByUser = (userId: string) => {
     return projects.filter(p => p.created_by_user_id === userId);
+  };
+
+  // Initialize sale form with data from TAP
+  const initSaleForm = (projectId: string) => {
+    const updated = projects.map(p => {
+      if (p.id === projectId && p.tap_form) {
+        const saleForm: SaleCompletedForm = {
+          project_id: projectId,
+          vendedor_email: p.vendedor_email,
+          vendedor_nome: p.vendedor_nome,
+          filial: '',
+          nome_condominio: p.cliente_condominio_nome,
+          qtd_apartamentos: 0,
+          qtd_blocos: p.tap_form.numero_blocos,
+          produto: 'Portaria Digital',
+        };
+        return {
+          ...p,
+          sale_status: 'RASCUNHO' as SaleStatus,
+          sale_form: saleForm,
+          updated_at: new Date().toISOString(),
+        };
+      }
+      return p;
+    });
+    saveProjects(updated);
+  };
+
+  const updateSaleForm = (projectId: string, saleFormUpdate: Partial<SaleCompletedForm>) => {
+    const updated = projects.map(p => {
+      if (p.id === projectId && p.sale_form) {
+        return {
+          ...p,
+          sale_form: { ...p.sale_form, ...saleFormUpdate },
+          updated_at: new Date().toISOString(),
+        };
+      }
+      return p;
+    });
+    saveProjects(updated);
+  };
+
+  const submitSaleForm = (projectId: string) => {
+    const updated = projects.map(p => {
+      if (p.id === projectId) {
+        return {
+          ...p,
+          sale_status: 'ENVIADO' as SaleStatus,
+          sale_locked_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
+      }
+      return p;
+    });
+    saveProjects(updated);
+  };
+
+  const addNotification = (projectId: string, notification: Omit<Notification, 'id' | 'created_at'>) => {
+    const updated = projects.map(p => {
+      if (p.id === projectId) {
+        const newNotification: Notification = {
+          ...notification,
+          id: `notif-${Date.now()}`,
+          created_at: new Date().toISOString(),
+        };
+        return {
+          ...p,
+          notifications: [...(p.notifications || []), newNotification],
+        };
+      }
+      return p;
+    });
+    saveProjects(updated);
+  };
+
+  const markNotificationRead = (projectId: string, notificationId: string) => {
+    const updated = projects.map(p => {
+      if (p.id === projectId) {
+        return {
+          ...p,
+          notifications: (p.notifications || []).map(n => 
+            n.id === notificationId ? { ...n, read: true } : n
+          ),
+        };
+      }
+      return p;
+    });
+    saveProjects(updated);
+  };
+
+  const getUnreadNotifications = (userId: string) => {
+    const userProjects = projects.filter(p => p.created_by_user_id === userId);
+    return userProjects.flatMap(p => (p.notifications || []).filter(n => !n.read));
+  };
+
+  const markProjectCompleted = (projectId: string, userId: string, userName: string) => {
+    const project = projects.find(p => p.id === projectId);
+    if (!project) return;
+
+    const updated = projects.map(p => {
+      if (p.id === projectId) {
+        const notification: Notification = {
+          id: `notif-${Date.now()}`,
+          type: 'PROJECT_COMPLETED',
+          message: `O projeto ${p.cliente_condominio_nome} foi concluído pela engenharia.`,
+          read: false,
+          created_at: new Date().toISOString(),
+          project_id: projectId,
+        };
+        
+        return {
+          ...p,
+          status: 'APROVADO_PROJETO' as ProjectStatus,
+          engineering_status: 'CONCLUIDO' as EngineeringStatus,
+          engineering_completed_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          notifications: [...(p.notifications || []), notification],
+        };
+      }
+      return p;
+    });
+    saveProjects(updated);
   };
 
   return (
@@ -333,7 +544,15 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
       removeAttachment,
       addComment,
       updateStatus,
+      updateEngineeringStatus,
       getProjectsByUser,
+      initSaleForm,
+      updateSaleForm,
+      submitSaleForm,
+      addNotification,
+      markNotificationRead,
+      getUnreadNotifications,
+      markProjectCompleted,
     }}>
       {children}
     </ProjectsContext.Provider>

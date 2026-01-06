@@ -21,9 +21,13 @@ export default function Login() {
     setIsLoading(true);
 
     try {
-      const success = await login(email, password);
-      if (success) {
-        navigate('/dashboard');
+      const result = await login(email, password);
+      if (result.success) {
+        if (result.mustChangePassword) {
+          navigate('/alterar-senha');
+        } else {
+          navigate('/dashboard');
+        }
       } else {
         setError('Email ou senha inválidos');
       }
@@ -93,12 +97,10 @@ export default function Login() {
 
             {/* Demo credentials */}
             <div className="mt-6 p-4 bg-secondary rounded-lg">
-              <p className="text-xs font-medium text-secondary-foreground mb-2">Usuários demo:</p>
+              <p className="text-xs font-medium text-secondary-foreground mb-2">Informações de acesso:</p>
               <div className="space-y-1 text-xs text-muted-foreground">
-                <p><span className="font-medium">Vendedor:</span> vendedor@empresa.com</p>
-                <p><span className="font-medium">Projetos:</span> projetos@empresa.com</p>
-                <p><span className="font-medium">Admin:</span> admin@empresa.com</p>
-                <p className="text-xs mt-2 italic">(qualquer senha)</p>
+                <p><span className="font-medium">Senha inicial:</span> 123456</p>
+                <p className="text-xs mt-2 italic">(você será solicitado a trocar no primeiro acesso)</p>
               </div>
             </div>
           </CardContent>

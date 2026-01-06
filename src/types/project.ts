@@ -75,6 +75,8 @@ export interface User {
   email: string;
   nome: string;
   role: UserRole;
+  password: string;
+  mustChangePassword: boolean;
 }
 
 export interface Project {

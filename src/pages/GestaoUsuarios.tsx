@@ -531,7 +531,7 @@ export default function GestaoUsuarios() {
                 </Select>
               </div>
 
-              {formData.role === 'gerente_comercial' ? (
+              {formData.role === 'gerente_comercial' && (
                 <div className="space-y-2">
                   <Label>Filiais Responsáveis *</Label>
                   <div className="grid grid-cols-2 gap-2 p-3 border rounded-lg">
@@ -552,7 +552,9 @@ export default function GestaoUsuarios() {
                     ))}
                   </div>
                 </div>
-              ) : (
+              )}
+
+              {formData.role === 'vendedor' && (
                 <div className="space-y-2">
                   <Label htmlFor="filial">Filial</Label>
                   <Select

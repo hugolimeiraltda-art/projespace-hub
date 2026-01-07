@@ -5,7 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Building2, AlertCircle } from 'lucide-react';
+import { AlertCircle } from 'lucide-react';
+import emiveLogo from '@/assets/emive-logo.png';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -39,11 +40,11 @@ export default function Login() {
       <div className="w-full max-w-md animate-fade-in">
         {/* Logo */}
         <div className="flex flex-col items-center mb-8">
-          <div className="flex items-center justify-center w-16 h-16 rounded-2xl bg-primary mb-4 shadow-soft">
-            <Building2 className="w-8 h-8 text-primary-foreground" />
-          </div>
-          <h1 className="text-2xl font-bold text-foreground">Projetos</h1>
-          <p className="text-muted-foreground">Portaria Digital</p>
+          <img 
+            src={emiveLogo} 
+            alt="EMIVE Portarias Digitais" 
+            className="h-32 w-auto mb-4"
+          />
         </div>
 
         <Card className="shadow-soft border-border">

@@ -5,7 +5,6 @@ import { Layout } from '@/components/Layout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -333,25 +332,38 @@ export default function StartupProjetos() {
                       </div>
 
                       {/* Actions */}
-                      <div className="flex items-center gap-3">
-                        <Select
-                          value={project.implantacao_status || 'A_EXECUTAR'}
-                          onValueChange={(value) => handleStatusChange(project.id, value as ImplantacaoStatus)}
-                        >
-                          <SelectTrigger className="w-[160px]">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="A_EXECUTAR">A Executar</SelectItem>
-                            <SelectItem value="EM_EXECUCAO">Em Execução</SelectItem>
-                            <SelectItem value="CONCLUIDO_IMPLANTACAO">Concluído</SelectItem>
-                          </SelectContent>
-                        </Select>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        {(!project.implantacao_status || project.implantacao_status === 'A_EXECUTAR') && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="border-blue-300 text-blue-700 hover:bg-blue-50"
+                            onClick={() => handleStatusChange(project.id, 'EM_EXECUCAO')}
+                          >
+                            <PlayCircle className="w-4 h-4 mr-1" />
+                            Iniciar
+                          </Button>
+                        )}
+                        {project.implantacao_status === 'EM_EXECUCAO' && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="border-green-300 text-green-700 hover:bg-green-50"
+                            onClick={() => handleStatusChange(project.id, 'CONCLUIDO_IMPLANTACAO')}
+                          >
+                            <CheckCircle2 className="w-4 h-4 mr-1" />
+                            Concluir
+                          </Button>
+                        )}
                         
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => navigate(`/projetos/${project.id}`)}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            navigate(`/projetos/${project.id}`);
+                          }}
                         >
                           <Eye className="w-4 h-4 mr-2" />
                           Ver Detalhes

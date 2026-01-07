@@ -18,6 +18,7 @@ export type Database = {
         Row: {
           created_at: string
           email: string
+          filiais: string[] | null
           filial: string | null
           foto: string | null
           id: string
@@ -28,6 +29,7 @@ export type Database = {
         Insert: {
           created_at?: string
           email: string
+          filiais?: string[] | null
           filial?: string | null
           foto?: string | null
           id: string
@@ -38,6 +40,7 @@ export type Database = {
         Update: {
           created_at?: string
           email?: string
+          filiais?: string[] | null
           filial?: string | null
           foto?: string | null
           id?: string
@@ -86,7 +89,7 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "admin" | "vendedor" | "projetos"
+      app_role: "admin" | "vendedor" | "projetos" | "gerente_comercial"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -214,7 +217,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "vendedor", "projetos"],
+      app_role: ["admin", "vendedor", "projetos", "gerente_comercial"],
     },
   },
 } as const

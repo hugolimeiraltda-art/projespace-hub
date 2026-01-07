@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useAuth, User, UserRole } from '@/contexts/AuthContext';
@@ -20,9 +21,10 @@ const FILIAIS = [
   { id: 'sao-paulo', nome: 'São Paulo - SP' },
 ];
 
-const ROLES: { value: UserRole; label: string }[] = [
+const ALL_ROLES: { value: UserRole; label: string }[] = [
   { value: 'vendedor', label: 'Vendedor' },
   { value: 'projetos', label: 'Projetista' },
+  { value: 'gerente_comercial', label: 'Gerente Comercial' },
   { value: 'admin', label: 'Administrador' },
 ];
 
@@ -32,6 +34,8 @@ const getRoleBadgeVariant = (role: UserRole) => {
       return 'destructive';
     case 'projetos':
       return 'default';
+    case 'gerente_comercial':
+      return 'outline';
     case 'vendedor':
       return 'secondary';
     default:
@@ -42,6 +46,12 @@ const getRoleBadgeVariant = (role: UserRole) => {
 export default function GestaoUsuarios() {
   const { user: currentUser, getAllUsers, addUser, updateUser, deleteUser, resetPassword } = useAuth();
   const { toast } = useToast();
+
+  // Gerente comercial can only create vendedor users
+  const isGerenteComercial = currentUser?.role === 'gerente_comercial';
+  const availableRoles = isGerenteComercial 
+    ? ALL_ROLES.filter(r => r.value === 'vendedor')
+    : ALL_ROLES;
 
   const [users, setUsers] = useState<User[]>([]);
   const [isLoadingUsers, setIsLoadingUsers] = useState(true);
@@ -63,6 +73,7 @@ export default function GestaoUsuarios() {
     password: '',
     role: 'vendedor' as UserRole,
     filial: '',
+    filiais: [] as string[],
     telefone: '',
   });
   const [formError, setFormError] = useState('');
@@ -93,8 +104,9 @@ export default function GestaoUsuarios() {
       nome: '',
       email: '',
       password: '123456',
-      role: 'vendedor',
+      role: isGerenteComercial ? 'vendedor' : 'vendedor',
       filial: '',
+      filiais: [],
       telefone: '',
     });
     setFormError('');
@@ -109,6 +121,7 @@ export default function GestaoUsuarios() {
       password: '',
       role: user.role,
       filial: user.filial || '',
+      filiais: user.filiais || [],
       telefone: user.telefone || '',
     });
     setFormError('');
@@ -145,13 +158,14 @@ export default function GestaoUsuarios() {
       return;
     }
 
-    setIsSubmitting(true);
+  setIsSubmitting(true);
     try {
       if (editingUser) {
         const result = await updateUser(editingUser.id, {
           nome: formData.nome,
           role: formData.role,
-          filial: formData.filial || undefined,
+          filial: formData.role !== 'gerente_comercial' ? (formData.filial || undefined) : undefined,
+          filiais: formData.role === 'gerente_comercial' ? formData.filiais : undefined,
           telefone: formData.telefone || undefined,
         });
         if (result.success) {
@@ -170,7 +184,8 @@ export default function GestaoUsuarios() {
           email: formData.email,
           password: formData.password,
           role: formData.role,
-          filial: formData.filial || undefined,
+          filial: formData.role !== 'gerente_comercial' ? (formData.filial || undefined) : undefined,
+          filiais: formData.role === 'gerente_comercial' ? formData.filiais : undefined,
           telefone: formData.telefone || undefined,
         });
         if (result.success) {
@@ -261,6 +276,20 @@ export default function GestaoUsuarios() {
     return FILIAIS.find((f) => f.id === filialId)?.nome || filialId;
   };
 
+  const getFiliaisNames = (filiais?: string[]) => {
+    if (!filiais || filiais.length === 0) return '-';
+    return filiais.map(f => FILIAIS.find(fil => fil.id === f)?.nome || f).join(', ');
+  };
+
+  const toggleFilial = (filialId: string) => {
+    setFormData(prev => ({
+      ...prev,
+      filiais: prev.filiais.includes(filialId)
+        ? prev.filiais.filter(f => f !== filialId)
+        : [...prev.filiais, filialId]
+    }));
+  };
+
   if (isLoadingUsers) {
     return (
       <Layout>
@@ -315,7 +344,7 @@ export default function GestaoUsuarios() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Todos os perfis</SelectItem>
-                  {ROLES.map((role) => (
+                  {ALL_ROLES.map((role) => (
                     <SelectItem key={role.value} value={role.value}>
                       {role.label}
                     </SelectItem>
@@ -367,10 +396,12 @@ export default function GestaoUsuarios() {
                       <td className="py-3 px-4 text-muted-foreground">{u.email}</td>
                       <td className="py-3 px-4">
                         <Badge variant={getRoleBadgeVariant(u.role)} className="capitalize">
-                          {ROLES.find((r) => r.value === u.role)?.label || u.role}
+                          {ALL_ROLES.find((r) => r.value === u.role)?.label || u.role}
                         </Badge>
                       </td>
-                      <td className="py-3 px-4 text-muted-foreground">{getFilialName(u.filial)}</td>
+                      <td className="py-3 px-4 text-muted-foreground">
+                        {u.role === 'gerente_comercial' ? getFiliaisNames(u.filiais) : getFilialName(u.filial)}
+                      </td>
                       <td className="py-3 px-4">
                         <div className="flex items-center justify-end gap-2">
                           <Button variant="ghost" size="icon" onClick={() => openEditDialog(u)} title="Editar">
@@ -481,13 +512,14 @@ export default function GestaoUsuarios() {
                 <Label htmlFor="role">Perfil *</Label>
                 <Select
                   value={formData.role}
-                  onValueChange={(value) => setFormData({ ...formData, role: value as UserRole })}
+                  onValueChange={(value) => setFormData({ ...formData, role: value as UserRole, filiais: [], filial: '' })}
+                  disabled={isGerenteComercial}
                 >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {ROLES.map((role) => (
+                    {availableRoles.map((role) => (
                       <SelectItem key={role.value} value={role.value}>
                         {role.label}
                       </SelectItem>
@@ -496,24 +528,47 @@ export default function GestaoUsuarios() {
                 </Select>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="filial">Filial</Label>
-                <Select
-                  value={formData.filial}
-                  onValueChange={(value) => setFormData({ ...formData, filial: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione uma filial" />
-                  </SelectTrigger>
-                  <SelectContent>
+              {formData.role === 'gerente_comercial' ? (
+                <div className="space-y-2">
+                  <Label>Filiais Responsáveis *</Label>
+                  <div className="grid grid-cols-2 gap-2 p-3 border rounded-lg">
                     {FILIAIS.map((f) => (
-                      <SelectItem key={f.id} value={f.id}>
-                        {f.nome}
-                      </SelectItem>
+                      <div key={f.id} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={`filial-${f.id}`}
+                          checked={formData.filiais.includes(f.id)}
+                          onCheckedChange={() => toggleFilial(f.id)}
+                        />
+                        <label
+                          htmlFor={`filial-${f.id}`}
+                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                        >
+                          {f.nome}
+                        </label>
+                      </div>
                     ))}
-                  </SelectContent>
-                </Select>
-              </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <Label htmlFor="filial">Filial</Label>
+                  <Select
+                    value={formData.filial}
+                    onValueChange={(value) => setFormData({ ...formData, filial: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione uma filial" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {FILIAIS.map((f) => (
+                        <SelectItem key={f.id} value={f.id}>
+                          {f.nome}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
 
               <div className="space-y-2">
                 <Label htmlFor="telefone">Telefone</Label>

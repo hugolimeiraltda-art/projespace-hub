@@ -11,8 +11,9 @@ interface CreateUserRequest {
   email: string;
   password: string;
   nome: string;
-  role: 'admin' | 'vendedor' | 'projetos';
+  role: 'admin' | 'vendedor' | 'projetos' | 'gerente_comercial';
   filial?: string;
+  filiais?: string[];
   telefone?: string;
 }
 
@@ -20,8 +21,9 @@ interface UpdateUserRequest {
   action: 'update';
   userId: string;
   nome?: string;
-  role?: 'admin' | 'vendedor' | 'projetos';
+  role?: 'admin' | 'vendedor' | 'projetos' | 'gerente_comercial';
   filial?: string;
+  filiais?: string[];
   telefone?: string;
 }
 
@@ -76,16 +78,19 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // Check if requesting user is admin
+    // Check if requesting user is admin or gerente_comercial
     const { data: roleData } = await supabaseAdmin
       .from("user_roles")
       .select("role")
       .eq("user_id", requestingUser.id)
       .single();
 
-    if (!roleData || roleData.role !== "admin") {
+    const isAdmin = roleData?.role === "admin";
+    const isGerenteComercial = roleData?.role === "gerente_comercial";
+
+    if (!roleData || (!isAdmin && !isGerenteComercial)) {
       return new Response(
-        JSON.stringify({ error: "Only admins can manage users" }),
+        JSON.stringify({ error: "Only admins and commercial managers can manage users" }),
         { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -95,7 +100,15 @@ const handler = async (req: Request): Promise<Response> => {
 
     switch (body.action) {
       case "create": {
-        const { email, password, nome, role, filial, telefone } = body;
+        const { email, password, nome, role, filial, filiais, telefone } = body;
+
+        // Gerente comercial can only create vendedor users
+        if (isGerenteComercial && role !== "vendedor") {
+          return new Response(
+            JSON.stringify({ error: "Commercial managers can only create seller users" }),
+            { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
 
         // Create user in auth
         const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
@@ -114,10 +127,15 @@ const handler = async (req: Request): Promise<Response> => {
         }
 
         // Update profile with additional data
-        if (filial || telefone) {
+        const profileUpdate: Record<string, string | string[] | undefined> = {};
+        if (filial) profileUpdate.filial = filial;
+        if (filiais && filiais.length > 0) profileUpdate.filiais = filiais;
+        if (telefone) profileUpdate.telefone = telefone;
+
+        if (Object.keys(profileUpdate).length > 0) {
           await supabaseAdmin
             .from("profiles")
-            .update({ filial, telefone })
+            .update(profileUpdate)
             .eq("id", newUser.user.id);
         }
 
@@ -136,13 +154,22 @@ const handler = async (req: Request): Promise<Response> => {
       }
 
       case "update": {
-        const { userId, nome, role, filial, telefone } = body;
+        const { userId, nome, role, filial, filiais, telefone } = body;
+
+        // Gerente comercial can only update to vendedor role
+        if (isGerenteComercial && role && role !== "vendedor") {
+          return new Response(
+            JSON.stringify({ error: "Commercial managers can only set seller role" }),
+            { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
 
         // Update profile
-        const profileUpdate: Record<string, string | undefined> = {};
+        const profileUpdate: Record<string, string | string[] | null | undefined> = {};
         if (nome) profileUpdate.nome = nome;
-        if (filial !== undefined) profileUpdate.filial = filial;
-        if (telefone !== undefined) profileUpdate.telefone = telefone;
+        if (filial !== undefined) profileUpdate.filial = filial || null;
+        if (filiais !== undefined) profileUpdate.filiais = filiais && filiais.length > 0 ? filiais : null;
+        if (telefone !== undefined) profileUpdate.telefone = telefone || null;
 
         if (Object.keys(profileUpdate).length > 0) {
           const { error: profileError } = await supabaseAdmin
@@ -159,8 +186,8 @@ const handler = async (req: Request): Promise<Response> => {
           }
         }
 
-        // Update role
-        if (role) {
+        // Update role (only admin can change roles freely)
+        if (role && isAdmin) {
           const { error: roleError } = await supabaseAdmin
             .from("user_roles")
             .update({ role })
@@ -211,6 +238,14 @@ const handler = async (req: Request): Promise<Response> => {
           return new Response(
             JSON.stringify({ error: "Cannot delete your own account" }),
             { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+
+        // Gerente comercial cannot delete users
+        if (isGerenteComercial) {
+          return new Response(
+            JSON.stringify({ error: "Commercial managers cannot delete users" }),
+            { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
           );
         }
 

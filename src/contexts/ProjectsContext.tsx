@@ -651,6 +651,9 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
 
   const submitSaleForm = async (projectId: string): Promise<boolean> => {
     try {
+      // Get project info for notification message
+      const project = projects.find(p => p.id === projectId);
+      
       const { error } = await supabase
         .from('projects')
         .update({ 
@@ -662,6 +665,20 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
       if (error) {
         console.error('Error submitting sale form:', error);
         return false;
+      }
+
+      // Create notification for implantacao role
+      if (project) {
+        await supabase
+          .from('project_notifications')
+          .insert({
+            project_id: projectId,
+            type: 'SALE_COMPLETED',
+            title: 'Nova Venda Concluída',
+            message: `O projeto "${project.cliente_condominio_nome}" foi enviado para implantação.`,
+            read: false,
+            for_role: 'implantacao',
+          });
       }
 
       await fetchProjects();

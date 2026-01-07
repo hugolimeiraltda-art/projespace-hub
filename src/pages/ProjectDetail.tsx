@@ -11,7 +11,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 import {
   ArrowLeft,
   Building,
@@ -47,6 +49,9 @@ export default function ProjectDetail() {
   const [isInternalComment, setIsInternalComment] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState<ProjectStatus | ''>('');
   const [selectedEngineeringStatus, setSelectedEngineeringStatus] = useState<EngineeringStatus | ''>('');
+  const [showPendingInfoDialog, setShowPendingInfoDialog] = useState(false);
+  const [pendingInfoReason, setPendingInfoReason] = useState('');
+  const [isSendingEmail, setIsSendingEmail] = useState(false);
 
   if (!project) {
     return (
@@ -360,13 +365,96 @@ export default function ProjectDetail() {
     });
   };
 
-  const handleStatusChange = () => {
+  const sendStatusEmail = async (newStatus: ProjectStatus, comment?: string) => {
+    try {
+      setIsSendingEmail(true);
+      console.log('Sending status change email...');
+      
+      const { data, error } = await supabase.functions.invoke('send-status-email', {
+        body: {
+          vendedor_email: project.vendedor_email,
+          vendedor_nome: project.vendedor_nome,
+          projeto_nome: project.cliente_condominio_nome,
+          projeto_id: project.id,
+          old_status: project.status,
+          new_status: newStatus,
+          new_status_label: STATUS_LABELS[newStatus],
+          changed_by: user?.nome || 'Sistema',
+          comment: comment,
+        },
+      });
+
+      if (error) {
+        console.error('Error sending email:', error);
+        toast({
+          title: 'Aviso',
+          description: 'Status atualizado, mas houve um erro ao enviar o email de notificação.',
+          variant: 'destructive',
+        });
+      } else {
+        console.log('Email sent successfully:', data);
+      }
+    } catch (err) {
+      console.error('Error invoking edge function:', err);
+    } finally {
+      setIsSendingEmail(false);
+    }
+  };
+
+  const handleStatusChange = async () => {
     if (!selectedStatus || !user) return;
+    
+    // Se for PENDENTE_INFO, abrir dialog para pedir motivo
+    if (selectedStatus === 'PENDENTE_INFO') {
+      setShowPendingInfoDialog(true);
+      return;
+    }
+    
+    // Para outros status, atualizar normalmente
     updateStatus(project.id, selectedStatus, user.id, user.nome);
+    
+    // Enviar email de notificação
+    await sendStatusEmail(selectedStatus);
+    
     setSelectedStatus('');
     toast({
       title: 'Status atualizado',
       description: `O projeto foi marcado como "${STATUS_LABELS[selectedStatus]}".`,
+    });
+  };
+
+  const handleConfirmPendingInfo = async () => {
+    if (!pendingInfoReason.trim() || !user) {
+      toast({
+        title: 'Erro',
+        description: 'Por favor, informe o motivo da pendência.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    // Adicionar comentário com o motivo
+    addComment(project.id, {
+      user_id: user.id,
+      user_name: user.nome,
+      content: `⚠️ INFORMAÇÃO PENDENTE: ${pendingInfoReason}`,
+      is_internal: false,
+    });
+    
+    // Atualizar status
+    updateStatus(project.id, 'PENDENTE_INFO', user.id, user.nome);
+    
+    // Enviar email com o motivo
+    await sendStatusEmail('PENDENTE_INFO', pendingInfoReason);
+    
+    // Limpar e fechar
+    setShowPendingInfoDialog(false);
+    setPendingInfoReason('');
+    setSelectedStatus('');
+    
+    toast({
+      title: 'Status atualizado',
+      description: 'O vendedor foi notificado sobre as informações pendentes.',
     });
   };
 
@@ -862,6 +950,51 @@ export default function ProjectDetail() {
           </div>
         </div>
       </div>
+
+      {/* Dialog para Pendente Info */}
+      <Dialog open={showPendingInfoDialog} onOpenChange={setShowPendingInfoDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-status-pending" />
+              Informação Pendente
+            </DialogTitle>
+            <DialogDescription>
+              Informe ao vendedor quais informações estão faltando neste projeto.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <Textarea
+              placeholder="Descreva detalhadamente quais informações estão faltando..."
+              value={pendingInfoReason}
+              onChange={(e) => setPendingInfoReason(e.target.value)}
+              className="min-h-[120px]"
+            />
+            <p className="text-sm text-muted-foreground">
+              Esta mensagem será enviada por email ao vendedor e adicionada como comentário no projeto.
+            </p>
+          </div>
+          <DialogFooter className="gap-2">
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setShowPendingInfoDialog(false);
+                setPendingInfoReason('');
+                setSelectedStatus('');
+              }}
+            >
+              Cancelar
+            </Button>
+            <Button 
+              onClick={handleConfirmPendingInfo}
+              disabled={!pendingInfoReason.trim() || isSendingEmail}
+              className="bg-status-pending hover:bg-status-pending/90"
+            >
+              {isSendingEmail ? 'Enviando...' : 'Confirmar e Notificar'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Layout>
   );
 }

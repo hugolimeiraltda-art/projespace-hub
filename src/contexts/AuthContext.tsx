@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { User as SupabaseUser, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 
-export type UserRole = 'admin' | 'vendedor' | 'projetos';
+export type UserRole = 'admin' | 'vendedor' | 'projetos' | 'gerente_comercial';
 
 export interface User {
   id: string;
@@ -11,6 +11,7 @@ export interface User {
   role: UserRole;
   telefone?: string;
   filial?: string;
+  filiais?: string[];
   foto?: string;
 }
 
@@ -23,8 +24,8 @@ interface AuthContextType {
   changePassword: (newPassword: string) => Promise<boolean>;
   updateProfile: (data: { telefone?: string; filial?: string; foto?: string }) => Promise<boolean>;
   getAllUsers: () => Promise<User[]>;
-  addUser: (data: { nome: string; email: string; password: string; role: UserRole; filial?: string; telefone?: string }) => Promise<{ success: boolean; error?: string }>;
-  updateUser: (userId: string, data: { nome?: string; role?: UserRole; filial?: string; telefone?: string }) => Promise<{ success: boolean; error?: string }>;
+  addUser: (data: { nome: string; email: string; password: string; role: UserRole; filial?: string; filiais?: string[]; telefone?: string }) => Promise<{ success: boolean; error?: string }>;
+  updateUser: (userId: string, data: { nome?: string; role?: UserRole; filial?: string; filiais?: string[]; telefone?: string }) => Promise<{ success: boolean; error?: string }>;
   deleteUser: (userId: string) => Promise<{ success: boolean; error?: string }>;
   resetPassword: (userId: string, newPassword: string) => Promise<{ success: boolean; error?: string }>;
   isAuthenticated: boolean;
@@ -68,6 +69,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         role: (roleData?.role as UserRole) || 'vendedor',
         telefone: profile.telefone || undefined,
         filial: profile.filial || undefined,
+        filiais: profile.filiais || undefined,
         foto: profile.foto || undefined,
       };
     } catch (error) {
@@ -194,6 +196,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         role: (rolesMap.get(profile.id) as UserRole) || 'vendedor',
         telefone: profile.telefone || undefined,
         filial: profile.filial || undefined,
+        filiais: profile.filiais || undefined,
         foto: profile.foto || undefined,
       }));
     } catch (error) {
@@ -202,7 +205,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const addUser = async (data: { nome: string; email: string; password: string; role: UserRole; filial?: string; telefone?: string }): Promise<{ success: boolean; error?: string }> => {
+  const addUser = async (data: { nome: string; email: string; password: string; role: UserRole; filial?: string; filiais?: string[]; telefone?: string }): Promise<{ success: boolean; error?: string }> => {
     try {
       const { data: result, error } = await supabase.functions.invoke('manage-users', {
         body: {
@@ -225,7 +228,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const updateUser = async (userId: string, data: { nome?: string; role?: UserRole; filial?: string; telefone?: string }): Promise<{ success: boolean; error?: string }> => {
+  const updateUser = async (userId: string, data: { nome?: string; role?: UserRole; filial?: string; filiais?: string[]; telefone?: string }): Promise<{ success: boolean; error?: string }> => {
     try {
       const { data: result, error } = await supabase.functions.invoke('manage-users', {
         body: {

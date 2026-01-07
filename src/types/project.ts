@@ -68,7 +68,7 @@ export type CroquiItem =
   | 'ALARME_PERIMETRAL' 
   | 'OUTROS';
 
-export type UserRole = 'vendedor' | 'projetos' | 'admin';
+export type UserRole = 'vendedor' | 'projetos' | 'admin' | 'gerente_comercial';
 
 export interface Project {
   id: string;

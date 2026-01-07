@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import jsPDF from 'jspdf';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -14,6 +14,8 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { getChangedFields, isFieldChanged } from '@/lib/changeTracking';
+import { cn } from '@/lib/utils';
 import {
   ArrowLeft,
   Building,
@@ -30,7 +32,8 @@ import {
   AlertTriangle,
   CheckCircle2,
   ShoppingCart,
-  Upload
+  Upload,
+  Hash
 } from 'lucide-react';
 import { ProjectStatus, STATUS_LABELS, ATTACHMENT_TYPE_LABELS, PORTARIA_VIRTUAL_LABELS, CFTV_ELEVADOR_LABELS, ENGINEERING_STATUS_LABELS, EngineeringStatus, SALE_STATUS_LABELS } from '@/types/project';
 import { format, parseISO } from 'date-fns';
@@ -528,6 +531,15 @@ export default function ProjectDetail() {
   };
 
   const tap = project.tap_form;
+  
+  // Get changed fields for highlighting
+  const changedFields = useMemo(() => getChangedFields(project), [project]);
+  const hasChanges = changedFields.size > 0;
+
+  // Helper for changed field styling
+  const changedStyle = (fieldName: string) => isFieldChanged(changedFields, fieldName) 
+    ? 'bg-amber-50 border-l-4 border-amber-400 pl-2 -ml-2' 
+    : '';
 
   return (
     <Layout>
@@ -539,6 +551,12 @@ export default function ProjectDetail() {
           </Button>
           <div className="flex-1">
             <div className="flex items-center gap-3 mb-1">
+              {project.numero_projeto && (
+                <span className="flex items-center gap-1 text-sm font-mono bg-muted px-2 py-0.5 rounded">
+                  <Hash className="w-3 h-3" />
+                  {project.numero_projeto}
+                </span>
+              )}
               <h1 className="text-2xl font-bold text-foreground">{project.cliente_condominio_nome}</h1>
               <StatusBadge status={project.status} />
               {project.sale_status && project.sale_status !== 'NAO_INICIADO' && (
@@ -615,6 +633,16 @@ export default function ProjectDetail() {
           </Alert>
         )}
 
+        {/* Alert for resubmitted project with changes */}
+        {hasChanges && (user?.role === 'projetos' || user?.role === 'admin') && (
+          <Alert className="mb-6 bg-amber-50 border-amber-400/50">
+            <AlertTriangle className="w-4 h-4 text-amber-600" />
+            <AlertDescription className="text-foreground">
+              <strong>Projeto reenviado com alterações.</strong> Os campos destacados em amarelo foram modificados pelo vendedor.
+            </AlertDescription>
+          </Alert>
+        )}
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
@@ -626,23 +654,23 @@ export default function ProjectDetail() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                    <div>
+                    <div className={cn("rounded p-2", changedStyle('portaria_virtual_atendimento_app'))}>
                       <p className="text-xs text-muted-foreground uppercase">Portaria Virtual</p>
                       <p className="font-medium">{PORTARIA_VIRTUAL_LABELS[tap.portaria_virtual_atendimento_app]}</p>
                     </div>
-                    <div>
+                    <div className={cn("rounded p-2", changedStyle('numero_blocos'))}>
                       <p className="text-xs text-muted-foreground uppercase">Nº Blocos</p>
                       <p className="font-medium">{tap.numero_blocos}</p>
                     </div>
-                    <div>
+                    <div className={cn("rounded p-2", changedStyle('interfonia'))}>
                       <p className="text-xs text-muted-foreground uppercase">Interfonia</p>
                       <p className="font-medium">{tap.interfonia ? 'Sim' : 'Não'}</p>
                     </div>
-                    <div>
+                    <div className={cn("rounded p-2", changedStyle('cftv_elevador_possui'))}>
                       <p className="text-xs text-muted-foreground uppercase">CFTV Elevador</p>
                       <p className="font-medium">{CFTV_ELEVADOR_LABELS[tap.cftv_elevador_possui]}</p>
                     </div>
-                    <div>
+                    <div className={cn("rounded p-2", changedStyle('marcacao_croqui_confirmada'))}>
                       <p className="text-xs text-muted-foreground uppercase">Croqui Confirmado</p>
                       <p className="font-medium flex items-center gap-1">
                         {tap.marcacao_croqui_confirmada ? (
@@ -655,28 +683,28 @@ export default function ProjectDetail() {
                   </div>
 
                   {tap.controle_acessos_pedestre_descricao && (
-                    <div>
+                    <div className={cn("rounded p-2", changedStyle('controle_acessos_pedestre_descricao'))}>
                       <p className="text-xs text-muted-foreground uppercase mb-1">Controle Pedestre</p>
                       <p className="text-sm">{tap.controle_acessos_pedestre_descricao}</p>
                     </div>
                   )}
 
                   {tap.controle_acessos_veiculo_descricao && (
-                    <div>
+                    <div className={cn("rounded p-2", changedStyle('controle_acessos_veiculo_descricao'))}>
                       <p className="text-xs text-muted-foreground uppercase mb-1">Controle Veículo</p>
                       <p className="text-sm">{tap.controle_acessos_veiculo_descricao}</p>
                     </div>
                   )}
 
                   {tap.alarme_descricao && (
-                    <div>
+                    <div className={cn("rounded p-2", changedStyle('alarme_descricao'))}>
                       <p className="text-xs text-muted-foreground uppercase mb-1">Alarme</p>
                       <p className="text-sm">{tap.alarme_descricao}</p>
                     </div>
                   )}
 
                   {tap.cftv_dvr_descricao && (
-                    <div>
+                    <div className={cn("rounded p-2", changedStyle('cftv_dvr_descricao'))}>
                       <p className="text-xs text-muted-foreground uppercase mb-1">CFTV/DVR</p>
                       <p className="text-sm">{tap.cftv_dvr_descricao}</p>
                     </div>

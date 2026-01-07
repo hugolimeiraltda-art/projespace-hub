@@ -192,7 +192,10 @@ export default function ProjectsList() {
                           <Building className="w-5 h-5 text-secondary-foreground" />
                         </div>
                         <div>
-                          <h3 className="font-semibold text-foreground">
+                          <h3 className="font-semibold text-foreground flex items-center gap-2">
+                            {project.numero_projeto && (
+                              <span className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">#{project.numero_projeto}</span>
+                            )}
                             {project.cliente_condominio_nome}
                           </h3>
                           <div className="flex items-center gap-4 mt-1 text-sm text-muted-foreground">

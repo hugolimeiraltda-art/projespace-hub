@@ -200,6 +200,7 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
         const tapForm = tapFormsMap.get(p.id);
         return {
           id: p.id,
+          numero_projeto: (p as Record<string, unknown>).numero_projeto as number | undefined,
           created_at: p.created_at,
           updated_at: p.updated_at,
           created_by_user_id: p.created_by_user_id,
@@ -218,6 +219,7 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
           engineering_production_at: p.engineering_production_at || undefined,
           engineering_completed_at: p.engineering_completed_at || undefined,
           sale_status: (p.sale_status as SaleStatus) || 'NAO_INICIADO',
+          dados_originais_pre_reenvio: (p as Record<string, unknown>).dados_originais_pre_reenvio as Record<string, unknown> | undefined,
           notifications: notificationsMap.get(p.id) || [],
           tap_form: tapForm ? {
             project_id: tapForm.project_id,
@@ -513,6 +515,38 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
       if (newStatus === 'ENVIADO' && !project?.engineering_status) {
         updateData.engineering_status = 'EM_RECEBIMENTO';
         updateData.engineering_received_at = new Date().toISOString();
+      }
+
+      // When marking as PENDENTE_INFO, save current data for comparison later
+      if (newStatus === 'PENDENTE_INFO' && project) {
+        const originalData = {
+          cliente_condominio_nome: project.cliente_condominio_nome,
+          cliente_cidade: project.cliente_cidade,
+          cliente_estado: project.cliente_estado,
+          endereco_condominio: project.endereco_condominio,
+          prazo_entrega_projeto: project.prazo_entrega_projeto,
+          data_assembleia: project.data_assembleia,
+          tap_form: project.tap_form ? {
+            portaria_virtual_atendimento_app: project.tap_form.portaria_virtual_atendimento_app,
+            numero_blocos: project.tap_form.numero_blocos,
+            interfonia: project.tap_form.interfonia,
+            controle_acessos_pedestre_descricao: project.tap_form.controle_acessos_pedestre_descricao,
+            controle_acessos_veiculo_descricao: project.tap_form.controle_acessos_veiculo_descricao,
+            alarme_descricao: project.tap_form.alarme_descricao,
+            cftv_dvr_descricao: project.tap_form.cftv_dvr_descricao,
+            cftv_elevador_possui: project.tap_form.cftv_elevador_possui,
+            marcacao_croqui_confirmada: project.tap_form.marcacao_croqui_confirmada,
+            info_custo: project.tap_form.info_custo,
+            info_cronograma: project.tap_form.info_cronograma,
+            info_adicionais: project.tap_form.info_adicionais,
+          } : null,
+        };
+        updateData.dados_originais_pre_reenvio = originalData;
+      }
+
+      // Clear original data when project is approved or analyzed
+      if (['EM_ANALISE', 'APROVADO_PROJETO'].includes(newStatus)) {
+        updateData.dados_originais_pre_reenvio = null;
       }
 
       const { error: projectError } = await supabase

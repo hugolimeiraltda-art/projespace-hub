@@ -11,6 +11,7 @@ import ChangePassword from "./pages/ChangePassword";
 import Dashboard from "./pages/Dashboard";
 import ProjectsList from "./pages/ProjectsList";
 import NewProject from "./pages/NewProject";
+import EditProject from "./pages/EditProject";
 import ProjectDetail from "./pages/ProjectDetail";
 import SaleCompletedForm from "./pages/SaleCompletedForm";
 import MeusChamados from "./pages/MeusChamados";
@@ -76,6 +77,10 @@ function AppRoutes() {
       <Route 
         path="/projetos/:id" 
         element={<ProtectedRoute><ProjectDetail /></ProtectedRoute>} 
+      />
+      <Route 
+        path="/projetos/:id/editar" 
+        element={<ProtectedRoute><EditProject /></ProtectedRoute>} 
       />
       <Route 
         path="/projetos/:id/form2" 

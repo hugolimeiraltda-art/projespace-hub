@@ -132,18 +132,11 @@ export default function SaleCompletedForm() {
     });
   };
 
-  const handleSubmit = () => {
-    // Validate required fields
+  const handleSubmit = async () => {
+    // Validate only essential required fields
     const errors: string[] = [];
     
     if (!formData.nome_condominio) errors.push('Nome do condomínio');
-    if (!formData.qtd_blocos || formData.qtd_blocos < 1) errors.push('Quantidade de blocos');
-    if (!formData.qtd_apartamentos || formData.qtd_apartamentos < 1) errors.push('Quantidade de apartamentos');
-    if (!formData.filial) errors.push('Filial');
-    if (!formData.cabo_metros_qdg_ate_central) errors.push('Metragem do cabo QDG até central');
-    if (!formData.internet_exclusiva) errors.push('Internet exclusiva');
-    if (!formData.qtd_portas_pedestre && formData.qtd_portas_pedestre !== 0) errors.push('Quantidade de portas pedestre');
-    if (!formData.qtd_portas_bloco && formData.qtd_portas_bloco !== 0) errors.push('Quantidade de portas bloco');
 
     if (errors.length > 0) {
       toast({
@@ -154,12 +147,21 @@ export default function SaleCompletedForm() {
       return;
     }
 
-    submitSaleForm(project.id);
-    toast({
-      title: 'Venda Concluída enviada!',
-      description: 'O formulário foi enviado e bloqueado para edição.',
-    });
-    navigate(`/projetos/${project.id}`);
+    const success = await submitSaleForm(project.id);
+    
+    if (success) {
+      toast({
+        title: 'Venda Concluída enviada!',
+        description: 'O formulário foi enviado e bloqueado para edição.',
+      });
+      navigate(`/projetos/${project.id}`);
+    } else {
+      toast({
+        title: 'Erro ao enviar',
+        description: 'Não foi possível enviar o formulário. Tente novamente.',
+        variant: 'destructive',
+      });
+    }
   };
 
   const handleFileUpload = (type: AttachmentType, file: File) => {

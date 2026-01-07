@@ -8,12 +8,16 @@ const corsHeaders = {
 };
 
 interface NotifyProjectRequest {
-  projectId: string;
-  projectName: string;
-  vendedorNome: string;
-  vendedorEmail: string;
+  projectId?: string;
+  project_id?: string;
+  projectName?: string;
+  project_name?: string;
+  vendedorNome?: string;
+  vendedor_name?: string;
+  vendedorEmail?: string;
   cidade?: string;
   estado?: string;
+  is_resubmission?: boolean;
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -54,9 +58,14 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     const body: NotifyProjectRequest = await req.json();
-    const { projectId, projectName, vendedorNome, vendedorEmail, cidade, estado } = body;
+    // Support both camelCase and snake_case for flexibility
+    const projectId = body.projectId || body.project_id || '';
+    const projectName = body.projectName || body.project_name || '';
+    const vendedorNome = body.vendedorNome || body.vendedor_name || '';
+    const vendedorEmail = body.vendedorEmail || '';
+    const { cidade, estado, is_resubmission } = body;
 
-    console.log("notify-project-submitted: Notifying about project", projectId);
+    console.log("notify-project-submitted: Notifying about project", projectId, is_resubmission ? "(resubmission)" : "");
 
     // Get all users with 'projetos' role
     const { data: projetosRoles, error: rolesError } = await supabaseAdmin
@@ -99,11 +108,17 @@ const handler = async (req: Request): Promise<Response> => {
     console.log(`Found ${emails.length} projetos users to notify`);
 
     // Create notifications for each projetos user
+    const notificationType = is_resubmission ? 'PROJECT_RESUBMITTED' : 'PROJECT_SUBMITTED';
+    const notificationTitle = is_resubmission ? 'Projeto Reenviado' : 'Novo Projeto Enviado';
+    const notificationMessage = is_resubmission 
+      ? `O projeto "${projectName}" foi reenviado por ${vendedorNome} com informações adicionais`
+      : `O projeto "${projectName}" foi enviado por ${vendedorNome}`;
+
     const notifications = userIds.map(userId => ({
       project_id: projectId,
-      type: 'PROJECT_SUBMITTED',
-      title: 'Novo Projeto Enviado',
-      message: `O projeto "${projectName}" foi enviado por ${vendedorNome}`,
+      type: notificationType,
+      title: notificationTitle,
+      message: notificationMessage,
       for_user_id: userId,
       for_role: 'projetos',
     }));
@@ -123,24 +138,36 @@ const handler = async (req: Request): Promise<Response> => {
         
         const location = cidade && estado ? `${cidade} - ${estado}` : cidade || estado || 'Não informado';
         
+        const emailSubject = is_resubmission 
+          ? `Projeto Reenviado: ${projectName}`
+          : `Novo Projeto Enviado: ${projectName}`;
+        
+        const emailTitle = is_resubmission 
+          ? 'Projeto Reenviado com Informações Adicionais'
+          : 'Novo Projeto Recebido';
+        
+        const emailIntro = is_resubmission
+          ? 'Um projeto foi reenviado com informações adicionais e está aguardando nova análise:'
+          : 'Um novo projeto foi enviado e está aguardando análise:';
+        
         const emailResponse = await resend.emails.send({
           from: "Projetos PCI <onboarding@resend.dev>",
           to: emails,
-          subject: `Novo Projeto Enviado: ${projectName}`,
+          subject: emailSubject,
           html: `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-              <h1 style="color: #1E40AF;">Novo Projeto Recebido</h1>
+              <h1 style="color: #1E40AF;">${emailTitle}</h1>
               <p>Olá,</p>
-              <p>Um novo projeto foi enviado e está aguardando análise:</p>
+              <p>${emailIntro}</p>
               
               <div style="background-color: #F3F4F6; padding: 20px; border-radius: 8px; margin: 20px 0;">
                 <h2 style="color: #374151; margin-top: 0;">${projectName}</h2>
                 <p><strong>Vendedor:</strong> ${vendedorNome}</p>
-                <p><strong>Email:</strong> ${vendedorEmail}</p>
+                ${vendedorEmail ? `<p><strong>Email:</strong> ${vendedorEmail}</p>` : ''}
                 <p><strong>Localização:</strong> ${location}</p>
               </div>
               
-              <p>Acesse o sistema para visualizar os detalhes e iniciar a análise.</p>
+              <p>Acesse o sistema para visualizar os detalhes e ${is_resubmission ? 'continuar' : 'iniciar'} a análise.</p>
               
               <p style="color: #6B7280; font-size: 12px; margin-top: 30px;">
                 Este é um email automático enviado pelo sistema Projetos PCI.

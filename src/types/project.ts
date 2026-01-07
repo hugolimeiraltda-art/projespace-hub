@@ -15,10 +15,8 @@ export type EngineeringStatus =
 // Sale status for Form 2
 export type SaleStatus = 
   | 'NAO_INICIADO'
-  | 'RASCUNHO'
-  | 'ENVIADO'
-  | 'EM_VALIDACAO'
-  | 'APROVADO_IMPLANTACAO';
+  | 'EM_ANDAMENTO'
+  | 'CONCLUIDO';
 
 export type SolicitacaoOrigem = 'EMAIL' | 'FORMS' | 'OUTRO';
 
@@ -293,10 +291,8 @@ export const ENGINEERING_STATUS_DAYS: Record<EngineeringStatus, number> = {
 
 export const SALE_STATUS_LABELS: Record<SaleStatus, string> = {
   NAO_INICIADO: 'Não Iniciado',
-  RASCUNHO: 'Rascunho',
-  ENVIADO: 'Enviado',
-  EM_VALIDACAO: 'Em Validação',
-  APROVADO_IMPLANTACAO: 'Aprovado para Implantação',
+  EM_ANDAMENTO: 'Em Andamento',
+  CONCLUIDO: 'Concluído',
 };
 
 export const STATUS_COLORS: Record<ProjectStatus, { bg: string; text: string; dot: string }> = {

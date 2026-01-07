@@ -72,10 +72,37 @@ export default function SaleCompletedForm() {
 
   useEffect(() => {
     if (project && !project.sale_form) {
+      // Initialize the sale form and pre-fill with TAP data
       initSaleForm(project.id);
-    }
-    if (project?.sale_form) {
-      setFormData(project.sale_form);
+      
+      // Pre-fill with data from project and TAP form
+      const preFilledData: Partial<SaleFormType> = {
+        nome_condominio: project.cliente_condominio_nome,
+        vendedor_nome: project.vendedor_nome,
+        vendedor_email: project.vendedor_email,
+        qtd_blocos: project.tap_form?.numero_blocos || undefined,
+        produto: 'Portaria Digital',
+      };
+      
+      setFormData(preFilledData);
+      
+      // Save pre-filled data to backend
+      Object.entries(preFilledData).forEach(([key, value]) => {
+        if (value !== undefined) {
+          updateSaleForm(project.id, { [key]: value });
+        }
+      });
+    } else if (project?.sale_form) {
+      // If sale form exists, load it but ensure project data is up-to-date
+      const updatedFormData = {
+        ...project.sale_form,
+        nome_condominio: project.sale_form.nome_condominio || project.cliente_condominio_nome,
+        vendedor_nome: project.vendedor_nome,
+        vendedor_email: project.vendedor_email,
+        qtd_blocos: project.sale_form.qtd_blocos || project.tap_form?.numero_blocos || undefined,
+        produto: project.sale_form.produto || 'Portaria Digital',
+      };
+      setFormData(updatedFormData);
     }
   }, [project, initSaleForm]);
 

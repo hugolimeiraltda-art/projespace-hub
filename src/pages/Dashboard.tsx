@@ -95,7 +95,7 @@ export default function Dashboard() {
                 </div>
                 <div>
                   <p className="text-2xl font-bold text-foreground">{stats.rascunho}</p>
-                  <p className="text-sm text-muted-foreground">Rascunhos</p>
+                  <p className="text-sm text-muted-foreground">Retornados</p>
                 </div>
               </div>
             </CardContent>

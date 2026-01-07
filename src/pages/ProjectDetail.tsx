@@ -487,14 +487,22 @@ export default function ProjectDetail() {
     });
   };
 
-  const handleEngineeringStatusChange = () => {
+  const handleEngineeringStatusChange = async () => {
     if (!selectedEngineeringStatus || !user) return;
-    updateEngineeringStatus(project.id, selectedEngineeringStatus, user.id, user.nome);
+    const success = await updateEngineeringStatus(project.id, selectedEngineeringStatus, user.id, user.nome);
+    if (success) {
+      toast({
+        title: 'Status de engenharia atualizado',
+        description: `O status foi alterado para "${ENGINEERING_STATUS_LABELS[selectedEngineeringStatus]}".`,
+      });
+    } else {
+      toast({
+        title: 'Erro ao atualizar status',
+        description: 'Não foi possível atualizar o status de engenharia. Verifique suas permissões.',
+        variant: 'destructive',
+      });
+    }
     setSelectedEngineeringStatus('');
-    toast({
-      title: 'Status de engenharia atualizado',
-      description: `O status foi alterado para "${ENGINEERING_STATUS_LABELS[selectedEngineeringStatus]}".`,
-    });
   };
 
   const handleMarkCompleted = () => {
@@ -868,7 +876,7 @@ export default function ProjectDetail() {
                   completedAt={project.engineering_completed_at}
                 />
                 
-                {canChangeStatus && project.engineering_status !== 'CONCLUIDO' && (
+                {canChangeStatus && project.engineering_status && project.engineering_status !== 'CONCLUIDO' && (
                   <div className="mt-4 pt-4 border-t border-border space-y-3">
                     <Select 
                       value={selectedEngineeringStatus} 

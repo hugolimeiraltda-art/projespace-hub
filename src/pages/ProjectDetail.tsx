@@ -608,7 +608,7 @@ export default function ProjectDetail() {
                 onClick={() => navigate(`/projetos/${project.id}/form2`)}
               >
                 <FileText className="w-4 h-4 mr-2" />
-                {project.sale_status === 'CONCLUIDO' ? 'Visualizar Formulário' : 'Informar Venda Concluída'}
+                {project.sale_status === 'CONCLUIDO' ? 'Visualizar Forms' : 'Informar Venda Concluída'}
               </Button>
             )}
           </div>

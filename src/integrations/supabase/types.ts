@@ -221,6 +221,7 @@ export type Database = {
           cliente_estado: string | null
           created_at: string
           created_by_user_id: string
+          dados_originais_pre_reenvio: Json | null
           data_assembleia: string | null
           email_padrao_gerado: string | null
           endereco_condominio: string | null
@@ -231,6 +232,7 @@ export type Database = {
             | Database["public"]["Enums"]["engineering_status"]
             | null
           id: string
+          numero_projeto: number
           observacoes: string | null
           prazo_entrega_projeto: string | null
           sale_status: Database["public"]["Enums"]["sale_status"]
@@ -245,6 +247,7 @@ export type Database = {
           cliente_estado?: string | null
           created_at?: string
           created_by_user_id: string
+          dados_originais_pre_reenvio?: Json | null
           data_assembleia?: string | null
           email_padrao_gerado?: string | null
           endereco_condominio?: string | null
@@ -255,6 +258,7 @@ export type Database = {
             | Database["public"]["Enums"]["engineering_status"]
             | null
           id?: string
+          numero_projeto?: number
           observacoes?: string | null
           prazo_entrega_projeto?: string | null
           sale_status?: Database["public"]["Enums"]["sale_status"]
@@ -269,6 +273,7 @@ export type Database = {
           cliente_estado?: string | null
           created_at?: string
           created_by_user_id?: string
+          dados_originais_pre_reenvio?: Json | null
           data_assembleia?: string | null
           email_padrao_gerado?: string | null
           endereco_condominio?: string | null
@@ -279,6 +284,7 @@ export type Database = {
             | Database["public"]["Enums"]["engineering_status"]
             | null
           id?: string
+          numero_projeto?: number
           observacoes?: string | null
           prazo_entrega_projeto?: string | null
           sale_status?: Database["public"]["Enums"]["sale_status"]

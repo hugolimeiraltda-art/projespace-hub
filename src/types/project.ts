@@ -72,6 +72,7 @@ export type UserRole = 'vendedor' | 'projetos' | 'admin' | 'gerente_comercial';
 
 export interface Project {
   id: string;
+  numero_projeto?: number;
   created_at: string;
   updated_at: string;
   created_by_user_id: string;
@@ -97,6 +98,8 @@ export interface Project {
   sale_locked_at?: string;
   // Notifications
   notifications?: Notification[];
+  // Original data before resubmission for change tracking
+  dados_originais_pre_reenvio?: Record<string, unknown>;
 }
 
 export interface Notification {

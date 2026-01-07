@@ -1,8 +1,8 @@
 import { ReactNode } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { useProjects } from '@/contexts/ProjectsContext';
 import { Button } from '@/components/ui/button';
+import { NotificationsDropdown } from '@/components/NotificationsDropdown';
 import { cn } from '@/lib/utils';
 import {
   LayoutDashboard,
@@ -13,7 +13,6 @@ import {
   Building2,
   User,
   ClipboardList,
-  Bell,
   Users,
 } from 'lucide-react';
 
@@ -23,11 +22,8 @@ interface LayoutProps {
 
 export function Layout({ children }: LayoutProps) {
   const { user, logout } = useAuth();
-  const { getUnreadNotifications } = useProjects();
   const location = useLocation();
   const navigate = useNavigate();
-
-  const unreadCount = user ? getUnreadNotifications(user.id).length : 0;
 
   const handleLogout = () => {
     logout();
@@ -98,17 +94,10 @@ export function Layout({ children }: LayoutProps) {
           })}
         </nav>
 
-        {/* Notifications indicator */}
-        {unreadCount > 0 && (
-          <div className="mx-3 mb-2">
-            <div className="flex items-center gap-2 px-3 py-2 bg-status-approved-bg rounded-lg">
-              <Bell className="w-4 h-4 text-status-approved" />
-              <span className="text-sm text-foreground">
-                {unreadCount} notificação(ões)
-              </span>
-            </div>
-          </div>
-        )}
+        {/* Notifications */}
+        <div className="mx-3 mb-2">
+          <NotificationsDropdown />
+        </div>
 
         {/* User */}
         <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-border bg-card">

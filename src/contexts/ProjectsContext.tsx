@@ -703,6 +703,17 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
         // Get project data to pre-fill the form
         const project = projects.find(p => p.id === projectId);
         
+        // Fetch vendedor's filial from their profile
+        let vendedorFilial = '';
+        if (project?.created_by_user_id) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('filial')
+            .eq('id', project.created_by_user_id)
+            .maybeSingle();
+          vendedorFilial = profile?.filial || '';
+        }
+        
         // Create sale form with pre-filled data
         const { error: insertError } = await supabase
           .from('sale_forms')
@@ -713,6 +724,7 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
             vendedor_email: project?.vendedor_email || '',
             qtd_blocos: project?.tap_form?.numero_blocos || null,
             produto: 'Portaria Digital',
+            filial: vendedorFilial,
           });
 
         if (insertError) {

@@ -24,6 +24,7 @@ const FILIAIS = [
 const ALL_ROLES: { value: UserRole; label: string }[] = [
   { value: 'vendedor', label: 'Vendedor' },
   { value: 'projetos', label: 'Projetista' },
+  { value: 'implantacao', label: 'Implantação' },
   { value: 'gerente_comercial', label: 'Gerente Comercial' },
   { value: 'admin', label: 'Administrador' },
 ];
@@ -33,6 +34,8 @@ const getRoleBadgeVariant = (role: UserRole) => {
     case 'admin':
       return 'destructive';
     case 'projetos':
+      return 'default';
+    case 'implantacao':
       return 'default';
     case 'gerente_comercial':
       return 'outline';

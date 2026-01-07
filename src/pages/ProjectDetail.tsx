@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import jsPDF from 'jspdf';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -39,12 +39,12 @@ import { ptBR } from 'date-fns/locale';
 export default function ProjectDetail() {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
-  const { getProject, updateStatus, updateEngineeringStatus, addComment, markProjectCompleted, addAttachment } = useProjects();
+  const { getProject, updateStatus, updateEngineeringStatus, addComment, markProjectCompleted, addAttachment, projects } = useProjects();
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const project = getProject(id!);
-
+  const [project, setProject] = useState<ReturnType<typeof getProject>>(undefined);
+  const [isLoading, setIsLoading] = useState(true);
   const [newComment, setNewComment] = useState('');
   const [isInternalComment, setIsInternalComment] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState<ProjectStatus | ''>('');
@@ -52,6 +52,24 @@ export default function ProjectDetail() {
   const [showPendingInfoDialog, setShowPendingInfoDialog] = useState(false);
   const [pendingInfoReason, setPendingInfoReason] = useState('');
   const [isSendingEmail, setIsSendingEmail] = useState(false);
+
+  // Watch for project changes in the context
+  useEffect(() => {
+    const foundProject = getProject(id!);
+    setProject(foundProject);
+    setIsLoading(false);
+  }, [id, projects, getProject]);
+
+  if (isLoading) {
+    return (
+      <Layout>
+        <div className="p-8 text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-muted-foreground">Carregando projeto...</p>
+        </div>
+      </Layout>
+    );
+  }
 
   if (!project) {
     return (

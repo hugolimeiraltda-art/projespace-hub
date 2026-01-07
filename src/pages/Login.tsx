@@ -23,13 +23,9 @@ export default function Login() {
     try {
       const result = await login(email, password);
       if (result.success) {
-        if (result.mustChangePassword) {
-          navigate('/alterar-senha');
-        } else {
-          navigate('/dashboard');
-        }
+        navigate('/dashboard');
       } else {
-        setError('Email ou senha inválidos');
+        setError(result.error || 'Email ou senha inválidos');
       }
     } catch {
       setError('Erro ao fazer login. Tente novamente.');

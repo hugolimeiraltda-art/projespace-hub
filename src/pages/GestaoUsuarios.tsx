@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Layout } from '@/components/Layout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,10 +8,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth, User, UserRole } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { User, UserRole } from '@/types/project';
-import { Users, Plus, Pencil, Trash2, KeyRound, Search, ArrowLeft } from 'lucide-react';
+import { Users, Plus, Pencil, Trash2, KeyRound, Search, ArrowLeft, Loader2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const FILIAIS = [
@@ -43,22 +42,42 @@ const getRoleBadgeVariant = (role: UserRole) => {
 export default function GestaoUsuarios() {
   const { user: currentUser, getAllUsers, addUser, updateUser, deleteUser, resetPassword } = useAuth();
   const { toast } = useToast();
-  const users = getAllUsers();
 
+  const [users, setUsers] = useState<User[]>([]);
+  const [isLoadingUsers, setIsLoadingUsers] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterRole, setFilterRole] = useState<string>('all');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Password dialog state
+  const [showPasswordDialog, setShowPasswordDialog] = useState(false);
+  const [passwordUserId, setPasswordUserId] = useState<string | null>(null);
+  const [newPassword, setNewPassword] = useState('');
 
   // Form state
   const [formData, setFormData] = useState({
     nome: '',
     email: '',
+    password: '',
     role: 'vendedor' as UserRole,
     filial: '',
     telefone: '',
   });
   const [formError, setFormError] = useState('');
+
+  // Load users
+  useEffect(() => {
+    loadUsers();
+  }, []);
+
+  const loadUsers = async () => {
+    setIsLoadingUsers(true);
+    const fetchedUsers = await getAllUsers();
+    setUsers(fetchedUsers);
+    setIsLoadingUsers(false);
+  };
 
   const filteredUsers = users.filter((u) => {
     const matchesSearch =
@@ -73,6 +92,7 @@ export default function GestaoUsuarios() {
     setFormData({
       nome: '',
       email: '',
+      password: '123456',
       role: 'vendedor',
       filial: '',
       telefone: '',
@@ -86,6 +106,7 @@ export default function GestaoUsuarios() {
     setFormData({
       nome: user.nome,
       email: user.email,
+      password: '',
       role: user.role,
       filial: user.filial || '',
       telefone: user.telefone || '',
@@ -119,23 +140,54 @@ export default function GestaoUsuarios() {
       return;
     }
 
+    if (!editingUser && (!formData.password || formData.password.length < 6)) {
+      setFormError('A senha deve ter pelo menos 6 caracteres');
+      return;
+    }
+
+    setIsSubmitting(true);
     try {
       if (editingUser) {
-        await updateUser(editingUser.id, formData);
-        toast({
-          title: 'Sucesso',
-          description: 'Usuário atualizado com sucesso!',
+        const result = await updateUser(editingUser.id, {
+          nome: formData.nome,
+          role: formData.role,
+          filial: formData.filial || undefined,
+          telefone: formData.telefone || undefined,
         });
+        if (result.success) {
+          toast({
+            title: 'Sucesso',
+            description: 'Usuário atualizado com sucesso!',
+          });
+          setIsDialogOpen(false);
+          loadUsers();
+        } else {
+          setFormError(result.error || 'Erro ao atualizar usuário');
+        }
       } else {
-        await addUser(formData);
-        toast({
-          title: 'Sucesso',
-          description: 'Usuário criado com sucesso! Senha inicial: 123456',
+        const result = await addUser({
+          nome: formData.nome,
+          email: formData.email,
+          password: formData.password,
+          role: formData.role,
+          filial: formData.filial || undefined,
+          telefone: formData.telefone || undefined,
         });
+        if (result.success) {
+          toast({
+            title: 'Sucesso',
+            description: 'Usuário criado com sucesso!',
+          });
+          setIsDialogOpen(false);
+          loadUsers();
+        } else {
+          setFormError(result.error || 'Erro ao criar usuário');
+        }
       }
-      setIsDialogOpen(false);
     } catch {
       setFormError('Erro ao salvar usuário');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -149,32 +201,56 @@ export default function GestaoUsuarios() {
       return;
     }
 
-    try {
-      await deleteUser(userId);
+    const result = await deleteUser(userId);
+    if (result.success) {
       toast({
         title: 'Sucesso',
         description: 'Usuário removido com sucesso!',
       });
-    } catch {
+      loadUsers();
+    } else {
       toast({
         title: 'Erro',
-        description: 'Erro ao remover usuário',
+        description: result.error || 'Erro ao remover usuário',
         variant: 'destructive',
       });
     }
   };
 
-  const handleResetPassword = async (userId: string) => {
-    try {
-      await resetPassword(userId);
-      toast({
-        title: 'Sucesso',
-        description: 'Senha resetada para 123456. O usuário deverá alterá-la no próximo login.',
-      });
-    } catch {
+  const openPasswordDialog = (userId: string) => {
+    setPasswordUserId(userId);
+    setNewPassword('123456');
+    setShowPasswordDialog(true);
+  };
+
+  const handleResetPassword = async () => {
+    if (!passwordUserId || !newPassword) return;
+
+    if (newPassword.length < 6) {
       toast({
         title: 'Erro',
-        description: 'Erro ao resetar senha',
+        description: 'A senha deve ter pelo menos 6 caracteres',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+    const result = await resetPassword(passwordUserId, newPassword);
+    setIsSubmitting(false);
+
+    if (result.success) {
+      toast({
+        title: 'Sucesso',
+        description: 'Senha alterada com sucesso!',
+      });
+      setShowPasswordDialog(false);
+      setPasswordUserId(null);
+      setNewPassword('');
+    } else {
+      toast({
+        title: 'Erro',
+        description: result.error || 'Erro ao resetar senha',
         variant: 'destructive',
       });
     }
@@ -184,6 +260,16 @@ export default function GestaoUsuarios() {
     if (!filialId) return '-';
     return FILIAIS.find((f) => f.id === filialId)?.nome || filialId;
   };
+
+  if (isLoadingUsers) {
+    return (
+      <Layout>
+        <div className="p-8 flex items-center justify-center min-h-[400px]">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        </div>
+      </Layout>
+    );
+  }
 
   return (
     <Layout>
@@ -293,8 +379,8 @@ export default function GestaoUsuarios() {
                           <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => handleResetPassword(u.id)}
-                            title="Resetar senha"
+                            onClick={() => openPasswordDialog(u.id)}
+                            title="Alterar senha"
                           >
                             <KeyRound className="w-4 h-4" />
                           </Button>
@@ -348,7 +434,7 @@ export default function GestaoUsuarios() {
               <DialogDescription>
                 {editingUser
                   ? 'Atualize as informações do usuário'
-                  : 'Preencha os dados para criar um novo usuário. A senha inicial será 123456.'}
+                  : 'Preencha os dados para criar um novo usuário.'}
               </DialogDescription>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -374,8 +460,22 @@ export default function GestaoUsuarios() {
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   placeholder="email@exemplo.com"
+                  disabled={!!editingUser}
                 />
               </div>
+
+              {!editingUser && (
+                <div className="space-y-2">
+                  <Label htmlFor="password">Senha Inicial *</Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    value={formData.password}
+                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                    placeholder="Mínimo 6 caracteres"
+                  />
+                </div>
+              )}
 
               <div className="space-y-2">
                 <Label htmlFor="role">Perfil *</Label>
@@ -429,9 +529,45 @@ export default function GestaoUsuarios() {
                 <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
                   Cancelar
                 </Button>
-                <Button type="submit">{editingUser ? 'Salvar' : 'Criar Usuário'}</Button>
+                <Button type="submit" disabled={isSubmitting}>
+                  {isSubmitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                  {editingUser ? 'Salvar' : 'Criar Usuário'}
+                </Button>
               </DialogFooter>
             </form>
+          </DialogContent>
+        </Dialog>
+
+        {/* Password Dialog */}
+        <Dialog open={showPasswordDialog} onOpenChange={setShowPasswordDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Alterar Senha</DialogTitle>
+              <DialogDescription>
+                Digite a nova senha para o usuário.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="newPassword">Nova Senha *</Label>
+                <Input
+                  id="newPassword"
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="Mínimo 6 caracteres"
+                />
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setShowPasswordDialog(false)}>
+                  Cancelar
+                </Button>
+                <Button onClick={handleResetPassword} disabled={isSubmitting}>
+                  {isSubmitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                  Alterar Senha
+                </Button>
+              </DialogFooter>
+            </div>
           </DialogContent>
         </Dialog>
       </div>

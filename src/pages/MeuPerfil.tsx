@@ -77,11 +77,6 @@ export default function MeuPerfil() {
     e.preventDefault();
     setPasswordError('');
 
-    if (senhaAtual !== user?.password) {
-      setPasswordError('Senha atual incorreta');
-      return;
-    }
-
     if (novaSenha.length < 6) {
       setPasswordError('A nova senha deve ter pelo menos 6 caracteres');
       return;

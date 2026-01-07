@@ -1,178 +1,316 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
-import { User, UserRole } from '@/types/project';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { User as SupabaseUser, Session } from '@supabase/supabase-js';
+import { supabase } from '@/integrations/supabase/client';
+
+export type UserRole = 'admin' | 'vendedor' | 'projetos';
+
+export interface User {
+  id: string;
+  email: string;
+  nome: string;
+  role: UserRole;
+  telefone?: string;
+  filial?: string;
+  foto?: string;
+}
 
 interface AuthContextType {
   user: User | null;
-  login: (email: string, password: string) => Promise<{ success: boolean; mustChangePassword?: boolean }>;
-  logout: () => void;
+  session: Session | null;
+  isLoading: boolean;
+  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  logout: () => Promise<void>;
   changePassword: (newPassword: string) => Promise<boolean>;
   updateProfile: (data: { telefone?: string; filial?: string; foto?: string }) => Promise<boolean>;
-  getAllUsers: () => User[];
-  addUser: (data: { nome: string; email: string; role: UserRole; filial?: string; telefone?: string }) => Promise<boolean>;
-  updateUser: (userId: string, data: { nome: string; email: string; role: UserRole; filial?: string; telefone?: string }) => Promise<boolean>;
-  deleteUser: (userId: string) => Promise<boolean>;
-  resetPassword: (userId: string) => Promise<boolean>;
+  getAllUsers: () => Promise<User[]>;
+  addUser: (data: { nome: string; email: string; password: string; role: UserRole; filial?: string; telefone?: string }) => Promise<{ success: boolean; error?: string }>;
+  updateUser: (userId: string, data: { nome?: string; role?: UserRole; filial?: string; telefone?: string }) => Promise<{ success: boolean; error?: string }>;
+  deleteUser: (userId: string) => Promise<{ success: boolean; error?: string }>;
+  resetPassword: (userId: string, newPassword: string) => Promise<{ success: boolean; error?: string }>;
   isAuthenticated: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Get users from localStorage or use defaults
-const getStoredUsers = (): User[] => {
-  const stored = localStorage.getItem('portaria_users');
-  if (stored) {
-    return JSON.parse(stored);
-  }
-  // Default users with initial password
-  const defaultUsers: User[] = [
-    // Vendedores
-    { id: '1', email: 'vendedor@empresa.com', nome: 'João Vendedor', role: 'vendedor', password: '123456', mustChangePassword: true },
-    { id: '5', email: 'victor.soares@emive.com.br', nome: 'Victor Soares', role: 'vendedor', password: '123456', mustChangePassword: true },
-    { id: '6', email: 'rayane.moura@emive.com.br', nome: 'Rayane Moura', role: 'vendedor', password: '123456', mustChangePassword: true },
-    { id: '7', email: 'gleyton.gurgel@emive.com.br', nome: 'Gleyton Gurgel', role: 'vendedor', password: '123456', mustChangePassword: true },
-    { id: '8', email: 'wilson.simao@emive.com.br', nome: 'Wilson Simão', role: 'vendedor', password: '123456', mustChangePassword: true },
-    // Projetistas
-    { id: '2', email: 'projetos@empresa.com', nome: 'Maria Projetos', role: 'projetos', password: '123456', mustChangePassword: true },
-    { id: '4', email: 'henrique.macedo@emive.com.br', nome: 'Henrique Macedo', role: 'projetos', password: '123456', mustChangePassword: true },
-    { id: '9', email: 'stenio.santos@emive.com.br', nome: 'Stenio Santos', role: 'projetos', password: '123456', mustChangePassword: true },
-    // Admins
-    { id: '3', email: 'admin@empresa.com', nome: 'Admin Sistema', role: 'admin', password: '123456', mustChangePassword: true },
-    { id: '10', email: 'hugo.santos@emive.com.br', nome: 'Hugo Santos', role: 'admin', password: '123456', mustChangePassword: true },
-    { id: '11', email: 'gustavo.morais@emive.com.br', nome: 'Gustavo Morais', role: 'admin', password: '123456', mustChangePassword: true },
-  ];
-  localStorage.setItem('portaria_users', JSON.stringify(defaultUsers));
-  return defaultUsers;
-};
-
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [users, setUsers] = useState<User[]>(getStoredUsers);
-  const [user, setUser] = useState<User | null>(() => {
-    const saved = localStorage.getItem('portaria_user');
-    return saved ? JSON.parse(saved) : null;
-  });
+  const [session, setSession] = useState<Session | null>(null);
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const login = async (email: string, password: string): Promise<{ success: boolean; mustChangePassword?: boolean }> => {
-    const foundUser = users.find(u => u.email.toLowerCase() === email.toLowerCase());
-    if (foundUser) {
-      if (foundUser.password !== password) {
-        return { success: false };
+  // Fetch user profile and role
+  const fetchUserProfile = async (userId: string): Promise<User | null> => {
+    try {
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .maybeSingle();
+
+      if (profileError || !profile) {
+        console.error('Error fetching profile:', profileError);
+        return null;
       }
-      setUser(foundUser);
-      localStorage.setItem('portaria_user', JSON.stringify(foundUser));
-      return { success: true, mustChangePassword: foundUser.mustChangePassword };
+
+      const { data: roleData, error: roleError } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', userId)
+        .maybeSingle();
+
+      if (roleError) {
+        console.error('Error fetching role:', roleError);
+      }
+
+      return {
+        id: profile.id,
+        email: profile.email,
+        nome: profile.nome,
+        role: (roleData?.role as UserRole) || 'vendedor',
+        telefone: profile.telefone || undefined,
+        filial: profile.filial || undefined,
+        foto: profile.foto || undefined,
+      };
+    } catch (error) {
+      console.error('Error in fetchUserProfile:', error);
+      return null;
     }
-    return { success: false };
+  };
+
+  useEffect(() => {
+    // Set up auth state listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        setSession(session);
+        
+        if (session?.user) {
+          // Use setTimeout to avoid potential deadlock
+          setTimeout(async () => {
+            const userProfile = await fetchUserProfile(session.user.id);
+            setUser(userProfile);
+            setIsLoading(false);
+          }, 0);
+        } else {
+          setUser(null);
+          setIsLoading(false);
+        }
+      }
+    );
+
+    // Check for existing session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      if (session?.user) {
+        fetchUserProfile(session.user.id).then((userProfile) => {
+          setUser(userProfile);
+          setIsLoading(false);
+        });
+      } else {
+        setIsLoading(false);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const login = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) {
+        return { success: false, error: error.message };
+      }
+
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: 'Erro ao fazer login' };
+    }
+  };
+
+  const logout = async () => {
+    await supabase.auth.signOut();
+    setUser(null);
+    setSession(null);
   };
 
   const changePassword = async (newPassword: string): Promise<boolean> => {
-    if (!user) return false;
-    
-    const updatedUsers = users.map(u => 
-      u.id === user.id 
-        ? { ...u, password: newPassword, mustChangePassword: false }
-        : u
-    );
-    
-    const updatedUser = { ...user, password: newPassword, mustChangePassword: false };
-    
-    setUsers(updatedUsers);
-    setUser(updatedUser);
-    localStorage.setItem('portaria_users', JSON.stringify(updatedUsers));
-    localStorage.setItem('portaria_user', JSON.stringify(updatedUser));
-    
-    return true;
+    try {
+      const { error } = await supabase.auth.updateUser({ password: newPassword });
+      return !error;
+    } catch {
+      return false;
+    }
   };
 
   const updateProfile = async (data: { telefone?: string; filial?: string; foto?: string }): Promise<boolean> => {
     if (!user) return false;
-    
-    const updatedUser = { ...user, ...data };
-    const updatedUsers = users.map(u => 
-      u.id === user.id ? updatedUser : u
-    );
-    
-    setUsers(updatedUsers);
-    setUser(updatedUser);
-    localStorage.setItem('portaria_users', JSON.stringify(updatedUsers));
-    localStorage.setItem('portaria_user', JSON.stringify(updatedUser));
-    
-    return true;
-  };
 
-  const getAllUsers = (): User[] => {
-    return users;
-  };
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update(data)
+        .eq('id', user.id);
 
-  const addUser = async (data: { nome: string; email: string; role: UserRole; filial?: string; telefone?: string }): Promise<boolean> => {
-    const newUser: User = {
-      id: crypto.randomUUID(),
-      ...data,
-      password: '123456',
-      mustChangePassword: true,
-    };
-    
-    const updatedUsers = [...users, newUser];
-    setUsers(updatedUsers);
-    localStorage.setItem('portaria_users', JSON.stringify(updatedUsers));
-    
-    return true;
-  };
+      if (error) {
+        console.error('Error updating profile:', error);
+        return false;
+      }
 
-  const updateUser = async (userId: string, data: { nome: string; email: string; role: UserRole; filial?: string; telefone?: string }): Promise<boolean> => {
-    const updatedUsers = users.map(u => 
-      u.id === userId ? { ...u, ...data } : u
-    );
-    
-    setUsers(updatedUsers);
-    localStorage.setItem('portaria_users', JSON.stringify(updatedUsers));
-    
-    // Update current user if editing self
-    if (user?.id === userId) {
-      const updatedUser = { ...user, ...data };
-      setUser(updatedUser);
-      localStorage.setItem('portaria_user', JSON.stringify(updatedUser));
+      setUser({ ...user, ...data });
+      return true;
+    } catch {
+      return false;
     }
-    
-    return true;
   };
 
-  const deleteUser = async (userId: string): Promise<boolean> => {
-    const updatedUsers = users.filter(u => u.id !== userId);
-    setUsers(updatedUsers);
-    localStorage.setItem('portaria_users', JSON.stringify(updatedUsers));
-    
-    return true;
+  const getAllUsers = async (): Promise<User[]> => {
+    try {
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('*')
+        .order('nome');
+
+      if (profilesError || !profiles) {
+        console.error('Error fetching profiles:', profilesError);
+        return [];
+      }
+
+      const { data: roles, error: rolesError } = await supabase
+        .from('user_roles')
+        .select('user_id, role');
+
+      if (rolesError) {
+        console.error('Error fetching roles:', rolesError);
+      }
+
+      const rolesMap = new Map(roles?.map(r => [r.user_id, r.role]) || []);
+
+      return profiles.map(profile => ({
+        id: profile.id,
+        email: profile.email,
+        nome: profile.nome,
+        role: (rolesMap.get(profile.id) as UserRole) || 'vendedor',
+        telefone: profile.telefone || undefined,
+        filial: profile.filial || undefined,
+        foto: profile.foto || undefined,
+      }));
+    } catch (error) {
+      console.error('Error in getAllUsers:', error);
+      return [];
+    }
   };
 
-  const resetPassword = async (userId: string): Promise<boolean> => {
-    const updatedUsers = users.map(u => 
-      u.id === userId ? { ...u, password: '123456', mustChangePassword: true } : u
-    );
-    
-    setUsers(updatedUsers);
-    localStorage.setItem('portaria_users', JSON.stringify(updatedUsers));
-    
-    return true;
+  const addUser = async (data: { nome: string; email: string; password: string; role: UserRole; filial?: string; telefone?: string }): Promise<{ success: boolean; error?: string }> => {
+    try {
+      const { data: result, error } = await supabase.functions.invoke('manage-users', {
+        body: {
+          action: 'create',
+          ...data,
+        },
+      });
+
+      if (error) {
+        return { success: false, error: error.message };
+      }
+
+      if (result?.error) {
+        return { success: false, error: result.error };
+      }
+
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: 'Erro ao criar usuário' };
+    }
   };
 
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem('portaria_user');
+  const updateUser = async (userId: string, data: { nome?: string; role?: UserRole; filial?: string; telefone?: string }): Promise<{ success: boolean; error?: string }> => {
+    try {
+      const { data: result, error } = await supabase.functions.invoke('manage-users', {
+        body: {
+          action: 'update',
+          userId,
+          ...data,
+        },
+      });
+
+      if (error) {
+        return { success: false, error: error.message };
+      }
+
+      if (result?.error) {
+        return { success: false, error: result.error };
+      }
+
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: 'Erro ao atualizar usuário' };
+    }
+  };
+
+  const deleteUser = async (userId: string): Promise<{ success: boolean; error?: string }> => {
+    try {
+      const { data: result, error } = await supabase.functions.invoke('manage-users', {
+        body: {
+          action: 'delete',
+          userId,
+        },
+      });
+
+      if (error) {
+        return { success: false, error: error.message };
+      }
+
+      if (result?.error) {
+        return { success: false, error: result.error };
+      }
+
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: 'Erro ao deletar usuário' };
+    }
+  };
+
+  const resetPassword = async (userId: string, newPassword: string): Promise<{ success: boolean; error?: string }> => {
+    try {
+      const { data: result, error } = await supabase.functions.invoke('manage-users', {
+        body: {
+          action: 'reset_password',
+          userId,
+          newPassword,
+        },
+      });
+
+      if (error) {
+        return { success: false, error: error.message };
+      }
+
+      if (result?.error) {
+        return { success: false, error: result.error };
+      }
+
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: 'Erro ao resetar senha' };
+    }
   };
 
   return (
-    <AuthContext.Provider value={{ 
-      user, 
-      login, 
-      logout, 
-      changePassword, 
-      updateProfile, 
+    <AuthContext.Provider value={{
+      user,
+      session,
+      isLoading,
+      login,
+      logout,
+      changePassword,
+      updateProfile,
       getAllUsers,
       addUser,
       updateUser,
       deleteUser,
       resetPassword,
-      isAuthenticated: !!user 
+      isAuthenticated: !!user,
     }}>
       {children}
     </AuthContext.Provider>

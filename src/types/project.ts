@@ -70,18 +70,6 @@ export type CroquiItem =
 
 export type UserRole = 'vendedor' | 'projetos' | 'admin';
 
-export interface User {
-  id: string;
-  email: string;
-  nome: string;
-  role: UserRole;
-  password: string;
-  mustChangePassword: boolean;
-  foto?: string;
-  filial?: string;
-  telefone?: string;
-}
-
 export interface Project {
   id: string;
   created_at: string;

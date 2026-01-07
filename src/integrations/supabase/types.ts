@@ -316,6 +316,203 @@ export type Database = {
         }
         Relationships: []
       }
+      sale_forms: {
+        Row: {
+          acesso_local_central_portaria: string | null
+          acessos_tem_camera_int_ext: boolean | null
+          alarme_tipo: string | null
+          cabo_metros_qdg_ate_central: number | null
+          cancela_aproveitada_detalhes: string | null
+          cancela_autenticacao: string | null
+          cancela_qtd_duplo_sentido: number | null
+          cancela_qtd_sentido_unico: number | null
+          catraca_aproveitada_detalhes: string | null
+          catraca_autenticacao: string | null
+          catraca_qtd_duplo_sentido: number | null
+          catraca_qtd_sentido_unico: number | null
+          cerca_central_alarme_tipo: string | null
+          cerca_local_central_choque: string | null
+          cerca_metragem_linear_total: number | null
+          cerca_qtd_cabo_centenax: number | null
+          cerca_qtd_fios: number | null
+          cftv_novo_qtd_dvr_16ch: number | null
+          cftv_novo_qtd_dvr_4ch: number | null
+          cftv_novo_qtd_dvr_8ch: number | null
+          cftv_novo_qtd_total_cameras: number | null
+          checklist_implantacao: Json | null
+          created_at: string
+          filial: string | null
+          id: string
+          internet_exclusiva: string | null
+          iva_central_alarme_tipo: string | null
+          iva_qtd_cabo_blindado: string | null
+          iva_qtd_novos: number | null
+          iva_qtd_pares_existentes: number | null
+          local_central_interfonia_descricao: string | null
+          marca_modelo_dvr_aproveitado: string | null
+          metodo_acionamento_portoes: string | null
+          nome_condominio: string | null
+          obs_central_portaria_qdg: string | null
+          obs_gerais: string | null
+          obs_portas: string | null
+          possui_cancela: boolean | null
+          possui_catraca: boolean | null
+          possui_totem: boolean | null
+          produto: string | null
+          project_id: string
+          qtd_apartamentos: number | null
+          qtd_blocos: number | null
+          qtd_cameras_aproveitadas: number | null
+          qtd_cameras_elevador: number | null
+          qtd_dvrs_aproveitados: number | null
+          qtd_portas_bloco: number | null
+          qtd_portas_pedestre: number | null
+          qtd_portoes_basculantes: number | null
+          qtd_portoes_deslizantes: number | null
+          qtd_portoes_pivotantes: number | null
+          qtd_saida_autenticada: number | null
+          resumo_tecnico_noc: string | null
+          totem_qtd_duplo: number | null
+          totem_qtd_simples: number | null
+          transbordo_para_apartamentos: string | null
+          updated_at: string
+          vendedor_email: string | null
+          vendedor_nome: string | null
+        }
+        Insert: {
+          acesso_local_central_portaria?: string | null
+          acessos_tem_camera_int_ext?: boolean | null
+          alarme_tipo?: string | null
+          cabo_metros_qdg_ate_central?: number | null
+          cancela_aproveitada_detalhes?: string | null
+          cancela_autenticacao?: string | null
+          cancela_qtd_duplo_sentido?: number | null
+          cancela_qtd_sentido_unico?: number | null
+          catraca_aproveitada_detalhes?: string | null
+          catraca_autenticacao?: string | null
+          catraca_qtd_duplo_sentido?: number | null
+          catraca_qtd_sentido_unico?: number | null
+          cerca_central_alarme_tipo?: string | null
+          cerca_local_central_choque?: string | null
+          cerca_metragem_linear_total?: number | null
+          cerca_qtd_cabo_centenax?: number | null
+          cerca_qtd_fios?: number | null
+          cftv_novo_qtd_dvr_16ch?: number | null
+          cftv_novo_qtd_dvr_4ch?: number | null
+          cftv_novo_qtd_dvr_8ch?: number | null
+          cftv_novo_qtd_total_cameras?: number | null
+          checklist_implantacao?: Json | null
+          created_at?: string
+          filial?: string | null
+          id?: string
+          internet_exclusiva?: string | null
+          iva_central_alarme_tipo?: string | null
+          iva_qtd_cabo_blindado?: string | null
+          iva_qtd_novos?: number | null
+          iva_qtd_pares_existentes?: number | null
+          local_central_interfonia_descricao?: string | null
+          marca_modelo_dvr_aproveitado?: string | null
+          metodo_acionamento_portoes?: string | null
+          nome_condominio?: string | null
+          obs_central_portaria_qdg?: string | null
+          obs_gerais?: string | null
+          obs_portas?: string | null
+          possui_cancela?: boolean | null
+          possui_catraca?: boolean | null
+          possui_totem?: boolean | null
+          produto?: string | null
+          project_id: string
+          qtd_apartamentos?: number | null
+          qtd_blocos?: number | null
+          qtd_cameras_aproveitadas?: number | null
+          qtd_cameras_elevador?: number | null
+          qtd_dvrs_aproveitados?: number | null
+          qtd_portas_bloco?: number | null
+          qtd_portas_pedestre?: number | null
+          qtd_portoes_basculantes?: number | null
+          qtd_portoes_deslizantes?: number | null
+          qtd_portoes_pivotantes?: number | null
+          qtd_saida_autenticada?: number | null
+          resumo_tecnico_noc?: string | null
+          totem_qtd_duplo?: number | null
+          totem_qtd_simples?: number | null
+          transbordo_para_apartamentos?: string | null
+          updated_at?: string
+          vendedor_email?: string | null
+          vendedor_nome?: string | null
+        }
+        Update: {
+          acesso_local_central_portaria?: string | null
+          acessos_tem_camera_int_ext?: boolean | null
+          alarme_tipo?: string | null
+          cabo_metros_qdg_ate_central?: number | null
+          cancela_aproveitada_detalhes?: string | null
+          cancela_autenticacao?: string | null
+          cancela_qtd_duplo_sentido?: number | null
+          cancela_qtd_sentido_unico?: number | null
+          catraca_aproveitada_detalhes?: string | null
+          catraca_autenticacao?: string | null
+          catraca_qtd_duplo_sentido?: number | null
+          catraca_qtd_sentido_unico?: number | null
+          cerca_central_alarme_tipo?: string | null
+          cerca_local_central_choque?: string | null
+          cerca_metragem_linear_total?: number | null
+          cerca_qtd_cabo_centenax?: number | null
+          cerca_qtd_fios?: number | null
+          cftv_novo_qtd_dvr_16ch?: number | null
+          cftv_novo_qtd_dvr_4ch?: number | null
+          cftv_novo_qtd_dvr_8ch?: number | null
+          cftv_novo_qtd_total_cameras?: number | null
+          checklist_implantacao?: Json | null
+          created_at?: string
+          filial?: string | null
+          id?: string
+          internet_exclusiva?: string | null
+          iva_central_alarme_tipo?: string | null
+          iva_qtd_cabo_blindado?: string | null
+          iva_qtd_novos?: number | null
+          iva_qtd_pares_existentes?: number | null
+          local_central_interfonia_descricao?: string | null
+          marca_modelo_dvr_aproveitado?: string | null
+          metodo_acionamento_portoes?: string | null
+          nome_condominio?: string | null
+          obs_central_portaria_qdg?: string | null
+          obs_gerais?: string | null
+          obs_portas?: string | null
+          possui_cancela?: boolean | null
+          possui_catraca?: boolean | null
+          possui_totem?: boolean | null
+          produto?: string | null
+          project_id?: string
+          qtd_apartamentos?: number | null
+          qtd_blocos?: number | null
+          qtd_cameras_aproveitadas?: number | null
+          qtd_cameras_elevador?: number | null
+          qtd_dvrs_aproveitados?: number | null
+          qtd_portas_bloco?: number | null
+          qtd_portas_pedestre?: number | null
+          qtd_portoes_basculantes?: number | null
+          qtd_portoes_deslizantes?: number | null
+          qtd_portoes_pivotantes?: number | null
+          qtd_saida_autenticada?: number | null
+          resumo_tecnico_noc?: string | null
+          totem_qtd_duplo?: number | null
+          totem_qtd_simples?: number | null
+          transbordo_para_apartamentos?: string | null
+          updated_at?: string
+          vendedor_email?: string | null
+          vendedor_nome?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sale_forms_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: true
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tap_forms: {
         Row: {
           alarme_descricao: string | null

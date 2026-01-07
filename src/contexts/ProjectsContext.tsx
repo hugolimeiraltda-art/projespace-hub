@@ -17,7 +17,10 @@ import {
   CroquiItem,
   SolicitacaoOrigem,
   PortariaVirtualApp,
-  CFTVElevador
+  CFTVElevador,
+  MetodoAcionamentoPortoes,
+  AlarmeTipo,
+  CentralAlarmeTipo
 } from '@/types/project';
 
 interface ProjectsContextType {
@@ -134,8 +137,9 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
       const projectIds = projectsData.map(p => p.id);
 
       // Fetch related data in parallel
-      const [tapFormsRes, attachmentsRes, commentsRes, historyRes, notificationsRes] = await Promise.all([
+      const [tapFormsRes, saleFormsRes, attachmentsRes, commentsRes, historyRes, notificationsRes] = await Promise.all([
         supabase.from('tap_forms').select('*').in('project_id', projectIds),
+        supabase.from('sale_forms').select('*').in('project_id', projectIds),
         supabase.from('project_attachments').select('*').in('project_id', projectIds),
         supabase.from('project_comments').select('*').in('project_id', projectIds).order('created_at', { ascending: false }),
         supabase.from('project_status_history').select('*').in('project_id', projectIds).order('created_at', { ascending: false }),
@@ -143,6 +147,7 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
       ]);
 
       const tapFormsMap = new Map(tapFormsRes.data?.map(t => [t.project_id, t]) || []);
+      const saleFormsMap = new Map(saleFormsRes.data?.map(s => [s.project_id, s]) || []);
       const attachmentsMap = new Map<string, Attachment[]>();
       const commentsMap = new Map<string, Comment[]>();
       const historyMap = new Map<string, StatusChange[]>();
@@ -204,6 +209,7 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
 
       const fullProjects: ProjectWithDetails[] = projectsData.map(p => {
         const tapForm = tapFormsMap.get(p.id);
+        const saleForm = saleFormsMap.get(p.id);
         return {
           id: p.id,
           numero_projeto: (p as Record<string, unknown>).numero_projeto as number | undefined,
@@ -246,6 +252,65 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
             info_custo: tapForm.info_custo || undefined,
             info_cronograma: tapForm.info_cronograma || undefined,
             info_adicionais: tapForm.info_adicionais || undefined,
+          } : undefined,
+          sale_form: saleForm ? {
+            project_id: saleForm.project_id,
+            vendedor_email: saleForm.vendedor_email || '',
+            vendedor_nome: saleForm.vendedor_nome || '',
+            filial: saleForm.filial || '',
+            nome_condominio: saleForm.nome_condominio || '',
+            qtd_apartamentos: saleForm.qtd_apartamentos || 0,
+            qtd_blocos: saleForm.qtd_blocos || 0,
+            produto: saleForm.produto || 'Portaria Digital',
+            acesso_local_central_portaria: saleForm.acesso_local_central_portaria || undefined,
+            cabo_metros_qdg_ate_central: saleForm.cabo_metros_qdg_ate_central || undefined,
+            internet_exclusiva: saleForm.internet_exclusiva || undefined,
+            obs_central_portaria_qdg: saleForm.obs_central_portaria_qdg || undefined,
+            transbordo_para_apartamentos: saleForm.transbordo_para_apartamentos || undefined,
+            local_central_interfonia_descricao: saleForm.local_central_interfonia_descricao || undefined,
+            qtd_portas_pedestre: saleForm.qtd_portas_pedestre || undefined,
+            qtd_portas_bloco: saleForm.qtd_portas_bloco || undefined,
+            qtd_saida_autenticada: saleForm.qtd_saida_autenticada || undefined,
+            obs_portas: saleForm.obs_portas || undefined,
+            qtd_portoes_deslizantes: saleForm.qtd_portoes_deslizantes || undefined,
+            qtd_portoes_pivotantes: saleForm.qtd_portoes_pivotantes || undefined,
+            qtd_portoes_basculantes: saleForm.qtd_portoes_basculantes || undefined,
+            metodo_acionamento_portoes: saleForm.metodo_acionamento_portoes as MetodoAcionamentoPortoes || undefined,
+            qtd_dvrs_aproveitados: saleForm.qtd_dvrs_aproveitados || undefined,
+            marca_modelo_dvr_aproveitado: saleForm.marca_modelo_dvr_aproveitado || undefined,
+            qtd_cameras_aproveitadas: saleForm.qtd_cameras_aproveitadas || undefined,
+            cftv_novo_qtd_dvr_4ch: saleForm.cftv_novo_qtd_dvr_4ch || undefined,
+            cftv_novo_qtd_dvr_8ch: saleForm.cftv_novo_qtd_dvr_8ch || undefined,
+            cftv_novo_qtd_dvr_16ch: saleForm.cftv_novo_qtd_dvr_16ch || undefined,
+            cftv_novo_qtd_total_cameras: saleForm.cftv_novo_qtd_total_cameras || undefined,
+            qtd_cameras_elevador: saleForm.qtd_cameras_elevador || undefined,
+            acessos_tem_camera_int_ext: saleForm.acessos_tem_camera_int_ext || undefined,
+            obs_gerais: saleForm.obs_gerais || undefined,
+            alarme_tipo: saleForm.alarme_tipo as AlarmeTipo || undefined,
+            iva_central_alarme_tipo: saleForm.iva_central_alarme_tipo as CentralAlarmeTipo || undefined,
+            iva_qtd_pares_existentes: saleForm.iva_qtd_pares_existentes || undefined,
+            iva_qtd_novos: saleForm.iva_qtd_novos || undefined,
+            iva_qtd_cabo_blindado: saleForm.iva_qtd_cabo_blindado || undefined,
+            cerca_central_alarme_tipo: saleForm.cerca_central_alarme_tipo as CentralAlarmeTipo || undefined,
+            cerca_qtd_cabo_centenax: saleForm.cerca_qtd_cabo_centenax || undefined,
+            cerca_local_central_choque: saleForm.cerca_local_central_choque || undefined,
+            cerca_metragem_linear_total: saleForm.cerca_metragem_linear_total || undefined,
+            cerca_qtd_fios: saleForm.cerca_qtd_fios || undefined,
+            possui_cancela: saleForm.possui_cancela || undefined,
+            possui_catraca: saleForm.possui_catraca || undefined,
+            possui_totem: saleForm.possui_totem || undefined,
+            cancela_qtd_sentido_unico: saleForm.cancela_qtd_sentido_unico || undefined,
+            cancela_qtd_duplo_sentido: saleForm.cancela_qtd_duplo_sentido || undefined,
+            cancela_aproveitada_detalhes: saleForm.cancela_aproveitada_detalhes || undefined,
+            cancela_autenticacao: saleForm.cancela_autenticacao || undefined,
+            catraca_qtd_sentido_unico: saleForm.catraca_qtd_sentido_unico || undefined,
+            catraca_qtd_duplo_sentido: saleForm.catraca_qtd_duplo_sentido || undefined,
+            catraca_aproveitada_detalhes: saleForm.catraca_aproveitada_detalhes || undefined,
+            catraca_autenticacao: saleForm.catraca_autenticacao || undefined,
+            totem_qtd_simples: saleForm.totem_qtd_simples || undefined,
+            totem_qtd_duplo: saleForm.totem_qtd_duplo || undefined,
+            checklist_implantacao: saleForm.checklist_implantacao as Record<string, boolean> || undefined,
+            resumo_tecnico_noc: saleForm.resumo_tecnico_noc || undefined,
           } : undefined,
           attachments: attachmentsMap.get(p.id) || [],
           comments: commentsMap.get(p.id) || [],
@@ -625,6 +690,36 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
 
   const initSaleForm = async (projectId: string): Promise<boolean> => {
     try {
+      // Check if sale_form already exists
+      const { data: existingForm } = await supabase
+        .from('sale_forms')
+        .select('id')
+        .eq('project_id', projectId)
+        .maybeSingle();
+
+      if (!existingForm) {
+        // Get project data to pre-fill the form
+        const project = projects.find(p => p.id === projectId);
+        
+        // Create sale form with pre-filled data
+        const { error: insertError } = await supabase
+          .from('sale_forms')
+          .insert({
+            project_id: projectId,
+            nome_condominio: project?.cliente_condominio_nome || '',
+            vendedor_nome: project?.vendedor_nome || '',
+            vendedor_email: project?.vendedor_email || '',
+            qtd_blocos: project?.tap_form?.numero_blocos || null,
+            produto: 'Portaria Digital',
+          });
+
+        if (insertError) {
+          console.error('Error creating sale form:', insertError);
+          return false;
+        }
+      }
+
+      // Update project sale_status
       const { error } = await supabase
         .from('projects')
         .update({ sale_status: 'EM_ANDAMENTO' })
@@ -644,9 +739,48 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
   };
 
   const updateSaleForm = async (projectId: string, saleForm: Partial<SaleCompletedForm>): Promise<boolean> => {
-    // Sale form is stored differently - for now just update the status
-    console.log('updateSaleForm called for', projectId, saleForm);
-    return true;
+    try {
+      // Remove project_id from the update data if present
+      const { project_id: _, ...updateData } = saleForm as Record<string, unknown>;
+      
+      // Check if sale_form exists
+      const { data: existingForm } = await supabase
+        .from('sale_forms')
+        .select('id')
+        .eq('project_id', projectId)
+        .maybeSingle();
+
+      if (existingForm) {
+        // Update existing form
+        const { error } = await supabase
+          .from('sale_forms')
+          .update(updateData)
+          .eq('project_id', projectId);
+
+        if (error) {
+          console.error('Error updating sale form:', error);
+          return false;
+        }
+      } else {
+        // Create new form with the data
+        const { error } = await supabase
+          .from('sale_forms')
+          .insert({
+            project_id: projectId,
+            ...updateData,
+          });
+
+        if (error) {
+          console.error('Error creating sale form:', error);
+          return false;
+        }
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Error in updateSaleForm:', error);
+      return false;
+    }
   };
 
   const submitSaleForm = async (projectId: string): Promise<boolean> => {

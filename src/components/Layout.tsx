@@ -10,11 +10,11 @@ import {
   List,
   Settings,
   LogOut,
-  Building2,
   User,
   ClipboardList,
   Users,
 } from 'lucide-react';
+import emiveLogo from '@/assets/emive-logo.png';
 
 interface LayoutProps {
   children: ReactNode;
@@ -60,14 +60,12 @@ export function Layout({ children }: LayoutProps) {
       {/* Sidebar */}
       <aside className="fixed inset-y-0 left-0 z-50 w-64 bg-card border-r border-border shadow-card">
         {/* Logo */}
-        <div className="flex items-center gap-3 px-6 py-5 border-b border-border">
-          <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-primary">
-            <Building2 className="w-5 h-5 text-primary-foreground" />
-          </div>
-          <div>
-            <h1 className="text-base font-semibold text-foreground">Projetos</h1>
-            <p className="text-xs text-muted-foreground">Portaria Digital</p>
-          </div>
+        <div className="flex items-center justify-center px-4 py-4 border-b border-border">
+          <img 
+            src={emiveLogo} 
+            alt="EMIVE Portarias Digitais" 
+            className="h-16 w-auto"
+          />
         </div>
 
         {/* Navigation */}

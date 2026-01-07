@@ -2,7 +2,7 @@ import { ReactNode } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
-import { NotificationsDropdown } from '@/components/NotificationsDropdown';
+import { NotificationsSidebarItem } from '@/components/NotificationsSidebarItem';
 import { cn } from '@/lib/utils';
 import {
   LayoutDashboard,
@@ -92,12 +92,10 @@ export function Layout({ children }: LayoutProps) {
               </Link>
             );
           })}
+          
+          {/* Notifications in sidebar */}
+          <NotificationsSidebarItem />
         </nav>
-
-        {/* Notifications */}
-        <div className="mx-3 mb-2">
-          <NotificationsDropdown />
-        </div>
 
         {/* User */}
         <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-border bg-card">

@@ -309,32 +309,6 @@ ${infoAdicionais || 'Não informado'}`;
               </Alert>
             )}
 
-            <div className="space-y-2">
-              <Label htmlFor="origem">Origem da Solicitação</Label>
-              <Select value={solicitacaoOrigem} onValueChange={(v) => setSolicitacaoOrigem(v as SolicitacaoOrigem)}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="EMAIL">Email</SelectItem>
-                  <SelectItem value="FORMS">Formulário</SelectItem>
-                  <SelectItem value="OUTRO">Outro</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {solicitacaoOrigem === 'EMAIL' && (
-              <div className="space-y-2">
-                <Label htmlFor="emailOrigem">Texto do Email de Origem</Label>
-                <Textarea
-                  id="emailOrigem"
-                  value={emailOrigemTexto}
-                  onChange={(e) => setEmailOrigemTexto(e.target.value)}
-                  placeholder="Cole aqui o conteúdo do email recebido..."
-                  rows={4}
-                />
-              </div>
-            )}
           </div>
         );
 

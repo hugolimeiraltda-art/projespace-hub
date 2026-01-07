@@ -22,15 +22,18 @@ import NotFound from "./pages/NotFound";
 const queryClient = new QueryClient();
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
   
-  if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
   }
 
-  // Force password change if required (but not on the change password page itself)
-  if (user?.mustChangePassword && window.location.pathname !== '/alterar-senha') {
-    return <Navigate to="/alterar-senha" replace />;
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
   }
   
   return <>{children}</>;

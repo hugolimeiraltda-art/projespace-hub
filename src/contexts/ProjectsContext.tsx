@@ -59,6 +59,9 @@ const mapAttachmentType = (dbType: string): AttachmentType => {
     'ORCAMENTO': 'OUTROS',
     'DOCUMENTOS_COMPLEMENTARES': 'OUTROS',
     'OUTRO': 'OUTROS',
+    'PLANTA_CROQUI_DEVOLUCAO': 'PLANTA_CROQUI_DEVOLUCAO',
+    'LISTA_EQUIPAMENTOS': 'LISTA_EQUIPAMENTOS',
+    'LISTA_ATIVIDADES': 'LISTA_ATIVIDADES',
   };
   return typeMap[dbType] || 'OUTROS';
 };
@@ -71,6 +74,9 @@ const mapToDbAttachmentType = (type: AttachmentType): string => {
     'IMAGENS': 'FOTOS_LOCAL',
     'FOTOS_EQUIP_APROVEITADOS': 'FOTOS_LOCAL',
     'OUTROS': 'OUTRO',
+    'PLANTA_CROQUI_DEVOLUCAO': 'PLANTA_CROQUI_DEVOLUCAO',
+    'LISTA_EQUIPAMENTOS': 'LISTA_EQUIPAMENTOS',
+    'LISTA_ATIVIDADES': 'LISTA_ATIVIDADES',
     'CENTRAL_PORTARIA_FOTOS': 'FOTOS_LOCAL',
     'QDG_FOTO': 'FOTOS_LOCAL',
     'INTERFONIA_FOTO': 'FOTOS_LOCAL',
@@ -218,6 +224,7 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
           engineering_received_at: p.engineering_received_at || undefined,
           engineering_production_at: p.engineering_production_at || undefined,
           engineering_completed_at: p.engineering_completed_at || undefined,
+          laudo_projeto: (p as Record<string, unknown>).laudo_projeto as string | undefined,
           sale_status: (p.sale_status as SaleStatus) || 'NAO_INICIADO',
           dados_originais_pre_reenvio: (p as Record<string, unknown>).dados_originais_pre_reenvio as Record<string, unknown> | undefined,
           notifications: notificationsMap.get(p.id) || [],
@@ -366,6 +373,7 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
       if (projectUpdate.engineering_received_at !== undefined) updateData.engineering_received_at = projectUpdate.engineering_received_at;
       if (projectUpdate.engineering_production_at !== undefined) updateData.engineering_production_at = projectUpdate.engineering_production_at;
       if (projectUpdate.engineering_completed_at !== undefined) updateData.engineering_completed_at = projectUpdate.engineering_completed_at;
+      if (projectUpdate.laudo_projeto !== undefined) updateData.laudo_projeto = projectUpdate.laudo_projeto;
       if (projectUpdate.sale_status !== undefined) updateData.sale_status = projectUpdate.sale_status;
 
       if (Object.keys(updateData).length > 0) {

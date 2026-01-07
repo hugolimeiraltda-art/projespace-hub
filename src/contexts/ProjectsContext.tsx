@@ -46,6 +46,8 @@ interface ProjectsContextType {
   getUnreadNotifications: (userId: string) => Notification[];
   // Project completion
   markProjectCompleted: (projectId: string, userId: string, userName: string) => Promise<boolean>;
+  // Delete project (admin only)
+  deleteProject: (projectId: string) => Promise<boolean>;
   // Refresh
   refreshProjects: () => Promise<void>;
 }
@@ -911,6 +913,26 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const deleteProject = async (projectId: string): Promise<boolean> => {
+    try {
+      const { error } = await supabase
+        .from('projects')
+        .delete()
+        .eq('id', projectId);
+
+      if (error) {
+        console.error('Error deleting project:', error);
+        return false;
+      }
+
+      await fetchProjects();
+      return true;
+    } catch (error) {
+      console.error('Error in deleteProject:', error);
+      return false;
+    }
+  };
+
   return (
     <ProjectsContext.Provider value={{
       projects,
@@ -932,6 +954,7 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
       markNotificationRead,
       getUnreadNotifications,
       markProjectCompleted,
+      deleteProject,
       refreshProjects,
     }}>
       {children}

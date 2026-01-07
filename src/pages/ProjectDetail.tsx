@@ -34,7 +34,8 @@ import {
   CheckCircle2,
   ShoppingCart,
   Upload,
-  Hash
+  Hash,
+  Trash2
 } from 'lucide-react';
 import { ProjectStatus, STATUS_LABELS, ATTACHMENT_TYPE_LABELS, PORTARIA_VIRTUAL_LABELS, CFTV_ELEVADOR_LABELS, ENGINEERING_STATUS_LABELS, EngineeringStatus, SALE_STATUS_LABELS } from '@/types/project';
 import { format, parseISO } from 'date-fns';
@@ -43,7 +44,7 @@ import { ptBR } from 'date-fns/locale';
 export default function ProjectDetail() {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
-  const { getProject, updateStatus, updateEngineeringStatus, addComment, markProjectCompleted, addAttachment, updateProject, projects } = useProjects();
+  const { getProject, updateStatus, updateEngineeringStatus, addComment, markProjectCompleted, addAttachment, updateProject, deleteProject, projects } = useProjects();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -54,8 +55,10 @@ export default function ProjectDetail() {
   const [selectedStatus, setSelectedStatus] = useState<ProjectStatus | ''>('');
   const [selectedEngineeringStatus, setSelectedEngineeringStatus] = useState<EngineeringStatus | ''>('');
   const [showPendingInfoDialog, setShowPendingInfoDialog] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [pendingInfoReason, setPendingInfoReason] = useState('');
   const [isSendingEmail, setIsSendingEmail] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Watch for project changes in the context
   useEffect(() => {
@@ -611,6 +614,15 @@ export default function ProjectDetail() {
                 {project.sale_status === 'CONCLUIDO' ? 'Visualizar Forms' : 'Informar Venda Concluída'}
               </Button>
             )}
+            {user?.role === 'admin' && (
+              <Button 
+                variant="destructive"
+                onClick={() => setShowDeleteDialog(true)}
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                Excluir
+              </Button>
+            )}
           </div>
         </div>
 
@@ -1047,6 +1059,57 @@ export default function ProjectDetail() {
               className="bg-status-pending hover:bg-status-pending/90"
             >
               {isSendingEmail ? 'Enviando...' : 'Confirmar e Notificar'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog para Confirmar Exclusão */}
+      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-destructive flex items-center gap-2">
+              <Trash2 className="w-5 h-5" />
+              Excluir Projeto
+            </DialogTitle>
+            <DialogDescription>
+              Tem certeza que deseja excluir o projeto <strong>#{project.numero_projeto} - {project.cliente_condominio_nome}</strong>?
+              <br /><br />
+              <span className="text-destructive font-medium">Esta ação não pode ser desfeita.</span>
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button 
+              variant="outline" 
+              onClick={() => setShowDeleteDialog(false)}
+              disabled={isDeleting}
+            >
+              Cancelar
+            </Button>
+            <Button 
+              variant="destructive"
+              onClick={async () => {
+                setIsDeleting(true);
+                const success = await deleteProject(project.id);
+                setIsDeleting(false);
+                if (success) {
+                  toast({
+                    title: 'Projeto excluído',
+                    description: 'O projeto foi excluído com sucesso.',
+                  });
+                  navigate('/projetos');
+                } else {
+                  toast({
+                    title: 'Erro ao excluir',
+                    description: 'Não foi possível excluir o projeto.',
+                    variant: 'destructive',
+                  });
+                }
+                setShowDeleteDialog(false);
+              }}
+              disabled={isDeleting}
+            >
+              {isDeleting ? 'Excluindo...' : 'Excluir Projeto'}
             </Button>
           </DialogFooter>
         </DialogContent>

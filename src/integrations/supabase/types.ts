@@ -232,6 +232,7 @@ export type Database = {
             | Database["public"]["Enums"]["engineering_status"]
             | null
           id: string
+          laudo_projeto: string | null
           numero_projeto: number
           observacoes: string | null
           prazo_entrega_projeto: string | null
@@ -258,6 +259,7 @@ export type Database = {
             | Database["public"]["Enums"]["engineering_status"]
             | null
           id?: string
+          laudo_projeto?: string | null
           numero_projeto?: number
           observacoes?: string | null
           prazo_entrega_projeto?: string | null
@@ -284,6 +286,7 @@ export type Database = {
             | Database["public"]["Enums"]["engineering_status"]
             | null
           id?: string
+          laudo_projeto?: string | null
           numero_projeto?: number
           observacoes?: string | null
           prazo_entrega_projeto?: string | null
@@ -414,6 +417,9 @@ export type Database = {
         | "ORCAMENTO"
         | "DOCUMENTOS_COMPLEMENTARES"
         | "OUTRO"
+        | "PLANTA_CROQUI_DEVOLUCAO"
+        | "LISTA_EQUIPAMENTOS"
+        | "LISTA_ATIVIDADES"
       engineering_status: "EM_RECEBIMENTO" | "EM_PRODUCAO" | "CONCLUIDO"
       project_status:
         | "RASCUNHO"
@@ -560,6 +566,9 @@ export const Constants = {
         "ORCAMENTO",
         "DOCUMENTOS_COMPLEMENTARES",
         "OUTRO",
+        "PLANTA_CROQUI_DEVOLUCAO",
+        "LISTA_EQUIPAMENTOS",
+        "LISTA_ATIVIDADES",
       ],
       engineering_status: ["EM_RECEBIMENTO", "EM_PRODUCAO", "CONCLUIDO"],
       project_status: [

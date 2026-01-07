@@ -43,6 +43,10 @@ export type AttachmentType =
   | 'IMAGENS' 
   | 'FOTOS_EQUIP_APROVEITADOS' 
   | 'OUTROS'
+  // Engineering deliverables
+  | 'PLANTA_CROQUI_DEVOLUCAO'
+  | 'LISTA_EQUIPAMENTOS'
+  | 'LISTA_ATIVIDADES'
   // Form 2 attachment types
   | 'CENTRAL_PORTARIA_FOTOS'
   | 'QDG_FOTO'
@@ -93,6 +97,8 @@ export interface Project {
   engineering_received_at?: string;
   engineering_production_at?: string;
   engineering_completed_at?: string;
+  // Engineering deliverables
+  laudo_projeto?: string;
   // Sale status
   sale_status?: SaleStatus;
   sale_locked_at?: string;
@@ -305,6 +311,9 @@ export const ATTACHMENT_TYPE_LABELS: Record<AttachmentType, string> = {
   IMAGENS: 'Imagens',
   FOTOS_EQUIP_APROVEITADOS: 'Fotos Equipamentos Aproveitados',
   OUTROS: 'Outros',
+  PLANTA_CROQUI_DEVOLUCAO: 'Planta/Croqui (Devolução)',
+  LISTA_EQUIPAMENTOS: 'Lista de Equipamentos',
+  LISTA_ATIVIDADES: 'Lista de Atividades',
   CENTRAL_PORTARIA_FOTOS: 'Fotos Central de Portaria',
   QDG_FOTO: 'Foto QDG',
   INTERFONIA_FOTO: 'Foto Interfonia',

@@ -6,6 +6,7 @@ import { useProjects } from '@/contexts/ProjectsContext';
 import { Layout } from '@/components/Layout';
 import { StatusBadge } from '@/components/StatusBadge';
 import { EngineeringTimeline } from '@/components/EngineeringTimeline';
+import { EngineeringDeliverables } from '@/components/EngineeringDeliverables';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
@@ -42,7 +43,7 @@ import { ptBR } from 'date-fns/locale';
 export default function ProjectDetail() {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
-  const { getProject, updateStatus, updateEngineeringStatus, addComment, markProjectCompleted, addAttachment, projects } = useProjects();
+  const { getProject, updateStatus, updateEngineeringStatus, addComment, markProjectCompleted, addAttachment, updateProject, projects } = useProjects();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -723,11 +724,11 @@ export default function ProjectDetail() {
             {/* Attachments */}
             <Card className="shadow-card">
               <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle className="text-lg">Anexos</CardTitle>
-                {canChangeStatus && (
+                <CardTitle className="text-lg">Anexos do Vendedor</CardTitle>
+                {canEdit && (
                   <div>
                     <input
-                      id="file-upload"
+                      id="file-upload-vendedor"
                       type="file"
                       multiple
                       accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.dwg,video/*"
@@ -737,7 +738,7 @@ export default function ProjectDetail() {
                     <Button 
                       variant="outline" 
                       size="sm"
-                      onClick={() => document.getElementById('file-upload')?.click()}
+                      onClick={() => document.getElementById('file-upload-vendedor')?.click()}
                     >
                       <Upload className="w-4 h-4 mr-2" />
                       Adicionar Arquivos
@@ -746,11 +747,11 @@ export default function ProjectDetail() {
                 )}
               </CardHeader>
               <CardContent>
-                {project.attachments.length === 0 ? (
+                {project.attachments.filter(a => !['PLANTA_CROQUI_DEVOLUCAO', 'LISTA_EQUIPAMENTOS', 'LISTA_ATIVIDADES'].includes(a.tipo)).length === 0 ? (
                   <p className="text-muted-foreground text-center py-4">Nenhum anexo</p>
                 ) : (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {project.attachments.map(att => (
+                    {project.attachments.filter(a => !['PLANTA_CROQUI_DEVOLUCAO', 'LISTA_EQUIPAMENTOS', 'LISTA_ATIVIDADES'].includes(a.tipo)).map(att => (
                       <div key={att.id} className="flex items-center gap-3 p-3 bg-secondary rounded-lg">
                         <FileText className="w-5 h-5 text-muted-foreground" />
                         <div className="flex-1 min-w-0">
@@ -763,6 +764,15 @@ export default function ProjectDetail() {
                 )}
               </CardContent>
             </Card>
+
+            {/* Deliverables from Engineering - Section for projetista to upload and vendedor to view */}
+            <EngineeringDeliverables 
+              project={project}
+              canChangeStatus={canChangeStatus}
+              user={user}
+              addAttachment={addAttachment}
+              updateProject={updateProject}
+            />
 
             {/* Comments */}
             <Card className="shadow-card">

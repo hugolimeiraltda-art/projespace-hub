@@ -7,8 +7,9 @@ import { StatusBadge } from '@/components/StatusBadge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { 
   Search, 
   Building, 
@@ -16,11 +17,13 @@ import {
   User, 
   MapPin,
   Clock,
-  CheckCircle2
+  CheckCircle2,
+  ChevronDown,
+  Hash
 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { STATUS_LABELS, ENGINEERING_STATUS_LABELS, ProjectStatus } from '@/types/project';
+import { STATUS_LABELS, ENGINEERING_STATUS_LABELS, ProjectStatus, EngineeringStatus } from '@/types/project';
 
 export default function MeusChamados() {
   const { user } = useAuth();
@@ -28,8 +31,8 @@ export default function MeusChamados() {
   const navigate = useNavigate();
   
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [engineeringFilter, setEngineeringFilter] = useState<string>('all');
+  const [selectedStatuses, setSelectedStatuses] = useState<ProjectStatus[]>([]);
+  const [selectedEngineeringStatuses, setSelectedEngineeringStatuses] = useState<EngineeringStatus[]>([]);
 
   // Only admin and projetos can see this page
   if (user?.role !== 'projetos' && user?.role !== 'admin') {
@@ -52,11 +55,28 @@ export default function MeusChamados() {
       p.vendedor_nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
       p.cliente_cidade.toLowerCase().includes(searchTerm.toLowerCase());
     
-    const matchesStatus = statusFilter === 'all' || p.status === statusFilter;
-    const matchesEngineering = engineeringFilter === 'all' || p.engineering_status === engineeringFilter;
+    const matchesStatus = selectedStatuses.length === 0 || selectedStatuses.includes(p.status);
+    const matchesEngineering = selectedEngineeringStatuses.length === 0 || 
+      (p.engineering_status && selectedEngineeringStatuses.includes(p.engineering_status));
 
     return matchesSearch && matchesStatus && matchesEngineering;
   });
+
+  const toggleStatus = (status: ProjectStatus) => {
+    setSelectedStatuses(prev => 
+      prev.includes(status) 
+        ? prev.filter(s => s !== status)
+        : [...prev, status]
+    );
+  };
+
+  const toggleEngineeringStatus = (status: EngineeringStatus) => {
+    setSelectedEngineeringStatuses(prev => 
+      prev.includes(status) 
+        ? prev.filter(s => s !== status)
+        : [...prev, status]
+    );
+  };
 
   const getEngineeringStatusBadge = (status?: string) => {
     if (!status) return null;
@@ -73,6 +93,9 @@ export default function MeusChamados() {
       </Badge>
     );
   };
+
+  const availableStatuses = Object.entries(STATUS_LABELS).filter(([k]) => k !== 'RASCUNHO');
+  const availableEngineeringStatuses = Object.entries(ENGINEERING_STATUS_LABELS);
 
   return (
     <Layout>
@@ -97,28 +120,86 @@ export default function MeusChamados() {
                   className="pl-10"
                 />
               </div>
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-full md:w-48">
-                  <SelectValue placeholder="Status do Projeto" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos os Status</SelectItem>
-                  {Object.entries(STATUS_LABELS).filter(([k]) => k !== 'RASCUNHO').map(([value, label]) => (
-                    <SelectItem key={value} value={value}>{label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Select value={engineeringFilter} onValueChange={setEngineeringFilter}>
-                <SelectTrigger className="w-full md:w-48">
-                  <SelectValue placeholder="Status Engenharia" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todas as Etapas</SelectItem>
-                  {Object.entries(ENGINEERING_STATUS_LABELS).map(([value, label]) => (
-                    <SelectItem key={value} value={value}>{label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              
+              {/* Status Filter Multi-Select */}
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="w-full md:w-56 justify-between">
+                    <span>
+                      {selectedStatuses.length === 0 
+                        ? 'Todos os Status' 
+                        : `${selectedStatuses.length} selecionado(s)`}
+                    </span>
+                    <ChevronDown className="w-4 h-4 ml-2" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-56 p-3" align="start">
+                  <div className="space-y-2">
+                    {availableStatuses.map(([value, label]) => (
+                      <label 
+                        key={value} 
+                        className="flex items-center gap-2 cursor-pointer hover:bg-secondary p-2 rounded-md"
+                      >
+                        <Checkbox
+                          checked={selectedStatuses.includes(value as ProjectStatus)}
+                          onCheckedChange={() => toggleStatus(value as ProjectStatus)}
+                        />
+                        <span className="text-sm">{label}</span>
+                      </label>
+                    ))}
+                    {selectedStatuses.length > 0 && (
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="w-full mt-2"
+                        onClick={() => setSelectedStatuses([])}
+                      >
+                        Limpar filtros
+                      </Button>
+                    )}
+                  </div>
+                </PopoverContent>
+              </Popover>
+
+              {/* Engineering Status Filter Multi-Select */}
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="w-full md:w-56 justify-between">
+                    <span>
+                      {selectedEngineeringStatuses.length === 0 
+                        ? 'Todas as Etapas' 
+                        : `${selectedEngineeringStatuses.length} selecionada(s)`}
+                    </span>
+                    <ChevronDown className="w-4 h-4 ml-2" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-56 p-3" align="start">
+                  <div className="space-y-2">
+                    {availableEngineeringStatuses.map(([value, label]) => (
+                      <label 
+                        key={value} 
+                        className="flex items-center gap-2 cursor-pointer hover:bg-secondary p-2 rounded-md"
+                      >
+                        <Checkbox
+                          checked={selectedEngineeringStatuses.includes(value as EngineeringStatus)}
+                          onCheckedChange={() => toggleEngineeringStatus(value as EngineeringStatus)}
+                        />
+                        <span className="text-sm">{label}</span>
+                      </label>
+                    ))}
+                    {selectedEngineeringStatuses.length > 0 && (
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="w-full mt-2"
+                        onClick={() => setSelectedEngineeringStatuses([])}
+                      >
+                        Limpar filtros
+                      </Button>
+                    )}
+                  </div>
+                </PopoverContent>
+              </Popover>
             </div>
           </CardContent>
         </Card>
@@ -177,6 +258,12 @@ export default function MeusChamados() {
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-2">
                         <Building className="w-5 h-5 text-primary" />
+                        {projeto.numero_projeto && (
+                          <span className="flex items-center gap-1 text-xs font-mono bg-muted px-2 py-0.5 rounded">
+                            <Hash className="w-3 h-3" />
+                            {projeto.numero_projeto}
+                          </span>
+                        )}
                         <h3 className="font-semibold text-foreground text-lg">
                           {projeto.cliente_condominio_nome}
                         </h3>

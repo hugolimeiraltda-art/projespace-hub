@@ -809,7 +809,22 @@ ${infoAdicionais || 'Não informado'}`;
             </Button>
 
             {currentStep < STEPS.length ? (
-              <Button onClick={() => setCurrentStep(prev => Math.min(STEPS.length, prev + 1))}>
+              <Button 
+                onClick={() => {
+                  // Validação do passo 3 - Croqui
+                  if (currentStep === 3 && (!marcacaoCroquiConfirmada || !hasCroquiAttachment)) {
+                    toast({
+                      title: 'Campos obrigatórios',
+                      description: !hasCroquiAttachment 
+                        ? 'É necessário anexar o arquivo do croqui para continuar.'
+                        : 'É necessário confirmar que marcou todos os pontos no croqui.',
+                      variant: 'destructive',
+                    });
+                    return;
+                  }
+                  setCurrentStep(prev => Math.min(STEPS.length, prev + 1));
+                }}
+              >
                 Próximo
                 <ChevronRight className="w-4 h-4 ml-2" />
               </Button>

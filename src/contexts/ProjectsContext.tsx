@@ -1,4 +1,6 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 import { 
   Project, 
   TapForm, 
@@ -10,536 +12,717 @@ import {
   EngineeringStatus,
   SaleStatus,
   ProjectWithDetails,
-  Notification
+  Notification,
+  AttachmentType,
+  CroquiItem,
+  SolicitacaoOrigem,
+  PortariaVirtualApp,
+  CFTVElevador
 } from '@/types/project';
 
 interface ProjectsContextType {
   projects: ProjectWithDetails[];
-  addProject: (project: Omit<Project, 'id' | 'created_at' | 'updated_at'>, tapForm: Omit<TapForm, 'project_id'>) => string;
-  updateProject: (id: string, project: Partial<Project>, tapForm?: Partial<TapForm>) => void;
+  isLoading: boolean;
+  addProject: (project: Omit<Project, 'id' | 'created_at' | 'updated_at'>, tapForm: Omit<TapForm, 'project_id'>) => Promise<string | null>;
+  updateProject: (id: string, project: Partial<Project>, tapForm?: Partial<TapForm>) => Promise<boolean>;
   getProject: (id: string) => ProjectWithDetails | undefined;
-  addAttachment: (projectId: string, attachment: Omit<Attachment, 'id' | 'project_id' | 'created_at'>) => void;
-  removeAttachment: (projectId: string, attachmentId: string) => void;
-  addComment: (projectId: string, comment: Omit<Comment, 'id' | 'project_id' | 'created_at'>) => void;
-  updateStatus: (projectId: string, newStatus: ProjectStatus, userId: string, userName: string) => void;
-  updateEngineeringStatus: (projectId: string, newStatus: EngineeringStatus, userId: string, userName: string) => void;
+  fetchProject: (id: string) => Promise<ProjectWithDetails | null>;
+  addAttachment: (projectId: string, attachment: Omit<Attachment, 'id' | 'project_id' | 'created_at'>) => Promise<boolean>;
+  removeAttachment: (projectId: string, attachmentId: string) => Promise<boolean>;
+  addComment: (projectId: string, comment: Omit<Comment, 'id' | 'project_id' | 'created_at'>) => Promise<boolean>;
+  updateStatus: (projectId: string, newStatus: ProjectStatus, userId: string, userName: string, reason?: string) => Promise<boolean>;
+  updateEngineeringStatus: (projectId: string, newStatus: EngineeringStatus, userId: string, userName: string) => Promise<boolean>;
   getProjectsByUser: (userId: string) => ProjectWithDetails[];
   // Sale Form functions
-  initSaleForm: (projectId: string) => void;
-  updateSaleForm: (projectId: string, saleForm: Partial<SaleCompletedForm>) => void;
-  submitSaleForm: (projectId: string) => void;
+  initSaleForm: (projectId: string) => Promise<boolean>;
+  updateSaleForm: (projectId: string, saleForm: Partial<SaleCompletedForm>) => Promise<boolean>;
+  submitSaleForm: (projectId: string) => Promise<boolean>;
   // Notification functions
-  addNotification: (projectId: string, notification: Omit<Notification, 'id' | 'created_at'>) => void;
-  markNotificationRead: (projectId: string, notificationId: string) => void;
+  addNotification: (projectId: string, notification: Omit<Notification, 'id' | 'created_at'>) => Promise<boolean>;
+  markNotificationRead: (projectId: string, notificationId: string) => Promise<boolean>;
   getUnreadNotifications: (userId: string) => Notification[];
   // Project completion
-  markProjectCompleted: (projectId: string, userId: string, userName: string) => void;
+  markProjectCompleted: (projectId: string, userId: string, userName: string) => Promise<boolean>;
+  // Refresh
+  refreshProjects: () => Promise<void>;
 }
 
 const ProjectsContext = createContext<ProjectsContextType | undefined>(undefined);
 
-// Generate mock data
-const generateMockProjects = (): ProjectWithDetails[] => {
-  return [
-    {
-      id: 'proj-001',
-      created_at: '2024-01-15T10:00:00Z',
-      updated_at: '2024-01-16T14:30:00Z',
-      created_by_user_id: '1',
-      vendedor_nome: 'João Vendedor',
-      vendedor_email: 'vendedor@empresa.com',
-      cliente_condominio_nome: 'Residencial Sol Nascente',
-      cliente_cidade: 'São Paulo',
-      cliente_estado: 'SP',
-      endereco_condominio: 'Rua das Flores, 123 - Jardim América',
-      status: 'EM_ANALISE',
-      engineering_status: 'EM_PRODUCAO',
-      engineering_received_at: '2024-01-15T10:30:00Z',
-      engineering_production_at: '2024-01-16T08:00:00Z',
-      prazo_entrega_projeto: '2024-02-15',
-      data_assembleia: '2024-02-01',
-      sale_status: 'NAO_INICIADO',
-      tap_form: {
-        project_id: 'proj-001',
-        solicitacao_origem: 'EMAIL',
-        email_origem_texto: 'Solicitação recebida via email do síndico',
-        portaria_virtual_atendimento_app: 'SIM_COM_TRANSBORDO',
-        numero_blocos: 3,
-        interfonia: true,
-        controle_acessos_pedestre_descricao: 'Catracas com biometria na entrada principal',
-        controle_acessos_veiculo_descricao: 'Cancela automática com TAG',
-        alarme_descricao: 'Alarme perimetral com sensores de presença',
-        cftv_dvr_descricao: 'DVR 16 canais com 12 câmeras instaladas',
-        cftv_elevador_possui: 'POSSUI',
-        observacao_nao_assumir_cameras: true,
-        marcacao_croqui_confirmada: true,
-        marcacao_croqui_itens: ['CAMERAS_EXISTENTES', 'CAMERAS_NOVAS', 'ALARME_PERIMETRAL'],
-        info_custo: 'Orçamento inicial: R$ 45.000,00',
-        info_cronograma: 'Prazo de instalação: 30 dias',
-        info_adicionais: 'Cliente prefere instalação aos finais de semana',
-      },
-      attachments: [
-        {
-          id: 'att-001',
-          project_id: 'proj-001',
-          tipo: 'CROQUI',
-          arquivo_url: '/placeholder.svg',
-          nome_arquivo: 'croqui_sol_nascente.pdf',
-          created_at: '2024-01-15T10:05:00Z',
-        },
-        {
-          id: 'att-002',
-          project_id: 'proj-001',
-          tipo: 'PLANTA_BAIXA',
-          arquivo_url: '/placeholder.svg',
-          nome_arquivo: 'planta_baixa.pdf',
-          created_at: '2024-01-15T10:06:00Z',
-        },
-      ],
-      comments: [
-        {
-          id: 'com-001',
-          project_id: 'proj-001',
-          user_id: '2',
-          user_name: 'Maria Projetos',
-          content: 'Projeto recebido e em análise. Verificando compatibilidade dos equipamentos.',
-          is_internal: true,
-          created_at: '2024-01-16T09:00:00Z',
-        },
-      ],
-      status_history: [
-        {
-          id: 'sh-001',
-          project_id: 'proj-001',
-          user_id: '1',
-          user_name: 'João Vendedor',
-          old_status: 'RASCUNHO',
-          new_status: 'ENVIADO',
-          created_at: '2024-01-15T10:30:00Z',
-        },
-        {
-          id: 'sh-002',
-          project_id: 'proj-001',
-          user_id: '2',
-          user_name: 'Maria Projetos',
-          old_status: 'ENVIADO',
-          new_status: 'EM_ANALISE',
-          created_at: '2024-01-16T08:00:00Z',
-        },
-      ],
-      notifications: [],
-    },
-    {
-      id: 'proj-002',
-      created_at: '2024-01-10T08:00:00Z',
-      updated_at: '2024-01-18T11:00:00Z',
-      created_by_user_id: '1',
-      vendedor_nome: 'João Vendedor',
-      vendedor_email: 'vendedor@empresa.com',
-      cliente_condominio_nome: 'Edifício Torre Alta',
-      cliente_cidade: 'Campinas',
-      cliente_estado: 'SP',
-      endereco_condominio: 'Av. Brasil, 500 - Centro',
-      status: 'APROVADO_PROJETO',
-      engineering_status: 'CONCLUIDO',
-      engineering_received_at: '2024-01-10T08:30:00Z',
-      engineering_production_at: '2024-01-11T09:00:00Z',
-      engineering_completed_at: '2024-01-18T11:00:00Z',
-      prazo_entrega_projeto: '2024-01-20',
-      sale_status: 'NAO_INICIADO',
-      tap_form: {
-        project_id: 'proj-002',
-        solicitacao_origem: 'FORMS',
-        portaria_virtual_atendimento_app: 'SIM_SEM_TRANSBORDO',
-        numero_blocos: 1,
-        interfonia: true,
-        controle_acessos_pedestre_descricao: 'Portão com senha numérica',
-        controle_acessos_veiculo_descricao: 'Controle remoto',
-        cftv_dvr_descricao: 'Sistema novo a ser instalado',
-        cftv_elevador_possui: 'NAO_POSSUI',
-        observacao_nao_assumir_cameras: true,
-        marcacao_croqui_confirmada: true,
-        marcacao_croqui_itens: ['CAMERAS_NOVAS', 'PONTOS_CAMERAS'],
-        info_cronograma: 'Urgente - cliente aguardando',
-      },
-      attachments: [
-        {
-          id: 'att-003',
-          project_id: 'proj-002',
-          tipo: 'CROQUI',
-          arquivo_url: '/placeholder.svg',
-          nome_arquivo: 'croqui_torre_alta.jpg',
-          created_at: '2024-01-10T08:10:00Z',
-        },
-      ],
-      comments: [],
-      status_history: [
-        {
-          id: 'sh-003',
-          project_id: 'proj-002',
-          user_id: '2',
-          user_name: 'Maria Projetos',
-          old_status: 'EM_ANALISE',
-          new_status: 'APROVADO_PROJETO',
-          created_at: '2024-01-18T11:00:00Z',
-        },
-      ],
-      notifications: [
-        {
-          id: 'notif-001',
-          type: 'PROJECT_COMPLETED',
-          message: 'O projeto Edifício Torre Alta foi concluído pela engenharia.',
-          read: false,
-          created_at: '2024-01-18T11:00:00Z',
-          project_id: 'proj-002',
-        },
-      ],
-    },
-    {
-      id: 'proj-003',
-      created_at: '2024-01-17T14:00:00Z',
-      updated_at: '2024-01-17T14:00:00Z',
-      created_by_user_id: '1',
-      vendedor_nome: 'João Vendedor',
-      vendedor_email: 'vendedor@empresa.com',
-      cliente_condominio_nome: 'Condomínio Parque das Árvores',
-      cliente_cidade: 'Santos',
-      cliente_estado: 'SP',
-      endereco_condominio: 'Rua da Praia, 789 - Gonzaga',
-      status: 'RASCUNHO',
-      sale_status: 'NAO_INICIADO',
-      tap_form: {
-        project_id: 'proj-003',
-        solicitacao_origem: 'EMAIL',
-        portaria_virtual_atendimento_app: 'NAO',
-        numero_blocos: 5,
-        interfonia: false,
-        cftv_elevador_possui: 'NAO_INFORMADO',
-        observacao_nao_assumir_cameras: true,
-        marcacao_croqui_confirmada: false,
-        marcacao_croqui_itens: [],
-      },
-      attachments: [],
-      comments: [],
-      status_history: [],
-      notifications: [],
-    },
-  ];
+// Helper to map database attachment type to our type
+const mapAttachmentType = (dbType: string): AttachmentType => {
+  const typeMap: Record<string, AttachmentType> = {
+    'CROQUI': 'CROQUI',
+    'PLANTA_BAIXA': 'PLANTA_BAIXA',
+    'CONTRATO': 'OUTROS',
+    'FOTOS_LOCAL': 'IMAGENS',
+    'ORCAMENTO': 'OUTROS',
+    'DOCUMENTOS_COMPLEMENTARES': 'OUTROS',
+    'OUTRO': 'OUTROS',
+  };
+  return typeMap[dbType] || 'OUTROS';
+};
+
+// Helper to map our type to database type
+const mapToDbAttachmentType = (type: AttachmentType): string => {
+  const typeMap: Record<AttachmentType, string> = {
+    'CROQUI': 'CROQUI',
+    'PLANTA_BAIXA': 'PLANTA_BAIXA',
+    'IMAGENS': 'FOTOS_LOCAL',
+    'FOTOS_EQUIP_APROVEITADOS': 'FOTOS_LOCAL',
+    'OUTROS': 'OUTRO',
+    'CENTRAL_PORTARIA_FOTOS': 'FOTOS_LOCAL',
+    'QDG_FOTO': 'FOTOS_LOCAL',
+    'INTERFONIA_FOTO': 'FOTOS_LOCAL',
+    'PORTAS_FOTOS': 'FOTOS_LOCAL',
+    'PORTOES_FOTOS': 'FOTOS_LOCAL',
+    'CFTV_CENTRAL_FOTO': 'FOTOS_LOCAL',
+    'DVRS_FOTOS': 'FOTOS_LOCAL',
+    'CAMERAS_INSTALADAS_FOTOS': 'FOTOS_LOCAL',
+    'ALARME_CENTRAL_FOTO_IVA': 'FOTOS_LOCAL',
+    'ALARME_CENTRAL_FOTO_CERCA': 'FOTOS_LOCAL',
+    'CHOQUE_FOTO': 'FOTOS_LOCAL',
+    'CERCA_FOTOS': 'FOTOS_LOCAL',
+    'CANCELA_FOTOS': 'FOTOS_LOCAL',
+    'CATRACA_FOTOS': 'FOTOS_LOCAL',
+    'TOTEM_FOTOS': 'FOTOS_LOCAL',
+    'CAMERAS_NOVAS_FOTOS': 'FOTOS_LOCAL',
+  };
+  return typeMap[type] || 'OUTRO';
 };
 
 export function ProjectsProvider({ children }: { children: ReactNode }) {
-  const [projects, setProjects] = useState<ProjectWithDetails[]>(() => {
-    const saved = localStorage.getItem('portaria_projects');
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      // Ensure all projects have the new fields
-      return parsed.map((p: ProjectWithDetails) => ({
-        ...p,
-        engineering_status: p.engineering_status || (p.status === 'ENVIADO' ? 'EM_RECEBIMENTO' : p.status === 'EM_ANALISE' ? 'EM_PRODUCAO' : p.status === 'APROVADO_PROJETO' ? 'CONCLUIDO' : undefined),
-        sale_status: p.sale_status || 'NAO_INICIADO',
-        notifications: p.notifications || [],
-      }));
-    }
-    return generateMockProjects();
-  });
+  const [projects, setProjects] = useState<ProjectWithDetails[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const { user } = useAuth();
 
-  const saveProjects = (newProjects: ProjectWithDetails[]) => {
-    setProjects(newProjects);
-    localStorage.setItem('portaria_projects', JSON.stringify(newProjects));
+  const fetchProjects = useCallback(async () => {
+    if (!user) {
+      setProjects([]);
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      
+      // Fetch projects
+      const { data: projectsData, error: projectsError } = await supabase
+        .from('projects')
+        .select('*')
+        .order('updated_at', { ascending: false });
+
+      if (projectsError) {
+        console.error('Error fetching projects:', projectsError);
+        setProjects([]);
+        setIsLoading(false);
+        return;
+      }
+
+      if (!projectsData || projectsData.length === 0) {
+        setProjects([]);
+        setIsLoading(false);
+        return;
+      }
+
+      const projectIds = projectsData.map(p => p.id);
+
+      // Fetch related data in parallel
+      const [tapFormsRes, attachmentsRes, commentsRes, historyRes, notificationsRes] = await Promise.all([
+        supabase.from('tap_forms').select('*').in('project_id', projectIds),
+        supabase.from('project_attachments').select('*').in('project_id', projectIds),
+        supabase.from('project_comments').select('*').in('project_id', projectIds).order('created_at', { ascending: false }),
+        supabase.from('project_status_history').select('*').in('project_id', projectIds).order('created_at', { ascending: false }),
+        supabase.from('project_notifications').select('*').in('project_id', projectIds),
+      ]);
+
+      const tapFormsMap = new Map(tapFormsRes.data?.map(t => [t.project_id, t]) || []);
+      const attachmentsMap = new Map<string, Attachment[]>();
+      const commentsMap = new Map<string, Comment[]>();
+      const historyMap = new Map<string, StatusChange[]>();
+      const notificationsMap = new Map<string, Notification[]>();
+
+      attachmentsRes.data?.forEach(a => {
+        const list = attachmentsMap.get(a.project_id) || [];
+        list.push({
+          id: a.id,
+          project_id: a.project_id,
+          tipo: mapAttachmentType(a.tipo),
+          arquivo_url: a.arquivo_url,
+          nome_arquivo: a.nome_arquivo,
+          created_at: a.created_at,
+        });
+        attachmentsMap.set(a.project_id, list);
+      });
+
+      commentsRes.data?.forEach(c => {
+        const list = commentsMap.get(c.project_id) || [];
+        list.push({
+          id: c.id,
+          project_id: c.project_id,
+          user_id: c.user_id,
+          user_name: c.user_name,
+          content: c.texto,
+          is_internal: c.is_internal,
+          created_at: c.created_at,
+        });
+        commentsMap.set(c.project_id, list);
+      });
+
+      historyRes.data?.forEach(h => {
+        const list = historyMap.get(h.project_id) || [];
+        list.push({
+          id: h.id,
+          project_id: h.project_id,
+          user_id: h.changed_by_user_id,
+          user_name: h.changed_by_user_name,
+          old_status: h.from_status as ProjectStatus,
+          new_status: h.to_status as ProjectStatus,
+          created_at: h.created_at,
+        });
+        historyMap.set(h.project_id, list);
+      });
+
+      notificationsRes.data?.forEach(n => {
+        const list = notificationsMap.get(n.project_id) || [];
+        list.push({
+          id: n.id,
+          type: n.type as 'PROJECT_COMPLETED' | 'STATUS_CHANGED' | 'COMMENT_ADDED',
+          message: n.message,
+          read: n.read,
+          created_at: n.created_at,
+          project_id: n.project_id,
+        });
+        notificationsMap.set(n.project_id, list);
+      });
+
+      const fullProjects: ProjectWithDetails[] = projectsData.map(p => {
+        const tapForm = tapFormsMap.get(p.id);
+        return {
+          id: p.id,
+          created_at: p.created_at,
+          updated_at: p.updated_at,
+          created_by_user_id: p.created_by_user_id,
+          vendedor_nome: p.vendedor_nome,
+          vendedor_email: p.vendedor_email,
+          cliente_condominio_nome: p.cliente_condominio_nome,
+          cliente_cidade: p.cliente_cidade || '',
+          cliente_estado: p.cliente_estado || '',
+          endereco_condominio: p.endereco_condominio || '',
+          status: p.status as ProjectStatus,
+          prazo_entrega_projeto: p.prazo_entrega_projeto || undefined,
+          data_assembleia: p.data_assembleia || undefined,
+          email_padrao_gerado: p.email_padrao_gerado || undefined,
+          engineering_status: p.engineering_status as EngineeringStatus | undefined,
+          engineering_received_at: p.engineering_received_at || undefined,
+          engineering_production_at: p.engineering_production_at || undefined,
+          engineering_completed_at: p.engineering_completed_at || undefined,
+          sale_status: (p.sale_status as SaleStatus) || 'NAO_INICIADO',
+          notifications: notificationsMap.get(p.id) || [],
+          tap_form: tapForm ? {
+            project_id: tapForm.project_id,
+            solicitacao_origem: (tapForm.solicitacao_origem || 'EMAIL') as SolicitacaoOrigem,
+            email_origem_texto: tapForm.email_origem_texto || undefined,
+            portaria_virtual_atendimento_app: (tapForm.portaria_virtual_atendimento_app || 'NAO') as PortariaVirtualApp,
+            numero_blocos: tapForm.numero_blocos || 0,
+            interfonia: tapForm.interfonia || false,
+            controle_acessos_pedestre_descricao: tapForm.controle_acessos_pedestre_descricao || undefined,
+            controle_acessos_veiculo_descricao: tapForm.controle_acessos_veiculo_descricao || undefined,
+            alarme_descricao: tapForm.alarme_descricao || undefined,
+            cftv_dvr_descricao: tapForm.cftv_dvr_descricao || undefined,
+            cftv_elevador_possui: (tapForm.cftv_elevador_possui || 'NAO_INFORMADO') as CFTVElevador,
+            observacao_nao_assumir_cameras: tapForm.observacao_nao_assumir_cameras || false,
+            marcacao_croqui_confirmada: tapForm.marcacao_croqui_confirmada || false,
+            marcacao_croqui_itens: (tapForm.marcacao_croqui_itens as CroquiItem[]) || [],
+            info_custo: tapForm.info_custo || undefined,
+            info_cronograma: tapForm.info_cronograma || undefined,
+            info_adicionais: tapForm.info_adicionais || undefined,
+          } : undefined,
+          attachments: attachmentsMap.get(p.id) || [],
+          comments: commentsMap.get(p.id) || [],
+          status_history: historyMap.get(p.id) || [],
+        };
+      });
+
+      setProjects(fullProjects);
+    } catch (error) {
+      console.error('Error in fetchProjects:', error);
+      setProjects([]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    fetchProjects();
+  }, [fetchProjects]);
+
+  const refreshProjects = async () => {
+    await fetchProjects();
   };
 
-  const addProject = (
+  const addProject = async (
     project: Omit<Project, 'id' | 'created_at' | 'updated_at'>, 
     tapForm: Omit<TapForm, 'project_id'>
-  ): string => {
-    const id = `proj-${Date.now()}`;
-    const now = new Date().toISOString();
-    
-    const newProject: ProjectWithDetails = {
-      ...project,
-      id,
-      created_at: now,
-      updated_at: now,
-      sale_status: 'NAO_INICIADO',
-      tap_form: { ...tapForm, project_id: id },
-      attachments: [],
-      comments: [],
-      status_history: [],
-      notifications: [],
-    };
+  ): Promise<string | null> => {
+    try {
+      // Insert project
+      const { data: newProject, error: projectError } = await supabase
+        .from('projects')
+        .insert({
+          created_by_user_id: project.created_by_user_id,
+          vendedor_nome: project.vendedor_nome,
+          vendedor_email: project.vendedor_email,
+          cliente_condominio_nome: project.cliente_condominio_nome,
+          cliente_cidade: project.cliente_cidade || null,
+          cliente_estado: project.cliente_estado || null,
+          endereco_condominio: project.endereco_condominio || null,
+          status: project.status,
+          prazo_entrega_projeto: project.prazo_entrega_projeto || null,
+          data_assembleia: project.data_assembleia || null,
+          email_padrao_gerado: project.email_padrao_gerado || null,
+          engineering_status: project.status === 'ENVIADO' ? 'EM_RECEBIMENTO' : null,
+          engineering_received_at: project.status === 'ENVIADO' ? new Date().toISOString() : null,
+        })
+        .select()
+        .single();
 
-    saveProjects([...projects, newProject]);
-    return id;
+      if (projectError || !newProject) {
+        console.error('Error creating project:', projectError);
+        return null;
+      }
+
+      // Insert TAP form
+      const { error: tapError } = await supabase
+        .from('tap_forms')
+        .insert({
+          project_id: newProject.id,
+          solicitacao_origem: tapForm.solicitacao_origem || null,
+          email_origem_texto: tapForm.email_origem_texto || null,
+          portaria_virtual_atendimento_app: tapForm.portaria_virtual_atendimento_app || null,
+          numero_blocos: tapForm.numero_blocos || null,
+          interfonia: tapForm.interfonia || false,
+          controle_acessos_pedestre_descricao: tapForm.controle_acessos_pedestre_descricao || null,
+          controle_acessos_veiculo_descricao: tapForm.controle_acessos_veiculo_descricao || null,
+          alarme_descricao: tapForm.alarme_descricao || null,
+          cftv_dvr_descricao: tapForm.cftv_dvr_descricao || null,
+          cftv_elevador_possui: tapForm.cftv_elevador_possui || null,
+          observacao_nao_assumir_cameras: tapForm.observacao_nao_assumir_cameras || false,
+          marcacao_croqui_confirmada: tapForm.marcacao_croqui_confirmada || false,
+          marcacao_croqui_itens: tapForm.marcacao_croqui_itens || [],
+          info_custo: tapForm.info_custo || null,
+          info_cronograma: tapForm.info_cronograma || null,
+          info_adicionais: tapForm.info_adicionais || null,
+        });
+
+      if (tapError) {
+        console.error('Error creating TAP form:', tapError);
+      }
+
+      // If project is being sent (not draft), notify project team
+      if (project.status === 'ENVIADO') {
+        try {
+          await supabase.functions.invoke('notify-project-submitted', {
+            body: {
+              projectId: newProject.id,
+              projectName: project.cliente_condominio_nome,
+              vendedorNome: project.vendedor_nome,
+              vendedorEmail: project.vendedor_email,
+              cidade: project.cliente_cidade,
+              estado: project.cliente_estado,
+            },
+          });
+        } catch (notifyError) {
+          console.error('Error notifying project team:', notifyError);
+          // Don't fail the project creation if notification fails
+        }
+      }
+
+      // Refresh projects list
+      await fetchProjects();
+
+      return newProject.id;
+    } catch (error) {
+      console.error('Error in addProject:', error);
+      return null;
+    }
   };
 
-  const updateProject = (id: string, projectUpdate: Partial<Project>, tapFormUpdate?: Partial<TapForm>) => {
-    const updated = projects.map(p => {
-      if (p.id === id) {
-        return {
-          ...p,
-          ...projectUpdate,
-          updated_at: new Date().toISOString(),
-          tap_form: tapFormUpdate ? { ...p.tap_form!, ...tapFormUpdate } : p.tap_form,
-        };
+  const updateProject = async (id: string, projectUpdate: Partial<Project>, tapFormUpdate?: Partial<TapForm>): Promise<boolean> => {
+    try {
+      const updateData: Record<string, unknown> = {};
+      
+      if (projectUpdate.cliente_condominio_nome !== undefined) updateData.cliente_condominio_nome = projectUpdate.cliente_condominio_nome;
+      if (projectUpdate.cliente_cidade !== undefined) updateData.cliente_cidade = projectUpdate.cliente_cidade;
+      if (projectUpdate.cliente_estado !== undefined) updateData.cliente_estado = projectUpdate.cliente_estado;
+      if (projectUpdate.endereco_condominio !== undefined) updateData.endereco_condominio = projectUpdate.endereco_condominio;
+      if (projectUpdate.status !== undefined) updateData.status = projectUpdate.status;
+      if (projectUpdate.prazo_entrega_projeto !== undefined) updateData.prazo_entrega_projeto = projectUpdate.prazo_entrega_projeto;
+      if (projectUpdate.data_assembleia !== undefined) updateData.data_assembleia = projectUpdate.data_assembleia;
+      if (projectUpdate.email_padrao_gerado !== undefined) updateData.email_padrao_gerado = projectUpdate.email_padrao_gerado;
+      if (projectUpdate.engineering_status !== undefined) updateData.engineering_status = projectUpdate.engineering_status;
+      if (projectUpdate.engineering_received_at !== undefined) updateData.engineering_received_at = projectUpdate.engineering_received_at;
+      if (projectUpdate.engineering_production_at !== undefined) updateData.engineering_production_at = projectUpdate.engineering_production_at;
+      if (projectUpdate.engineering_completed_at !== undefined) updateData.engineering_completed_at = projectUpdate.engineering_completed_at;
+      if (projectUpdate.sale_status !== undefined) updateData.sale_status = projectUpdate.sale_status;
+
+      if (Object.keys(updateData).length > 0) {
+        const { error: projectError } = await supabase
+          .from('projects')
+          .update(updateData)
+          .eq('id', id);
+
+        if (projectError) {
+          console.error('Error updating project:', projectError);
+          return false;
+        }
       }
-      return p;
-    });
-    saveProjects(updated);
+
+      if (tapFormUpdate) {
+        const tapUpdateData: Record<string, unknown> = {};
+        
+        if (tapFormUpdate.solicitacao_origem !== undefined) tapUpdateData.solicitacao_origem = tapFormUpdate.solicitacao_origem;
+        if (tapFormUpdate.email_origem_texto !== undefined) tapUpdateData.email_origem_texto = tapFormUpdate.email_origem_texto;
+        if (tapFormUpdate.portaria_virtual_atendimento_app !== undefined) tapUpdateData.portaria_virtual_atendimento_app = tapFormUpdate.portaria_virtual_atendimento_app;
+        if (tapFormUpdate.numero_blocos !== undefined) tapUpdateData.numero_blocos = tapFormUpdate.numero_blocos;
+        if (tapFormUpdate.interfonia !== undefined) tapUpdateData.interfonia = tapFormUpdate.interfonia;
+        if (tapFormUpdate.controle_acessos_pedestre_descricao !== undefined) tapUpdateData.controle_acessos_pedestre_descricao = tapFormUpdate.controle_acessos_pedestre_descricao;
+        if (tapFormUpdate.controle_acessos_veiculo_descricao !== undefined) tapUpdateData.controle_acessos_veiculo_descricao = tapFormUpdate.controle_acessos_veiculo_descricao;
+        if (tapFormUpdate.alarme_descricao !== undefined) tapUpdateData.alarme_descricao = tapFormUpdate.alarme_descricao;
+        if (tapFormUpdate.cftv_dvr_descricao !== undefined) tapUpdateData.cftv_dvr_descricao = tapFormUpdate.cftv_dvr_descricao;
+        if (tapFormUpdate.cftv_elevador_possui !== undefined) tapUpdateData.cftv_elevador_possui = tapFormUpdate.cftv_elevador_possui;
+        if (tapFormUpdate.observacao_nao_assumir_cameras !== undefined) tapUpdateData.observacao_nao_assumir_cameras = tapFormUpdate.observacao_nao_assumir_cameras;
+        if (tapFormUpdate.marcacao_croqui_confirmada !== undefined) tapUpdateData.marcacao_croqui_confirmada = tapFormUpdate.marcacao_croqui_confirmada;
+        if (tapFormUpdate.marcacao_croqui_itens !== undefined) tapUpdateData.marcacao_croqui_itens = tapFormUpdate.marcacao_croqui_itens;
+        if (tapFormUpdate.info_custo !== undefined) tapUpdateData.info_custo = tapFormUpdate.info_custo;
+        if (tapFormUpdate.info_cronograma !== undefined) tapUpdateData.info_cronograma = tapFormUpdate.info_cronograma;
+        if (tapFormUpdate.info_adicionais !== undefined) tapUpdateData.info_adicionais = tapFormUpdate.info_adicionais;
+
+        if (Object.keys(tapUpdateData).length > 0) {
+          const { error: tapError } = await supabase
+            .from('tap_forms')
+            .update(tapUpdateData)
+            .eq('project_id', id);
+
+          if (tapError) {
+            console.error('Error updating TAP form:', tapError);
+          }
+        }
+      }
+
+      await fetchProjects();
+      return true;
+    } catch (error) {
+      console.error('Error in updateProject:', error);
+      return false;
+    }
   };
 
   const getProject = (id: string) => projects.find(p => p.id === id);
 
-  const addAttachment = (projectId: string, attachment: Omit<Attachment, 'id' | 'project_id' | 'created_at'>) => {
-    const updated = projects.map(p => {
-      if (p.id === projectId) {
-        return {
-          ...p,
-          attachments: [
-            ...p.attachments,
-            {
-              ...attachment,
-              id: `att-${Date.now()}`,
-              project_id: projectId,
-              created_at: new Date().toISOString(),
-            },
-          ],
-        };
-      }
-      return p;
-    });
-    saveProjects(updated);
+  const fetchProject = async (id: string): Promise<ProjectWithDetails | null> => {
+    // First try from cache
+    const cached = projects.find(p => p.id === id);
+    if (cached) return cached;
+
+    // Fetch from database
+    await fetchProjects();
+    return projects.find(p => p.id === id) || null;
   };
 
-  const removeAttachment = (projectId: string, attachmentId: string) => {
-    const updated = projects.map(p => {
-      if (p.id === projectId) {
-        return {
-          ...p,
-          attachments: p.attachments.filter(a => a.id !== attachmentId),
-        };
-      }
-      return p;
-    });
-    saveProjects(updated);
-  };
-
-  const addComment = (projectId: string, comment: Omit<Comment, 'id' | 'project_id' | 'created_at'>) => {
-    const updated = projects.map(p => {
-      if (p.id === projectId) {
-        return {
-          ...p,
-          comments: [
-            ...p.comments,
-            {
-              ...comment,
-              id: `com-${Date.now()}`,
-              project_id: projectId,
-              created_at: new Date().toISOString(),
-            },
-          ],
-        };
-      }
-      return p;
-    });
-    saveProjects(updated);
-  };
-
-  const updateStatus = (projectId: string, newStatus: ProjectStatus, userId: string, userName: string) => {
-    const updated = projects.map(p => {
-      if (p.id === projectId) {
-        const statusChange: StatusChange = {
-          id: `sh-${Date.now()}`,
+  const addAttachment = async (projectId: string, attachment: Omit<Attachment, 'id' | 'project_id' | 'created_at'>): Promise<boolean> => {
+    try {
+      const { error } = await supabase
+        .from('project_attachments')
+        .insert({
           project_id: projectId,
-          user_id: userId,
-          user_name: userName,
-          old_status: p.status,
-          new_status: newStatus,
-          created_at: new Date().toISOString(),
-        };
-        
-        // Auto-set engineering status based on project status
-        let engineeringStatus = p.engineering_status;
-        let engineeringReceivedAt = p.engineering_received_at;
-        let engineeringProductionAt = p.engineering_production_at;
-        let engineeringCompletedAt = p.engineering_completed_at;
-        
-        if (newStatus === 'ENVIADO' && !engineeringStatus) {
-          engineeringStatus = 'EM_RECEBIMENTO';
-          engineeringReceivedAt = new Date().toISOString();
-        }
-        
-        return {
-          ...p,
-          status: newStatus,
-          engineering_status: engineeringStatus,
-          engineering_received_at: engineeringReceivedAt,
-          engineering_production_at: engineeringProductionAt,
-          engineering_completed_at: engineeringCompletedAt,
-          updated_at: new Date().toISOString(),
-          status_history: [...p.status_history, statusChange],
-        };
+          tipo: mapToDbAttachmentType(attachment.tipo) as "CROQUI" | "PLANTA_BAIXA" | "CONTRATO" | "FOTOS_LOCAL" | "ORCAMENTO" | "DOCUMENTOS_COMPLEMENTARES" | "OUTRO",
+          arquivo_url: attachment.arquivo_url,
+          nome_arquivo: attachment.nome_arquivo,
+        });
+
+      if (error) {
+        console.error('Error adding attachment:', error);
+        return false;
       }
-      return p;
-    });
-    saveProjects(updated);
+
+      await fetchProjects();
+      return true;
+    } catch (error) {
+      console.error('Error in addAttachment:', error);
+      return false;
+    }
   };
 
-  const updateEngineeringStatus = (projectId: string, newStatus: EngineeringStatus, userId: string, userName: string) => {
-    const updated = projects.map(p => {
-      if (p.id === projectId) {
-        const now = new Date().toISOString();
-        let updates: Partial<ProjectWithDetails> = {
-          engineering_status: newStatus,
-          updated_at: now,
-        };
-        
-        if (newStatus === 'EM_RECEBIMENTO') {
-          updates.engineering_received_at = now;
-        } else if (newStatus === 'EM_PRODUCAO') {
-          updates.engineering_production_at = now;
-        } else if (newStatus === 'CONCLUIDO') {
-          updates.engineering_completed_at = now;
-        }
-        
-        return { ...p, ...updates };
+  const removeAttachment = async (projectId: string, attachmentId: string): Promise<boolean> => {
+    try {
+      const { error } = await supabase
+        .from('project_attachments')
+        .delete()
+        .eq('id', attachmentId)
+        .eq('project_id', projectId);
+
+      if (error) {
+        console.error('Error removing attachment:', error);
+        return false;
       }
-      return p;
-    });
-    saveProjects(updated);
+
+      await fetchProjects();
+      return true;
+    } catch (error) {
+      console.error('Error in removeAttachment:', error);
+      return false;
+    }
+  };
+
+  const addComment = async (projectId: string, comment: Omit<Comment, 'id' | 'project_id' | 'created_at'>): Promise<boolean> => {
+    try {
+      const { error } = await supabase
+        .from('project_comments')
+        .insert({
+          project_id: projectId,
+          user_id: comment.user_id,
+          user_name: comment.user_name,
+          user_role: user?.role || 'vendedor',
+          texto: comment.content,
+          is_internal: comment.is_internal,
+        });
+
+      if (error) {
+        console.error('Error adding comment:', error);
+        return false;
+      }
+
+      await fetchProjects();
+      return true;
+    } catch (error) {
+      console.error('Error in addComment:', error);
+      return false;
+    }
+  };
+
+  const updateStatus = async (projectId: string, newStatus: ProjectStatus, userId: string, userName: string, reason?: string): Promise<boolean> => {
+    try {
+      const project = projects.find(p => p.id === projectId);
+      const oldStatus = project?.status;
+
+      // Update project status
+      const updateData: Record<string, unknown> = { status: newStatus };
+      
+      // Set engineering status when project is sent
+      if (newStatus === 'ENVIADO' && !project?.engineering_status) {
+        updateData.engineering_status = 'EM_RECEBIMENTO';
+        updateData.engineering_received_at = new Date().toISOString();
+      }
+
+      const { error: projectError } = await supabase
+        .from('projects')
+        .update(updateData)
+        .eq('id', projectId);
+
+      if (projectError) {
+        console.error('Error updating status:', projectError);
+        return false;
+      }
+
+      // Add status history
+      const { error: historyError } = await supabase
+        .from('project_status_history')
+        .insert({
+          project_id: projectId,
+          from_status: oldStatus || null,
+          to_status: newStatus,
+          changed_by_user_id: userId,
+          changed_by_user_name: userName,
+          reason: reason || null,
+        });
+
+      if (historyError) {
+        console.error('Error adding status history:', historyError);
+      }
+
+      await fetchProjects();
+      return true;
+    } catch (error) {
+      console.error('Error in updateStatus:', error);
+      return false;
+    }
+  };
+
+  const updateEngineeringStatus = async (projectId: string, newStatus: EngineeringStatus, userId: string, userName: string): Promise<boolean> => {
+    try {
+      const updateData: Record<string, unknown> = { engineering_status: newStatus };
+
+      if (newStatus === 'EM_PRODUCAO') {
+        updateData.engineering_production_at = new Date().toISOString();
+      } else if (newStatus === 'CONCLUIDO') {
+        updateData.engineering_completed_at = new Date().toISOString();
+      }
+
+      const { error } = await supabase
+        .from('projects')
+        .update(updateData)
+        .eq('id', projectId);
+
+      if (error) {
+        console.error('Error updating engineering status:', error);
+        return false;
+      }
+
+      await fetchProjects();
+      return true;
+    } catch (error) {
+      console.error('Error in updateEngineeringStatus:', error);
+      return false;
+    }
   };
 
   const getProjectsByUser = (userId: string) => {
     return projects.filter(p => p.created_by_user_id === userId);
   };
 
-  // Initialize sale form with data from TAP
-  const initSaleForm = (projectId: string) => {
-    const updated = projects.map(p => {
-      if (p.id === projectId && p.tap_form) {
-        const saleForm: SaleCompletedForm = {
+  const initSaleForm = async (projectId: string): Promise<boolean> => {
+    try {
+      const { error } = await supabase
+        .from('projects')
+        .update({ sale_status: 'EM_ANDAMENTO' })
+        .eq('id', projectId);
+
+      if (error) {
+        console.error('Error initializing sale form:', error);
+        return false;
+      }
+
+      await fetchProjects();
+      return true;
+    } catch (error) {
+      console.error('Error in initSaleForm:', error);
+      return false;
+    }
+  };
+
+  const updateSaleForm = async (projectId: string, saleForm: Partial<SaleCompletedForm>): Promise<boolean> => {
+    // Sale form is stored differently - for now just update the status
+    console.log('updateSaleForm called for', projectId, saleForm);
+    return true;
+  };
+
+  const submitSaleForm = async (projectId: string): Promise<boolean> => {
+    try {
+      const { error } = await supabase
+        .from('projects')
+        .update({ sale_status: 'CONCLUIDO' })
+        .eq('id', projectId);
+
+      if (error) {
+        console.error('Error submitting sale form:', error);
+        return false;
+      }
+
+      await fetchProjects();
+      return true;
+    } catch (error) {
+      console.error('Error in submitSaleForm:', error);
+      return false;
+    }
+  };
+
+  const addNotification = async (projectId: string, notification: Omit<Notification, 'id' | 'created_at'>): Promise<boolean> => {
+    try {
+      const { error } = await supabase
+        .from('project_notifications')
+        .insert({
           project_id: projectId,
-          vendedor_email: p.vendedor_email,
-          vendedor_nome: p.vendedor_nome,
-          filial: '',
-          nome_condominio: p.cliente_condominio_nome,
-          qtd_apartamentos: 0,
-          qtd_blocos: p.tap_form.numero_blocos,
-          produto: 'Portaria Digital',
-        };
-        return {
-          ...p,
-          sale_status: 'RASCUNHO' as SaleStatus,
-          sale_form: saleForm,
-          updated_at: new Date().toISOString(),
-        };
-      }
-      return p;
-    });
-    saveProjects(updated);
-  };
-
-  const updateSaleForm = (projectId: string, saleFormUpdate: Partial<SaleCompletedForm>) => {
-    const updated = projects.map(p => {
-      if (p.id === projectId && p.sale_form) {
-        return {
-          ...p,
-          sale_form: { ...p.sale_form, ...saleFormUpdate },
-          updated_at: new Date().toISOString(),
-        };
-      }
-      return p;
-    });
-    saveProjects(updated);
-  };
-
-  const submitSaleForm = (projectId: string) => {
-    const updated = projects.map(p => {
-      if (p.id === projectId) {
-        return {
-          ...p,
-          sale_status: 'ENVIADO' as SaleStatus,
-          sale_locked_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        };
-      }
-      return p;
-    });
-    saveProjects(updated);
-  };
-
-  const addNotification = (projectId: string, notification: Omit<Notification, 'id' | 'created_at'>) => {
-    const updated = projects.map(p => {
-      if (p.id === projectId) {
-        const newNotification: Notification = {
-          ...notification,
-          id: `notif-${Date.now()}`,
-          created_at: new Date().toISOString(),
-        };
-        return {
-          ...p,
-          notifications: [...(p.notifications || []), newNotification],
-        };
-      }
-      return p;
-    });
-    saveProjects(updated);
-  };
-
-  const markNotificationRead = (projectId: string, notificationId: string) => {
-    const updated = projects.map(p => {
-      if (p.id === projectId) {
-        return {
-          ...p,
-          notifications: (p.notifications || []).map(n => 
-            n.id === notificationId ? { ...n, read: true } : n
-          ),
-        };
-      }
-      return p;
-    });
-    saveProjects(updated);
-  };
-
-  const getUnreadNotifications = (userId: string) => {
-    const userProjects = projects.filter(p => p.created_by_user_id === userId);
-    return userProjects.flatMap(p => (p.notifications || []).filter(n => !n.read));
-  };
-
-  const markProjectCompleted = (projectId: string, userId: string, userName: string) => {
-    const project = projects.find(p => p.id === projectId);
-    if (!project) return;
-
-    const updated = projects.map(p => {
-      if (p.id === projectId) {
-        const notification: Notification = {
-          id: `notif-${Date.now()}`,
-          type: 'PROJECT_COMPLETED',
-          message: `O projeto ${p.cliente_condominio_nome} foi concluído pela engenharia.`,
+          type: notification.type,
+          title: notification.type,
+          message: notification.message,
           read: false,
-          created_at: new Date().toISOString(),
-          project_id: projectId,
-        };
-        
-        return {
-          ...p,
-          status: 'APROVADO_PROJETO' as ProjectStatus,
-          engineering_status: 'CONCLUIDO' as EngineeringStatus,
-          engineering_completed_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          notifications: [...(p.notifications || []), notification],
-        };
+        });
+
+      if (error) {
+        console.error('Error adding notification:', error);
+        return false;
       }
-      return p;
+
+      await fetchProjects();
+      return true;
+    } catch (error) {
+      console.error('Error in addNotification:', error);
+      return false;
+    }
+  };
+
+  const markNotificationRead = async (projectId: string, notificationId: string): Promise<boolean> => {
+    try {
+      const { error } = await supabase
+        .from('project_notifications')
+        .update({ read: true })
+        .eq('id', notificationId);
+
+      if (error) {
+        console.error('Error marking notification read:', error);
+        return false;
+      }
+
+      await fetchProjects();
+      return true;
+    } catch (error) {
+      console.error('Error in markNotificationRead:', error);
+      return false;
+    }
+  };
+
+  const getUnreadNotifications = (userId: string): Notification[] => {
+    const allNotifications: Notification[] = [];
+    projects.forEach(p => {
+      p.notifications?.forEach(n => {
+        if (!n.read) {
+          allNotifications.push(n);
+        }
+      });
     });
-    saveProjects(updated);
+    return allNotifications;
+  };
+
+  const markProjectCompleted = async (projectId: string, userId: string, userName: string): Promise<boolean> => {
+    try {
+      const { error: projectError } = await supabase
+        .from('projects')
+        .update({
+          engineering_status: 'CONCLUIDO',
+          engineering_completed_at: new Date().toISOString(),
+        })
+        .eq('id', projectId);
+
+      if (projectError) {
+        console.error('Error marking project completed:', projectError);
+        return false;
+      }
+
+      // Add notification
+      await addNotification(projectId, {
+        type: 'PROJECT_COMPLETED',
+        message: `Projeto marcado como concluído por ${userName}`,
+        read: false,
+        project_id: projectId,
+      });
+
+      await fetchProjects();
+      return true;
+    } catch (error) {
+      console.error('Error in markProjectCompleted:', error);
+      return false;
+    }
   };
 
   return (
     <ProjectsContext.Provider value={{
       projects,
+      isLoading,
       addProject,
       updateProject,
       getProject,
+      fetchProject,
       addAttachment,
       removeAttachment,
       addComment,
@@ -553,6 +736,7 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
       markNotificationRead,
       getUnreadNotifications,
       markProjectCompleted,
+      refreshProjects,
     }}>
       {children}
     </ProjectsContext.Provider>

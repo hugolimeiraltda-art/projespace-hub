@@ -53,6 +53,313 @@ export type Database = {
         }
         Relationships: []
       }
+      project_attachments: {
+        Row: {
+          arquivo_url: string
+          created_at: string
+          id: string
+          nome_arquivo: string
+          project_id: string
+          tipo: Database["public"]["Enums"]["attachment_type"]
+        }
+        Insert: {
+          arquivo_url: string
+          created_at?: string
+          id?: string
+          nome_arquivo: string
+          project_id: string
+          tipo: Database["public"]["Enums"]["attachment_type"]
+        }
+        Update: {
+          arquivo_url?: string
+          created_at?: string
+          id?: string
+          nome_arquivo?: string
+          project_id?: string
+          tipo?: Database["public"]["Enums"]["attachment_type"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_attachments_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_comments: {
+        Row: {
+          created_at: string
+          id: string
+          is_internal: boolean
+          project_id: string
+          texto: string
+          user_id: string
+          user_name: string
+          user_role: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_internal?: boolean
+          project_id: string
+          texto: string
+          user_id: string
+          user_name: string
+          user_role: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_internal?: boolean
+          project_id?: string
+          texto?: string
+          user_id?: string
+          user_name?: string
+          user_role?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_comments_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_notifications: {
+        Row: {
+          created_at: string
+          for_role: string | null
+          for_user_id: string | null
+          id: string
+          message: string
+          project_id: string
+          read: boolean
+          title: string
+          type: string
+        }
+        Insert: {
+          created_at?: string
+          for_role?: string | null
+          for_user_id?: string | null
+          id?: string
+          message: string
+          project_id: string
+          read?: boolean
+          title: string
+          type: string
+        }
+        Update: {
+          created_at?: string
+          for_role?: string | null
+          for_user_id?: string | null
+          id?: string
+          message?: string
+          project_id?: string
+          read?: boolean
+          title?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_notifications_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_status_history: {
+        Row: {
+          changed_by_user_id: string
+          changed_by_user_name: string
+          created_at: string
+          from_status: Database["public"]["Enums"]["project_status"] | null
+          id: string
+          project_id: string
+          reason: string | null
+          to_status: Database["public"]["Enums"]["project_status"]
+        }
+        Insert: {
+          changed_by_user_id: string
+          changed_by_user_name: string
+          created_at?: string
+          from_status?: Database["public"]["Enums"]["project_status"] | null
+          id?: string
+          project_id: string
+          reason?: string | null
+          to_status: Database["public"]["Enums"]["project_status"]
+        }
+        Update: {
+          changed_by_user_id?: string
+          changed_by_user_name?: string
+          created_at?: string
+          from_status?: Database["public"]["Enums"]["project_status"] | null
+          id?: string
+          project_id?: string
+          reason?: string | null
+          to_status?: Database["public"]["Enums"]["project_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_status_history_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      projects: {
+        Row: {
+          cliente_cidade: string | null
+          cliente_condominio_nome: string
+          cliente_estado: string | null
+          created_at: string
+          created_by_user_id: string
+          data_assembleia: string | null
+          email_padrao_gerado: string | null
+          endereco_condominio: string | null
+          engineering_completed_at: string | null
+          engineering_production_at: string | null
+          engineering_received_at: string | null
+          engineering_status:
+            | Database["public"]["Enums"]["engineering_status"]
+            | null
+          id: string
+          observacoes: string | null
+          prazo_entrega_projeto: string | null
+          sale_status: Database["public"]["Enums"]["sale_status"]
+          status: Database["public"]["Enums"]["project_status"]
+          updated_at: string
+          vendedor_email: string
+          vendedor_nome: string
+        }
+        Insert: {
+          cliente_cidade?: string | null
+          cliente_condominio_nome: string
+          cliente_estado?: string | null
+          created_at?: string
+          created_by_user_id: string
+          data_assembleia?: string | null
+          email_padrao_gerado?: string | null
+          endereco_condominio?: string | null
+          engineering_completed_at?: string | null
+          engineering_production_at?: string | null
+          engineering_received_at?: string | null
+          engineering_status?:
+            | Database["public"]["Enums"]["engineering_status"]
+            | null
+          id?: string
+          observacoes?: string | null
+          prazo_entrega_projeto?: string | null
+          sale_status?: Database["public"]["Enums"]["sale_status"]
+          status?: Database["public"]["Enums"]["project_status"]
+          updated_at?: string
+          vendedor_email: string
+          vendedor_nome: string
+        }
+        Update: {
+          cliente_cidade?: string | null
+          cliente_condominio_nome?: string
+          cliente_estado?: string | null
+          created_at?: string
+          created_by_user_id?: string
+          data_assembleia?: string | null
+          email_padrao_gerado?: string | null
+          endereco_condominio?: string | null
+          engineering_completed_at?: string | null
+          engineering_production_at?: string | null
+          engineering_received_at?: string | null
+          engineering_status?:
+            | Database["public"]["Enums"]["engineering_status"]
+            | null
+          id?: string
+          observacoes?: string | null
+          prazo_entrega_projeto?: string | null
+          sale_status?: Database["public"]["Enums"]["sale_status"]
+          status?: Database["public"]["Enums"]["project_status"]
+          updated_at?: string
+          vendedor_email?: string
+          vendedor_nome?: string
+        }
+        Relationships: []
+      }
+      tap_forms: {
+        Row: {
+          alarme_descricao: string | null
+          cftv_dvr_descricao: string | null
+          cftv_elevador_possui: string | null
+          controle_acessos_pedestre_descricao: string | null
+          controle_acessos_veiculo_descricao: string | null
+          email_origem_texto: string | null
+          id: string
+          info_adicionais: string | null
+          info_cronograma: string | null
+          info_custo: string | null
+          interfonia: boolean | null
+          marcacao_croqui_confirmada: boolean | null
+          marcacao_croqui_itens: string[] | null
+          numero_blocos: number | null
+          observacao_nao_assumir_cameras: boolean | null
+          portaria_virtual_atendimento_app: string | null
+          project_id: string
+          solicitacao_origem: string | null
+        }
+        Insert: {
+          alarme_descricao?: string | null
+          cftv_dvr_descricao?: string | null
+          cftv_elevador_possui?: string | null
+          controle_acessos_pedestre_descricao?: string | null
+          controle_acessos_veiculo_descricao?: string | null
+          email_origem_texto?: string | null
+          id?: string
+          info_adicionais?: string | null
+          info_cronograma?: string | null
+          info_custo?: string | null
+          interfonia?: boolean | null
+          marcacao_croqui_confirmada?: boolean | null
+          marcacao_croqui_itens?: string[] | null
+          numero_blocos?: number | null
+          observacao_nao_assumir_cameras?: boolean | null
+          portaria_virtual_atendimento_app?: string | null
+          project_id: string
+          solicitacao_origem?: string | null
+        }
+        Update: {
+          alarme_descricao?: string | null
+          cftv_dvr_descricao?: string | null
+          cftv_elevador_possui?: string | null
+          controle_acessos_pedestre_descricao?: string | null
+          controle_acessos_veiculo_descricao?: string | null
+          email_origem_texto?: string | null
+          id?: string
+          info_adicionais?: string | null
+          info_cronograma?: string | null
+          info_custo?: string | null
+          interfonia?: boolean | null
+          marcacao_croqui_confirmada?: boolean | null
+          marcacao_croqui_itens?: string[] | null
+          numero_blocos?: number | null
+          observacao_nao_assumir_cameras?: boolean | null
+          portaria_virtual_atendimento_app?: string | null
+          project_id?: string
+          solicitacao_origem?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tap_forms_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: true
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -93,6 +400,24 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "vendedor" | "projetos" | "gerente_comercial"
+      attachment_type:
+        | "CROQUI"
+        | "PLANTA_BAIXA"
+        | "CONTRATO"
+        | "FOTOS_LOCAL"
+        | "ORCAMENTO"
+        | "DOCUMENTOS_COMPLEMENTARES"
+        | "OUTRO"
+      engineering_status: "EM_RECEBIMENTO" | "EM_PRODUCAO" | "CONCLUIDO"
+      project_status:
+        | "RASCUNHO"
+        | "ENVIADO"
+        | "EM_ANALISE"
+        | "PENDENTE_INFO"
+        | "APROVADO_PROJETO"
+        | "RECUSADO"
+        | "CANCELADO"
+      sale_status: "NAO_INICIADO" | "EM_ANDAMENTO" | "CONCLUIDO"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -221,6 +546,26 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "vendedor", "projetos", "gerente_comercial"],
+      attachment_type: [
+        "CROQUI",
+        "PLANTA_BAIXA",
+        "CONTRATO",
+        "FOTOS_LOCAL",
+        "ORCAMENTO",
+        "DOCUMENTOS_COMPLEMENTARES",
+        "OUTRO",
+      ],
+      engineering_status: ["EM_RECEBIMENTO", "EM_PRODUCAO", "CONCLUIDO"],
+      project_status: [
+        "RASCUNHO",
+        "ENVIADO",
+        "EM_ANALISE",
+        "PENDENTE_INFO",
+        "APROVADO_PROJETO",
+        "RECUSADO",
+        "CANCELADO",
+      ],
+      sale_status: ["NAO_INICIADO", "EM_ANDAMENTO", "CONCLUIDO"],
     },
   },
 } as const

@@ -158,13 +158,13 @@ Informações adicionais
 ${infoAdicionais || 'Não informado'}`;
   };
 
-  const handleSave = (sendToProjects: boolean) => {
+  const handleSave = async (sendToProjects: boolean) => {
     if (!user) return;
 
     setIsSubmitting(true);
 
     try {
-      const projectId = addProject(
+      const projectId = await addProject(
         {
           created_by_user_id: user.id,
           vendedor_nome: user.nome,
@@ -199,14 +199,18 @@ ${infoAdicionais || 'Não informado'}`;
         }
       );
 
-      // Add mock attachments
-      attachments.forEach(att => {
-        addAttachment(projectId, {
+      if (!projectId) {
+        throw new Error('Failed to create project');
+      }
+
+      // Add attachments
+      for (const att of attachments) {
+        await addAttachment(projectId, {
           tipo: att.tipo,
           arquivo_url: '/placeholder.svg',
           nome_arquivo: att.nome,
         });
-      });
+      }
 
       toast({
         title: sendToProjects ? 'Projeto enviado!' : 'Rascunho salvo!',
@@ -215,11 +219,9 @@ ${infoAdicionais || 'Não informado'}`;
           : 'Você pode continuar editando depois.',
       });
 
-      // Small delay to ensure localStorage is updated before navigation
-      setTimeout(() => {
-        navigate(`/projetos/${projectId}`);
-      }, 100);
+      navigate(`/projetos/${projectId}`);
     } catch (error) {
+      console.error('Error saving project:', error);
       toast({
         title: 'Erro',
         description: 'Ocorreu um erro ao salvar o projeto.',

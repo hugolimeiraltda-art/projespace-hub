@@ -64,6 +64,10 @@ export default function ProjectDetail() {
     setIsLoading(false);
   }, [id, projects, getProject]);
 
+  // Get changed fields for highlighting - MUST be before any early returns
+  const changedFields = useMemo(() => project ? getChangedFields(project) : new Set<string>(), [project]);
+  const hasChanges = changedFields.size > 0;
+
   if (isLoading) {
     return (
       <Layout>
@@ -532,10 +536,6 @@ export default function ProjectDetail() {
   };
 
   const tap = project.tap_form;
-  
-  // Get changed fields for highlighting
-  const changedFields = useMemo(() => getChangedFields(project), [project]);
-  const hasChanges = changedFields.size > 0;
 
   // Helper for changed field styling
   const changedStyle = (fieldName: string) => isFieldChanged(changedFields, fieldName) 

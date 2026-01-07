@@ -42,11 +42,11 @@ const ESTADOS_BR = [
 export default function EditProject() {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
-  const { getProject, updateProject, updateStatus, addAttachment, projects } = useProjects();
+  const { getProject, updateProject, updateStatus, addAttachment, projects, isLoading: contextLoading } = useProjects();
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const [isLoading, setIsLoading] = useState(true);
+  const [isFormLoading, setIsFormLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Form state - Project
@@ -78,6 +78,8 @@ export default function EditProject() {
 
   // Load project data
   useEffect(() => {
+    if (contextLoading) return;
+    
     const project = getProject(id!);
     if (project) {
       setCondominioNome(project.cliente_condominio_nome);
@@ -105,9 +107,9 @@ export default function EditProject() {
       }
 
       setExistingAttachments(project.attachments.map(a => ({ tipo: a.tipo, nome: a.nome_arquivo })));
-      setIsLoading(false);
     }
-  }, [id, projects, getProject]);
+    setIsFormLoading(false);
+  }, [id, projects, getProject, contextLoading]);
 
   const project = getProject(id!);
   const canSubmit = project?.status === 'PENDENTE_INFO' || project?.status === 'RASCUNHO';
@@ -231,6 +233,8 @@ ${infoAdicionais || 'Não informado'}`;
       setIsSubmitting(false);
     }
   };
+
+  const isLoading = contextLoading || isFormLoading;
 
   if (isLoading) {
     return (

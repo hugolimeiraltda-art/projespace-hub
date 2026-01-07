@@ -653,7 +653,10 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
     try {
       const { error } = await supabase
         .from('projects')
-        .update({ sale_status: 'CONCLUIDO' })
+        .update({ 
+          sale_status: 'CONCLUIDO',
+          implantacao_status: 'A_EXECUTAR'
+        })
         .eq('id', projectId);
 
       if (error) {

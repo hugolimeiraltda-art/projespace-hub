@@ -215,14 +215,16 @@ ${infoAdicionais || 'Não informado'}`;
           : 'Você pode continuar editando depois.',
       });
 
-      navigate(`/projetos/${projectId}`);
+      // Small delay to ensure localStorage is updated before navigation
+      setTimeout(() => {
+        navigate(`/projetos/${projectId}`);
+      }, 100);
     } catch (error) {
       toast({
         title: 'Erro',
         description: 'Ocorreu um erro ao salvar o projeto.',
         variant: 'destructive',
       });
-    } finally {
       setIsSubmitting(false);
     }
   };

@@ -512,28 +512,6 @@ export default function ProjectDetail() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Email Generated */}
-            <Card className="shadow-card">
-              <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle className="text-lg">E-mail Gerado</CardTitle>
-                <div className="flex gap-2">
-                  <Button variant="outline" size="sm" onClick={handleCopyEmail}>
-                    <Copy className="w-4 h-4 mr-2" />
-                    Copiar
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={handleDownloadEmail}>
-                    <Download className="w-4 h-4 mr-2" />
-                    Baixar .txt
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <pre className="whitespace-pre-wrap text-sm bg-secondary p-4 rounded-lg font-mono text-foreground">
-                  {project.email_padrao_gerado || 'E-mail não gerado'}
-                </pre>
-              </CardContent>
-            </Card>
-
             {/* TAP Summary */}
             {tap && (
               <Card className="shadow-card">

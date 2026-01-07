@@ -650,6 +650,46 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
         console.error('Error adding status history:', historyError);
       }
 
+      // Create notification for the vendedor (project owner) when status changes
+      if (project && project.created_by_user_id !== userId) {
+        const statusLabels: Record<ProjectStatus, string> = {
+          'RASCUNHO': 'Rascunho',
+          'ENVIADO': 'Enviado',
+          'EM_ANALISE': 'Em Análise',
+          'PENDENTE_INFO': 'Pendente de Informações',
+          'APROVADO_PROJETO': 'Aprovado',
+          'CANCELADO': 'Cancelado',
+        };
+
+        let notificationTitle = 'Status do Projeto Atualizado';
+        let notificationMessage = `O projeto "${project.cliente_condominio_nome}" foi atualizado para: ${statusLabels[newStatus]}`;
+        
+        if (newStatus === 'PENDENTE_INFO') {
+          notificationTitle = 'Informações Pendentes';
+          notificationMessage = `O projeto "${project.cliente_condominio_nome}" precisa de informações adicionais.${reason ? ` Motivo: ${reason}` : ''}`;
+        } else if (newStatus === 'APROVADO_PROJETO') {
+          notificationTitle = 'Projeto Aprovado!';
+          notificationMessage = `Parabéns! O projeto "${project.cliente_condominio_nome}" foi aprovado.`;
+        } else if (newStatus === 'CANCELADO') {
+          notificationTitle = 'Projeto Cancelado';
+          notificationMessage = `O projeto "${project.cliente_condominio_nome}" foi cancelado.${reason ? ` Motivo: ${reason}` : ''}`;
+        } else if (newStatus === 'EM_ANALISE') {
+          notificationTitle = 'Projeto em Análise';
+          notificationMessage = `O projeto "${project.cliente_condominio_nome}" está sendo analisado pela equipe de projetos.`;
+        }
+
+        await supabase
+          .from('project_notifications')
+          .insert({
+            project_id: projectId,
+            type: 'STATUS_CHANGED',
+            title: notificationTitle,
+            message: notificationMessage,
+            read: false,
+            for_user_id: project.created_by_user_id,
+          });
+      }
+
       await fetchProjects();
       return true;
     } catch (error) {

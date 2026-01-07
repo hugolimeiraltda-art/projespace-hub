@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProjects } from '@/contexts/ProjectsContext';
+import { useFileUpload } from '@/hooks/useFileUpload';
 import { Layout } from '@/components/Layout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,7 +20,8 @@ import {
   Save,
   Send,
   Check,
-  Upload
+  Upload,
+  Loader2
 } from 'lucide-react';
 import {
   PortariaVirtualApp,
@@ -43,6 +45,7 @@ export default function EditProject() {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
   const { getProject, updateProject, updateStatus, addAttachment, projects, isLoading: contextLoading } = useProjects();
+  const { uploadFile, isUploading } = useFileUpload();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -187,13 +190,18 @@ ${infoAdicionais || 'Não informado'}`;
         info_adicionais: infoAdicionais || undefined,
       });
 
-      // Add new attachments
+      // Add new attachments with real upload
       for (const att of newAttachments) {
-        await addAttachment(project.id, {
-          tipo: att.tipo,
-          arquivo_url: '/placeholder.svg',
-          nome_arquivo: att.nome,
-        });
+        if (att.file) {
+          const uploadResult = await uploadFile(att.file, project.id, att.tipo.toLowerCase());
+          if (uploadResult) {
+            await addAttachment(project.id, {
+              tipo: att.tipo,
+              arquivo_url: uploadResult.url,
+              nome_arquivo: att.nome,
+            });
+          }
+        }
       }
 
       // If sending back to projects after PENDENTE_INFO

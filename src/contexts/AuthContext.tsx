@@ -13,6 +13,7 @@ export interface User {
   filial?: string;
   filiais?: string[];
   foto?: string;
+  must_change_password?: boolean;
 }
 
 interface AuthContextType {
@@ -71,6 +72,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         filial: profile.filial || undefined,
         filiais: profile.filiais || undefined,
         foto: profile.foto || undefined,
+        must_change_password: profile.must_change_password ?? false,
       };
     } catch (error) {
       console.error('Error in fetchUserProfile:', error);
@@ -138,9 +140,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const changePassword = async (newPassword: string): Promise<boolean> => {
+    if (!user) return false;
+    
     try {
-      const { error } = await supabase.auth.updateUser({ password: newPassword });
-      return !error;
+      const { error: authError } = await supabase.auth.updateUser({ password: newPassword });
+      if (authError) return false;
+      
+      // Mark password as changed in profile
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({ must_change_password: false })
+        .eq('id', user.id);
+      
+      if (profileError) {
+        console.error('Error updating must_change_password:', profileError);
+        return false;
+      }
+      
+      // Update local user state
+      setUser({ ...user, must_change_password: false });
+      return true;
     } catch {
       return false;
     }

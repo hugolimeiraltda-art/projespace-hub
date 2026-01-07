@@ -126,18 +126,18 @@ const handler = async (req: Request): Promise<Response> => {
           );
         }
 
-        // Update profile with additional data
-        const profileUpdate: Record<string, string | string[] | undefined> = {};
+        // Update profile with additional data and mark password change required
+        const profileUpdate: Record<string, string | string[] | boolean | undefined> = {
+          must_change_password: true, // Force password change on first login
+        };
         if (filial) profileUpdate.filial = filial;
         if (filiais && filiais.length > 0) profileUpdate.filiais = filiais;
         if (telefone) profileUpdate.telefone = telefone;
 
-        if (Object.keys(profileUpdate).length > 0) {
-          await supabaseAdmin
-            .from("profiles")
-            .update(profileUpdate)
-            .eq("id", newUser.user.id);
-        }
+        await supabaseAdmin
+          .from("profiles")
+          .update(profileUpdate)
+          .eq("id", newUser.user.id);
 
         // Update role if not default
         if (role !== "vendedor") {
@@ -223,6 +223,12 @@ const handler = async (req: Request): Promise<Response> => {
             { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
           );
         }
+
+        // Mark user as needing to change password on next login
+        await supabaseAdmin
+          .from("profiles")
+          .update({ must_change_password: true })
+          .eq("id", userId);
 
         return new Response(
           JSON.stringify({ success: true }),

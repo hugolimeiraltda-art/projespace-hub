@@ -22,6 +22,7 @@ export type Database = {
           filial: string | null
           foto: string | null
           id: string
+          must_change_password: boolean
           nome: string
           telefone: string | null
           updated_at: string
@@ -33,6 +34,7 @@ export type Database = {
           filial?: string | null
           foto?: string | null
           id: string
+          must_change_password?: boolean
           nome: string
           telefone?: string | null
           updated_at?: string
@@ -44,6 +46,7 @@ export type Database = {
           filial?: string | null
           foto?: string | null
           id?: string
+          must_change_password?: boolean
           nome?: string
           telefone?: string | null
           updated_at?: string

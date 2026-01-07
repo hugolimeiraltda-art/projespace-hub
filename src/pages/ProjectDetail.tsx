@@ -91,73 +91,261 @@ export default function ProjectDetail() {
     }
   };
 
-  const handleDownloadPDF = () => {
+  const handleDownloadPDF = async () => {
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
     let yPosition = 20;
 
-    // Title
-    doc.setFontSize(18);
+    const checkNewPage = (neededSpace: number = 30) => {
+      if (yPosition > 280 - neededSpace) {
+        doc.addPage();
+        yPosition = 20;
+      }
+    };
+
+    const addSectionTitle = (title: string) => {
+      checkNewPage(20);
+      yPosition += 5;
+      doc.setFillColor(245, 245, 245);
+      doc.rect(15, yPosition - 5, pageWidth - 30, 10, 'F');
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(50, 50, 50);
+      doc.text(title, 20, yPosition + 2);
+      yPosition += 15;
+      doc.setTextColor(0, 0, 0);
+    };
+
+    const addField = (label: string, value: string, inline = true) => {
+      checkNewPage();
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'bold');
+      doc.text(`${label}:`, 20, yPosition);
+      doc.setFont('helvetica', 'normal');
+      if (inline) {
+        doc.text(value || '-', 75, yPosition);
+        yPosition += 7;
+      } else {
+        yPosition += 6;
+        const lines = doc.splitTextToSize(value || '-', pageWidth - 45);
+        lines.forEach((line: string) => {
+          checkNewPage();
+          doc.text(line, 25, yPosition);
+          yPosition += 5;
+        });
+        yPosition += 2;
+      }
+    };
+
+    // Header
+    doc.setFontSize(20);
     doc.setFont('helvetica', 'bold');
     doc.text('DETALHES DO PROJETO', pageWidth / 2, yPosition, { align: 'center' });
-    yPosition += 15;
+    yPosition += 12;
 
-    // Project name
-    doc.setFontSize(14);
+    doc.setFontSize(16);
     doc.text(project.cliente_condominio_nome, pageWidth / 2, yPosition, { align: 'center' });
-    yPosition += 15;
+    yPosition += 10;
 
-    // Line separator
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Gerado em: ${format(new Date(), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}`, pageWidth / 2, yPosition, { align: 'center' });
+    yPosition += 10;
+
     doc.setLineWidth(0.5);
     doc.line(20, yPosition, pageWidth - 20, yPosition);
     yPosition += 10;
 
-    // Info section
-    doc.setFontSize(11);
-    doc.setFont('helvetica', 'normal');
-    
-    const addField = (label: string, value: string) => {
-      if (yPosition > 270) {
-        doc.addPage();
-        yPosition = 20;
-      }
-      doc.setFont('helvetica', 'bold');
-      doc.text(`${label}:`, 20, yPosition);
-      doc.setFont('helvetica', 'normal');
-      doc.text(value || '-', 70, yPosition);
-      yPosition += 8;
-    };
-
+    // Basic Info Section
+    addSectionTitle('INFORMAÇÕES GERAIS');
     addField('Vendedor', project.vendedor_nome);
     addField('Email', project.vendedor_email);
     addField('Cidade', `${project.cliente_cidade}, ${project.cliente_estado}`);
     addField('Endereço', project.endereco_condominio);
     addField('Status', STATUS_LABELS[project.status]);
     if (project.engineering_status) {
-      addField('Engenharia', ENGINEERING_STATUS_LABELS[project.engineering_status]);
+      addField('Status Engenharia', ENGINEERING_STATUS_LABELS[project.engineering_status]);
     }
     if (project.prazo_entrega_projeto) {
-      addField('Prazo', format(parseISO(project.prazo_entrega_projeto), "dd/MM/yyyy", { locale: ptBR }));
+      addField('Prazo de Entrega', format(parseISO(project.prazo_entrega_projeto), "dd/MM/yyyy", { locale: ptBR }));
+    }
+    if (project.data_assembleia) {
+      addField('Data Assembleia', format(parseISO(project.data_assembleia), "dd/MM/yyyy", { locale: ptBR }));
     }
 
-    yPosition += 10;
-
-    // Email content section
-    if (project.email_padrao_gerado) {
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(12);
-      doc.text('CONTEÚDO DO E-MAIL', 20, yPosition);
-      yPosition += 8;
-
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(10);
+    // TAP Section
+    if (tap) {
+      addSectionTitle('RESUMO DO TAP');
+      addField('Portaria Virtual', PORTARIA_VIRTUAL_LABELS[tap.portaria_virtual_atendimento_app]);
+      addField('Nº de Blocos', String(tap.numero_blocos));
+      addField('Interfonia', tap.interfonia ? 'Sim' : 'Não');
+      addField('CFTV Elevador', CFTV_ELEVADOR_LABELS[tap.cftv_elevador_possui]);
+      addField('Croqui Confirmado', tap.marcacao_croqui_confirmada ? 'Sim' : 'Não');
       
+      if (tap.controle_acessos_pedestre_descricao) {
+        addField('Controle Pedestre', tap.controle_acessos_pedestre_descricao, false);
+      }
+      if (tap.controle_acessos_veiculo_descricao) {
+        addField('Controle Veículo', tap.controle_acessos_veiculo_descricao, false);
+      }
+      if (tap.alarme_descricao) {
+        addField('Alarme', tap.alarme_descricao, false);
+      }
+      if (tap.cftv_dvr_descricao) {
+        addField('CFTV/DVR', tap.cftv_dvr_descricao, false);
+      }
+      if (tap.info_adicionais) {
+        addField('Informações Adicionais', tap.info_adicionais, false);
+      }
+    }
+
+    // Email Content Section
+    if (project.email_padrao_gerado) {
+      addSectionTitle('CONTEÚDO DO E-MAIL');
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'normal');
       const emailLines = doc.splitTextToSize(project.email_padrao_gerado, pageWidth - 40);
       emailLines.forEach((line: string) => {
-        if (yPosition > 280) {
-          doc.addPage();
-          yPosition = 20;
+        checkNewPage();
+        doc.text(line, 20, yPosition);
+        yPosition += 5;
+      });
+    }
+
+    // Attachments Section
+    if (project.attachments.length > 0) {
+      addSectionTitle('ANEXOS');
+      
+      // List attachments
+      doc.setFontSize(10);
+      project.attachments.forEach((att, index) => {
+        checkNewPage();
+        doc.setFont('helvetica', 'normal');
+        doc.text(`${index + 1}. ${att.nome_arquivo}`, 25, yPosition);
+        doc.setFont('helvetica', 'italic');
+        doc.setFontSize(8);
+        doc.text(`(${ATTACHMENT_TYPE_LABELS[att.tipo]})`, 25, yPosition + 4);
+        doc.setFontSize(10);
+        yPosition += 12;
+      });
+
+      // Try to embed images
+      const imageAttachments = project.attachments.filter(att => 
+        att.nome_arquivo.match(/\.(jpg|jpeg|png|gif|webp)$/i) ||
+        att.tipo === 'IMAGENS' || att.tipo === 'FOTOS_EQUIP_APROVEITADOS'
+      );
+
+      if (imageAttachments.length > 0) {
+        addSectionTitle('IMAGENS ANEXADAS');
+        
+        for (const att of imageAttachments) {
+          try {
+            // For blob URLs or data URLs
+            if (att.arquivo_url.startsWith('blob:') || att.arquivo_url.startsWith('data:')) {
+              checkNewPage(70);
+              doc.setFontSize(9);
+              doc.setFont('helvetica', 'italic');
+              doc.text(`${att.nome_arquivo}`, 20, yPosition);
+              yPosition += 5;
+              
+              // Try to add image
+              try {
+                const img = new Image();
+                img.crossOrigin = 'anonymous';
+                await new Promise<void>((resolve, reject) => {
+                  img.onload = () => resolve();
+                  img.onerror = () => reject();
+                  img.src = att.arquivo_url;
+                });
+                
+                const canvas = document.createElement('canvas');
+                const maxWidth = 170;
+                const maxHeight = 100;
+                let width = img.width;
+                let height = img.height;
+                
+                if (width > maxWidth) {
+                  height = (height * maxWidth) / width;
+                  width = maxWidth;
+                }
+                if (height > maxHeight) {
+                  width = (width * maxHeight) / height;
+                  height = maxHeight;
+                }
+                
+                canvas.width = img.width;
+                canvas.height = img.height;
+                const ctx = canvas.getContext('2d');
+                ctx?.drawImage(img, 0, 0);
+                const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+                
+                checkNewPage(height / 2 + 10);
+                doc.addImage(dataUrl, 'JPEG', 20, yPosition, width / 2, height / 2);
+                yPosition += height / 2 + 10;
+              } catch {
+                doc.text('[Imagem não disponível para exibição no PDF]', 25, yPosition);
+                yPosition += 10;
+              }
+            }
+          } catch {
+            // Skip image if can't be processed
+          }
         }
+      }
+    }
+
+    // Comments Section
+    if (project.comments.length > 0) {
+      addSectionTitle('COMENTÁRIOS');
+      
+      project.comments.forEach((comment) => {
+        checkNewPage(25);
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'bold');
+        doc.text(comment.user_name, 20, yPosition);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(100, 100, 100);
+        doc.text(` - ${format(parseISO(comment.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}`, 20 + doc.getTextWidth(comment.user_name), yPosition);
+        doc.setTextColor(0, 0, 0);
+        if (comment.is_internal) {
+          doc.setTextColor(200, 100, 0);
+          doc.text(' [Interno]', 20 + doc.getTextWidth(comment.user_name + ` - ${format(parseISO(comment.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}`), yPosition);
+          doc.setTextColor(0, 0, 0);
+        }
+        yPosition += 5;
+        
+        const commentLines = doc.splitTextToSize(comment.content, pageWidth - 50);
+        commentLines.forEach((line: string) => {
+          checkNewPage();
+          doc.text(line, 25, yPosition);
+          yPosition += 4;
+        });
+        yPosition += 5;
+      });
+    }
+
+    // Status History Section
+    if (project.status_history.length > 0) {
+      addSectionTitle('HISTÓRICO DE STATUS');
+      
+      project.status_history.forEach((change) => {
+        checkNewPage();
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'normal');
+        const dateStr = format(parseISO(change.created_at), "dd/MM/yyyy HH:mm", { locale: ptBR });
+        doc.text(`• ${dateStr} - ${change.user_name}: ${STATUS_LABELS[change.old_status]} → ${STATUS_LABELS[change.new_status]}`, 20, yPosition);
+        yPosition += 6;
+      });
+    }
+
+    // Observations
+    if (project.observacoes_gerais) {
+      addSectionTitle('OBSERVAÇÕES GERAIS');
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      const obsLines = doc.splitTextToSize(project.observacoes_gerais, pageWidth - 40);
+      obsLines.forEach((line: string) => {
+        checkNewPage();
         doc.text(line, 20, yPosition);
         yPosition += 5;
       });
@@ -167,8 +355,8 @@ export default function ProjectDetail() {
     doc.save(`projeto_${project.cliente_condominio_nome.replace(/\s+/g, '_')}.pdf`);
 
     toast({
-      title: 'Download iniciado',
-      description: 'O PDF do projeto foi baixado com sucesso.',
+      title: 'PDF gerado com sucesso!',
+      description: 'O arquivo completo do projeto foi baixado.',
     });
   };
 

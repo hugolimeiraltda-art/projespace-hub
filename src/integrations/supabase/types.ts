@@ -232,6 +232,12 @@ export type Database = {
             | Database["public"]["Enums"]["engineering_status"]
             | null
           id: string
+          implantacao_assigned_to: string | null
+          implantacao_completed_at: string | null
+          implantacao_started_at: string | null
+          implantacao_status:
+            | Database["public"]["Enums"]["implantacao_status"]
+            | null
           laudo_projeto: string | null
           numero_projeto: number
           observacoes: string | null
@@ -259,6 +265,12 @@ export type Database = {
             | Database["public"]["Enums"]["engineering_status"]
             | null
           id?: string
+          implantacao_assigned_to?: string | null
+          implantacao_completed_at?: string | null
+          implantacao_started_at?: string | null
+          implantacao_status?:
+            | Database["public"]["Enums"]["implantacao_status"]
+            | null
           laudo_projeto?: string | null
           numero_projeto?: number
           observacoes?: string | null
@@ -286,6 +298,12 @@ export type Database = {
             | Database["public"]["Enums"]["engineering_status"]
             | null
           id?: string
+          implantacao_assigned_to?: string | null
+          implantacao_completed_at?: string | null
+          implantacao_started_at?: string | null
+          implantacao_status?:
+            | Database["public"]["Enums"]["implantacao_status"]
+            | null
           laudo_projeto?: string | null
           numero_projeto?: number
           observacoes?: string | null
@@ -408,7 +426,12 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "admin" | "vendedor" | "projetos" | "gerente_comercial"
+      app_role:
+        | "admin"
+        | "vendedor"
+        | "projetos"
+        | "gerente_comercial"
+        | "implantacao"
       attachment_type:
         | "CROQUI"
         | "PLANTA_BAIXA"
@@ -421,6 +444,7 @@ export type Database = {
         | "LISTA_EQUIPAMENTOS"
         | "LISTA_ATIVIDADES"
       engineering_status: "EM_RECEBIMENTO" | "EM_PRODUCAO" | "CONCLUIDO"
+      implantacao_status: "A_EXECUTAR" | "EM_EXECUCAO" | "CONCLUIDO_IMPLANTACAO"
       project_status:
         | "RASCUNHO"
         | "ENVIADO"
@@ -557,7 +581,13 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "vendedor", "projetos", "gerente_comercial"],
+      app_role: [
+        "admin",
+        "vendedor",
+        "projetos",
+        "gerente_comercial",
+        "implantacao",
+      ],
       attachment_type: [
         "CROQUI",
         "PLANTA_BAIXA",
@@ -571,6 +601,11 @@ export const Constants = {
         "LISTA_ATIVIDADES",
       ],
       engineering_status: ["EM_RECEBIMENTO", "EM_PRODUCAO", "CONCLUIDO"],
+      implantacao_status: [
+        "A_EXECUTAR",
+        "EM_EXECUCAO",
+        "CONCLUIDO_IMPLANTACAO",
+      ],
       project_status: [
         "RASCUNHO",
         "ENVIADO",

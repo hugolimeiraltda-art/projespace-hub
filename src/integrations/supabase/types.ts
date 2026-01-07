@@ -607,9 +607,42 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      profiles_summary: {
+        Row: {
+          filiais: string[] | null
+          filial: string | null
+          foto: string | null
+          id: string | null
+          nome: string | null
+        }
+        Insert: {
+          filiais?: string[] | null
+          filial?: string | null
+          foto?: string | null
+          id?: string | null
+          nome?: string | null
+        }
+        Update: {
+          filiais?: string[] | null
+          filial?: string | null
+          foto?: string | null
+          id?: string | null
+          nome?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
+      can_gerente_view_project: {
+        Args: { project_user_id: string }
+        Returns: boolean
+      }
+      can_gerente_view_sale_form: {
+        Args: { sf_filial: string; sf_project_id: string }
+        Returns: boolean
+      }
+      get_user_filiais: { Args: { _user_id: string }; Returns: string[] }
+      get_user_filial: { Args: { _user_id: string }; Returns: string }
       get_user_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]

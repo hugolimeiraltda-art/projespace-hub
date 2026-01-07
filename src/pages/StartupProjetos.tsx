@@ -5,6 +5,7 @@ import { Layout } from '@/components/Layout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -257,9 +258,9 @@ export default function StartupProjetos() {
           </Card>
         </div>
 
-        {/* Search */}
-        <div className="mb-6">
-          <div className="relative max-w-md">
+        {/* Search and Filter */}
+        <div className="mb-6 flex flex-col sm:flex-row gap-4">
+          <div className="relative flex-1 max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
               placeholder="Buscar por nome, vendedor ou número..."
@@ -268,6 +269,22 @@ export default function StartupProjetos() {
               className="pl-10"
             />
           </div>
+          
+          <Select
+            value={statusFilter}
+            onValueChange={(value) => setStatusFilter(value as ImplantacaoStatus | 'TODOS')}
+          >
+            <SelectTrigger className="w-full sm:w-[200px]">
+              <Filter className="w-4 h-4 mr-2" />
+              <SelectValue placeholder="Filtrar por status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="TODOS">Todos os status</SelectItem>
+              <SelectItem value="A_EXECUTAR">A Executar</SelectItem>
+              <SelectItem value="EM_EXECUCAO">Em Execução</SelectItem>
+              <SelectItem value="CONCLUIDO_IMPLANTACAO">Concluído</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         {/* Projects List */}

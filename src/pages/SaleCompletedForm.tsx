@@ -76,17 +76,19 @@ export default function SaleCompletedForm() {
         // Initialize the sale form - this will create it in the database with pre-filled data
         await initSaleForm(project.id);
         
-        // Set initial form data locally while waiting for refresh
+        // Set initial form data locally while waiting for refresh (including user's filial)
         const preFilledData: Partial<SaleFormType> = {
           nome_condominio: project.cliente_condominio_nome,
           vendedor_nome: project.vendedor_nome,
           vendedor_email: project.vendedor_email,
           qtd_blocos: project.tap_form?.numero_blocos || undefined,
           produto: 'Portaria Digital',
+          filial: user?.filial || '',
         };
         setFormData(preFilledData);
       } else if (project?.sale_form) {
         // If sale form exists, load it but ensure project data is up-to-date
+        // Also fill filial from user if not already set
         const updatedFormData = {
           ...project.sale_form,
           nome_condominio: project.sale_form.nome_condominio || project.cliente_condominio_nome,
@@ -94,13 +96,19 @@ export default function SaleCompletedForm() {
           vendedor_email: project.vendedor_email,
           qtd_blocos: project.sale_form.qtd_blocos || project.tap_form?.numero_blocos || undefined,
           produto: project.sale_form.produto || 'Portaria Digital',
+          filial: project.sale_form.filial || user?.filial || '',
         };
         setFormData(updatedFormData);
+        
+        // If filial was not set in database, update it
+        if (!project.sale_form.filial && user?.filial) {
+          updateSaleForm(project.id, { filial: user.filial });
+        }
       }
     };
     
     loadFormData();
-  }, [project, initSaleForm]);
+  }, [project, initSaleForm, user?.filial, updateSaleForm]);
 
   if (!project) {
     return (

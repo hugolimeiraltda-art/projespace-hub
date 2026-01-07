@@ -93,9 +93,11 @@ export default function SaleCompletedForm() {
   }
 
   const isLocked = !!project.sale_locked_at;
+  const isReadOnly = project.sale_status === 'CONCLUIDO';
+  const isDisabled = isLocked || isReadOnly;
   
   const updateField = <K extends keyof SaleFormType>(field: K, value: SaleFormType[K]) => {
-    if (isLocked) return;
+    if (isLocked || isReadOnly) return;
     setFormData(prev => ({ ...prev, [field]: value }));
     updateSaleForm(project.id, { [field]: value });
   };
@@ -268,9 +270,9 @@ export default function SaleCompletedForm() {
       <div 
         className={cn(
           "border-2 border-dashed rounded-lg p-4 text-center cursor-pointer transition-colors",
-          isLocked ? "opacity-50 cursor-not-allowed" : "hover:border-primary hover:bg-accent"
+          isDisabled ? "opacity-50 cursor-not-allowed" : "hover:border-primary hover:bg-accent"
         )}
-        onClick={() => !isLocked && document.getElementById(`upload-${type}`)?.click()}
+        onClick={() => !isDisabled && document.getElementById(`upload-${type}`)?.click()}
       >
         <input
           id={`upload-${type}`}
@@ -278,7 +280,7 @@ export default function SaleCompletedForm() {
           accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.dwg"
           multiple
           className="hidden"
-          disabled={isLocked}
+          disabled={isDisabled}
           onChange={(e) => {
             const files = e.target.files;
             if (files) {
@@ -317,7 +319,7 @@ export default function SaleCompletedForm() {
                 <Input
                   value={formData.nome_condominio || ''}
                   onChange={(e) => updateField('nome_condominio', e.target.value)}
-                  disabled={isLocked}
+                  disabled={isDisabled}
                 />
               </div>
               <div className="space-y-2">
@@ -325,7 +327,7 @@ export default function SaleCompletedForm() {
                 <Input
                   value={formData.filial || ''}
                   onChange={(e) => updateField('filial', e.target.value)}
-                  disabled={isLocked}
+                  disabled={isDisabled}
                 />
               </div>
               <div className="space-y-2">
@@ -335,7 +337,7 @@ export default function SaleCompletedForm() {
                   min="1"
                   value={formData.qtd_apartamentos || ''}
                   onChange={(e) => updateField('qtd_apartamentos', parseInt(e.target.value) || 0)}
-                  disabled={isLocked}
+                  disabled={isDisabled}
                 />
               </div>
               <div className="space-y-2">
@@ -345,7 +347,7 @@ export default function SaleCompletedForm() {
                   min="1"
                   value={formData.qtd_blocos || ''}
                   onChange={(e) => updateField('qtd_blocos', parseInt(e.target.value) || 0)}
-                  disabled={isLocked}
+                  disabled={isDisabled}
                 />
               </div>
               <div className="space-y-2">
@@ -1109,13 +1111,17 @@ export default function SaleCompletedForm() {
             <ArrowLeft className="w-5 h-5" />
           </Button>
           <div className="flex-1">
-            <h1 className="text-2xl font-bold text-foreground">Venda Concluída (Form 2)</h1>
+            <h1 className="text-2xl font-bold text-foreground">
+              {isReadOnly ? 'Formulário de Venda' : 'Venda Concluída (Form 2)'}
+            </h1>
             <p className="text-muted-foreground">{project.cliente_condominio_nome}</p>
           </div>
-          {isLocked && (
+          {(isLocked || isReadOnly) && (
             <div className="flex items-center gap-2 text-status-approved">
               <Lock className="w-4 h-4" />
-              <span className="text-sm font-medium">Formulário Bloqueado</span>
+              <span className="text-sm font-medium">
+                {isReadOnly ? 'Modo Visualização' : 'Formulário Bloqueado'}
+              </span>
             </div>
           )}
         </div>
@@ -1181,7 +1187,7 @@ export default function SaleCompletedForm() {
           </Button>
 
           <div className="flex gap-2">
-            {!isLocked && (
+            {!isLocked && !isReadOnly && (
               <Button variant="outline" onClick={handleSaveDraft}>
                 <Save className="w-4 h-4 mr-2" />
                 Salvar Rascunho
@@ -1189,7 +1195,7 @@ export default function SaleCompletedForm() {
             )}
             
             {currentSection === SECTIONS.length - 1 ? (
-              !isLocked && (
+              !isLocked && !isReadOnly && (
                 <Button onClick={handleSubmit} className="bg-status-approved hover:bg-status-approved/90">
                   <Send className="w-4 h-4 mr-2" />
                   Enviar Venda Concluída

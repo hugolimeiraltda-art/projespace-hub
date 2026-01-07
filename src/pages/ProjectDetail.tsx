@@ -772,13 +772,19 @@ export default function ProjectDetail() {
                 ) : (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {project.attachments.filter(a => !['PLANTA_CROQUI_DEVOLUCAO', 'LISTA_EQUIPAMENTOS', 'LISTA_ATIVIDADES'].includes(a.tipo)).map(att => (
-                      <div key={att.id} className="flex items-center gap-3 p-3 bg-secondary rounded-lg">
+                      <a 
+                        key={att.id} 
+                        href={att.arquivo_url} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-3 p-3 bg-secondary rounded-lg hover:bg-secondary/80 transition-colors cursor-pointer"
+                      >
                         <FileText className="w-5 h-5 text-muted-foreground" />
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium truncate">{att.nome_arquivo}</p>
                           <p className="text-xs text-muted-foreground">{ATTACHMENT_TYPE_LABELS[att.tipo]}</p>
                         </div>
-                      </div>
+                      </a>
                     ))}
                   </div>
                 )}

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProjects } from '@/contexts/ProjectsContext';
+import { useFileUpload } from '@/hooks/useFileUpload';
 import { Layout } from '@/components/Layout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox';
 import { Switch } from '@/components/ui/switch';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
 import {
   Building,
@@ -27,7 +29,8 @@ import {
   Send,
   ChevronLeft,
   ChevronRight,
-  Info
+  Info,
+  Loader2
 } from 'lucide-react';
 import {
   TapForm,
@@ -60,6 +63,7 @@ const ESTADOS_BR = [
 export default function NewProject() {
   const { user } = useAuth();
   const { addProject, addAttachment } = useProjects();
+  const { uploadFile, isUploading, uploadProgress } = useFileUpload();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -92,8 +96,8 @@ export default function NewProject() {
   const [infoCronograma, setInfoCronograma] = useState('');
   const [infoAdicionais, setInfoAdicionais] = useState('');
 
-  // Mock attachments (in real app, would upload to storage)
-  const [attachments, setAttachments] = useState<{ tipo: AttachmentType; nome: string }[]>([]);
+  // Attachments with actual file references
+  const [attachments, setAttachments] = useState<{ tipo: AttachmentType; nome: string; file: File }[]>([]);
 
   const hasCroquiAttachment = attachments.some(a => a.tipo === 'CROQUI');
   const hasPlantaBaixa = attachments.some(a => a.tipo === 'PLANTA_BAIXA');
@@ -113,9 +117,8 @@ export default function NewProject() {
     );
   };
 
-  const handleMockAttachment = (tipo: AttachmentType) => {
-    const nome = `arquivo_${tipo.toLowerCase()}_${Date.now()}.pdf`;
-    setAttachments(prev => [...prev, { tipo, nome }]);
+  const handleFileAttachment = (tipo: AttachmentType, file: File) => {
+    setAttachments(prev => [...prev, { tipo, nome: file.name, file }]);
     toast({
       title: 'Arquivo adicionado',
       description: `${ATTACHMENT_TYPE_LABELS[tipo]} foi adicionado com sucesso.`,
@@ -203,13 +206,18 @@ ${infoAdicionais || 'Não informado'}`;
         throw new Error('Failed to create project');
       }
 
-      // Add attachments
+      // Upload and add attachments
       for (const att of attachments) {
-        await addAttachment(projectId, {
-          tipo: att.tipo,
-          arquivo_url: '/placeholder.svg',
-          nome_arquivo: att.nome,
-        });
+        const uploadResult = await uploadFile(att.file, projectId, att.tipo.toLowerCase());
+        if (uploadResult) {
+          await addAttachment(projectId, {
+            tipo: att.tipo,
+            arquivo_url: uploadResult.url,
+            nome_arquivo: att.nome,
+          });
+        } else {
+          console.error(`Failed to upload file: ${att.nome}`);
+        }
       }
 
       toast({
@@ -451,15 +459,14 @@ ${infoAdicionais || 'Não informado'}`;
                   onChange={(e) => {
                     const file = e.target.files?.[0];
                     if (file) {
-                      const nome = file.name;
                       setAttachments(prev => {
                         // Remove croqui anterior se existir
                         const filtered = prev.filter(a => a.tipo !== 'CROQUI');
-                        return [...filtered, { tipo: 'CROQUI', nome }];
+                        return [...filtered, { tipo: 'CROQUI' as AttachmentType, nome: file.name, file }];
                       });
                       toast({
                         title: 'Croqui anexado',
-                        description: `${nome} foi adicionado com sucesso.`,
+                        description: `${file.name} foi adicionado com sucesso.`,
                       });
                     }
                     e.target.value = '';
@@ -589,15 +596,30 @@ ${infoAdicionais || 'Não informado'}`;
                       {tipo === 'CROQUI' && '* Obrigatório'}
                       {tipo === 'PLANTA_BAIXA' && 'Recomendado'}
                     </p>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="w-full"
-                      onClick={() => handleMockAttachment(tipo)}
-                    >
-                      <Paperclip className="w-4 h-4 mr-2" />
-                      Adicionar
-                    </Button>
+                    <div>
+                      <input
+                        id={`file-upload-${tipo}`}
+                        type="file"
+                        accept="image/*,.pdf,.doc,.docx,.dwg"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            handleFileAttachment(tipo, file);
+                          }
+                          e.target.value = '';
+                        }}
+                      />
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full"
+                        onClick={() => document.getElementById(`file-upload-${tipo}`)?.click()}
+                      >
+                        <Paperclip className="w-4 h-4 mr-2" />
+                        Adicionar
+                      </Button>
+                    </div>
                   </CardContent>
                 </Card>
               ))}

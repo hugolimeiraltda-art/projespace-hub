@@ -607,7 +607,30 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      profiles_summary: {
+        Row: {
+          filiais: string[] | null
+          filial: string | null
+          foto: string | null
+          id: string | null
+          nome: string | null
+        }
+        Insert: {
+          filiais?: string[] | null
+          filial?: string | null
+          foto?: string | null
+          id?: string | null
+          nome?: string | null
+        }
+        Update: {
+          filiais?: string[] | null
+          filial?: string | null
+          foto?: string | null
+          id?: string | null
+          nome?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       get_user_filiais: { Args: { _user_id: string }; Returns: string[] }

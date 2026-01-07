@@ -21,8 +21,8 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
-function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, isLoading } = useAuth();
+function ProtectedRoute({ children, allowPasswordChange = false }: { children: React.ReactNode; allowPasswordChange?: boolean }) {
+  const { isAuthenticated, isLoading, user } = useAuth();
   
   if (isLoading) {
     return (
@@ -34,6 +34,11 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
+  }
+
+  // Force password change if required (unless we're already on the password change page)
+  if (user?.must_change_password && !allowPasswordChange) {
+    return <Navigate to="/alterar-senha" replace />;
   }
   
   return <>{children}</>;
@@ -50,7 +55,7 @@ function AppRoutes() {
       />
       <Route 
         path="/alterar-senha" 
-        element={isAuthenticated ? <ChangePassword /> : <Navigate to="/login" replace />} 
+        element={<ProtectedRoute allowPasswordChange><ChangePassword /></ProtectedRoute>} 
       />
       <Route 
         path="/" 

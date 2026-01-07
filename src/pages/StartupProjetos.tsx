@@ -144,14 +144,16 @@ export default function StartupProjetos() {
       project.vendedor_nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
       String(project.numero_projeto).includes(searchTerm);
     
-    const matchesStatus = statusFilter === 'TODOS' || project.implantacao_status === statusFilter;
+    // Treat null implantacao_status as 'A_EXECUTAR'
+    const effectiveStatus = project.implantacao_status || 'A_EXECUTAR';
+    const matchesStatus = statusFilter === 'TODOS' || effectiveStatus === statusFilter;
     
     return matchesSearch && matchesStatus;
   });
 
   const statusCounts = {
     TODOS: projects.length,
-    A_EXECUTAR: projects.filter(p => p.implantacao_status === 'A_EXECUTAR').length,
+    A_EXECUTAR: projects.filter(p => !p.implantacao_status || p.implantacao_status === 'A_EXECUTAR').length,
     EM_EXECUCAO: projects.filter(p => p.implantacao_status === 'EM_EXECUCAO').length,
     CONCLUIDO_IMPLANTACAO: projects.filter(p => p.implantacao_status === 'CONCLUIDO_IMPLANTACAO').length,
   };

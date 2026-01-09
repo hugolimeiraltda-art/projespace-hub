@@ -22,7 +22,7 @@ interface AuthContextType {
   isLoading: boolean;
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
-  changePassword: (newPassword: string) => Promise<boolean>;
+  changePassword: (newPassword: string) => Promise<{ success: boolean; error?: string }>;
   updateProfile: (data: { telefone?: string; filial?: string; foto?: string }) => Promise<boolean>;
   getAllUsers: () => Promise<User[]>;
   addUser: (data: { nome: string; email: string; password: string; role: UserRole; filial?: string; filiais?: string[]; telefone?: string }) => Promise<{ success: boolean; error?: string }>;
@@ -139,12 +139,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setSession(null);
   };
 
-  const changePassword = async (newPassword: string): Promise<boolean> => {
-    if (!user) return false;
+  const changePassword = async (newPassword: string): Promise<{ success: boolean; error?: string }> => {
+    if (!user) return { success: false, error: 'Usuário não autenticado' };
     
     try {
       const { error: authError } = await supabase.auth.updateUser({ password: newPassword });
-      if (authError) return false;
+      
+      if (authError) {
+        console.error('Auth error changing password:', authError);
+        
+        // Handle specific error messages
+        if (authError.message.includes('weak_password') || authError.message.includes('should contain')) {
+          return { success: false, error: 'A senha deve conter letras maiúsculas, minúsculas, números e caracteres especiais (!@#$%^&*)' };
+        }
+        if (authError.message.includes('same_password') || authError.message.includes('different from the old password')) {
+          return { success: false, error: 'A nova senha deve ser diferente da senha atual' };
+        }
+        if (authError.status === 422) {
+          return { success: false, error: 'Senha muito fraca. Use letras maiúsculas, minúsculas, números e caracteres especiais.' };
+        }
+        
+        return { success: false, error: authError.message };
+      }
       
       // Mark password as changed in profile
       const { error: profileError } = await supabase
@@ -154,14 +170,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       if (profileError) {
         console.error('Error updating must_change_password:', profileError);
-        return false;
+        // Password was changed but profile update failed - still consider it success
       }
       
       // Update local user state
       setUser({ ...user, must_change_password: false });
-      return true;
-    } catch {
-      return false;
+      return { success: true };
+    } catch (err) {
+      console.error('Exception changing password:', err);
+      return { success: false, error: 'Erro inesperado ao alterar senha' };
     }
   };
 

@@ -77,13 +77,13 @@ export default function MeuPerfil() {
     e.preventDefault();
     setPasswordError('');
 
-    if (novaSenha.length < 6) {
-      setPasswordError('A nova senha deve ter pelo menos 6 caracteres');
+    if (novaSenha.length < 8) {
+      setPasswordError('A nova senha deve ter pelo menos 8 caracteres');
       return;
     }
 
-    if (novaSenha === '123456') {
-      setPasswordError('Escolha uma senha diferente de 123456');
+    if (!/[a-z]/.test(novaSenha) || !/[A-Z]/.test(novaSenha) || !/[0-9]/.test(novaSenha) || !/[!@#$%^&*()_+\-=\[\]{}|;:,.<>?]/.test(novaSenha)) {
+      setPasswordError('A senha deve conter letras maiúsculas, minúsculas, números e caracteres especiais');
       return;
     }
 
@@ -94,15 +94,19 @@ export default function MeuPerfil() {
 
     setIsLoading(true);
     try {
-      await changePassword(novaSenha);
-      toast({
-        title: 'Sucesso',
-        description: 'Senha alterada com sucesso!',
-      });
-      setSenhaAtual('');
-      setNovaSenha('');
-      setConfirmarSenha('');
-      setShowPasswordForm(false);
+      const result = await changePassword(novaSenha);
+      if (result.success) {
+        toast({
+          title: 'Sucesso',
+          description: 'Senha alterada com sucesso!',
+        });
+        setSenhaAtual('');
+        setNovaSenha('');
+        setConfirmarSenha('');
+        setShowPasswordForm(false);
+      } else {
+        setPasswordError(result.error || 'Erro ao alterar senha');
+      }
     } catch {
       setPasswordError('Erro ao alterar senha');
     } finally {

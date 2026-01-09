@@ -18,11 +18,23 @@ export default function ChangePassword() {
   const { toast } = useToast();
 
   const validatePassword = (password: string): string | null => {
-    if (password.length < 6) {
-      return 'A senha deve ter pelo menos 6 caracteres';
+    if (password.length < 8) {
+      return 'A senha deve ter pelo menos 8 caracteres';
     }
-    if (password === '123456') {
+    if (password === '123456' || password === '12345678') {
       return 'Escolha uma senha diferente da senha inicial';
+    }
+    if (!/[a-z]/.test(password)) {
+      return 'A senha deve conter pelo menos uma letra minúscula';
+    }
+    if (!/[A-Z]/.test(password)) {
+      return 'A senha deve conter pelo menos uma letra maiúscula';
+    }
+    if (!/[0-9]/.test(password)) {
+      return 'A senha deve conter pelo menos um número';
+    }
+    if (!/[!@#$%^&*()_+\-=\[\]{}|;:,.<>?]/.test(password)) {
+      return 'A senha deve conter pelo menos um caractere especial (!@#$%^&*)';
     }
     return null;
   };
@@ -47,8 +59,8 @@ export default function ChangePassword() {
     setIsLoading(true);
 
     try {
-      const success = await changePassword(newPassword);
-      if (success) {
+      const result = await changePassword(newPassword);
+      if (result.success) {
         toast({
           title: 'Senha alterada com sucesso!',
           description: 'Faça login novamente com sua nova senha.',
@@ -57,7 +69,7 @@ export default function ChangePassword() {
         await logout();
         navigate('/login');
       } else {
-        setError('Erro ao alterar senha. Tente novamente.');
+        setError(result.error || 'Erro ao alterar senha. Tente novamente.');
       }
     } catch {
       setError('Erro ao alterar senha. Tente novamente.');
@@ -108,7 +120,7 @@ export default function ChangePassword() {
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
                   required
-                  minLength={6}
+                  minLength={8}
                 />
               </div>
 
@@ -121,7 +133,7 @@ export default function ChangePassword() {
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   required
-                  minLength={6}
+                  minLength={8}
                 />
               </div>
 
@@ -130,15 +142,33 @@ export default function ChangePassword() {
                 <p className="text-xs font-medium text-secondary-foreground mb-2">Requisitos da senha:</p>
                 <div className="space-y-1">
                   <div className="flex items-center gap-2 text-xs">
-                    <CheckCircle className={`w-3 h-3 ${newPassword.length >= 6 ? 'text-status-approved' : 'text-muted-foreground'}`} />
-                    <span className={newPassword.length >= 6 ? 'text-status-approved' : 'text-muted-foreground'}>
-                      Mínimo 6 caracteres
+                    <CheckCircle className={`w-3 h-3 ${newPassword.length >= 8 ? 'text-status-approved' : 'text-muted-foreground'}`} />
+                    <span className={newPassword.length >= 8 ? 'text-status-approved' : 'text-muted-foreground'}>
+                      Mínimo 8 caracteres
                     </span>
                   </div>
                   <div className="flex items-center gap-2 text-xs">
-                    <CheckCircle className={`w-3 h-3 ${newPassword && newPassword !== '123456' ? 'text-status-approved' : 'text-muted-foreground'}`} />
-                    <span className={newPassword && newPassword !== '123456' ? 'text-status-approved' : 'text-muted-foreground'}>
-                      Diferente da senha inicial
+                    <CheckCircle className={`w-3 h-3 ${/[a-z]/.test(newPassword) ? 'text-status-approved' : 'text-muted-foreground'}`} />
+                    <span className={/[a-z]/.test(newPassword) ? 'text-status-approved' : 'text-muted-foreground'}>
+                      Letra minúscula
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 text-xs">
+                    <CheckCircle className={`w-3 h-3 ${/[A-Z]/.test(newPassword) ? 'text-status-approved' : 'text-muted-foreground'}`} />
+                    <span className={/[A-Z]/.test(newPassword) ? 'text-status-approved' : 'text-muted-foreground'}>
+                      Letra maiúscula
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 text-xs">
+                    <CheckCircle className={`w-3 h-3 ${/[0-9]/.test(newPassword) ? 'text-status-approved' : 'text-muted-foreground'}`} />
+                    <span className={/[0-9]/.test(newPassword) ? 'text-status-approved' : 'text-muted-foreground'}>
+                      Número
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 text-xs">
+                    <CheckCircle className={`w-3 h-3 ${/[!@#$%^&*()_+\-=\[\]{}|;:,.<>?]/.test(newPassword) ? 'text-status-approved' : 'text-muted-foreground'}`} />
+                    <span className={/[!@#$%^&*()_+\-=\[\]{}|;:,.<>?]/.test(newPassword) ? 'text-status-approved' : 'text-muted-foreground'}>
+                      Caractere especial (!@#$%^&*)
                     </span>
                   </div>
                   <div className="flex items-center gap-2 text-xs">

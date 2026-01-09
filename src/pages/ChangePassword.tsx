@@ -6,14 +6,16 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Building2, AlertCircle, CheckCircle, Lock } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 export default function ChangePassword() {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { user, changePassword } = useAuth();
+  const { user, changePassword, logout } = useAuth();
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   const validatePassword = (password: string): string | null => {
     if (password.length < 6) {
@@ -47,7 +49,13 @@ export default function ChangePassword() {
     try {
       const success = await changePassword(newPassword);
       if (success) {
-        navigate('/dashboard');
+        toast({
+          title: 'Senha alterada com sucesso!',
+          description: 'Faça login novamente com sua nova senha.',
+        });
+        // Logout and redirect to login page
+        await logout();
+        navigate('/login');
       } else {
         setError('Erro ao alterar senha. Tente novamente.');
       }

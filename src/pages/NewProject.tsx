@@ -478,42 +478,7 @@ ${observacoesGerais || 'Não informado'}`;
             </CardContent>
           </Card>
 
-          {/* Seção 3: Croqui e Marcações */}
-          <Card className="shadow-card">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <Map className="w-5 h-5 text-primary" />
-                Croqui e Marcações
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-4">
-                <h3 className="font-medium text-foreground text-sm">Itens Marcados no Croqui</h3>
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
-                  {(Object.entries(CROQUI_ITEM_LABELS) as [CroquiItem, string][]).map(([value, label]) => (
-                    <div
-                      key={value}
-                      className={cn(
-                        "flex items-center gap-2 p-2 rounded-lg border cursor-pointer transition-colors text-sm",
-                        marcacaoCroquiItens.includes(value)
-                          ? "border-primary bg-primary/5"
-                          : "border-border hover:bg-accent"
-                      )}
-                      onClick={() => handleCroquiItemToggle(value)}
-                    >
-                      <Checkbox
-                        checked={marcacaoCroquiItens.includes(value)}
-                        onCheckedChange={() => handleCroquiItemToggle(value)}
-                      />
-                      <span className="text-xs">{label}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Seção 4: Anexos */}
+          {/* Seção 3: Anexos */}
           <Card className="shadow-card">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-lg">
@@ -524,7 +489,7 @@ ${observacoesGerais || 'Não informado'}`;
             <CardContent className="space-y-6">
               {/* Croqui - Obrigatório */}
               <div className="space-y-3">
-                <Label className="text-base font-medium">Arquivo do Croqui *</Label>
+                <Label className="text-base font-medium">Croqui das Câmeras Novas *</Label>
                 <div 
                   className={cn(
                     "border-2 border-dashed rounded-lg p-6 text-center transition-colors cursor-pointer",

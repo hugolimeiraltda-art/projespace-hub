@@ -24,6 +24,258 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Create Supabase client with service role for full access
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    const url = new URL(req.url);
+    const method = req.method;
+
+    // =============================================
+    // DOCUMENT OPERATIONS (PUT, DELETE on /documents)
+    // =============================================
+    
+    if (url.pathname.endsWith('/documents') || url.pathname.includes('/documents/')) {
+      
+      // CREATE DOCUMENT - PUT /documents
+      if (method === 'PUT') {
+        const body = await req.json();
+        const { customer_id, nome_arquivo, arquivo_url, tipo_arquivo, tamanho } = body;
+
+        if (!customer_id || !nome_arquivo || !arquivo_url) {
+          return new Response(
+            JSON.stringify({ error: 'Missing required fields: customer_id, nome_arquivo, arquivo_url' }),
+            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+
+        const { data, error } = await supabase
+          .from('customer_documents')
+          .insert({
+            customer_id,
+            nome_arquivo,
+            arquivo_url,
+            tipo_arquivo: tipo_arquivo || null,
+            tamanho: tamanho || null
+          })
+          .select()
+          .single();
+
+        if (error) {
+          console.error('Insert document error:', error);
+          return new Response(
+            JSON.stringify({ error: 'Failed to create document', details: error.message }),
+            { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+
+        console.log('Document created:', data.id);
+        return new Response(
+          JSON.stringify({ success: true, data }),
+          { status: 201, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // DELETE DOCUMENT - DELETE /documents
+      if (method === 'DELETE') {
+        const body = await req.json();
+        const { document_id } = body;
+
+        if (!document_id) {
+          return new Response(
+            JSON.stringify({ error: 'Missing required field: document_id' }),
+            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+
+        // First get the document to retrieve file path
+        const { data: doc, error: fetchError } = await supabase
+          .from('customer_documents')
+          .select('arquivo_url')
+          .eq('id', document_id)
+          .single();
+
+        if (fetchError) {
+          console.error('Fetch document error:', fetchError);
+          return new Response(
+            JSON.stringify({ error: 'Document not found', details: fetchError.message }),
+            { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+
+        // Delete from storage if file exists
+        if (doc?.arquivo_url) {
+          const { error: storageError } = await supabase.storage
+            .from('customer-documents')
+            .remove([doc.arquivo_url.replace('customer-documents/', '')]);
+
+          if (storageError) {
+            console.error('Storage delete error:', storageError);
+            // Continue with database deletion even if storage fails
+          }
+        }
+
+        // Delete from database
+        const { error } = await supabase
+          .from('customer_documents')
+          .delete()
+          .eq('id', document_id);
+
+        if (error) {
+          console.error('Delete document error:', error);
+          return new Response(
+            JSON.stringify({ error: 'Failed to delete document', details: error.message }),
+            { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+
+        console.log('Document deleted:', document_id);
+        return new Response(
+          JSON.stringify({ success: true, message: 'Document deleted successfully' }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+    }
+
+    // =============================================
+    // CUSTOMER OPERATIONS (POST for update, DELETE)
+    // =============================================
+
+    // UPDATE CUSTOMER - PATCH
+    if (method === 'PATCH') {
+      const body = await req.json();
+      const { customer_id, ...updateData } = body;
+
+      if (!customer_id) {
+        return new Response(
+          JSON.stringify({ error: 'Missing required field: customer_id' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // Remove fields that shouldn't be updated
+      delete updateData.id;
+      delete updateData.created_at;
+
+      const { data, error } = await supabase
+        .from('customer_portfolio')
+        .update(updateData)
+        .eq('id', customer_id)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Update customer error:', error);
+        return new Response(
+          JSON.stringify({ error: 'Failed to update customer', details: error.message }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      console.log('Customer updated:', customer_id);
+      return new Response(
+        JSON.stringify({ success: true, data }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // CREATE CUSTOMER - PUT
+    if (method === 'PUT') {
+      const body = await req.json();
+      const { razao_social, contrato, filial, cnpj } = body;
+
+      if (!razao_social || !contrato || !filial) {
+        return new Response(
+          JSON.stringify({ error: 'Missing required fields: razao_social, contrato, filial' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // Remove id if present to let database generate it
+      delete body.id;
+
+      const { data, error } = await supabase
+        .from('customer_portfolio')
+        .insert(body)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Insert customer error:', error);
+        return new Response(
+          JSON.stringify({ error: 'Failed to create customer', details: error.message }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      console.log('Customer created:', data.id);
+      return new Response(
+        JSON.stringify({ success: true, data }),
+        { status: 201, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // DELETE CUSTOMER - DELETE
+    if (method === 'DELETE') {
+      const body = await req.json();
+      const { customer_id } = body;
+
+      if (!customer_id) {
+        return new Response(
+          JSON.stringify({ error: 'Missing required field: customer_id' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // First delete all documents for this customer
+      const { data: docs } = await supabase
+        .from('customer_documents')
+        .select('arquivo_url')
+        .eq('customer_id', customer_id);
+
+      // Delete files from storage
+      if (docs && docs.length > 0) {
+        const filePaths = docs
+          .filter(d => d.arquivo_url)
+          .map(d => d.arquivo_url.replace('customer-documents/', ''));
+        
+        if (filePaths.length > 0) {
+          await supabase.storage.from('customer-documents').remove(filePaths);
+        }
+
+        // Delete document records
+        await supabase
+          .from('customer_documents')
+          .delete()
+          .eq('customer_id', customer_id);
+      }
+
+      // Delete customer
+      const { error } = await supabase
+        .from('customer_portfolio')
+        .delete()
+        .eq('id', customer_id);
+
+      if (error) {
+        console.error('Delete customer error:', error);
+        return new Response(
+          JSON.stringify({ error: 'Failed to delete customer', details: error.message }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      console.log('Customer deleted:', customer_id);
+      return new Response(
+        JSON.stringify({ success: true, message: 'Customer and documents deleted successfully' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // =============================================
+    // READ OPERATIONS (GET, POST for query)
+    // =============================================
+
     // Parse parameters from query string (GET) or body (POST)
     let search = '';
     let filial = '';
@@ -48,7 +300,7 @@ Deno.serve(async (req) => {
     let limit = 100;
     let offset = 0;
 
-    if (req.method === 'POST') {
+    if (method === 'POST') {
       const body = await req.json();
       search = body.search || '';
       filial = body.filial || '';
@@ -73,7 +325,6 @@ Deno.serve(async (req) => {
       limit = parseInt(body.limit) || 100;
       offset = parseInt(body.offset) || 0;
     } else {
-      const url = new URL(req.url);
       search = url.searchParams.get('search') || '';
       filial = url.searchParams.get('filial') || '';
       contrato = url.searchParams.get('contrato') || '';
@@ -99,12 +350,6 @@ Deno.serve(async (req) => {
     }
 
     console.log('Query params:', { search, filial, contrato, sistema, app, tipo, noc, transbordo, gateway, include_documents, customer_id, limit, offset });
-
-    // Create Supabase client with service role for full access
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // If customer_id is provided, return single customer with documents
     if (customer_id) {

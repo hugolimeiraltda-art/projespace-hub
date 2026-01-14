@@ -28,10 +28,16 @@ Deno.serve(async (req) => {
     const url = new URL(req.url);
     const search = url.searchParams.get('search') || '';
     const filial = url.searchParams.get('filial') || '';
+    const contrato = url.searchParams.get('contrato') || '';
+    const cnpj = url.searchParams.get('cnpj') || '';
+    const cidade = url.searchParams.get('cidade') || '';
+    const uf = url.searchParams.get('uf') || '';
+    const segmento = url.searchParams.get('segmento') || '';
+    const consultor = url.searchParams.get('consultor') || '';
     const limit = parseInt(url.searchParams.get('limit') || '100');
     const offset = parseInt(url.searchParams.get('offset') || '0');
 
-    console.log('Query params:', { search, filial, limit, offset });
+    console.log('Query params:', { search, filial, contrato, cnpj, cidade, uf, segmento, consultor, limit, offset });
 
     // Create Supabase client with service role for full access
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
@@ -46,11 +52,35 @@ Deno.serve(async (req) => {
 
     // Apply filters
     if (search) {
-      query = query.or(`razao_social.ilike.%${search}%,contrato.ilike.%${search}%`);
+      query = query.or(`razao_social.ilike.%${search}%,contrato.ilike.%${search}%,cnpj.ilike.%${search}%`);
     }
     
     if (filial) {
       query = query.eq('filial', filial);
+    }
+
+    if (contrato) {
+      query = query.ilike('contrato', `%${contrato}%`);
+    }
+
+    if (cnpj) {
+      query = query.ilike('cnpj', `%${cnpj}%`);
+    }
+
+    if (cidade) {
+      query = query.ilike('cidade', `%${cidade}%`);
+    }
+
+    if (uf) {
+      query = query.eq('uf', uf);
+    }
+
+    if (segmento) {
+      query = query.ilike('segmento', `%${segmento}%`);
+    }
+
+    if (consultor) {
+      query = query.ilike('consultor', `%${consultor}%`);
     }
 
     // Apply pagination and ordering

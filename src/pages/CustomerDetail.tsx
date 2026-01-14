@@ -25,6 +25,9 @@ interface Customer {
   contrato: string;
   alarme_codigo: string | null;
   razao_social: string;
+  endereco: string | null;
+  contato_nome: string | null;
+  contato_telefone: string | null;
   mensalidade: number | null;
   taxa_ativacao: number | null;
   leitores: string | null;
@@ -74,6 +77,9 @@ export default function CustomerDetail() {
     contrato: '',
     alarme_codigo: '',
     razao_social: '',
+    endereco: '',
+    contato_nome: '',
+    contato_telefone: '',
     mensalidade: '',
     taxa_ativacao: '',
     leitores: '',
@@ -120,6 +126,9 @@ export default function CustomerDetail() {
         contrato: data.contrato,
         alarme_codigo: data.alarme_codigo || '',
         razao_social: data.razao_social,
+        endereco: data.endereco || '',
+        contato_nome: data.contato_nome || '',
+        contato_telefone: data.contato_telefone || '',
         mensalidade: data.mensalidade?.toString() || '',
         taxa_ativacao: data.taxa_ativacao?.toString() || '',
         leitores: data.leitores || '',
@@ -179,6 +188,9 @@ export default function CustomerDetail() {
         contrato: form.contrato,
         alarme_codigo: form.alarme_codigo || null,
         razao_social: form.razao_social,
+        endereco: form.endereco || null,
+        contato_nome: form.contato_nome || null,
+        contato_telefone: form.contato_telefone || null,
         mensalidade: form.mensalidade ? parseFloat(form.mensalidade.replace(',', '.')) : null,
         taxa_ativacao: form.taxa_ativacao ? parseFloat(form.taxa_ativacao.replace(',', '.')) : null,
         leitores: form.leitores || null,
@@ -453,6 +465,38 @@ export default function CustomerDetail() {
               <div>
                 <Label>Razão Social</Label>
                 <Input value={form.razao_social} onChange={(e) => setForm({ ...form, razao_social: e.target.value })} disabled={!canEdit} />
+              </div>
+
+              <div>
+                <Label>Endereço Completo</Label>
+                <Input 
+                  value={form.endereco} 
+                  onChange={(e) => setForm({ ...form, endereco: e.target.value })} 
+                  disabled={!canEdit}
+                  placeholder="Rua, número, bairro, cidade - UF, CEP"
+                />
+              </div>
+
+              {/* Contato do Responsável */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Nome do Responsável</Label>
+                  <Input 
+                    value={form.contato_nome} 
+                    onChange={(e) => setForm({ ...form, contato_nome: e.target.value })} 
+                    disabled={!canEdit}
+                    placeholder="Nome completo"
+                  />
+                </div>
+                <div>
+                  <Label>Telefone do Responsável</Label>
+                  <Input 
+                    value={form.contato_telefone} 
+                    onChange={(e) => setForm({ ...form, contato_telefone: e.target.value })} 
+                    disabled={!canEdit}
+                    placeholder="(00) 00000-0000"
+                  />
+                </div>
               </div>
 
               {/* Financeiro e Tipo */}

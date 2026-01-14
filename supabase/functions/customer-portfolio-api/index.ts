@@ -43,6 +43,8 @@ Deno.serve(async (req) => {
     let alarme_codigo = '';
     let data_ativacao_inicio = '';
     let data_ativacao_fim = '';
+    let include_documents = false;
+    let customer_id = '';
     let limit = 100;
     let offset = 0;
 
@@ -66,6 +68,8 @@ Deno.serve(async (req) => {
       alarme_codigo = body.alarme_codigo || '';
       data_ativacao_inicio = body.data_ativacao_inicio || '';
       data_ativacao_fim = body.data_ativacao_fim || '';
+      include_documents = body.include_documents === true;
+      customer_id = body.customer_id || '';
       limit = parseInt(body.limit) || 100;
       offset = parseInt(body.offset) || 0;
     } else {
@@ -88,17 +92,58 @@ Deno.serve(async (req) => {
       alarme_codigo = url.searchParams.get('alarme_codigo') || '';
       data_ativacao_inicio = url.searchParams.get('data_ativacao_inicio') || '';
       data_ativacao_fim = url.searchParams.get('data_ativacao_fim') || '';
+      include_documents = url.searchParams.get('include_documents') === 'true';
+      customer_id = url.searchParams.get('customer_id') || '';
       limit = parseInt(url.searchParams.get('limit') || '100');
       offset = parseInt(url.searchParams.get('offset') || '0');
     }
 
-    console.log('Query params:', { search, filial, contrato, sistema, app, tipo, noc, transbordo, gateway, limit, offset });
+    console.log('Query params:', { search, filial, contrato, sistema, app, tipo, noc, transbordo, gateway, include_documents, customer_id, limit, offset });
 
     // Create Supabase client with service role for full access
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    // If customer_id is provided, return single customer with documents
+    if (customer_id) {
+      const { data: customer, error: customerError } = await supabase
+        .from('customer_portfolio')
+        .select('*')
+        .eq('id', customer_id)
+        .single();
+
+      if (customerError) {
+        console.error('Customer fetch error:', customerError);
+        return new Response(
+          JSON.stringify({ error: 'Customer not found', details: customerError.message }),
+          { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // Always fetch documents for single customer
+      const { data: documents, error: docsError } = await supabase
+        .from('customer_documents')
+        .select('id, nome_arquivo, arquivo_url, tipo_arquivo, tamanho, created_at')
+        .eq('customer_id', customer_id)
+        .order('created_at', { ascending: false });
+
+      if (docsError) {
+        console.error('Documents fetch error:', docsError);
+      }
+
+      return new Response(
+        JSON.stringify({
+          success: true,
+          data: {
+            ...customer,
+            documents: documents || []
+          }
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     // Build query
     let query = supabase
@@ -195,10 +240,41 @@ Deno.serve(async (req) => {
 
     console.log(`Returned ${data?.length || 0} customers out of ${count} total`);
 
+    // If include_documents is true, fetch documents for each customer
+    let customersWithDocs = data;
+    if (include_documents && data && data.length > 0) {
+      const customerIds = data.map((c: { id: string }) => c.id);
+      
+      const { data: allDocs, error: docsError } = await supabase
+        .from('customer_documents')
+        .select('id, customer_id, nome_arquivo, arquivo_url, tipo_arquivo, tamanho, created_at')
+        .in('customer_id', customerIds)
+        .order('created_at', { ascending: false });
+
+      if (docsError) {
+        console.error('Documents fetch error:', docsError);
+      } else if (allDocs) {
+        // Group documents by customer_id
+        const docsByCustomer: Record<string, typeof allDocs> = {};
+        for (const doc of allDocs) {
+          if (!docsByCustomer[doc.customer_id]) {
+            docsByCustomer[doc.customer_id] = [];
+          }
+          docsByCustomer[doc.customer_id].push(doc);
+        }
+
+        // Attach documents to each customer
+        customersWithDocs = data.map((customer: { id: string }) => ({
+          ...customer,
+          documents: docsByCustomer[customer.id] || []
+        }));
+      }
+    }
+
     return new Response(
       JSON.stringify({
         success: true,
-        data,
+        data: customersWithDocs,
         pagination: {
           total: count,
           limit,

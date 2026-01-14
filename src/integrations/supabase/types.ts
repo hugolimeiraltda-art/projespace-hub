@@ -14,6 +14,47 @@ export type Database = {
   }
   public: {
     Tables: {
+      customer_documents: {
+        Row: {
+          arquivo_url: string
+          created_at: string
+          created_by: string | null
+          customer_id: string
+          id: string
+          nome_arquivo: string
+          tamanho: number | null
+          tipo_arquivo: string | null
+        }
+        Insert: {
+          arquivo_url: string
+          created_at?: string
+          created_by?: string | null
+          customer_id: string
+          id?: string
+          nome_arquivo: string
+          tamanho?: number | null
+          tipo_arquivo?: string | null
+        }
+        Update: {
+          arquivo_url?: string
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string
+          id?: string
+          nome_arquivo?: string
+          tamanho?: number | null
+          tipo_arquivo?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_documents_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customer_portfolio"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       customer_portfolio: {
         Row: {
           alarme_codigo: string | null
@@ -35,6 +76,7 @@ export type Database = {
           quantidade_leitores: number | null
           razao_social: string
           sistema: string | null
+          taxa_ativacao: number | null
           tipo: string | null
           totem_duplo: number | null
           totem_simples: number | null
@@ -63,6 +105,7 @@ export type Database = {
           quantidade_leitores?: number | null
           razao_social: string
           sistema?: string | null
+          taxa_ativacao?: number | null
           tipo?: string | null
           totem_duplo?: number | null
           totem_simples?: number | null
@@ -91,6 +134,7 @@ export type Database = {
           quantidade_leitores?: number | null
           razao_social?: string
           sistema?: string | null
+          taxa_ativacao?: number | null
           tipo?: string | null
           totem_duplo?: number | null
           totem_simples?: number | null

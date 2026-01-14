@@ -383,6 +383,7 @@ export type Database = {
             | null
           laudo_projeto: string | null
           numero_projeto: number
+          numero_unidades: number | null
           observacoes: string | null
           prazo_entrega_projeto: string | null
           sale_status: Database["public"]["Enums"]["sale_status"]
@@ -416,6 +417,7 @@ export type Database = {
             | null
           laudo_projeto?: string | null
           numero_projeto?: number
+          numero_unidades?: number | null
           observacoes?: string | null
           prazo_entrega_projeto?: string | null
           sale_status?: Database["public"]["Enums"]["sale_status"]
@@ -449,6 +451,7 @@ export type Database = {
             | null
           laudo_projeto?: string | null
           numero_projeto?: number
+          numero_unidades?: number | null
           observacoes?: string | null
           prazo_entrega_projeto?: string | null
           sale_status?: Database["public"]["Enums"]["sale_status"]
@@ -669,9 +672,12 @@ export type Database = {
           info_cronograma: string | null
           info_custo: string | null
           interfonia: boolean | null
+          interfonia_descricao: string | null
           marcacao_croqui_confirmada: boolean | null
           marcacao_croqui_itens: string[] | null
+          modalidade_portaria: string | null
           numero_blocos: number | null
+          numero_unidades: number | null
           observacao_nao_assumir_cameras: boolean | null
           portaria_virtual_atendimento_app: string | null
           project_id: string
@@ -689,9 +695,12 @@ export type Database = {
           info_cronograma?: string | null
           info_custo?: string | null
           interfonia?: boolean | null
+          interfonia_descricao?: string | null
           marcacao_croqui_confirmada?: boolean | null
           marcacao_croqui_itens?: string[] | null
+          modalidade_portaria?: string | null
           numero_blocos?: number | null
+          numero_unidades?: number | null
           observacao_nao_assumir_cameras?: boolean | null
           portaria_virtual_atendimento_app?: string | null
           project_id: string
@@ -709,9 +718,12 @@ export type Database = {
           info_cronograma?: string | null
           info_custo?: string | null
           interfonia?: boolean | null
+          interfonia_descricao?: string | null
           marcacao_croqui_confirmada?: boolean | null
           marcacao_croqui_itens?: string[] | null
+          modalidade_portaria?: string | null
           numero_blocos?: number | null
+          numero_unidades?: number | null
           observacao_nao_assumir_cameras?: boolean | null
           portaria_virtual_atendimento_app?: string | null
           project_id?: string

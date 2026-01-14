@@ -22,6 +22,8 @@ export type SolicitacaoOrigem = 'EMAIL' | 'FORMS' | 'OUTRO';
 
 export type PortariaVirtualApp = 'SIM_SEM_TRANSBORDO' | 'SIM_COM_TRANSBORDO' | 'NAO';
 
+export type ModalidadePortaria = 'VIRTUAL' | 'PRESENCIAL' | 'CA_MONITORADO' | 'VIRTUAL_APOIO';
+
 export type CFTVElevador = 'POSSUI' | 'NAO_POSSUI' | 'NAO_INFORMADO';
 
 export type AlarmeTipo = 'IVA' | 'CERCA_ELETRICA' | 'NENHUM';
@@ -93,6 +95,7 @@ export interface Project {
   observacoes_gerais?: string;
   notas_projetos_internas?: string;
   email_padrao_gerado?: string;
+  numero_unidades?: number;
   // Engineering workflow
   engineering_status?: EngineeringStatus;
   engineering_received_at?: string;
@@ -122,9 +125,12 @@ export interface TapForm {
   project_id: string;
   solicitacao_origem: SolicitacaoOrigem;
   email_origem_texto?: string;
+  modalidade_portaria?: ModalidadePortaria;
   portaria_virtual_atendimento_app: PortariaVirtualApp;
   numero_blocos: number;
+  numero_unidades?: number;
   interfonia: boolean;
+  interfonia_descricao?: string;
   controle_acessos_pedestre_descricao?: string;
   controle_acessos_veiculo_descricao?: string;
   alarme_descricao?: string;
@@ -343,6 +349,13 @@ export const PORTARIA_VIRTUAL_LABELS: Record<PortariaVirtualApp, string> = {
   SIM_SEM_TRANSBORDO: 'Sim, sem transbordo',
   SIM_COM_TRANSBORDO: 'Sim, com transbordo',
   NAO: 'Não',
+};
+
+export const MODALIDADE_PORTARIA_LABELS: Record<ModalidadePortaria, string> = {
+  VIRTUAL: 'Portaria Virtual',
+  PRESENCIAL: 'Portaria Presencial',
+  CA_MONITORADO: 'CA Monitorado',
+  VIRTUAL_APOIO: 'Virtual + Apoio',
 };
 
 export const CFTV_ELEVADOR_LABELS: Record<CFTVElevador, string> = {

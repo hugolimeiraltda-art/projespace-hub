@@ -63,6 +63,8 @@ export default function NewProject() {
   const [estado, setEstado] = useState('');
   const [endereco, setEndereco] = useState('');
   const [prazoEntrega, setPrazoEntrega] = useState('');
+  const [prazoUrgente, setPrazoUrgente] = useState(false);
+  const [prazoUrgenteJustificativa, setPrazoUrgenteJustificativa] = useState('');
   const [observacoesGerais, setObservacoesGerais] = useState('');
 
   // Form state - TAP
@@ -311,12 +313,37 @@ ${observacoesGerais || 'Não informado'}`;
 
                 <div className="space-y-2">
                   <Label htmlFor="prazo">Prazo de Entrega do Projeto</Label>
-                  <Input
-                    id="prazo"
-                    type="date"
-                    value={prazoEntrega}
-                    onChange={(e) => setPrazoEntrega(e.target.value)}
-                  />
+                  <div className="flex items-center gap-3">
+                    <Input
+                      id="prazo"
+                      type="date"
+                      value={prazoEntrega}
+                      onChange={(e) => setPrazoEntrega(e.target.value)}
+                      className="flex-1"
+                    />
+                    <div className="flex items-center gap-2">
+                      <Checkbox
+                        id="prazoUrgente"
+                        checked={prazoUrgente}
+                        onCheckedChange={(checked) => {
+                          setPrazoUrgente(!!checked);
+                          if (!checked) setPrazoUrgenteJustificativa('');
+                        }}
+                      />
+                      <Label htmlFor="prazoUrgente" className="text-sm font-normal cursor-pointer whitespace-nowrap">
+                        Urgente
+                      </Label>
+                    </div>
+                  </div>
+                  {prazoUrgente && (
+                    <Textarea
+                      value={prazoUrgenteJustificativa}
+                      onChange={(e) => setPrazoUrgenteJustificativa(e.target.value)}
+                      placeholder="Justifique o motivo da urgência..."
+                      rows={2}
+                      className="mt-2"
+                    />
+                  )}
                 </div>
               </div>
             </CardContent>

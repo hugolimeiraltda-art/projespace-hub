@@ -32,10 +32,12 @@ import {
   TapForm,
   SolicitacaoOrigem,
   PortariaVirtualApp,
+  ModalidadePortaria,
   CFTVElevador,
   CroquiItem,
   AttachmentType,
   PORTARIA_VIRTUAL_LABELS,
+  MODALIDADE_PORTARIA_LABELS,
   CFTV_ELEVADOR_LABELS,
   CROQUI_ITEM_LABELS,
 } from '@/types/project';
@@ -61,21 +63,19 @@ export default function NewProject() {
   const [estado, setEstado] = useState('');
   const [endereco, setEndereco] = useState('');
   const [prazoEntrega, setPrazoEntrega] = useState('');
-  const [dataAssembleia, setDataAssembleia] = useState('');
   const [observacoesGerais, setObservacoesGerais] = useState('');
 
   // Form state - TAP
-  const [portariaVirtual, setPortariaVirtual] = useState<PortariaVirtualApp>('NAO');
+  const [modalidadePortaria, setModalidadePortaria] = useState<ModalidadePortaria>('VIRTUAL');
   const [numeroBlocos, setNumeroBlocos] = useState(1);
-  const [interfonia, setInterfonia] = useState(false);
+  const [numeroUnidades, setNumeroUnidades] = useState<number | ''>('');
+  const [interfoniaDescricao, setInterfoniaDescricao] = useState('');
   const [controlePedestre, setControlePedestre] = useState('');
   const [controleVeiculo, setControleVeiculo] = useState('');
   const [alarme, setAlarme] = useState('');
   const [cftvDvr, setCftvDvr] = useState('');
   const [cftvElevador, setCftvElevador] = useState<CFTVElevador>('NAO_INFORMADO');
   const [marcacaoCroquiItens, setMarcacaoCroquiItens] = useState<CroquiItem[]>([]);
-  const [infoCusto, setInfoCusto] = useState('');
-  const [infoCronograma, setInfoCronograma] = useState('');
   const [infoAdicionais, setInfoAdicionais] = useState('');
 
   // Attachments
@@ -113,24 +113,22 @@ export default function NewProject() {
   };
 
   const generateEmail = () => {
-    const portariaLabel = PORTARIA_VIRTUAL_LABELS[portariaVirtual];
+    const modalidadeLabel = MODALIDADE_PORTARIA_LABELS[modalidadePortaria];
     const cftvElevadorLabel = CFTV_ELEVADOR_LABELS[cftvElevador];
 
-    return `Portaria Virtual - Atendimento pelo Aplicativo - ${portariaLabel}
+    return `Modalidade de Portaria: ${modalidadeLabel}
 Número de blocos: ${numeroBlocos}
-Interfonia - ${interfonia ? 'Sim' : 'Não'}
+Número de unidades: ${numeroUnidades || 'Não informado'}
+
+Interfonia: ${interfoniaDescricao || 'Não informado'}
+
 Controle de acessos
     Pedestre - ${controlePedestre || 'Não informado'}
     Veículo - ${controleVeiculo || 'Não informado'}
+    
 Alarme - ${alarme || 'Não informado'}
 CFTV - ${cftvDvr || 'Não informado'}
 CFTV Elevador - ${cftvElevadorLabel}
-
-Informações do cronograma:
-${infoCronograma || 'Não informado'}
-
-Informações de custo
-${infoCusto || 'Não informado'}
 
 Documentos anexo:
 - Croqui: ${hasCroquiAttachment ? 'Sim' : 'Não'}
@@ -172,15 +170,18 @@ ${observacoesGerais || 'Não informado'}`;
           endereco_condominio: endereco,
           status: 'RASCUNHO',
           prazo_entrega_projeto: prazoEntrega || undefined,
-          data_assembleia: dataAssembleia || undefined,
           observacoes_gerais: observacoesGerais || undefined,
           email_padrao_gerado: generateEmail(),
+          numero_unidades: numeroUnidades || undefined,
         },
         {
           solicitacao_origem: 'EMAIL' as SolicitacaoOrigem,
-          portaria_virtual_atendimento_app: portariaVirtual,
+          modalidade_portaria: modalidadePortaria,
+          portaria_virtual_atendimento_app: 'NAO' as PortariaVirtualApp,
           numero_blocos: numeroBlocos,
-          interfonia,
+          numero_unidades: numeroUnidades || undefined,
+          interfonia: !!interfoniaDescricao,
+          interfonia_descricao: interfoniaDescricao || undefined,
           controle_acessos_pedestre_descricao: controlePedestre || undefined,
           controle_acessos_veiculo_descricao: controleVeiculo || undefined,
           alarme_descricao: alarme || undefined,
@@ -189,8 +190,6 @@ ${observacoesGerais || 'Não informado'}`;
           observacao_nao_assumir_cameras: true,
           marcacao_croqui_confirmada: true,
           marcacao_croqui_itens: marcacaoCroquiItens,
-          info_custo: infoCusto || undefined,
-          info_cronograma: infoCronograma || undefined,
           info_adicionais: `${infoAdicionais || ''}${observacoesFotos ? `\n\nObservações das fotos:\n${observacoesFotos}` : ''}`,
         }
       );
@@ -319,26 +318,7 @@ ${observacoesGerais || 'Não informado'}`;
                     onChange={(e) => setPrazoEntrega(e.target.value)}
                   />
                 </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="assembleia">Data da Assembleia</Label>
-                  <Input
-                    id="assembleia"
-                    type="date"
-                    value={dataAssembleia}
-                    onChange={(e) => setDataAssembleia(e.target.value)}
-                  />
-                </div>
               </div>
-
-              {dataAssembleia && prazoEntrega && new Date(dataAssembleia) < new Date(prazoEntrega) && (
-                <Alert>
-                  <AlertTriangle className="h-4 w-4" />
-                  <AlertDescription>
-                    A data da assembleia é anterior ao prazo de entrega do projeto.
-                  </AlertDescription>
-                </Alert>
-              )}
             </CardContent>
           </Card>
 
@@ -353,13 +333,13 @@ ${observacoesGerais || 'Não informado'}`;
             <CardContent className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-2">
-                  <Label>Portaria Virtual - Atendimento App</Label>
-                  <Select value={portariaVirtual} onValueChange={(v) => setPortariaVirtual(v as PortariaVirtualApp)}>
+                  <Label>Modalidade de Portaria</Label>
+                  <Select value={modalidadePortaria} onValueChange={(v) => setModalidadePortaria(v as ModalidadePortaria)}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {Object.entries(PORTARIA_VIRTUAL_LABELS).map(([value, label]) => (
+                      {Object.entries(MODALIDADE_PORTARIA_LABELS).map(([value, label]) => (
                         <SelectItem key={value} value={value}>{label}</SelectItem>
                       ))}
                     </SelectContent>
@@ -377,12 +357,28 @@ ${observacoesGerais || 'Não informado'}`;
                   />
                 </div>
 
-                <div className="flex items-center justify-between p-4 bg-secondary rounded-lg h-fit">
-                  <Label htmlFor="interfonia" className="cursor-pointer">Interfonia</Label>
-                  <Switch
+                <div className="space-y-2">
+                  <Label htmlFor="unidades">Número de Unidades</Label>
+                  <Input
+                    id="unidades"
+                    type="number"
+                    min={1}
+                    value={numeroUnidades}
+                    onChange={(e) => setNumeroUnidades(e.target.value ? parseInt(e.target.value) : '')}
+                    placeholder="Ex: 100"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <h3 className="font-medium text-foreground text-sm">Interfonia</h3>
+                <div className="space-y-2">
+                  <Textarea
                     id="interfonia"
-                    checked={interfonia}
-                    onCheckedChange={setInterfonia}
+                    value={interfoniaDescricao}
+                    onChange={(e) => setInterfoniaDescricao(e.target.value)}
+                    placeholder="Descreva o sistema de interfonia do condomínio..."
+                    rows={2}
                   />
                 </div>
               </div>
@@ -450,29 +446,6 @@ ${observacoesGerais || 'Não informado'}`;
                       ))}
                     </SelectContent>
                   </Select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="cronograma">Informações do Cronograma</Label>
-                  <Textarea
-                    id="cronograma"
-                    value={infoCronograma}
-                    onChange={(e) => setInfoCronograma(e.target.value)}
-                    placeholder="Descreva informações sobre o cronograma..."
-                    rows={2}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="custo">Informações de Custo</Label>
-                  <Textarea
-                    id="custo"
-                    value={infoCusto}
-                    onChange={(e) => setInfoCusto(e.target.value)}
-                    placeholder="Descreva informações sobre custos..."
-                    rows={2}
-                  />
                 </div>
               </div>
             </CardContent>

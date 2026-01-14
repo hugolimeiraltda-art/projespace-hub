@@ -58,6 +58,7 @@ export type Database = {
       customer_portfolio: {
         Row: {
           alarme_codigo: string | null
+          app: string | null
           cameras: number | null
           cancelas: number | null
           catracas: number | null
@@ -90,6 +91,7 @@ export type Database = {
         }
         Insert: {
           alarme_codigo?: string | null
+          app?: string | null
           cameras?: number | null
           cancelas?: number | null
           catracas?: number | null
@@ -122,6 +124,7 @@ export type Database = {
         }
         Update: {
           alarme_codigo?: string | null
+          app?: string | null
           cameras?: number | null
           cancelas?: number | null
           catracas?: number | null

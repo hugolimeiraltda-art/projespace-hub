@@ -24,18 +24,43 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Parse query parameters
-    const url = new URL(req.url);
-    const search = url.searchParams.get('search') || '';
-    const filial = url.searchParams.get('filial') || '';
-    const contrato = url.searchParams.get('contrato') || '';
-    const cnpj = url.searchParams.get('cnpj') || '';
-    const cidade = url.searchParams.get('cidade') || '';
-    const uf = url.searchParams.get('uf') || '';
-    const segmento = url.searchParams.get('segmento') || '';
-    const consultor = url.searchParams.get('consultor') || '';
-    const limit = parseInt(url.searchParams.get('limit') || '100');
-    const offset = parseInt(url.searchParams.get('offset') || '0');
+    // Parse parameters from query string (GET) or body (POST)
+    let search = '';
+    let filial = '';
+    let contrato = '';
+    let cnpj = '';
+    let cidade = '';
+    let uf = '';
+    let segmento = '';
+    let consultor = '';
+    let limit = 100;
+    let offset = 0;
+
+    if (req.method === 'POST') {
+      const body = await req.json();
+      search = body.search || '';
+      filial = body.filial || '';
+      contrato = body.contrato || '';
+      cnpj = body.cnpj || '';
+      cidade = body.cidade || '';
+      uf = body.uf || '';
+      segmento = body.segmento || '';
+      consultor = body.consultor || '';
+      limit = parseInt(body.limit) || 100;
+      offset = parseInt(body.offset) || 0;
+    } else {
+      const url = new URL(req.url);
+      search = url.searchParams.get('search') || '';
+      filial = url.searchParams.get('filial') || '';
+      contrato = url.searchParams.get('contrato') || '';
+      cnpj = url.searchParams.get('cnpj') || '';
+      cidade = url.searchParams.get('cidade') || '';
+      uf = url.searchParams.get('uf') || '';
+      segmento = url.searchParams.get('segmento') || '';
+      consultor = url.searchParams.get('consultor') || '';
+      limit = parseInt(url.searchParams.get('limit') || '100');
+      offset = parseInt(url.searchParams.get('offset') || '0');
+    }
 
     console.log('Query params:', { search, filial, contrato, cnpj, cidade, uf, segmento, consultor, limit, offset });
 

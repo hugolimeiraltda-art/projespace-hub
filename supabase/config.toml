@@ -11,3 +11,6 @@ verify_jwt = false
 
 [functions.notify-project-submitted]
 verify_jwt = false
+
+[functions.customer-portfolio-api]
+verify_jwt = false

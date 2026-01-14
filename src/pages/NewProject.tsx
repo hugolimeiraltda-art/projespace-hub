@@ -313,27 +313,26 @@ ${observacoesGerais || 'Não informado'}`;
 
                 <div className="space-y-2">
                   <Label htmlFor="prazo">Prazo de Entrega do Projeto</Label>
-                  <div className="flex items-center gap-3">
-                    <Input
-                      id="prazo"
-                      type="date"
-                      value={prazoEntrega}
-                      onChange={(e) => setPrazoEntrega(e.target.value)}
-                      className="flex-1"
+                  <Input
+                    id="prazo"
+                    type="date"
+                    value={prazoEntrega}
+                    onChange={(e) => setPrazoEntrega(e.target.value)}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Urgência</Label>
+                  <div className="flex items-center gap-3 h-10">
+                    <span className="text-sm text-muted-foreground">Não</span>
+                    <Switch
+                      checked={prazoUrgente}
+                      onCheckedChange={(checked) => {
+                        setPrazoUrgente(checked);
+                        if (!checked) setPrazoUrgenteJustificativa('');
+                      }}
                     />
-                    <div className="flex items-center gap-2">
-                      <Checkbox
-                        id="prazoUrgente"
-                        checked={prazoUrgente}
-                        onCheckedChange={(checked) => {
-                          setPrazoUrgente(!!checked);
-                          if (!checked) setPrazoUrgenteJustificativa('');
-                        }}
-                      />
-                      <Label htmlFor="prazoUrgente" className="text-sm font-normal cursor-pointer whitespace-nowrap">
-                        Urgente
-                      </Label>
-                    </div>
+                    <span className="text-sm text-muted-foreground">Sim</span>
                   </div>
                   {prazoUrgente && (
                     <Textarea

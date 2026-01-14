@@ -204,29 +204,35 @@ ${infoAdicionais || 'Não informado'}`;
         }
       }
 
-      // If sending back to projects after PENDENTE_INFO
-      if (sendToProjects && project.status === 'PENDENTE_INFO') {
+      // If sending to projects (first time or resubmission)
+      if (sendToProjects && (project.status === 'RASCUNHO' || project.status === 'PENDENTE_INFO')) {
+        const isResubmission = project.status === 'PENDENTE_INFO';
         await updateStatus(project.id, 'ENVIADO', user.id, user.nome);
         
-        // Notify projetos team
+        // Notify projetos team via email
         try {
           await supabase.functions.invoke('notify-project-submitted', {
             body: {
               project_id: project.id,
               project_name: condominioNome,
               vendedor_name: user.nome,
-              is_resubmission: true,
+              vendedorEmail: user.email,
+              cidade: cidade,
+              estado: estado,
+              is_resubmission: isResubmission,
             },
           });
+          console.log('Notification sent to projetos team');
         } catch (err) {
           console.error('Error notifying team:', err);
         }
       }
 
+      const isResubmission = project.status === 'PENDENTE_INFO';
       toast({
-        title: sendToProjects ? 'Projeto reenviado!' : 'Alterações salvas!',
+        title: sendToProjects ? (isResubmission ? 'Projeto reenviado!' : 'Projeto enviado!') : 'Alterações salvas!',
         description: sendToProjects 
-          ? 'O projeto foi reenviado para a equipe de Projetos.'
+          ? (isResubmission ? 'O projeto foi reenviado para a equipe de Projetos.' : 'O projeto foi enviado para a equipe de Projetos. A equipe será notificada por email.')
           : 'As alterações foram salvas com sucesso.',
       });
 

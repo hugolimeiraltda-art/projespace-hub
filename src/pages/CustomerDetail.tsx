@@ -231,24 +231,21 @@ export default function CustomerDetail() {
     try {
       for (const file of files) {
         const fileExt = file.name.split('.').pop();
-        const fileName = `${id}/${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+        const filePath = `${id}/${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
 
         const { error: uploadError } = await supabase.storage
           .from('customer-documents')
-          .upload(fileName, file);
+          .upload(filePath, file);
 
         if (uploadError) throw uploadError;
 
-        const { data: urlData } = supabase.storage
-          .from('customer-documents')
-          .getPublicUrl(fileName);
-
+        // Store the file path, not the public URL (bucket is private)
         const { error: insertError } = await supabase
           .from('customer_documents')
           .insert({
             customer_id: id,
             nome_arquivo: file.name,
-            arquivo_url: urlData.publicUrl,
+            arquivo_url: filePath, // Store path instead of full URL
             tipo_arquivo: file.type,
             tamanho: file.size,
           });
@@ -273,16 +270,61 @@ export default function CustomerDetail() {
     }
   };
 
+  const getSignedUrl = async (filePath: string): Promise<string | null> => {
+    try {
+      // Check if it's already a full URL (old records)
+      if (filePath.startsWith('http')) {
+        // Extract the path from old URLs
+        const pathMatch = filePath.match(/customer-documents\/(.+)/);
+        if (pathMatch) {
+          const { data, error } = await supabase.storage
+            .from('customer-documents')
+            .createSignedUrl(pathMatch[1], 3600); // 1 hour expiry
+          if (error) throw error;
+          return data.signedUrl;
+        }
+        return filePath;
+      }
+      
+      const { data, error } = await supabase.storage
+        .from('customer-documents')
+        .createSignedUrl(filePath, 3600); // 1 hour expiry
+      if (error) throw error;
+      return data.signedUrl;
+    } catch (error) {
+      console.error('Error getting signed URL:', error);
+      return null;
+    }
+  };
+
+  const handleOpenDocument = async (doc: CustomerDocument) => {
+    const url = await getSignedUrl(doc.arquivo_url);
+    if (url) {
+      window.open(url, '_blank');
+    } else {
+      toast({
+        title: 'Erro ao abrir arquivo',
+        description: 'Não foi possível gerar o link de acesso.',
+        variant: 'destructive',
+      });
+    }
+  };
+
   const handleDeleteDocument = async (doc: CustomerDocument) => {
     if (!canEdit) return;
     if (!confirm(`Excluir o arquivo "${doc.nome_arquivo}"?`)) return;
 
     try {
-      // Extract path from URL
-      const urlParts = doc.arquivo_url.split('/customer-documents/');
-      if (urlParts.length > 1) {
-        await supabase.storage.from('customer-documents').remove([urlParts[1]]);
+      // Get the file path - either direct path or extracted from URL
+      let filePath = doc.arquivo_url;
+      if (filePath.startsWith('http')) {
+        const pathMatch = filePath.match(/customer-documents\/(.+)/);
+        if (pathMatch) {
+          filePath = pathMatch[1];
+        }
       }
+      
+      await supabase.storage.from('customer-documents').remove([filePath]);
 
       const { error } = await supabase
         .from('customer_documents')
@@ -569,11 +611,9 @@ export default function CustomerDetail() {
                     key={doc.id}
                     className="flex items-center justify-between p-3 rounded-lg border bg-muted/30 hover:bg-muted/50 transition-colors"
                   >
-                    <a
-                      href={doc.arquivo_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-3 flex-1 min-w-0"
+                    <button
+                      onClick={() => handleOpenDocument(doc)}
+                      className="flex items-center gap-3 flex-1 min-w-0 text-left hover:underline"
                     >
                       {getFileIcon(doc.tipo_arquivo)}
                       <div className="flex-1 min-w-0">
@@ -582,7 +622,7 @@ export default function CustomerDetail() {
                           {formatFileSize(doc.tamanho)} • {format(new Date(doc.created_at), 'dd/MM/yyyy HH:mm', { locale: ptBR })}
                         </p>
                       </div>
-                    </a>
+                    </button>
                     {canEdit && (
                       <Button
                         variant="ghost"

@@ -61,10 +61,13 @@ export type Database = {
           cameras: number | null
           cancelas: number | null
           catracas: number | null
+          contato_nome: string | null
+          contato_telefone: string | null
           contrato: string
           created_at: string
           data_ativacao: string | null
           dvr_nvr: number | null
+          endereco: string | null
           filial: string | null
           gateway: boolean | null
           id: string
@@ -90,10 +93,13 @@ export type Database = {
           cameras?: number | null
           cancelas?: number | null
           catracas?: number | null
+          contato_nome?: string | null
+          contato_telefone?: string | null
           contrato: string
           created_at?: string
           data_ativacao?: string | null
           dvr_nvr?: number | null
+          endereco?: string | null
           filial?: string | null
           gateway?: boolean | null
           id?: string
@@ -119,10 +125,13 @@ export type Database = {
           cameras?: number | null
           cancelas?: number | null
           catracas?: number | null
+          contato_nome?: string | null
+          contato_telefone?: string | null
           contrato?: string
           created_at?: string
           data_ativacao?: string | null
           dvr_nvr?: number | null
+          endereco?: string | null
           filial?: string | null
           gateway?: boolean | null
           id?: string

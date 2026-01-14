@@ -19,6 +19,7 @@ import MeuPerfil from "./pages/MeuPerfil";
 import Configuracoes from "./pages/Configuracoes";
 import GestaoUsuarios from "./pages/GestaoUsuarios";
 import StartupProjetos from "./pages/StartupProjetos";
+import CarteiraClientes from "./pages/CarteiraClientes";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -92,8 +93,12 @@ function AppRoutes() {
         element={<ProtectedRoute><StartupProjetos /></ProtectedRoute>} 
       />
       <Route 
+        path="/carteira-clientes" 
+        element={<ProtectedRoute><CarteiraClientes /></ProtectedRoute>} 
+      />
+      <Route 
         path="/chamados" 
-        element={<ProtectedRoute><MeusChamados /></ProtectedRoute>} 
+        element={<ProtectedRoute><MeusChamados /></ProtectedRoute>}
       />
       <Route 
         path="/meu-perfil" 

@@ -20,6 +20,7 @@ import Configuracoes from "./pages/Configuracoes";
 import GestaoUsuarios from "./pages/GestaoUsuarios";
 import StartupProjetos from "./pages/StartupProjetos";
 import CarteiraClientes from "./pages/CarteiraClientes";
+import CustomerDetail from "./pages/CustomerDetail";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -95,6 +96,10 @@ function AppRoutes() {
       <Route 
         path="/carteira-clientes" 
         element={<ProtectedRoute><CarteiraClientes /></ProtectedRoute>} 
+      />
+      <Route 
+        path="/carteira-clientes/:id" 
+        element={<ProtectedRoute><CustomerDetail /></ProtectedRoute>} 
       />
       <Route 
         path="/chamados" 

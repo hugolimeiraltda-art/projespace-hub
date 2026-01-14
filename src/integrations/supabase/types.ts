@@ -14,6 +14,93 @@ export type Database = {
   }
   public: {
     Tables: {
+      customer_portfolio: {
+        Row: {
+          alarme_codigo: string | null
+          cameras: number | null
+          cancelas: number | null
+          catracas: number | null
+          contrato: string
+          created_at: string
+          data_ativacao: string | null
+          dvr_nvr: number | null
+          filial: string | null
+          gateway: boolean | null
+          id: string
+          leitores: string | null
+          mensalidade: number | null
+          noc: string | null
+          portas: number | null
+          portoes: number | null
+          quantidade_leitores: number | null
+          razao_social: string
+          sistema: string | null
+          tipo: string | null
+          totem_duplo: number | null
+          totem_simples: number | null
+          transbordo: boolean | null
+          unidades: number | null
+          updated_at: string
+          zonas_perimetro: number | null
+        }
+        Insert: {
+          alarme_codigo?: string | null
+          cameras?: number | null
+          cancelas?: number | null
+          catracas?: number | null
+          contrato: string
+          created_at?: string
+          data_ativacao?: string | null
+          dvr_nvr?: number | null
+          filial?: string | null
+          gateway?: boolean | null
+          id?: string
+          leitores?: string | null
+          mensalidade?: number | null
+          noc?: string | null
+          portas?: number | null
+          portoes?: number | null
+          quantidade_leitores?: number | null
+          razao_social: string
+          sistema?: string | null
+          tipo?: string | null
+          totem_duplo?: number | null
+          totem_simples?: number | null
+          transbordo?: boolean | null
+          unidades?: number | null
+          updated_at?: string
+          zonas_perimetro?: number | null
+        }
+        Update: {
+          alarme_codigo?: string | null
+          cameras?: number | null
+          cancelas?: number | null
+          catracas?: number | null
+          contrato?: string
+          created_at?: string
+          data_ativacao?: string | null
+          dvr_nvr?: number | null
+          filial?: string | null
+          gateway?: boolean | null
+          id?: string
+          leitores?: string | null
+          mensalidade?: number | null
+          noc?: string | null
+          portas?: number | null
+          portoes?: number | null
+          quantidade_leitores?: number | null
+          razao_social?: string
+          sistema?: string | null
+          tipo?: string | null
+          totem_duplo?: number | null
+          totem_simples?: number | null
+          transbordo?: boolean | null
+          unidades?: number | null
+          updated_at?: string
+          zonas_perimetro?: number | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string

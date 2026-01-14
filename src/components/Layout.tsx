@@ -13,6 +13,7 @@ import {
   User,
   ClipboardList,
   Users,
+  Briefcase,
 } from 'lucide-react';
 import emiveLogo from '@/assets/emive-logo.png';
 
@@ -36,6 +37,7 @@ export function Layout({ children }: LayoutProps) {
     { path: '/projetos', label: 'Meus Projetos', icon: List, roles: ['vendedor'] },
     { path: '/projetos', label: 'Projetos', icon: List, roles: ['projetos', 'admin', 'gerente_comercial'], exact: true },
     { path: '/startup-projetos', label: 'Start-up de Projetos', icon: ClipboardList, roles: ['implantacao', 'admin'] },
+    { path: '/carteira-clientes', label: 'Carteira de Clientes', icon: Briefcase, roles: ['projetos', 'admin', 'implantacao'] },
     { path: '/chamados', label: 'Meus Chamados', icon: ClipboardList, roles: ['projetos', 'admin'] },
     { path: '/configuracoes', label: 'Configurações', icon: Settings, roles: ['admin'] },
     { path: '/configuracoes/usuarios', label: 'Gestão de Usuários', icon: Users, roles: ['gerente_comercial'] },

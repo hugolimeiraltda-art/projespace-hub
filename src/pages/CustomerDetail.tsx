@@ -36,6 +36,7 @@ interface Customer {
   unidades: number | null;
   tipo: string | null;
   data_ativacao: string | null;
+  data_termino: string | null;
   noc: string | null;
   sistema: string | null;
   app: string | null;
@@ -89,6 +90,7 @@ export default function CustomerDetail() {
     unidades: '',
     tipo: '',
     data_ativacao: '',
+    data_termino: '',
     noc: '',
     sistema: '',
     app: '',
@@ -139,6 +141,7 @@ export default function CustomerDetail() {
         unidades: data.unidades?.toString() || '',
         tipo: data.tipo || '',
         data_ativacao: data.data_ativacao || '',
+        data_termino: data.data_termino || '',
         noc: data.noc || '',
         sistema: data.sistema || '',
         app: data.app || '',
@@ -202,6 +205,7 @@ export default function CustomerDetail() {
         unidades: form.unidades ? parseInt(form.unidades) : null,
         tipo: form.tipo || null,
         data_ativacao: form.data_ativacao || null,
+        data_termino: form.data_termino || null,
         noc: form.noc || null,
         sistema: form.sistema || null,
         app: form.app || null,
@@ -557,9 +561,13 @@ export default function CustomerDetail() {
                 </div>
                 <div>
                   <Label className="flex items-center gap-2"><Calendar className="w-4 h-4" /> Término (36 meses)</Label>
-                  <div className="flex items-center h-10 px-3 rounded-md border bg-muted text-muted-foreground">
-                    {calculateTermino(form.data_ativacao)}
-                  </div>
+                  <Input 
+                    type="date" 
+                    value={form.data_termino} 
+                    onChange={(e) => setForm({ ...form, data_termino: e.target.value })} 
+                    disabled={!canEdit}
+                    placeholder={calculateTermino(form.data_ativacao)}
+                  />
                 </div>
                 <div>
                   <Label>NOC</Label>

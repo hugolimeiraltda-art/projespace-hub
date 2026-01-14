@@ -67,6 +67,7 @@ export type Database = {
           contrato: string
           created_at: string
           data_ativacao: string | null
+          data_termino: string | null
           dvr_nvr: number | null
           endereco: string | null
           filial: string | null
@@ -100,6 +101,7 @@ export type Database = {
           contrato: string
           created_at?: string
           data_ativacao?: string | null
+          data_termino?: string | null
           dvr_nvr?: number | null
           endereco?: string | null
           filial?: string | null
@@ -133,6 +135,7 @@ export type Database = {
           contrato?: string
           created_at?: string
           data_ativacao?: string | null
+          data_termino?: string | null
           dvr_nvr?: number | null
           endereco?: string | null
           filial?: string | null

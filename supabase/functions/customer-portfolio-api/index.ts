@@ -33,6 +33,16 @@ Deno.serve(async (req) => {
     let uf = '';
     let segmento = '';
     let consultor = '';
+    let sistema = '';
+    let app = '';
+    let tipo = '';
+    let noc = '';
+    let leitores = '';
+    let transbordo: boolean | null = null;
+    let gateway: boolean | null = null;
+    let alarme_codigo = '';
+    let data_ativacao_inicio = '';
+    let data_ativacao_fim = '';
     let limit = 100;
     let offset = 0;
 
@@ -46,6 +56,16 @@ Deno.serve(async (req) => {
       uf = body.uf || '';
       segmento = body.segmento || '';
       consultor = body.consultor || '';
+      sistema = body.sistema || '';
+      app = body.app || '';
+      tipo = body.tipo || '';
+      noc = body.noc || '';
+      leitores = body.leitores || '';
+      transbordo = body.transbordo !== undefined ? body.transbordo : null;
+      gateway = body.gateway !== undefined ? body.gateway : null;
+      alarme_codigo = body.alarme_codigo || '';
+      data_ativacao_inicio = body.data_ativacao_inicio || '';
+      data_ativacao_fim = body.data_ativacao_fim || '';
       limit = parseInt(body.limit) || 100;
       offset = parseInt(body.offset) || 0;
     } else {
@@ -58,11 +78,21 @@ Deno.serve(async (req) => {
       uf = url.searchParams.get('uf') || '';
       segmento = url.searchParams.get('segmento') || '';
       consultor = url.searchParams.get('consultor') || '';
+      sistema = url.searchParams.get('sistema') || '';
+      app = url.searchParams.get('app') || '';
+      tipo = url.searchParams.get('tipo') || '';
+      noc = url.searchParams.get('noc') || '';
+      leitores = url.searchParams.get('leitores') || '';
+      transbordo = url.searchParams.get('transbordo') !== null ? url.searchParams.get('transbordo') === 'true' : null;
+      gateway = url.searchParams.get('gateway') !== null ? url.searchParams.get('gateway') === 'true' : null;
+      alarme_codigo = url.searchParams.get('alarme_codigo') || '';
+      data_ativacao_inicio = url.searchParams.get('data_ativacao_inicio') || '';
+      data_ativacao_fim = url.searchParams.get('data_ativacao_fim') || '';
       limit = parseInt(url.searchParams.get('limit') || '100');
       offset = parseInt(url.searchParams.get('offset') || '0');
     }
 
-    console.log('Query params:', { search, filial, contrato, cnpj, cidade, uf, segmento, consultor, limit, offset });
+    console.log('Query params:', { search, filial, contrato, sistema, app, tipo, noc, transbordo, gateway, limit, offset });
 
     // Create Supabase client with service role for full access
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
@@ -106,6 +136,46 @@ Deno.serve(async (req) => {
 
     if (consultor) {
       query = query.ilike('consultor', `%${consultor}%`);
+    }
+
+    if (sistema) {
+      query = query.eq('sistema', sistema);
+    }
+
+    if (app) {
+      query = query.eq('app', app);
+    }
+
+    if (tipo) {
+      query = query.eq('tipo', tipo);
+    }
+
+    if (noc) {
+      query = query.eq('noc', noc);
+    }
+
+    if (leitores) {
+      query = query.ilike('leitores', `%${leitores}%`);
+    }
+
+    if (transbordo !== null) {
+      query = query.eq('transbordo', transbordo);
+    }
+
+    if (gateway !== null) {
+      query = query.eq('gateway', gateway);
+    }
+
+    if (alarme_codigo) {
+      query = query.ilike('alarme_codigo', `%${alarme_codigo}%`);
+    }
+
+    if (data_ativacao_inicio) {
+      query = query.gte('data_ativacao', data_ativacao_inicio);
+    }
+
+    if (data_ativacao_fim) {
+      query = query.lte('data_ativacao', data_ativacao_fim);
     }
 
     // Apply pagination and ordering

@@ -38,6 +38,7 @@ interface Customer {
   data_ativacao: string | null;
   noc: string | null;
   sistema: string | null;
+  app: string | null;
   transbordo: boolean;
   gateway: boolean;
   portoes: number;
@@ -90,6 +91,7 @@ export default function CustomerDetail() {
     data_ativacao: '',
     noc: '',
     sistema: '',
+    app: '',
     transbordo: false,
     gateway: false,
     portoes: '0',
@@ -139,6 +141,7 @@ export default function CustomerDetail() {
         data_ativacao: data.data_ativacao || '',
         noc: data.noc || '',
         sistema: data.sistema || '',
+        app: data.app || '',
         transbordo: data.transbordo,
         gateway: data.gateway,
         portoes: data.portoes?.toString() || '0',
@@ -201,6 +204,7 @@ export default function CustomerDetail() {
         data_ativacao: form.data_ativacao || null,
         noc: form.noc || null,
         sistema: form.sistema || null,
+        app: form.app || null,
         transbordo: form.transbordo,
         gateway: form.gateway,
         portoes: parseInt(form.portoes) || 0,
@@ -437,7 +441,7 @@ export default function CustomerDetail() {
           <CardContent>
             <div className="grid gap-4">
               {/* Identificação */}
-              <div className="grid grid-cols-4 gap-4">
+              <div className="grid grid-cols-5 gap-4">
                 <div>
                   <Label>Contrato</Label>
                   <Input value={form.contrato} onChange={(e) => setForm({ ...form, contrato: e.target.value })} disabled={!canEdit} />
@@ -448,7 +452,15 @@ export default function CustomerDetail() {
                 </div>
                 <div>
                   <Label>Filial</Label>
-                  <Input value={form.filial} onChange={(e) => setForm({ ...form, filial: e.target.value })} disabled={!canEdit} />
+                  <Select value={form.filial} onValueChange={(v) => setForm({ ...form, filial: v })} disabled={!canEdit}>
+                    <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="BHZ">BHZ</SelectItem>
+                      <SelectItem value="RIO">RIO</SelectItem>
+                      <SelectItem value="VIX">VIX</SelectItem>
+                      <SelectItem value="SP">SP</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div>
                   <Label>Sistema</Label>
@@ -456,7 +468,17 @@ export default function CustomerDetail() {
                     <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="GEAR">GEAR</SelectItem>
-                      <SelectItem value="SIAM">SIAM</SelectItem>
+                      <SelectItem value="SITUATOR">SITUATOR</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>APP</Label>
+                  <Select value={form.app} onValueChange={(v) => setForm({ ...form, app: v })} disabled={!canEdit}>
+                    <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="GEAR">GEAR</SelectItem>
+                      <SelectItem value="WINKER">WINKER</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

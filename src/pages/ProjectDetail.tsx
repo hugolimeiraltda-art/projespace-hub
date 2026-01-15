@@ -55,8 +55,10 @@ export default function ProjectDetail() {
   const [selectedStatus, setSelectedStatus] = useState<ProjectStatus | ''>('');
   const [selectedEngineeringStatus, setSelectedEngineeringStatus] = useState<EngineeringStatus | ''>('');
   const [showPendingInfoDialog, setShowPendingInfoDialog] = useState(false);
+  const [showRetornarDialog, setShowRetornarDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [pendingInfoReason, setPendingInfoReason] = useState('');
+  const [retornarReason, setRetornarReason] = useState('');
   const [isSendingEmail, setIsSendingEmail] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
@@ -489,12 +491,24 @@ export default function ProjectDetail() {
 
   const handleEngineeringStatusChange = async () => {
     if (!selectedEngineeringStatus || !user) return;
+    
+    // Se for RETORNAR, abrir dialog para pedir motivo
+    if (selectedEngineeringStatus === 'RETORNAR') {
+      setShowRetornarDialog(true);
+      return;
+    }
+    
     const success = await updateEngineeringStatus(project.id, selectedEngineeringStatus, user.id, user.nome);
     if (success) {
       toast({
         title: 'Status de engenharia atualizado',
         description: `O status foi alterado para "${ENGINEERING_STATUS_LABELS[selectedEngineeringStatus]}".`,
       });
+      
+      // Enviar email se status mudou para CONCLUIDO
+      if (selectedEngineeringStatus === 'CONCLUIDO') {
+        await sendStatusEmail('APROVADO_PROJETO');
+      }
     } else {
       toast({
         title: 'Erro ao atualizar status',
@@ -502,6 +516,43 @@ export default function ProjectDetail() {
         variant: 'destructive',
       });
     }
+    setSelectedEngineeringStatus('');
+  };
+  
+  const handleConfirmRetornar = async () => {
+    if (!retornarReason.trim() || !user) {
+      toast({
+        title: 'Erro',
+        description: 'Por favor, informe o motivo do retorno.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    // Adicionar comentário com o motivo
+    addComment(project.id, {
+      user_id: user.id,
+      user_name: user.nome,
+      content: `⚠️ PROJETO RETORNADO: ${retornarReason}`,
+      is_internal: false,
+    });
+    
+    // Atualizar status de engenharia para RETORNAR
+    const success = await updateEngineeringStatus(project.id, 'RETORNAR', user.id, user.nome);
+    
+    if (success) {
+      // Enviar email com o motivo
+      await sendStatusEmail('PENDENTE_INFO', retornarReason);
+      
+      toast({
+        title: 'Projeto retornado',
+        description: 'O vendedor foi notificado sobre o retorno do projeto.',
+      });
+    }
+    
+    // Limpar e fechar
+    setShowRetornarDialog(false);
+    setRetornarReason('');
     setSelectedEngineeringStatus('');
   };
 
@@ -925,31 +976,7 @@ export default function ProjectDetail() {
               </CardContent>
             </Card>
 
-            {/* Status Change */}
-            {canChangeStatus && (
-              <Card className="shadow-card">
-                <CardHeader>
-                  <CardTitle className="text-lg">Alterar Status</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <Select value={selectedStatus} onValueChange={(v) => setSelectedStatus(v as ProjectStatus)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecionar status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {Object.entries(STATUS_LABELS).map(([value, label]) => (
-                        <SelectItem key={value} value={value} disabled={value === project.status}>
-                          {label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <Button className="w-full" onClick={handleStatusChange} disabled={!selectedStatus}>
-                    Atualizar Status
-                  </Button>
-                </CardContent>
-              </Card>
-            )}
+            {/* Card "Alterar Status" removido conforme solicitação */}
 
             {/* Status Timeline */}
             <Card className="shadow-card">
@@ -1070,6 +1097,51 @@ export default function ProjectDetail() {
             <Button 
               onClick={handleConfirmPendingInfo}
               disabled={!pendingInfoReason.trim() || isSendingEmail}
+              className="bg-status-pending hover:bg-status-pending/90"
+            >
+              {isSendingEmail ? 'Enviando...' : 'Confirmar e Notificar'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog para Retornar Projeto */}
+      <Dialog open={showRetornarDialog} onOpenChange={setShowRetornarDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-status-pending flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5" />
+              Retornar Projeto
+            </DialogTitle>
+            <DialogDescription>
+              Informe o motivo pelo qual o projeto está sendo retornado ao vendedor.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <Textarea
+              placeholder="Descreva detalhadamente o motivo do retorno..."
+              value={retornarReason}
+              onChange={(e) => setRetornarReason(e.target.value)}
+              className="min-h-[120px]"
+            />
+            <p className="text-sm text-muted-foreground">
+              Esta mensagem será enviada por email ao vendedor e adicionada como comentário no projeto.
+            </p>
+          </div>
+          <DialogFooter className="gap-2">
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setShowRetornarDialog(false);
+                setRetornarReason('');
+                setSelectedEngineeringStatus('');
+              }}
+            >
+              Cancelar
+            </Button>
+            <Button 
+              onClick={handleConfirmRetornar}
+              disabled={!retornarReason.trim() || isSendingEmail}
               className="bg-status-pending hover:bg-status-pending/90"
             >
               {isSendingEmail ? 'Enviando...' : 'Confirmar e Notificar'}

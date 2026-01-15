@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Select,
   SelectContent,
@@ -29,6 +30,14 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from '@/components/ui/sheet';
+import {
   Upload,
   Download,
   Search,
@@ -39,10 +48,12 @@ import {
   RefreshCw,
   Plus,
   Pencil,
-  Check,
-  X,
+  Bell,
+  FileSpreadsheet,
+  ShoppingCart,
+  CheckCheck,
 } from 'lucide-react';
-import { useEstoque, type EstoqueItemAgrupado } from '@/hooks/useEstoque';
+import { useEstoque } from '@/hooks/useEstoque';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import * as XLSX from 'xlsx';
@@ -54,102 +65,8 @@ import {
   type EstoqueStatus,
 } from '@/types/estoque';
 import { cn } from '@/lib/utils';
-
-// Editable cell component
-function EditableStockCell({
-  value,
-  itemId,
-  localId,
-  onSave,
-  bgColor,
-}: {
-  value: number;
-  itemId: string;
-  localId: string;
-  onSave: (itemId: string, localId: string, newValue: number) => Promise<boolean>;
-  bgColor: string;
-}) {
-  const [isEditing, setIsEditing] = useState(false);
-  const [editValue, setEditValue] = useState(value.toString());
-  const [isSaving, setIsSaving] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  const handleStartEdit = () => {
-    setEditValue(value.toString());
-    setIsEditing(true);
-    setTimeout(() => inputRef.current?.focus(), 0);
-  };
-
-  const handleCancel = () => {
-    setIsEditing(false);
-    setEditValue(value.toString());
-  };
-
-  const handleSave = async () => {
-    const newValue = parseInt(editValue, 10);
-    if (isNaN(newValue) || newValue < 0) {
-      setEditValue(value.toString());
-      setIsEditing(false);
-      return;
-    }
-
-    if (newValue === value) {
-      setIsEditing(false);
-      return;
-    }
-
-    setIsSaving(true);
-    const success = await onSave(itemId, localId, newValue);
-    setIsSaving(false);
-    
-    if (success) {
-      setIsEditing(false);
-    } else {
-      setEditValue(value.toString());
-    }
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      handleSave();
-    } else if (e.key === 'Escape') {
-      handleCancel();
-    }
-  };
-
-  if (isEditing) {
-    return (
-      <TableCell className={cn("text-center p-1", bgColor)}>
-        <div className="flex items-center gap-1">
-          <Input
-            ref={inputRef}
-            type="number"
-            min="0"
-            value={editValue}
-            onChange={(e) => setEditValue(e.target.value)}
-            onKeyDown={handleKeyDown}
-            onBlur={handleSave}
-            className="w-16 h-7 text-center text-sm"
-            disabled={isSaving}
-          />
-        </div>
-      </TableCell>
-    );
-  }
-
-  return (
-    <TableCell 
-      className={cn("text-center cursor-pointer hover:bg-accent/50 transition-colors group", bgColor)}
-      onClick={handleStartEdit}
-      title="Clique para editar"
-    >
-      <span className="inline-flex items-center gap-1">
-        {value}
-        <Pencil className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
-      </span>
-    </TableCell>
-  );
-}
+import { formatDistanceToNow } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 export default function ControleEstoque() {
   const { toast } = useToast();
@@ -164,6 +81,9 @@ export default function ControleEstoque() {
     isLoading,
     filteredData,
     criticalItems,
+    itensParaCompra,
+    alertas,
+    alertasNaoLidos,
     locais,
     locaisFiltrados,
     cidades,
@@ -180,6 +100,8 @@ export default function ControleEstoque() {
     refresh,
     updateEstoqueAtual,
     createProduct,
+    marcarAlertaLido,
+    marcarTodosAlertasLidos,
   } = useEstoque();
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -201,24 +123,20 @@ export default function ControleEstoque() {
       const data = await file.arrayBuffer();
       const workbook = XLSX.read(data, { type: 'array' });
 
-      // Map sheet names to tipos
       const sheetTypeMap: Record<string, string> = {
         'Instalação': 'INSTALACAO',
         'Manutenção': 'MANUTENCAO',
         'Urgência': 'URGENCIA',
       };
 
-      // Parse each sheet
       const itemMap = new Map<string, { modelo: string; estoques: { cidade: string; tipo: string; minimo: number; atual: number }[] }>();
 
       for (const sheetName of workbook.SheetNames) {
         const sheet = workbook.Sheets[sheetName];
         const jsonData = XLSX.utils.sheet_to_json(sheet, { header: 1 }) as (string | number)[][];
 
-        // Find the tipo for this sheet
         let tipo = '';
         
-        // Check sheet name or content for tipo
         for (const [key, value] of Object.entries(sheetTypeMap)) {
           if (sheetName.toLowerCase().includes(key.toLowerCase())) {
             tipo = value;
@@ -226,7 +144,6 @@ export default function ControleEstoque() {
           }
         }
 
-        // If not found in sheet name, try first cell
         if (!tipo && jsonData[0] && jsonData[0][0]) {
           const firstCell = String(jsonData[0][0]).toLowerCase();
           if (firstCell.includes('instalação') || firstCell.includes('instalacao')) {
@@ -238,12 +155,8 @@ export default function ControleEstoque() {
           }
         }
 
-        if (!tipo) {
-          console.log(`Could not determine type for sheet: ${sheetName}`);
-          continue;
-        }
+        if (!tipo) continue;
 
-        // Find header row (contains "Cód Sankhya" or similar)
         let headerRowIndex = -1;
         let codigoColIndex = -1;
         let modeloColIndex = -1;
@@ -266,12 +179,10 @@ export default function ControleEstoque() {
           }
 
           if (headerRowIndex === i) {
-            // Find city columns (look for BH, VIX, RIO in the same row or previous row)
             for (let j = 0; j < row.length; j++) {
               const cellValue = String(row[j] || '').toUpperCase();
               const prevRowValue = i > 0 ? String(jsonData[i - 1]?.[j] || '').toUpperCase() : '';
               
-              // Check current cell or header label
               if (cellValue.includes('BH') || prevRowValue.includes('BH')) {
                 cidadeColIndexes['BH'] = j;
               }
@@ -286,17 +197,12 @@ export default function ControleEstoque() {
           }
         }
 
-        if (headerRowIndex === -1 || codigoColIndex === -1) {
-          console.log(`Could not find headers in sheet: ${sheetName}`);
-          continue;
-        }
+        if (headerRowIndex === -1 || codigoColIndex === -1) continue;
 
-        // If modelo column not found, use the column before codigo
         if (modeloColIndex === -1) {
           modeloColIndex = codigoColIndex - 1;
         }
 
-        // Parse data rows
         for (let i = headerRowIndex + 1; i < jsonData.length; i++) {
           const row = jsonData[i];
           if (!row) continue;
@@ -306,14 +212,12 @@ export default function ControleEstoque() {
 
           const modelo = String(row[modeloColIndex] || 'Sem modelo').trim();
 
-          // Get or create item entry
           if (!itemMap.has(codigo)) {
             itemMap.set(codigo, { modelo, estoques: [] });
           }
 
           const item = itemMap.get(codigo)!;
 
-          // Add stock for each city
           for (const [cidade, colIndex] of Object.entries(cidadeColIndexes)) {
             const minValue = row[colIndex];
             const minimo = typeof minValue === 'number' ? minValue : parseInt(String(minValue || '0'), 10) || 0;
@@ -330,7 +234,6 @@ export default function ControleEstoque() {
         }
       }
 
-      // Convert map to array
       const stockData: { codigo: string; modelo: string; estoques: { cidade: string; tipo: string; minimo: number; atual: number }[] }[] = [];
       for (const [codigo, data] of itemMap) {
         stockData.push({ codigo, ...data });
@@ -346,7 +249,6 @@ export default function ControleEstoque() {
         return;
       }
 
-      // Get auth session for the request
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
         toast({
@@ -358,7 +260,6 @@ export default function ControleEstoque() {
         return;
       }
 
-      // Send to edge function
       const { data: result, error } = await supabase.functions.invoke('import-estoque', {
         body: { stockData, fileName: file.name },
       });
@@ -402,10 +303,8 @@ export default function ControleEstoque() {
       return;
     }
 
-    // Get the columns to show
     const columnsToShow = locaisFiltrados.length > 0 ? locaisFiltrados : locais;
 
-    // Create workbook
     const wb = XLSX.utils.book_new();
     const headers: (string | number)[] = ['Código', 'Modelo/Produto'];
     columnsToShow.forEach(local => {
@@ -429,7 +328,6 @@ export default function ControleEstoque() {
     const ws = XLSX.utils.aoa_to_sheet(wsData);
     XLSX.utils.book_append_sheet(wb, ws, 'Itens Críticos');
 
-    // Generate filename with current filters
     const filterParts = [];
     if (filterCidade) filterParts.push(filterCidade);
     if (filterTipo) filterParts.push(ESTOQUE_TIPO_LABELS[filterTipo as EstoqueTipo] || filterTipo);
@@ -440,6 +338,112 @@ export default function ControleEstoque() {
     toast({
       title: 'Exportação concluída',
       description: `${criticalItems.length} itens críticos exportados.`,
+    });
+  };
+
+  // Export purchase report
+  const handleExportRelatorioCompras = () => {
+    if (itensParaCompra.length === 0) {
+      toast({
+        title: 'Nenhum item para compra',
+        description: 'Não há itens que precisam ser comprados.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    const wb = XLSX.utils.book_new();
+    
+    // Summary by product (aggregate all locations)
+    const summaryMap = new Map<string, { codigo: string; modelo: string; totalComprar: number; detalhes: string[] }>();
+    
+    for (const item of itensParaCompra) {
+      const key = item.codigo;
+      if (!summaryMap.has(key)) {
+        summaryMap.set(key, { 
+          codigo: item.codigo, 
+          modelo: item.modelo, 
+          totalComprar: 0,
+          detalhes: []
+        });
+      }
+      const entry = summaryMap.get(key)!;
+      entry.totalComprar += item.quantidade_comprar;
+      entry.detalhes.push(`${item.local}: ${item.quantidade_comprar} un`);
+    }
+
+    // Sheet 1: Summary
+    const summaryData: (string | number)[][] = [
+      ['RELATÓRIO DE COMPRAS - RESUMO'],
+      [`Data: ${new Date().toLocaleDateString('pt-BR')}`],
+      [],
+      ['Código', 'Modelo/Produto', 'Qtd Total a Comprar', 'Detalhes por Local'],
+    ];
+    
+    const summaryArray = Array.from(summaryMap.values()).sort((a, b) => b.totalComprar - a.totalComprar);
+    for (const item of summaryArray) {
+      summaryData.push([item.codigo, item.modelo, item.totalComprar, item.detalhes.join('; ')]);
+    }
+    
+    const wsSummary = XLSX.utils.aoa_to_sheet(summaryData);
+    XLSX.utils.book_append_sheet(wb, wsSummary, 'Resumo');
+
+    // Sheet 2: Detailed by location
+    const detailedData: (string | number)[][] = [
+      ['RELATÓRIO DE COMPRAS - DETALHADO POR LOCAL'],
+      [`Data: ${new Date().toLocaleDateString('pt-BR')}`],
+      [],
+      ['Código', 'Modelo/Produto', 'Local', 'Cidade', 'Tipo', 'Estoque Mínimo', 'Estoque Atual', 'Qtd a Comprar'],
+    ];
+    
+    for (const item of itensParaCompra) {
+      detailedData.push([
+        item.codigo,
+        item.modelo,
+        item.local,
+        item.cidade,
+        ESTOQUE_TIPO_LABELS[item.tipo as EstoqueTipo] || item.tipo,
+        item.estoque_minimo,
+        item.estoque_atual,
+        item.quantidade_comprar,
+      ]);
+    }
+    
+    const wsDetailed = XLSX.utils.aoa_to_sheet(detailedData);
+    XLSX.utils.book_append_sheet(wb, wsDetailed, 'Detalhado');
+
+    // Sheet 3: By city
+    const cities = [...new Set(itensParaCompra.map(i => i.cidade))];
+    for (const cidade of cities) {
+      const cityItems = itensParaCompra.filter(i => i.cidade === cidade);
+      const cityData: (string | number)[][] = [
+        [`COMPRAS - ${cidade}`],
+        [`Data: ${new Date().toLocaleDateString('pt-BR')}`],
+        [],
+        ['Código', 'Modelo/Produto', 'Local', 'Tipo', 'Mín', 'Atual', 'Comprar'],
+      ];
+      
+      for (const item of cityItems) {
+        cityData.push([
+          item.codigo,
+          item.modelo,
+          item.local,
+          ESTOQUE_TIPO_LABELS[item.tipo as EstoqueTipo] || item.tipo,
+          item.estoque_minimo,
+          item.estoque_atual,
+          item.quantidade_comprar,
+        ]);
+      }
+      
+      const wsCity = XLSX.utils.aoa_to_sheet(cityData);
+      XLSX.utils.book_append_sheet(wb, wsCity, cidade);
+    }
+
+    XLSX.writeFile(wb, `relatorio_compras_${new Date().toISOString().split('T')[0]}.xlsx`);
+
+    toast({
+      title: 'Relatório de compras gerado',
+      description: `${itensParaCompra.length} itens exportados para compra.`,
     });
   };
 
@@ -483,7 +487,6 @@ export default function ControleEstoque() {
     }
   };
 
-  // Get the columns to display based on filters
   const displayLocais = locaisFiltrados.length > 0 ? locaisFiltrados : locais;
 
   return (
@@ -502,6 +505,102 @@ export default function ControleEstoque() {
           </div>
 
           <div className="flex items-center gap-2 flex-wrap">
+            {/* Alerts Sheet */}
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button variant="outline" className="relative">
+                  <Bell className="h-4 w-4 mr-2" />
+                  Alertas
+                  {alertasNaoLidos > 0 && (
+                    <Badge className="absolute -top-2 -right-2 h-5 w-5 p-0 flex items-center justify-center bg-red-500 text-white text-xs">
+                      {alertasNaoLidos}
+                    </Badge>
+                  )}
+                </Button>
+              </SheetTrigger>
+              <SheetContent className="w-[400px] sm:w-[540px]">
+                <SheetHeader>
+                  <div className="flex items-center justify-between">
+                    <SheetTitle className="flex items-center gap-2">
+                      <Bell className="h-5 w-5" />
+                      Alertas de Estoque
+                    </SheetTitle>
+                    {alertasNaoLidos > 0 && (
+                      <Button variant="ghost" size="sm" onClick={marcarTodosAlertasLidos}>
+                        <CheckCheck className="h-4 w-4 mr-1" />
+                        Marcar todos como lidos
+                      </Button>
+                    )}
+                  </div>
+                  <SheetDescription>
+                    Itens com estoque abaixo do mínimo
+                  </SheetDescription>
+                </SheetHeader>
+                <ScrollArea className="h-[calc(100vh-180px)] mt-4">
+                  {alertas.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-8 text-center">
+                      <CheckCircle className="h-12 w-12 text-green-500 mb-4" />
+                      <p className="text-muted-foreground">Nenhum alerta no momento</p>
+                      <p className="text-sm text-muted-foreground">Todos os itens estão com estoque adequado</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {alertas.map(alerta => (
+                        <div 
+                          key={alerta.id} 
+                          className={cn(
+                            "p-3 rounded-lg border transition-colors cursor-pointer",
+                            alerta.lido ? "bg-background" : "bg-red-50 border-red-200"
+                          )}
+                          onClick={() => !alerta.lido && marcarAlertaLido(alerta.id)}
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2">
+                                <AlertTriangle className="h-4 w-4 text-red-500" />
+                                <span className="font-medium text-sm">{alerta.item_codigo}</span>
+                                {!alerta.lido && (
+                                  <Badge variant="destructive" className="text-xs">Novo</Badge>
+                                )}
+                              </div>
+                              <p className="text-sm text-muted-foreground mt-1 line-clamp-1">
+                                {alerta.item_modelo}
+                              </p>
+                              <p className="text-xs text-muted-foreground mt-1">
+                                {alerta.local_nome}
+                              </p>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-sm font-medium text-red-600">
+                                Faltam {alerta.quantidade_faltante} un
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                {alerta.estoque_atual}/{alerta.estoque_minimo}
+                              </p>
+                              <p className="text-xs text-muted-foreground mt-1">
+                                {formatDistanceToNow(new Date(alerta.created_at), { addSuffix: true, locale: ptBR })}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </ScrollArea>
+              </SheetContent>
+            </Sheet>
+
+            {/* Purchase Report Button */}
+            <Button 
+              variant="default" 
+              onClick={handleExportRelatorioCompras}
+              disabled={itensParaCompra.length === 0}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              <ShoppingCart className="h-4 w-4 mr-2" />
+              Relatório de Compras ({itensParaCompra.length})
+            </Button>
+
             <Button onClick={() => setShowNewProductDialog(true)}>
               <Plus className="h-4 w-4 mr-2" />
               Novo Produto
@@ -723,10 +822,6 @@ export default function ControleEstoque() {
                                 </span>
                                 <div 
                                   className="text-center px-2 py-1 w-1/2 cursor-pointer hover:bg-accent/50 transition-colors group flex items-center justify-center"
-                                  onClick={() => {
-                                    const cell = document.getElementById(`edit-${item.id}-${local.id}`);
-                                    if (cell) cell.click();
-                                  }}
                                 >
                                   <EditableCellContent
                                     id={`edit-${item.id}-${local.id}`}

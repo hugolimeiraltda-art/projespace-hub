@@ -160,6 +160,123 @@ export type Database = {
         }
         Relationships: []
       }
+      estoque: {
+        Row: {
+          created_at: string
+          estoque_atual: number
+          estoque_minimo: number
+          id: string
+          item_id: string
+          local_estoque_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          estoque_atual?: number
+          estoque_minimo?: number
+          id?: string
+          item_id: string
+          local_estoque_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          estoque_atual?: number
+          estoque_minimo?: number
+          id?: string
+          item_id?: string
+          local_estoque_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "estoque_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "estoque_itens"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "estoque_local_estoque_id_fkey"
+            columns: ["local_estoque_id"]
+            isOneToOne: false
+            referencedRelation: "locais_estoque"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      estoque_importacoes: {
+        Row: {
+          arquivo_nome: string
+          created_at: string
+          id: string
+          importado_por: string
+          itens_importados: number
+        }
+        Insert: {
+          arquivo_nome: string
+          created_at?: string
+          id?: string
+          importado_por: string
+          itens_importados?: number
+        }
+        Update: {
+          arquivo_nome?: string
+          created_at?: string
+          id?: string
+          importado_por?: string
+          itens_importados?: number
+        }
+        Relationships: []
+      }
+      estoque_itens: {
+        Row: {
+          codigo: string
+          created_at: string
+          id: string
+          modelo: string
+          updated_at: string
+        }
+        Insert: {
+          codigo: string
+          created_at?: string
+          id?: string
+          modelo: string
+          updated_at?: string
+        }
+        Update: {
+          codigo?: string
+          created_at?: string
+          id?: string
+          modelo?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      locais_estoque: {
+        Row: {
+          cidade: string
+          created_at: string
+          id: string
+          nome_local: string
+          tipo: Database["public"]["Enums"]["estoque_tipo"]
+        }
+        Insert: {
+          cidade: string
+          created_at?: string
+          id?: string
+          nome_local: string
+          tipo: Database["public"]["Enums"]["estoque_tipo"]
+        }
+        Update: {
+          cidade?: string
+          created_at?: string
+          id?: string
+          nome_local?: string
+          tipo?: Database["public"]["Enums"]["estoque_tipo"]
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -820,6 +937,7 @@ export type Database = {
         | "projetos"
         | "gerente_comercial"
         | "implantacao"
+        | "administrativo"
       attachment_type:
         | "CROQUI"
         | "PLANTA_BAIXA"
@@ -836,6 +954,7 @@ export type Database = {
         | "EM_PRODUCAO"
         | "CONCLUIDO"
         | "RETORNAR"
+      estoque_tipo: "INSTALACAO" | "MANUTENCAO" | "URGENCIA"
       implantacao_status: "A_EXECUTAR" | "EM_EXECUCAO" | "CONCLUIDO_IMPLANTACAO"
       project_status:
         | "RASCUNHO"
@@ -979,6 +1098,7 @@ export const Constants = {
         "projetos",
         "gerente_comercial",
         "implantacao",
+        "administrativo",
       ],
       attachment_type: [
         "CROQUI",
@@ -998,6 +1118,7 @@ export const Constants = {
         "CONCLUIDO",
         "RETORNAR",
       ],
+      estoque_tipo: ["INSTALACAO", "MANUTENCAO", "URGENCIA"],
       implantacao_status: [
         "A_EXECUTAR",
         "EM_EXECUCAO",

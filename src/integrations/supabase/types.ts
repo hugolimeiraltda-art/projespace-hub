@@ -205,6 +205,60 @@ export type Database = {
           },
         ]
       }
+      estoque_alertas: {
+        Row: {
+          created_at: string
+          estoque_atual: number
+          estoque_minimo: number
+          id: string
+          item_id: string
+          lido: boolean
+          lido_em: string | null
+          lido_por: string | null
+          local_estoque_id: string
+          quantidade_faltante: number
+        }
+        Insert: {
+          created_at?: string
+          estoque_atual: number
+          estoque_minimo: number
+          id?: string
+          item_id: string
+          lido?: boolean
+          lido_em?: string | null
+          lido_por?: string | null
+          local_estoque_id: string
+          quantidade_faltante: number
+        }
+        Update: {
+          created_at?: string
+          estoque_atual?: number
+          estoque_minimo?: number
+          id?: string
+          item_id?: string
+          lido?: boolean
+          lido_em?: string | null
+          lido_por?: string | null
+          local_estoque_id?: string
+          quantidade_faltante?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "estoque_alertas_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "estoque_itens"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "estoque_alertas_local_estoque_id_fkey"
+            columns: ["local_estoque_id"]
+            isOneToOne: false
+            referencedRelation: "locais_estoque"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       estoque_importacoes: {
         Row: {
           arquivo_nome: string
@@ -929,6 +983,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      sync_estoque_alertas: { Args: never; Returns: undefined }
     }
     Enums: {
       app_role:

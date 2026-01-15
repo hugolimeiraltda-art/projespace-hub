@@ -11,12 +11,40 @@ export interface EstoqueItemAgrupado {
   statusGeral: EstoqueStatus;
 }
 
+export interface EstoqueAlerta {
+  id: string;
+  item_id: string;
+  local_estoque_id: string;
+  estoque_minimo: number;
+  estoque_atual: number;
+  quantidade_faltante: number;
+  lido: boolean;
+  created_at: string;
+  // Joined data
+  item_codigo?: string;
+  item_modelo?: string;
+  local_nome?: string;
+}
+
+export interface ItemReposicao {
+  codigo: string;
+  modelo: string;
+  local: string;
+  cidade: string;
+  tipo: string;
+  estoque_minimo: number;
+  estoque_atual: number;
+  quantidade_comprar: number;
+}
+
 export function useEstoque() {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(true);
   const [items, setItems] = useState<EstoqueItem[]>([]);
   const [locais, setLocais] = useState<LocalEstoque[]>([]);
   const [estoques, setEstoques] = useState<Estoque[]>([]);
+  const [alertas, setAlertas] = useState<EstoqueAlerta[]>([]);
+  const [alertasNaoLidos, setAlertasNaoLidos] = useState(0);
 
   // Filters
   const [filterCidade, setFilterCidade] = useState<string>('');
@@ -28,19 +56,37 @@ export function useEstoque() {
     setIsLoading(true);
     try {
       // Fetch all data in parallel
-      const [itemsRes, locaisRes, estoquesRes] = await Promise.all([
+      const [itemsRes, locaisRes, estoquesRes, alertasRes] = await Promise.all([
         supabase.from('estoque_itens').select('*').order('modelo'),
         supabase.from('locais_estoque').select('*').order('cidade, tipo'),
         supabase.from('estoque').select('*'),
+        supabase.from('estoque_alertas').select('*').order('created_at', { ascending: false }),
       ]);
 
       if (itemsRes.error) throw itemsRes.error;
       if (locaisRes.error) throw locaisRes.error;
       if (estoquesRes.error) throw estoquesRes.error;
-
+      // Alertas might fail if user doesn't have permission, that's ok
+      
       setItems(itemsRes.data || []);
       setLocais((locaisRes.data || []) as LocalEstoque[]);
       setEstoques(estoquesRes.data || []);
+      
+      if (!alertasRes.error && alertasRes.data) {
+        // Enrich alerts with item and local info
+        const enrichedAlertas = alertasRes.data.map(alerta => {
+          const item = itemsRes.data?.find(i => i.id === alerta.item_id);
+          const local = locaisRes.data?.find(l => l.id === alerta.local_estoque_id) as LocalEstoque | undefined;
+          return {
+            ...alerta,
+            item_codigo: item?.codigo,
+            item_modelo: item?.modelo,
+            local_nome: local?.nome_local,
+          };
+        });
+        setAlertas(enrichedAlertas);
+        setAlertasNaoLidos(enrichedAlertas.filter(a => !a.lido).length);
+      }
     } catch (error) {
       console.error('Error loading stock data:', error);
       toast({
@@ -87,20 +133,8 @@ export function useEstoque() {
         if (error) throw error;
       }
 
-      // Update local state
-      setEstoques(prev => {
-        if (existingEstoque) {
-          return prev.map(e => 
-            e.id === existingEstoque.id 
-              ? { ...e, estoque_atual: novoValor }
-              : e
-          );
-        } else {
-          // Reload to get the new ID
-          loadData();
-          return prev;
-        }
-      });
+      // Reload to get updated alerts
+      await loadData();
 
       toast({
         title: 'Estoque atualizado',
@@ -153,6 +187,59 @@ export function useEstoque() {
         description: 'Não foi possível criar o produto.',
         variant: 'destructive',
       });
+      return false;
+    }
+  };
+
+  // Mark alert as read
+  const marcarAlertaLido = async (alertaId: string): Promise<boolean> => {
+    try {
+      const { error } = await supabase
+        .from('estoque_alertas')
+        .update({ 
+          lido: true,
+          lido_em: new Date().toISOString()
+        })
+        .eq('id', alertaId);
+
+      if (error) throw error;
+
+      setAlertas(prev => prev.map(a => 
+        a.id === alertaId ? { ...a, lido: true } : a
+      ));
+      setAlertasNaoLidos(prev => Math.max(0, prev - 1));
+
+      return true;
+    } catch (error) {
+      console.error('Error marking alert as read:', error);
+      return false;
+    }
+  };
+
+  // Mark all alerts as read
+  const marcarTodosAlertasLidos = async (): Promise<boolean> => {
+    try {
+      const { error } = await supabase
+        .from('estoque_alertas')
+        .update({ 
+          lido: true,
+          lido_em: new Date().toISOString()
+        })
+        .eq('lido', false);
+
+      if (error) throw error;
+
+      setAlertas(prev => prev.map(a => ({ ...a, lido: true })));
+      setAlertasNaoLidos(0);
+
+      toast({
+        title: 'Alertas marcados como lidos',
+        description: 'Todos os alertas foram marcados como lidos.',
+      });
+
+      return true;
+    } catch (error) {
+      console.error('Error marking all alerts as read:', error);
       return false;
     }
   };
@@ -268,6 +355,35 @@ export function useEstoque() {
     });
   }, [filteredData, locaisFiltrados, locais]);
 
+  // Get items for purchase report (all items where atual < minimo)
+  const itensParaCompra = useMemo((): ItemReposicao[] => {
+    const result: ItemReposicao[] = [];
+
+    for (const item of items) {
+      for (const local of locais) {
+        const estoque = estoques.find(
+          e => e.item_id === item.id && e.local_estoque_id === local.id
+        );
+
+        if (estoque && estoque.estoque_atual < estoque.estoque_minimo) {
+          result.push({
+            codigo: item.codigo,
+            modelo: item.modelo,
+            local: local.nome_local,
+            cidade: local.cidade,
+            tipo: local.tipo,
+            estoque_minimo: estoque.estoque_minimo,
+            estoque_atual: estoque.estoque_atual,
+            quantidade_comprar: estoque.estoque_minimo - estoque.estoque_atual,
+          });
+        }
+      }
+    }
+
+    // Sort by quantity to buy (descending)
+    return result.sort((a, b) => b.quantidade_comprar - a.quantidade_comprar);
+  }, [items, locais, estoques]);
+
   // Stats - count unique items
   const stats = useMemo(() => {
     const total = items.length;
@@ -296,6 +412,9 @@ export function useEstoque() {
     isLoading,
     filteredData,
     criticalItems,
+    itensParaCompra,
+    alertas,
+    alertasNaoLidos,
     locais,
     locaisFiltrados,
     cidades,
@@ -312,5 +431,7 @@ export function useEstoque() {
     refresh: loadData,
     updateEstoqueAtual,
     createProduct,
+    marcarAlertaLido,
+    marcarTodosAlertasLidos,
   };
 }

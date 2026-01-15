@@ -26,6 +26,7 @@ const ALL_ROLES: { value: UserRole; label: string }[] = [
   { value: 'projetos', label: 'Projetista' },
   { value: 'implantacao', label: 'Implantação' },
   { value: 'gerente_comercial', label: 'Gerente Comercial' },
+  { value: 'administrativo', label: 'Administrativo' },
   { value: 'admin', label: 'Administrador' },
 ];
 
@@ -51,9 +52,13 @@ export default function GestaoUsuarios() {
   const { toast } = useToast();
 
   // Gerente comercial can only create vendedor users
+  // Administrativo can create all except admin
   const isGerenteComercial = currentUser?.role === 'gerente_comercial';
+  const isAdministrativo = currentUser?.role === 'administrativo';
   const availableRoles = isGerenteComercial 
     ? ALL_ROLES.filter(r => r.value === 'vendedor')
+    : isAdministrativo
+    ? ALL_ROLES.filter(r => r.value !== 'admin')
     : ALL_ROLES;
 
   const [users, setUsers] = useState<User[]>([]);

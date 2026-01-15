@@ -30,7 +30,7 @@ import {
   Package,
   RefreshCw,
 } from 'lucide-react';
-import { useEstoque } from '@/hooks/useEstoque';
+import { useEstoque, type EstoqueItemAgrupado } from '@/hooks/useEstoque';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import * as XLSX from 'xlsx';
@@ -41,6 +41,7 @@ import {
   type EstoqueTipo,
   type EstoqueStatus,
 } from '@/types/estoque';
+import { cn } from '@/lib/utils';
 
 export default function ControleEstoque() {
   const { toast } = useToast();
@@ -51,6 +52,8 @@ export default function ControleEstoque() {
     isLoading,
     filteredData,
     criticalItems,
+    locais,
+    locaisFiltrados,
     cidades,
     tipos,
     stats,
@@ -92,12 +95,6 @@ export default function ControleEstoque() {
       };
 
       // Parse each sheet
-      const stockData: {
-        codigo: string;
-        modelo: string;
-        estoques: { cidade: string; tipo: string; minimo: number; atual: number }[];
-      }[] = [];
-
       const itemMap = new Map<string, { modelo: string; estoques: { cidade: string; tipo: string; minimo: number; atual: number }[] }>();
 
       for (const sheetName of workbook.SheetNames) {
@@ -212,7 +209,7 @@ export default function ControleEstoque() {
                 cidade,
                 tipo,
                 minimo,
-                atual: 0, // Estoque atual starts at 0 or should come from another source
+                atual: 0,
               });
             }
           }
@@ -220,6 +217,7 @@ export default function ControleEstoque() {
       }
 
       // Convert map to array
+      const stockData: { codigo: string; modelo: string; estoques: { cidade: string; tipo: string; minimo: number; atual: number }[] }[] = [];
       for (const [codigo, data] of itemMap) {
         stockData.push({ codigo, ...data });
       }
@@ -290,20 +288,29 @@ export default function ControleEstoque() {
       return;
     }
 
+    // Get the columns to show
+    const columnsToShow = locaisFiltrados.length > 0 ? locaisFiltrados : locais;
+
     // Create workbook
     const wb = XLSX.utils.book_new();
-    const wsData = [
-      ['Código', 'Modelo/Produto', 'Local', 'Mínimo', 'Atual', 'Reposição Sugerida', 'Status'],
-      ...criticalItems.map(item => [
-        item.codigo,
-        item.modelo,
-        item.nome_local,
-        item.estoque_minimo,
-        item.estoque_atual,
-        item.reposicao_sugerida,
-        ESTOQUE_STATUS_LABELS[item.status],
-      ]),
-    ];
+    const headers = ['Código', 'Modelo/Produto'];
+    columnsToShow.forEach(local => {
+      headers.push(`${local.nome_local} - Mín`);
+      headers.push(`${local.nome_local} - Atual`);
+    });
+    headers.push('Status');
+
+    const wsData: (string | number)[][] = [headers];
+    criticalItems.forEach(item => {
+      const row: (string | number)[] = [item.codigo, item.modelo];
+      columnsToShow.forEach(local => {
+        const est = item.estoques[local.id];
+        row.push(est?.minimo ?? 0);
+        row.push(est?.atual ?? 0);
+      });
+      row.push(item.statusGeral);
+      wsData.push(row);
+    });
 
     const ws = XLSX.utils.aoa_to_sheet(wsData);
     XLSX.utils.book_append_sheet(wb, ws, 'Itens Críticos');
@@ -332,6 +339,17 @@ export default function ControleEstoque() {
         return <HelpCircle className="h-4 w-4 text-gray-400" />;
     }
   };
+
+  const handleCardClick = (status: EstoqueStatus | '') => {
+    if (filterStatus === status) {
+      setFilterStatus('');
+    } else {
+      setFilterStatus(status);
+    }
+  };
+
+  // Get the columns to display based on filters
+  const displayLocais = locaisFiltrados.length > 0 ? locaisFiltrados : locais;
 
   return (
     <Layout>
@@ -378,27 +396,51 @@ export default function ControleEstoque() {
           </div>
         </div>
 
-        {/* Stats Cards */}
+        {/* Stats Cards - Clickable */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <Card>
+          <Card 
+            className={cn(
+              "cursor-pointer transition-all hover:shadow-md",
+              filterStatus === '' && "ring-2 ring-primary"
+            )}
+            onClick={() => handleCardClick('')}
+          >
             <CardContent className="pt-4">
               <div className="text-2xl font-bold">{stats.total}</div>
               <p className="text-sm text-muted-foreground">Total de Registros</p>
             </CardContent>
           </Card>
-          <Card>
+          <Card 
+            className={cn(
+              "cursor-pointer transition-all hover:shadow-md",
+              filterStatus === 'OK' && "ring-2 ring-green-500"
+            )}
+            onClick={() => handleCardClick('OK')}
+          >
             <CardContent className="pt-4">
               <div className="text-2xl font-bold text-green-600">{stats.ok}</div>
               <p className="text-sm text-muted-foreground">Estoque OK</p>
             </CardContent>
           </Card>
-          <Card>
+          <Card 
+            className={cn(
+              "cursor-pointer transition-all hover:shadow-md",
+              filterStatus === 'CRITICO' && "ring-2 ring-red-500"
+            )}
+            onClick={() => handleCardClick('CRITICO')}
+          >
             <CardContent className="pt-4">
               <div className="text-2xl font-bold text-red-600">{stats.critico}</div>
               <p className="text-sm text-muted-foreground">Crítico</p>
             </CardContent>
           </Card>
-          <Card>
+          <Card 
+            className={cn(
+              "cursor-pointer transition-all hover:shadow-md",
+              filterStatus === 'SEM_BASE' && "ring-2 ring-gray-500"
+            )}
+            onClick={() => handleCardClick('SEM_BASE')}
+          >
             <CardContent className="pt-4">
               <div className="text-2xl font-bold text-gray-500">{stats.semBase}</div>
               <p className="text-sm text-muted-foreground">Sem Base</p>
@@ -415,7 +457,7 @@ export default function ControleEstoque() {
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div>
                 <Label>Cidade</Label>
-                <Select value={filterCidade} onValueChange={setFilterCidade}>
+                <Select value={filterCidade || 'all'} onValueChange={(v) => setFilterCidade(v === 'all' ? '' : v)}>
                   <SelectTrigger>
                     <SelectValue placeholder="Todas" />
                   </SelectTrigger>
@@ -432,7 +474,7 @@ export default function ControleEstoque() {
 
               <div>
                 <Label>Tipo de Estoque</Label>
-                <Select value={filterTipo} onValueChange={setFilterTipo}>
+                <Select value={filterTipo || 'all'} onValueChange={(v) => setFilterTipo(v === 'all' ? '' : v)}>
                   <SelectTrigger>
                     <SelectValue placeholder="Todos" />
                   </SelectTrigger>
@@ -449,7 +491,7 @@ export default function ControleEstoque() {
 
               <div>
                 <Label>Status</Label>
-                <Select value={filterStatus} onValueChange={setFilterStatus}>
+                <Select value={filterStatus || 'all'} onValueChange={(v) => setFilterStatus(v === 'all' ? '' : v)}>
                   <SelectTrigger>
                     <SelectValue placeholder="Todos" />
                   </SelectTrigger>
@@ -496,43 +538,68 @@ export default function ControleEstoque() {
                 </p>
               </div>
             ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Código</TableHead>
-                    <TableHead>Modelo/Produto</TableHead>
-                    <TableHead>Local</TableHead>
-                    <TableHead className="text-right">Mín</TableHead>
-                    <TableHead className="text-right">Atual</TableHead>
-                    <TableHead className="text-right">Reposição</TableHead>
-                    <TableHead>Status</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredData.slice(0, 100).map(item => (
-                    <TableRow key={item.id}>
-                      <TableCell className="font-mono text-sm">{item.codigo}</TableCell>
-                      <TableCell className="max-w-[200px] truncate" title={item.modelo}>
-                        {item.modelo}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline">{item.nome_local}</Badge>
-                      </TableCell>
-                      <TableCell className="text-right">{item.estoque_minimo}</TableCell>
-                      <TableCell className="text-right">{item.estoque_atual}</TableCell>
-                      <TableCell className="text-right font-medium">
-                        {item.reposicao_sugerida > 0 ? item.reposicao_sugerida : '-'}
-                      </TableCell>
-                      <TableCell>
-                        <Badge className={`${ESTOQUE_STATUS_COLORS[item.status].bg} ${ESTOQUE_STATUS_COLORS[item.status].text} gap-1`}>
-                          {getStatusIcon(item.status)}
-                          {ESTOQUE_STATUS_LABELS[item.status]}
-                        </Badge>
-                      </TableCell>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="sticky left-0 bg-background z-10">Código</TableHead>
+                      <TableHead className="sticky left-[80px] bg-background z-10 min-w-[200px]">Modelo/Produto</TableHead>
+                      {displayLocais.map(local => (
+                        <TableHead key={local.id} className="text-center min-w-[120px]" colSpan={2}>
+                          {local.nome_local}
+                        </TableHead>
+                      ))}
+                      <TableHead>Status</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                    <TableRow className="bg-muted/50">
+                      <TableHead className="sticky left-0 bg-muted/50 z-10"></TableHead>
+                      <TableHead className="sticky left-[80px] bg-muted/50 z-10"></TableHead>
+                      {displayLocais.map(local => (
+                        <>
+                          <TableHead key={`${local.id}-min`} className="text-center text-xs font-normal">
+                            Mín
+                          </TableHead>
+                          <TableHead key={`${local.id}-atual`} className="text-center text-xs font-normal">
+                            Atual
+                          </TableHead>
+                        </>
+                      ))}
+                      <TableHead></TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredData.slice(0, 100).map(item => (
+                      <TableRow key={item.id}>
+                        <TableCell className="sticky left-0 bg-background font-mono text-sm">{item.codigo}</TableCell>
+                        <TableCell className="sticky left-[80px] bg-background max-w-[200px] truncate" title={item.modelo}>
+                          {item.modelo}
+                        </TableCell>
+                        {displayLocais.map(local => {
+                          const est = item.estoques[local.id];
+                          const status = est?.status || 'SEM_BASE';
+                          const bgColor = status === 'CRITICO' ? 'bg-red-50' : status === 'OK' ? 'bg-green-50' : '';
+                          return (
+                            <>
+                              <TableCell key={`${local.id}-${item.id}-min`} className={cn("text-center", bgColor)}>
+                                {est?.minimo ?? '-'}
+                              </TableCell>
+                              <TableCell key={`${local.id}-${item.id}-atual`} className={cn("text-center", bgColor)}>
+                                {est?.atual ?? '-'}
+                              </TableCell>
+                            </>
+                          );
+                        })}
+                        <TableCell>
+                          <Badge className={`${ESTOQUE_STATUS_COLORS[item.statusGeral].bg} ${ESTOQUE_STATUS_COLORS[item.statusGeral].text} gap-1`}>
+                            {getStatusIcon(item.statusGeral)}
+                            {ESTOQUE_STATUS_LABELS[item.statusGeral]}
+                          </Badge>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
             )}
             {filteredData.length > 100 && (
               <div className="p-4 text-center text-sm text-muted-foreground border-t">

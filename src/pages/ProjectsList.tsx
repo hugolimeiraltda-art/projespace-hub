@@ -37,9 +37,9 @@ export default function ProjectsList() {
     ? getProjectsByUser(user.id) 
     : projects;
 
-  // Get unique cities for filter
+  // Get unique cities for filter (filter out null/undefined/empty values)
   const cities = useMemo(() => {
-    const uniqueCities = [...new Set(baseProjects.map(p => p.cliente_cidade))];
+    const uniqueCities = [...new Set(baseProjects.map(p => p.cliente_cidade).filter(Boolean))];
     return uniqueCities.sort();
   }, [baseProjects]);
 
@@ -139,7 +139,7 @@ export default function ProjectsList() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="ALL">Todas as cidades</SelectItem>
-                  {cities.map(city => (
+                  {cities.filter(city => city && city.trim() !== '').map(city => (
                     <SelectItem key={city} value={city}>{city}</SelectItem>
                   ))}
                 </SelectContent>

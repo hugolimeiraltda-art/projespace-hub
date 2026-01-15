@@ -831,7 +831,11 @@ export type Database = {
         | "PLANTA_CROQUI_DEVOLUCAO"
         | "LISTA_EQUIPAMENTOS"
         | "LISTA_ATIVIDADES"
-      engineering_status: "EM_RECEBIMENTO" | "EM_PRODUCAO" | "CONCLUIDO"
+      engineering_status:
+        | "EM_RECEBIMENTO"
+        | "EM_PRODUCAO"
+        | "CONCLUIDO"
+        | "RETORNAR"
       implantacao_status: "A_EXECUTAR" | "EM_EXECUCAO" | "CONCLUIDO_IMPLANTACAO"
       project_status:
         | "RASCUNHO"
@@ -988,7 +992,12 @@ export const Constants = {
         "LISTA_EQUIPAMENTOS",
         "LISTA_ATIVIDADES",
       ],
-      engineering_status: ["EM_RECEBIMENTO", "EM_PRODUCAO", "CONCLUIDO"],
+      engineering_status: [
+        "EM_RECEBIMENTO",
+        "EM_PRODUCAO",
+        "CONCLUIDO",
+        "RETORNAR",
+      ],
       implantacao_status: [
         "A_EXECUTAR",
         "EM_EXECUCAO",

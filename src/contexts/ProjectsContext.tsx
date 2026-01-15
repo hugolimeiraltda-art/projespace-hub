@@ -706,6 +706,11 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
         updateData.engineering_production_at = new Date().toISOString();
       } else if (newStatus === 'CONCLUIDO') {
         updateData.engineering_completed_at = new Date().toISOString();
+        // Quando engenharia conclui, atualizar status do projeto para APROVADO_PROJETO
+        updateData.status = 'APROVADO_PROJETO';
+      } else if (newStatus === 'RETORNAR') {
+        // Quando retornar, atualizar status do projeto para PENDENTE_INFO
+        updateData.status = 'PENDENTE_INFO';
       }
 
       const { error } = await supabase
@@ -941,6 +946,7 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
         .update({
           engineering_status: 'CONCLUIDO',
           engineering_completed_at: new Date().toISOString(),
+          status: 'APROVADO_PROJETO', // Atualizar status do projeto para APROVADO
         })
         .eq('id', projectId);
 

@@ -10,6 +10,7 @@ export type ProjectStatus =
 export type EngineeringStatus = 
   | 'EM_RECEBIMENTO'
   | 'EM_PRODUCAO'
+  | 'RETORNAR'
   | 'CONCLUIDO';
 
 // Sale status for Form 2
@@ -286,12 +287,14 @@ export const STATUS_LABELS: Record<ProjectStatus, string> = {
 export const ENGINEERING_STATUS_LABELS: Record<EngineeringStatus, string> = {
   EM_RECEBIMENTO: 'Em Recebimento',
   EM_PRODUCAO: 'Em Produção',
+  RETORNAR: 'Retornar',
   CONCLUIDO: 'Concluído',
 };
 
 export const ENGINEERING_STATUS_DAYS: Record<EngineeringStatus, number> = {
   EM_RECEBIMENTO: 1,
   EM_PRODUCAO: 5,
+  RETORNAR: 0,
   CONCLUIDO: 0,
 };
 

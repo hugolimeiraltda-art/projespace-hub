@@ -14,6 +14,7 @@ import NewProject from "./pages/NewProject";
 import EditProject from "./pages/EditProject";
 import ProjectDetail from "./pages/ProjectDetail";
 import SaleCompletedForm from "./pages/SaleCompletedForm";
+import InformarNovaVenda from "./pages/InformarNovaVenda";
 import MeusChamados from "./pages/MeusChamados";
 import MeuPerfil from "./pages/MeuPerfil";
 import Configuracoes from "./pages/Configuracoes";
@@ -88,6 +89,10 @@ function AppRoutes() {
       <Route 
         path="/projetos/:id/form2" 
         element={<ProtectedRoute><SaleCompletedForm /></ProtectedRoute>} 
+      />
+      <Route 
+        path="/informar-venda" 
+        element={<ProtectedRoute><InformarNovaVenda /></ProtectedRoute>} 
       />
       <Route 
         path="/startup-projetos" 

@@ -14,6 +14,7 @@ import {
   ClipboardList,
   Users,
   Briefcase,
+  ShoppingCart,
 } from 'lucide-react';
 import emiveLogo from '@/assets/emive-logo.png';
 
@@ -34,6 +35,7 @@ export function Layout({ children }: LayoutProps) {
   const navItems = [
     { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { path: '/projetos/novo', label: 'Novo Projeto', icon: FolderPlus, roles: ['vendedor', 'admin'] },
+    { path: '/informar-venda', label: 'Informar Nova Venda', icon: ShoppingCart },
     { path: '/projetos', label: 'Meus Projetos', icon: List, roles: ['vendedor'] },
     { path: '/projetos', label: 'Projetos', icon: List, roles: ['projetos', 'admin', 'gerente_comercial'], exact: true },
     { path: '/startup-projetos', label: 'Start-up de Projetos', icon: ClipboardList, roles: ['implantacao', 'admin'] },

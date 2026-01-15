@@ -21,6 +21,14 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import {
   Upload,
   Download,
   Search,
@@ -29,6 +37,10 @@ import {
   HelpCircle,
   Package,
   RefreshCw,
+  Plus,
+  Pencil,
+  Check,
+  X,
 } from 'lucide-react';
 import { useEstoque, type EstoqueItemAgrupado } from '@/hooks/useEstoque';
 import { useToast } from '@/hooks/use-toast';
@@ -43,10 +55,110 @@ import {
 } from '@/types/estoque';
 import { cn } from '@/lib/utils';
 
+// Editable cell component
+function EditableStockCell({
+  value,
+  itemId,
+  localId,
+  onSave,
+  bgColor,
+}: {
+  value: number;
+  itemId: string;
+  localId: string;
+  onSave: (itemId: string, localId: string, newValue: number) => Promise<boolean>;
+  bgColor: string;
+}) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [editValue, setEditValue] = useState(value.toString());
+  const [isSaving, setIsSaving] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const handleStartEdit = () => {
+    setEditValue(value.toString());
+    setIsEditing(true);
+    setTimeout(() => inputRef.current?.focus(), 0);
+  };
+
+  const handleCancel = () => {
+    setIsEditing(false);
+    setEditValue(value.toString());
+  };
+
+  const handleSave = async () => {
+    const newValue = parseInt(editValue, 10);
+    if (isNaN(newValue) || newValue < 0) {
+      setEditValue(value.toString());
+      setIsEditing(false);
+      return;
+    }
+
+    if (newValue === value) {
+      setIsEditing(false);
+      return;
+    }
+
+    setIsSaving(true);
+    const success = await onSave(itemId, localId, newValue);
+    setIsSaving(false);
+    
+    if (success) {
+      setIsEditing(false);
+    } else {
+      setEditValue(value.toString());
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleSave();
+    } else if (e.key === 'Escape') {
+      handleCancel();
+    }
+  };
+
+  if (isEditing) {
+    return (
+      <TableCell className={cn("text-center p-1", bgColor)}>
+        <div className="flex items-center gap-1">
+          <Input
+            ref={inputRef}
+            type="number"
+            min="0"
+            value={editValue}
+            onChange={(e) => setEditValue(e.target.value)}
+            onKeyDown={handleKeyDown}
+            onBlur={handleSave}
+            className="w-16 h-7 text-center text-sm"
+            disabled={isSaving}
+          />
+        </div>
+      </TableCell>
+    );
+  }
+
+  return (
+    <TableCell 
+      className={cn("text-center cursor-pointer hover:bg-accent/50 transition-colors group", bgColor)}
+      onClick={handleStartEdit}
+      title="Clique para editar"
+    >
+      <span className="inline-flex items-center gap-1">
+        {value}
+        <Pencil className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+      </span>
+    </TableCell>
+  );
+}
+
 export default function ControleEstoque() {
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isImporting, setIsImporting] = useState(false);
+  const [showNewProductDialog, setShowNewProductDialog] = useState(false);
+  const [newProductCodigo, setNewProductCodigo] = useState('');
+  const [newProductModelo, setNewProductModelo] = useState('');
+  const [isCreatingProduct, setIsCreatingProduct] = useState(false);
 
   const {
     isLoading,
@@ -66,6 +178,8 @@ export default function ControleEstoque() {
     searchTerm,
     setSearchTerm,
     refresh,
+    updateEstoqueAtual,
+    createProduct,
   } = useEstoque();
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -293,7 +407,7 @@ export default function ControleEstoque() {
 
     // Create workbook
     const wb = XLSX.utils.book_new();
-    const headers = ['Código', 'Modelo/Produto'];
+    const headers: (string | number)[] = ['Código', 'Modelo/Produto'];
     columnsToShow.forEach(local => {
       headers.push(`${local.nome_local} - Mín`);
       headers.push(`${local.nome_local} - Atual`);
@@ -348,6 +462,27 @@ export default function ControleEstoque() {
     }
   };
 
+  const handleCreateProduct = async () => {
+    if (!newProductCodigo.trim() || !newProductModelo.trim()) {
+      toast({
+        title: 'Campos obrigatórios',
+        description: 'Preencha o código e o modelo do produto.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsCreatingProduct(true);
+    const success = await createProduct(newProductCodigo.trim(), newProductModelo.trim());
+    setIsCreatingProduct(false);
+
+    if (success) {
+      setShowNewProductDialog(false);
+      setNewProductCodigo('');
+      setNewProductModelo('');
+    }
+  };
+
   // Get the columns to display based on filters
   const displayLocais = locaisFiltrados.length > 0 ? locaisFiltrados : locais;
 
@@ -366,7 +501,11 @@ export default function ControleEstoque() {
             </p>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            <Button onClick={() => setShowNewProductDialog(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              Novo Produto
+            </Button>
             <input
               ref={fileInputRef}
               type="file"
@@ -534,7 +673,7 @@ export default function ControleEstoque() {
                 <p className="text-muted-foreground text-sm">
                   {searchTerm || filterCidade || filterTipo || filterStatus
                     ? 'Tente ajustar os filtros'
-                    : 'Importe uma planilha Excel para começar'}
+                    : 'Importe uma planilha Excel ou adicione um novo produto'}
                 </p>
               </div>
             ) : (
@@ -555,14 +694,12 @@ export default function ControleEstoque() {
                       <TableHead className="sticky left-0 bg-muted/50 z-10"></TableHead>
                       <TableHead className="sticky left-[80px] bg-muted/50 z-10"></TableHead>
                       {displayLocais.map(local => (
-                        <>
-                          <TableHead key={`${local.id}-min`} className="text-center text-xs font-normal">
-                            Mín
-                          </TableHead>
-                          <TableHead key={`${local.id}-atual`} className="text-center text-xs font-normal">
-                            Atual
-                          </TableHead>
-                        </>
+                        <TableHead key={`${local.id}-header`} className="text-center" colSpan={2}>
+                          <div className="flex justify-around text-xs font-normal">
+                            <span>Mín</span>
+                            <span>Atual</span>
+                          </div>
+                        </TableHead>
                       ))}
                       <TableHead></TableHead>
                     </TableRow>
@@ -579,14 +716,28 @@ export default function ControleEstoque() {
                           const status = est?.status || 'SEM_BASE';
                           const bgColor = status === 'CRITICO' ? 'bg-red-50' : status === 'OK' ? 'bg-green-50' : '';
                           return (
-                            <>
-                              <TableCell key={`${local.id}-${item.id}-min`} className={cn("text-center", bgColor)}>
-                                {est?.minimo ?? '-'}
-                              </TableCell>
-                              <TableCell key={`${local.id}-${item.id}-atual`} className={cn("text-center", bgColor)}>
-                                {est?.atual ?? '-'}
-                              </TableCell>
-                            </>
+                            <TableCell key={`${local.id}-${item.id}`} className={cn("p-0", bgColor)} colSpan={2}>
+                              <div className="flex justify-around items-center">
+                                <span className="text-center px-2 py-2 w-1/2 border-r border-border/50">
+                                  {est?.minimo ?? '-'}
+                                </span>
+                                <div 
+                                  className="text-center px-2 py-1 w-1/2 cursor-pointer hover:bg-accent/50 transition-colors group flex items-center justify-center"
+                                  onClick={() => {
+                                    const cell = document.getElementById(`edit-${item.id}-${local.id}`);
+                                    if (cell) cell.click();
+                                  }}
+                                >
+                                  <EditableCellContent
+                                    id={`edit-${item.id}-${local.id}`}
+                                    value={est?.atual ?? 0}
+                                    itemId={item.id}
+                                    localId={local.id}
+                                    onSave={updateEstoqueAtual}
+                                  />
+                                </div>
+                              </div>
+                            </TableCell>
                           );
                         })}
                         <TableCell>
@@ -609,6 +760,133 @@ export default function ControleEstoque() {
           </CardContent>
         </Card>
       </div>
+
+      {/* New Product Dialog */}
+      <Dialog open={showNewProductDialog} onOpenChange={setShowNewProductDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Novo Produto</DialogTitle>
+            <DialogDescription>
+              Adicione um novo produto ao estoque. Depois de criado, você pode definir os valores de estoque mínimo e atual por local.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="codigo">Código (Sankhya)</Label>
+              <Input
+                id="codigo"
+                value={newProductCodigo}
+                onChange={(e) => setNewProductCodigo(e.target.value)}
+                placeholder="Ex: 12345"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="modelo">Modelo / Produto</Label>
+              <Input
+                id="modelo"
+                value={newProductModelo}
+                onChange={(e) => setNewProductModelo(e.target.value)}
+                placeholder="Ex: CÂMERA BULLET HD 1080P"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowNewProductDialog(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleCreateProduct} disabled={isCreatingProduct}>
+              {isCreatingProduct ? 'Criando...' : 'Criar Produto'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Layout>
+  );
+}
+
+// Simple inline editable content
+function EditableCellContent({
+  id,
+  value,
+  itemId,
+  localId,
+  onSave,
+}: {
+  id: string;
+  value: number;
+  itemId: string;
+  localId: string;
+  onSave: (itemId: string, localId: string, newValue: number) => Promise<boolean>;
+}) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [editValue, setEditValue] = useState(value.toString());
+  const [isSaving, setIsSaving] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const handleStartEdit = () => {
+    setEditValue(value.toString());
+    setIsEditing(true);
+    setTimeout(() => inputRef.current?.focus(), 0);
+  };
+
+  const handleSave = async () => {
+    const newValue = parseInt(editValue, 10);
+    if (isNaN(newValue) || newValue < 0) {
+      setEditValue(value.toString());
+      setIsEditing(false);
+      return;
+    }
+
+    if (newValue === value) {
+      setIsEditing(false);
+      return;
+    }
+
+    setIsSaving(true);
+    const success = await onSave(itemId, localId, newValue);
+    setIsSaving(false);
+    
+    if (success) {
+      setIsEditing(false);
+    } else {
+      setEditValue(value.toString());
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleSave();
+    } else if (e.key === 'Escape') {
+      setIsEditing(false);
+      setEditValue(value.toString());
+    }
+  };
+
+  if (isEditing) {
+    return (
+      <Input
+        ref={inputRef}
+        type="number"
+        min="0"
+        value={editValue}
+        onChange={(e) => setEditValue(e.target.value)}
+        onKeyDown={handleKeyDown}
+        onBlur={handleSave}
+        className="w-14 h-6 text-center text-sm p-1"
+        disabled={isSaving}
+      />
+    );
+  }
+
+  return (
+    <span 
+      id={id}
+      className="inline-flex items-center gap-1 cursor-pointer"
+      onClick={handleStartEdit}
+    >
+      {value}
+      <Pencil className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+    </span>
   );
 }

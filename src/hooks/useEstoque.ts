@@ -7,7 +7,7 @@ export interface EstoqueItemAgrupado {
   id: string;
   codigo: string;
   modelo: string;
-  estoques: Record<string, { minimo: number; atual: number; status: EstoqueStatus }>;
+  estoques: Record<string, { id?: string; minimo: number; atual: number; status: EstoqueStatus }>;
   statusGeral: EstoqueStatus;
 }
 
@@ -57,6 +57,106 @@ export function useEstoque() {
     loadData();
   }, []);
 
+  // Update stock atual value
+  const updateEstoqueAtual = async (itemId: string, localId: string, novoValor: number): Promise<boolean> => {
+    try {
+      // Check if estoque record exists
+      const existingEstoque = estoques.find(
+        e => e.item_id === itemId && e.local_estoque_id === localId
+      );
+
+      if (existingEstoque) {
+        // Update existing record
+        const { error } = await supabase
+          .from('estoque')
+          .update({ estoque_atual: novoValor })
+          .eq('id', existingEstoque.id);
+
+        if (error) throw error;
+      } else {
+        // Create new record
+        const { error } = await supabase
+          .from('estoque')
+          .insert({
+            item_id: itemId,
+            local_estoque_id: localId,
+            estoque_atual: novoValor,
+            estoque_minimo: 0,
+          });
+
+        if (error) throw error;
+      }
+
+      // Update local state
+      setEstoques(prev => {
+        if (existingEstoque) {
+          return prev.map(e => 
+            e.id === existingEstoque.id 
+              ? { ...e, estoque_atual: novoValor }
+              : e
+          );
+        } else {
+          // Reload to get the new ID
+          loadData();
+          return prev;
+        }
+      });
+
+      toast({
+        title: 'Estoque atualizado',
+        description: 'O valor do estoque atual foi atualizado com sucesso.',
+      });
+
+      return true;
+    } catch (error) {
+      console.error('Error updating stock:', error);
+      toast({
+        title: 'Erro ao atualizar',
+        description: 'Não foi possível atualizar o estoque.',
+        variant: 'destructive',
+      });
+      return false;
+    }
+  };
+
+  // Create new product
+  const createProduct = async (codigo: string, modelo: string): Promise<boolean> => {
+    try {
+      // Check if codigo already exists
+      const existing = items.find(i => i.codigo === codigo);
+      if (existing) {
+        toast({
+          title: 'Código já existe',
+          description: 'Já existe um produto com este código.',
+          variant: 'destructive',
+        });
+        return false;
+      }
+
+      const { error } = await supabase
+        .from('estoque_itens')
+        .insert({ codigo, modelo });
+
+      if (error) throw error;
+
+      toast({
+        title: 'Produto criado',
+        description: 'O novo produto foi adicionado com sucesso.',
+      });
+
+      await loadData();
+      return true;
+    } catch (error) {
+      console.error('Error creating product:', error);
+      toast({
+        title: 'Erro ao criar produto',
+        description: 'Não foi possível criar o produto.',
+        variant: 'destructive',
+      });
+      return false;
+    }
+  };
+
   // Filter locais by cidade and tipo
   const locaisFiltrados = useMemo(() => {
     return locais.filter(local => {
@@ -71,7 +171,7 @@ export function useEstoque() {
     const result: EstoqueItemAgrupado[] = [];
 
     for (const item of items) {
-      const estoquesPorLocal: Record<string, { minimo: number; atual: number; status: EstoqueStatus }> = {};
+      const estoquesPorLocal: Record<string, { id?: string; minimo: number; atual: number; status: EstoqueStatus }> = {};
       let temCritico = false;
       let temOk = false;
       let temBase = false;
@@ -88,6 +188,7 @@ export function useEstoque() {
           if (status === 'OK') temOk = true;
           
           estoquesPorLocal[local.id] = {
+            id: estoque.id,
             minimo: estoque.estoque_minimo,
             atual: estoque.estoque_atual,
             status,
@@ -209,5 +310,7 @@ export function useEstoque() {
     searchTerm,
     setSearchTerm,
     refresh: loadData,
+    updateEstoqueAtual,
+    createProduct,
   };
 }

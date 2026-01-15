@@ -865,7 +865,7 @@ export default function ProjectDetail() {
                 ) : (
                   <div className="space-y-3">
                     {project.comments.map(comment => (
-                      <div key={comment.id} className="p-3 bg-secondary rounded-lg">
+                      <div key={comment.id} className="p-3 bg-background border border-border rounded-lg">
                         <div className="flex items-center justify-between mb-2">
                           <span className="font-medium text-sm">{comment.user_name}</span>
                           <div className="flex items-center gap-2">

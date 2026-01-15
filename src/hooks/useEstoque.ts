@@ -1,7 +1,15 @@
 import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import type { EstoqueView, EstoqueStatus, EstoqueTipo, LocalEstoque, EstoqueItem, Estoque } from '@/types/estoque';
+import type { EstoqueStatus, EstoqueTipo, LocalEstoque, EstoqueItem, Estoque } from '@/types/estoque';
+
+export interface EstoqueItemAgrupado {
+  id: string;
+  codigo: string;
+  modelo: string;
+  estoques: Record<string, { minimo: number; atual: number; status: EstoqueStatus }>;
+  statusGeral: EstoqueStatus;
+}
 
 export function useEstoque() {
   const { toast } = useToast();
@@ -49,54 +57,85 @@ export function useEstoque() {
     loadData();
   }, []);
 
-  // Compute the stock view with calculated fields
-  const estoqueView = useMemo(() => {
-    const views: EstoqueView[] = [];
+  // Filter locais by cidade and tipo
+  const locaisFiltrados = useMemo(() => {
+    return locais.filter(local => {
+      if (filterCidade && local.cidade !== filterCidade) return false;
+      if (filterTipo && local.tipo !== filterTipo) return false;
+      return true;
+    });
+  }, [locais, filterCidade, filterTipo]);
+
+  // Compute items with stock per local
+  const itensAgrupados = useMemo(() => {
+    const result: EstoqueItemAgrupado[] = [];
 
     for (const item of items) {
+      const estoquesPorLocal: Record<string, { minimo: number; atual: number; status: EstoqueStatus }> = {};
+      let temCritico = false;
+      let temOk = false;
+      let temBase = false;
+
       for (const local of locais) {
         const estoque = estoques.find(
           e => e.item_id === item.id && e.local_estoque_id === local.id
         );
 
-        const minimo = estoque?.estoque_minimo ?? 0;
-        const atual = estoque?.estoque_atual ?? 0;
-        const reposicao = Math.max(0, minimo - atual);
-
-        let status: EstoqueStatus = 'SEM_BASE';
         if (estoque) {
-          status = atual < minimo ? 'CRITICO' : 'OK';
+          temBase = true;
+          const status: EstoqueStatus = estoque.estoque_atual < estoque.estoque_minimo ? 'CRITICO' : 'OK';
+          if (status === 'CRITICO') temCritico = true;
+          if (status === 'OK') temOk = true;
+          
+          estoquesPorLocal[local.id] = {
+            minimo: estoque.estoque_minimo,
+            atual: estoque.estoque_atual,
+            status,
+          };
+        } else {
+          estoquesPorLocal[local.id] = {
+            minimo: 0,
+            atual: 0,
+            status: 'SEM_BASE',
+          };
         }
-
-        views.push({
-          id: estoque?.id || `${item.id}-${local.id}`,
-          codigo: item.codigo,
-          modelo: item.modelo,
-          cidade: local.cidade,
-          tipo: local.tipo as EstoqueTipo,
-          nome_local: local.nome_local,
-          estoque_minimo: minimo,
-          estoque_atual: atual,
-          reposicao_sugerida: reposicao,
-          status,
-        });
       }
+
+      // Determine general status
+      let statusGeral: EstoqueStatus = 'SEM_BASE';
+      if (temBase) {
+        statusGeral = temCritico ? 'CRITICO' : 'OK';
+      }
+
+      result.push({
+        id: item.id,
+        codigo: item.codigo,
+        modelo: item.modelo,
+        estoques: estoquesPorLocal,
+        statusGeral,
+      });
     }
 
-    return views;
+    return result;
   }, [items, locais, estoques]);
 
   // Apply filters
   const filteredData = useMemo(() => {
-    return estoqueView.filter(item => {
-      // City filter
-      if (filterCidade && item.cidade !== filterCidade) return false;
-
-      // Type filter
-      if (filterTipo && item.tipo !== filterTipo) return false;
-
-      // Status filter
-      if (filterStatus && item.status !== filterStatus) return false;
+    return itensAgrupados.filter(item => {
+      // Status filter - check status in filtered locais
+      if (filterStatus) {
+        const locaisParaVerificar = locaisFiltrados.length > 0 ? locaisFiltrados : locais;
+        const statusNosLocais = locaisParaVerificar.map(l => item.estoques[l.id]?.status);
+        
+        if (filterStatus === 'CRITICO') {
+          if (!statusNosLocais.includes('CRITICO')) return false;
+        } else if (filterStatus === 'OK') {
+          if (!statusNosLocais.includes('OK')) return false;
+        } else if (filterStatus === 'SEM_BASE') {
+          // Only show if all filtered locais are SEM_BASE
+          if (!statusNosLocais.every(s => s === 'SEM_BASE')) return false;
+        }
+      }
 
       // Search term (codigo or modelo)
       if (searchTerm) {
@@ -108,7 +147,7 @@ export function useEstoque() {
 
       return true;
     });
-  }, [estoqueView, filterCidade, filterTipo, filterStatus, searchTerm]);
+  }, [itensAgrupados, locaisFiltrados, locais, filterStatus, searchTerm]);
 
   // Get unique cities from locais
   const cidades = useMemo(() => {
@@ -122,22 +161,42 @@ export function useEstoque() {
 
   // Get critical items for export
   const criticalItems = useMemo(() => {
-    return filteredData.filter(item => item.status === 'CRITICO');
-  }, [filteredData]);
+    return filteredData.filter(item => {
+      const locaisParaVerificar = locaisFiltrados.length > 0 ? locaisFiltrados : locais;
+      return locaisParaVerificar.some(l => item.estoques[l.id]?.status === 'CRITICO');
+    });
+  }, [filteredData, locaisFiltrados, locais]);
 
-  // Stats
+  // Stats - count unique items
   const stats = useMemo(() => {
-    const total = estoqueView.length;
-    const ok = estoqueView.filter(i => i.status === 'OK').length;
-    const critico = estoqueView.filter(i => i.status === 'CRITICO').length;
-    const semBase = estoqueView.filter(i => i.status === 'SEM_BASE').length;
+    const total = items.length;
+    let ok = 0;
+    let critico = 0;
+    let semBase = 0;
+
+    for (const item of itensAgrupados) {
+      // Check all locais for this item
+      const statusList = locais.map(l => item.estoques[l.id]?.status);
+      const temEstoque = statusList.some(s => s && s !== 'SEM_BASE');
+      
+      if (!temEstoque) {
+        semBase++;
+      } else if (statusList.includes('CRITICO')) {
+        critico++;
+      } else {
+        ok++;
+      }
+    }
+    
     return { total, ok, critico, semBase };
-  }, [estoqueView]);
+  }, [items, itensAgrupados, locais]);
 
   return {
     isLoading,
     filteredData,
     criticalItems,
+    locais,
+    locaisFiltrados,
     cidades,
     tipos,
     stats,

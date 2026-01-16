@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { Layout } from '@/components/Layout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -56,6 +56,7 @@ interface Customer {
 export default function SucessoClienteDetalhe() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { toast } = useToast();
   const [customer, setCustomer] = useState<Customer | null>(null);
   const [loading, setLoading] = useState(true);
@@ -79,6 +80,27 @@ export default function SucessoClienteDetalhe() {
       fetchCustomer();
     }
   }, [id]);
+
+  // Open dialog based on URL action parameter
+  useEffect(() => {
+    const action = searchParams.get('action');
+    if (action && customer) {
+      switch (action) {
+        case 'reclamacao':
+          setReclamacaoDialogOpen(true);
+          break;
+        case 'nps':
+          setNpsDialogOpen(true);
+          break;
+        case 'depoimento':
+          setDepoimentoDialogOpen(true);
+          break;
+        case 'satisfacao':
+          setSatisfacaoDialogOpen(true);
+          break;
+      }
+    }
+  }, [searchParams, customer]);
 
   const fetchCustomer = async () => {
     try {

@@ -20,6 +20,8 @@ import MeuPerfil from "./pages/MeuPerfil";
 import Configuracoes from "./pages/Configuracoes";
 import GestaoUsuarios from "./pages/GestaoUsuarios";
 import StartupProjetos from "./pages/StartupProjetos";
+import ImplantacaoExecucao from "./pages/ImplantacaoExecucao";
+import ImplantacaoChecklist from "./pages/ImplantacaoChecklist";
 import CarteiraClientes from "./pages/CarteiraClientes";
 import CustomerDetail from "./pages/CustomerDetail";
 import ControleEstoque from "./pages/ControleEstoque";
@@ -98,6 +100,14 @@ function AppRoutes() {
       <Route 
         path="/startup-projetos" 
         element={<ProtectedRoute><StartupProjetos /></ProtectedRoute>} 
+      />
+      <Route 
+        path="/startup-projetos/:id/execucao" 
+        element={<ProtectedRoute><ImplantacaoExecucao /></ProtectedRoute>} 
+      />
+      <Route 
+        path="/startup-projetos/:id/checklist/:tipo" 
+        element={<ProtectedRoute><ImplantacaoChecklist /></ProtectedRoute>} 
       />
       <Route 
         path="/carteira-clientes" 

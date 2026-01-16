@@ -307,6 +307,214 @@ export type Database = {
         }
         Relationships: []
       }
+      implantacao_checklists: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          created_by_name: string | null
+          dados: Json | null
+          fotos: string[] | null
+          id: string
+          observacoes: string | null
+          project_id: string
+          tipo: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          created_by_name?: string | null
+          dados?: Json | null
+          fotos?: string[] | null
+          id?: string
+          observacoes?: string | null
+          project_id: string
+          tipo: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          created_by_name?: string | null
+          dados?: Json | null
+          fotos?: string[] | null
+          id?: string
+          observacoes?: string | null
+          project_id?: string
+          tipo?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "implantacao_checklists_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      implantacao_etapas: {
+        Row: {
+          agendamento_visita_comercial: boolean | null
+          agendamento_visita_comercial_at: string | null
+          agendamento_visita_comercial_data: string | null
+          agendamento_visita_startup: boolean | null
+          agendamento_visita_startup_at: string | null
+          agendamento_visita_startup_data: string | null
+          cadastro_gear: boolean | null
+          cadastro_gear_at: string | null
+          check_programacao: boolean | null
+          check_programacao_at: string | null
+          check_projeto: boolean | null
+          check_projeto_at: string | null
+          concluido: boolean | null
+          concluido_at: string | null
+          conferencia_tags: boolean | null
+          conferencia_tags_at: string | null
+          confirmacao_ativacao_financeira: boolean | null
+          confirmacao_ativacao_financeira_at: string | null
+          contrato_assinado: boolean | null
+          contrato_assinado_at: string | null
+          contrato_cadastrado: boolean | null
+          contrato_cadastrado_at: string | null
+          created_at: string
+          etapa_atual: number | null
+          id: string
+          laudo_conclusao_supervisor: boolean | null
+          laudo_conclusao_supervisor_at: string | null
+          laudo_instalador: boolean | null
+          laudo_instalador_at: string | null
+          laudo_serralheiro: boolean | null
+          laudo_serralheiro_at: string | null
+          laudo_vidraceiro: boolean | null
+          laudo_vidraceiro_at: string | null
+          laudo_visita_comercial: boolean | null
+          laudo_visita_comercial_at: string | null
+          laudo_visita_comercial_texto: string | null
+          laudo_visita_startup: boolean | null
+          laudo_visita_startup_at: string | null
+          ligacao_boas_vindas: boolean | null
+          ligacao_boas_vindas_at: string | null
+          observacoes_manutencao: string | null
+          operacao_assistida_fim: string | null
+          operacao_assistida_inicio: string | null
+          operacao_assistida_interacoes: Json | null
+          project_id: string
+          sindico_app: boolean | null
+          sindico_app_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          agendamento_visita_comercial?: boolean | null
+          agendamento_visita_comercial_at?: string | null
+          agendamento_visita_comercial_data?: string | null
+          agendamento_visita_startup?: boolean | null
+          agendamento_visita_startup_at?: string | null
+          agendamento_visita_startup_data?: string | null
+          cadastro_gear?: boolean | null
+          cadastro_gear_at?: string | null
+          check_programacao?: boolean | null
+          check_programacao_at?: string | null
+          check_projeto?: boolean | null
+          check_projeto_at?: string | null
+          concluido?: boolean | null
+          concluido_at?: string | null
+          conferencia_tags?: boolean | null
+          conferencia_tags_at?: string | null
+          confirmacao_ativacao_financeira?: boolean | null
+          confirmacao_ativacao_financeira_at?: string | null
+          contrato_assinado?: boolean | null
+          contrato_assinado_at?: string | null
+          contrato_cadastrado?: boolean | null
+          contrato_cadastrado_at?: string | null
+          created_at?: string
+          etapa_atual?: number | null
+          id?: string
+          laudo_conclusao_supervisor?: boolean | null
+          laudo_conclusao_supervisor_at?: string | null
+          laudo_instalador?: boolean | null
+          laudo_instalador_at?: string | null
+          laudo_serralheiro?: boolean | null
+          laudo_serralheiro_at?: string | null
+          laudo_vidraceiro?: boolean | null
+          laudo_vidraceiro_at?: string | null
+          laudo_visita_comercial?: boolean | null
+          laudo_visita_comercial_at?: string | null
+          laudo_visita_comercial_texto?: string | null
+          laudo_visita_startup?: boolean | null
+          laudo_visita_startup_at?: string | null
+          ligacao_boas_vindas?: boolean | null
+          ligacao_boas_vindas_at?: string | null
+          observacoes_manutencao?: string | null
+          operacao_assistida_fim?: string | null
+          operacao_assistida_inicio?: string | null
+          operacao_assistida_interacoes?: Json | null
+          project_id: string
+          sindico_app?: boolean | null
+          sindico_app_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          agendamento_visita_comercial?: boolean | null
+          agendamento_visita_comercial_at?: string | null
+          agendamento_visita_comercial_data?: string | null
+          agendamento_visita_startup?: boolean | null
+          agendamento_visita_startup_at?: string | null
+          agendamento_visita_startup_data?: string | null
+          cadastro_gear?: boolean | null
+          cadastro_gear_at?: string | null
+          check_programacao?: boolean | null
+          check_programacao_at?: string | null
+          check_projeto?: boolean | null
+          check_projeto_at?: string | null
+          concluido?: boolean | null
+          concluido_at?: string | null
+          conferencia_tags?: boolean | null
+          conferencia_tags_at?: string | null
+          confirmacao_ativacao_financeira?: boolean | null
+          confirmacao_ativacao_financeira_at?: string | null
+          contrato_assinado?: boolean | null
+          contrato_assinado_at?: string | null
+          contrato_cadastrado?: boolean | null
+          contrato_cadastrado_at?: string | null
+          created_at?: string
+          etapa_atual?: number | null
+          id?: string
+          laudo_conclusao_supervisor?: boolean | null
+          laudo_conclusao_supervisor_at?: string | null
+          laudo_instalador?: boolean | null
+          laudo_instalador_at?: string | null
+          laudo_serralheiro?: boolean | null
+          laudo_serralheiro_at?: string | null
+          laudo_vidraceiro?: boolean | null
+          laudo_vidraceiro_at?: string | null
+          laudo_visita_comercial?: boolean | null
+          laudo_visita_comercial_at?: string | null
+          laudo_visita_comercial_texto?: string | null
+          laudo_visita_startup?: boolean | null
+          laudo_visita_startup_at?: string | null
+          ligacao_boas_vindas?: boolean | null
+          ligacao_boas_vindas_at?: string | null
+          observacoes_manutencao?: string | null
+          operacao_assistida_fim?: string | null
+          operacao_assistida_inicio?: string | null
+          operacao_assistida_interacoes?: Json | null
+          project_id?: string
+          sindico_app?: boolean | null
+          sindico_app_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "implantacao_etapas_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: true
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       locais_estoque: {
         Row: {
           cidade: string

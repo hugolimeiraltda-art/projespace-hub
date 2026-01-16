@@ -31,8 +31,8 @@ import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { Plus, Search, Users, Building2, Camera, DoorOpen, Loader2 } from 'lucide-react';
-import { format, addMonths } from 'date-fns';
+import { Plus, Search, Users, Building2, Camera, DoorOpen, Loader2, CalendarClock, AlertTriangle } from 'lucide-react';
+import { format, addMonths, isBefore, isAfter, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 interface Customer {
@@ -48,6 +48,7 @@ interface Customer {
   unidades: number | null;
   tipo: string | null;
   data_ativacao: string | null;
+  data_termino: string | null;
   noc: string | null;
   sistema: string | null;
   transbordo: boolean;
@@ -212,6 +213,38 @@ export default function CarteiraClientes() {
     mensalidade: acc.mensalidade + (c.mensalidade || 0),
   }), { unidades: 0, cameras: 0, portas: 0, mensalidade: 0 });
 
+  // Calculate contracts expiring
+  const now = new Date();
+  const in3Months = addMonths(now, 3);
+  const in6Months = addMonths(now, 6);
+  const in1Year = addMonths(now, 12);
+
+  const getContractEndDate = (customer: Customer): Date | null => {
+    // Use data_termino if available, otherwise calculate from data_ativacao + 36 months
+    if (customer.data_termino) {
+      return parseISO(customer.data_termino);
+    }
+    if (customer.data_ativacao) {
+      return addMonths(parseISO(customer.data_ativacao), 36);
+    }
+    return null;
+  };
+
+  const contractsExpiring3Months = customers.filter(c => {
+    const endDate = getContractEndDate(c);
+    return endDate && isAfter(endDate, now) && isBefore(endDate, in3Months);
+  });
+
+  const contractsExpiring6Months = customers.filter(c => {
+    const endDate = getContractEndDate(c);
+    return endDate && isAfter(endDate, in3Months) && isBefore(endDate, in6Months);
+  });
+
+  const contractsExpiring1Year = customers.filter(c => {
+    const endDate = getContractEndDate(c);
+    return endDate && isAfter(endDate, in6Months) && isBefore(endDate, in1Year);
+  });
+
   const formatDate = (dateString: string | null) => {
     if (!dateString) return '-';
     try {
@@ -221,10 +254,13 @@ export default function CarteiraClientes() {
     }
   };
 
-  const calculateTermino = (inicio: string | null) => {
-    if (!inicio) return '-';
+  const calculateTermino = (customer: Customer) => {
+    if (customer.data_termino) {
+      return formatDate(customer.data_termino);
+    }
+    if (!customer.data_ativacao) return '-';
     try {
-      const dataInicio = new Date(inicio);
+      const dataInicio = new Date(customer.data_ativacao);
       const dataTermino = addMonths(dataInicio, 36);
       return format(dataTermino, 'dd/MM/yyyy', { locale: ptBR });
     } catch {
@@ -550,6 +586,79 @@ export default function CarteiraClientes() {
           </Card>
         </div>
 
+        {/* Contracts Expiring Cards */}
+        <div className="grid grid-cols-3 gap-4 mb-6">
+          <Card className="border-l-4 border-l-red-500">
+            <CardContent className="pt-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-red-100 rounded-lg">
+                  <AlertTriangle className="w-5 h-5 text-red-600" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Vencendo em 3 meses</p>
+                  <p className="text-2xl font-bold text-red-600">{contractsExpiring3Months.length}</p>
+                </div>
+              </div>
+              {contractsExpiring3Months.length > 0 && (
+                <div className="mt-3 text-xs text-muted-foreground max-h-20 overflow-y-auto">
+                  {contractsExpiring3Months.slice(0, 3).map(c => (
+                    <div key={c.id} className="truncate">{c.contrato} - {c.razao_social}</div>
+                  ))}
+                  {contractsExpiring3Months.length > 3 && (
+                    <div className="text-red-600 font-medium">+{contractsExpiring3Months.length - 3} mais</div>
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+          <Card className="border-l-4 border-l-amber-500">
+            <CardContent className="pt-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-amber-100 rounded-lg">
+                  <CalendarClock className="w-5 h-5 text-amber-600" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Vencendo em 6 meses</p>
+                  <p className="text-2xl font-bold text-amber-600">{contractsExpiring6Months.length}</p>
+                </div>
+              </div>
+              {contractsExpiring6Months.length > 0 && (
+                <div className="mt-3 text-xs text-muted-foreground max-h-20 overflow-y-auto">
+                  {contractsExpiring6Months.slice(0, 3).map(c => (
+                    <div key={c.id} className="truncate">{c.contrato} - {c.razao_social}</div>
+                  ))}
+                  {contractsExpiring6Months.length > 3 && (
+                    <div className="text-amber-600 font-medium">+{contractsExpiring6Months.length - 3} mais</div>
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+          <Card className="border-l-4 border-l-blue-500">
+            <CardContent className="pt-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-blue-100 rounded-lg">
+                  <CalendarClock className="w-5 h-5 text-blue-600" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Vencendo em 1 ano</p>
+                  <p className="text-2xl font-bold text-blue-600">{contractsExpiring1Year.length}</p>
+                </div>
+              </div>
+              {contractsExpiring1Year.length > 0 && (
+                <div className="mt-3 text-xs text-muted-foreground max-h-20 overflow-y-auto">
+                  {contractsExpiring1Year.slice(0, 3).map(c => (
+                    <div key={c.id} className="truncate">{c.contrato} - {c.razao_social}</div>
+                  ))}
+                  {contractsExpiring1Year.length > 3 && (
+                    <div className="text-blue-600 font-medium">+{contractsExpiring1Year.length - 3} mais</div>
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
         {/* Search */}
         <div className="mb-4">
           <div className="relative max-w-md">
@@ -609,7 +718,7 @@ export default function CarteiraClientes() {
                           </TableCell>
                           <TableCell>{customer.filial || '-'}</TableCell>
                           <TableCell>{formatDate(customer.data_ativacao)}</TableCell>
-                          <TableCell>{calculateTermino(customer.data_ativacao)}</TableCell>
+                          <TableCell>{calculateTermino(customer)}</TableCell>
                           <TableCell className="text-right">
                             {customer.taxa_ativacao 
                               ? `R$ ${customer.taxa_ativacao.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`

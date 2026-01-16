@@ -8,6 +8,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
@@ -123,6 +124,7 @@ interface ContratoInfo {
   alarme_codigo: string;
   mensalidade: string;
   prazo_contrato: string;
+  taxa_instalacao: string;
 }
 
 export default function ImplantacaoExecucao() {
@@ -141,7 +143,7 @@ export default function ImplantacaoExecucao() {
   const [tempStartDate, setTempStartDate] = useState('');
   const [tempEndDate, setTempEndDate] = useState('');
   const [selectedNota, setSelectedNota] = useState<number | null>(null);
-  const [contratoInfo, setContratoInfo] = useState<ContratoInfo>({ contrato: '', alarme_codigo: '', mensalidade: '', prazo_contrato: '' });
+  const [contratoInfo, setContratoInfo] = useState<ContratoInfo>({ contrato: '', alarme_codigo: '', mensalidade: '', prazo_contrato: '', taxa_instalacao: '' });
   const [editingContrato, setEditingContrato] = useState(false);
 
   const canEditDates = user?.role === 'admin' || user?.role === 'administrativo' || user?.role === 'implantacao';
@@ -829,7 +831,7 @@ export default function ImplantacaoExecucao() {
                         </div>
                       )}
                     </div>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                       <div>
                         <Label htmlFor="contrato-numero" className="text-sm">Contrato</Label>
                         {editingContrato ? (
@@ -875,15 +877,37 @@ export default function ImplantacaoExecucao() {
                       <div>
                         <Label htmlFor="prazo-contrato" className="text-sm">Prazo do Contrato</Label>
                         {editingContrato ? (
-                          <Input
-                            id="prazo-contrato"
+                          <Select
                             value={contratoInfo.prazo_contrato}
-                            onChange={(e) => setContratoInfo({ ...contratoInfo, prazo_contrato: e.target.value })}
-                            placeholder="Ex: 36 meses"
+                            onValueChange={(value) => setContratoInfo({ ...contratoInfo, prazo_contrato: value })}
+                          >
+                            <SelectTrigger className="mt-1">
+                              <SelectValue placeholder="Selecione" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="12">12 meses</SelectItem>
+                              <SelectItem value="24">24 meses</SelectItem>
+                              <SelectItem value="36">36 meses</SelectItem>
+                              <SelectItem value="48">48 meses</SelectItem>
+                              <SelectItem value="60">60 meses</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        ) : (
+                          <p className="text-sm mt-1 font-medium">{contratoInfo.prazo_contrato ? `${contratoInfo.prazo_contrato} meses` : '-'}</p>
+                        )}
+                      </div>
+                      <div>
+                        <Label htmlFor="taxa-instalacao" className="text-sm">Taxa de Instalação (R$)</Label>
+                        {editingContrato ? (
+                          <Input
+                            id="taxa-instalacao"
+                            value={contratoInfo.taxa_instalacao}
+                            onChange={(e) => setContratoInfo({ ...contratoInfo, taxa_instalacao: e.target.value })}
+                            placeholder="Ex: 1.500,00"
                             className="mt-1"
                           />
                         ) : (
-                          <p className="text-sm mt-1 font-medium">{contratoInfo.prazo_contrato || '-'}</p>
+                          <p className="text-sm mt-1 font-medium">{contratoInfo.taxa_instalacao ? `R$ ${contratoInfo.taxa_instalacao}` : '-'}</p>
                         )}
                       </div>
                     </div>

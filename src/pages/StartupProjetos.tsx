@@ -354,11 +354,25 @@ export default function StartupProjetos() {
                           <Button
                             variant="outline"
                             size="sm"
-                            className="border-blue-300 text-blue-700 hover:bg-blue-50"
-                            onClick={() => handleStatusChange(project.id, 'EM_EXECUCAO')}
+                            className="border-green-300 text-green-700 hover:bg-green-50"
+                            onClick={() => {
+                              handleStatusChange(project.id, 'EM_EXECUCAO');
+                              navigate(`/startup-projetos/${project.id}/execucao`);
+                            }}
                           >
                             <PlayCircle className="w-4 h-4 mr-1" />
                             Iniciar
+                          </Button>
+                        )}
+                        {project.implantacao_status === 'EM_EXECUCAO' && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="border-blue-300 text-blue-700 hover:bg-blue-50"
+                            onClick={() => navigate(`/startup-projetos/${project.id}/execucao`)}
+                          >
+                            <PlayCircle className="w-4 h-4 mr-1" />
+                            Continuar
                           </Button>
                         )}
                         {project.implantacao_status === 'EM_EXECUCAO' && (

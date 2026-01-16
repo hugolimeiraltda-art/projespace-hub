@@ -34,8 +34,9 @@ import {
   Plus,
   Building,
 } from 'lucide-react';
-import { format, parseISO, addDays } from 'date-fns';
+import { format, parseISO, addDays, differenceInDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { Progress } from '@/components/ui/progress';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import jsPDF from 'jspdf';
 
@@ -102,6 +103,9 @@ interface Project {
   cliente_cidade: string | null;
   cliente_estado: string | null;
   vendedor_nome: string;
+  created_at: string;
+  prazo_entrega_projeto: string | null;
+  implantacao_started_at: string | null;
 }
 
 export default function ImplantacaoExecucao() {
@@ -130,7 +134,7 @@ export default function ImplantacaoExecucao() {
       // Fetch project
       const { data: projectData, error: projectError } = await supabase
         .from('projects')
-        .select('id, numero_projeto, cliente_condominio_nome, cliente_cidade, cliente_estado, vendedor_nome')
+        .select('id, numero_projeto, cliente_condominio_nome, cliente_cidade, cliente_estado, vendedor_nome, created_at, prazo_entrega_projeto, implantacao_started_at')
         .eq('id', id)
         .single();
 
@@ -482,6 +486,80 @@ export default function ImplantacaoExecucao() {
             </div>
           </div>
         </div>
+
+        {/* Timeline Chart */}
+        <Card className="mb-6">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-medium flex items-center gap-2">
+                <Calendar className="w-4 h-4 text-primary" />
+                Cronograma do Projeto
+              </h3>
+            </div>
+            
+            {(() => {
+              const startDate = project.implantacao_started_at 
+                ? parseISO(project.implantacao_started_at) 
+                : (etapas.contrato_assinado_at ? parseISO(etapas.contrato_assinado_at) : new Date(project.created_at));
+              const endDate = project.prazo_entrega_projeto 
+                ? parseISO(project.prazo_entrega_projeto) 
+                : addDays(startDate, 90); // Default 90 days
+              const today = new Date();
+              const totalDays = differenceInDays(endDate, startDate);
+              const elapsedDays = differenceInDays(today, startDate);
+              const progressPercentage = Math.min(Math.max((elapsedDays / totalDays) * 100, 0), 100);
+              const remainingDays = differenceInDays(endDate, today);
+              const isOverdue = remainingDays < 0;
+
+              return (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between text-sm">
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded-full bg-primary" />
+                      <span className="font-medium">Início:</span>
+                      <span className="text-muted-foreground">
+                        {format(startDate, "dd/MM/yyyy", { locale: ptBR })}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className={cn("w-3 h-3 rounded-full", isOverdue ? "bg-destructive" : "bg-green-500")} />
+                      <span className="font-medium">Prazo:</span>
+                      <span className={cn("text-muted-foreground", isOverdue && "text-destructive font-medium")}>
+                        {format(endDate, "dd/MM/yyyy", { locale: ptBR })}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="relative">
+                    <Progress value={progressPercentage} className="h-4" />
+                    {/* Today marker */}
+                    <div 
+                      className="absolute top-0 w-0.5 h-4 bg-foreground"
+                      style={{ left: `${progressPercentage}%` }}
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">
+                      {elapsedDays > 0 ? `${elapsedDays} dias decorridos` : 'Projeto não iniciado'}
+                    </span>
+                    <span className={cn(
+                      "font-medium",
+                      isOverdue ? "text-destructive" : remainingDays <= 7 ? "text-amber-600" : "text-green-600"
+                    )}>
+                      {isOverdue 
+                        ? `${Math.abs(remainingDays)} dias em atraso` 
+                        : remainingDays === 0 
+                          ? 'Prazo vence hoje!'
+                          : `${remainingDays} dias restantes`
+                      }
+                    </span>
+                  </div>
+                </div>
+              );
+            })()}
+          </CardContent>
+        </Card>
 
         {/* Progress overview */}
         <Card className="mb-6">

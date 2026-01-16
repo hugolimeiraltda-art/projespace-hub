@@ -16,6 +16,7 @@ import {
   Briefcase,
   ShoppingCart,
   Package,
+  Heart,
 } from 'lucide-react';
 import emiveLogo from '@/assets/emive-logo.png';
 
@@ -41,6 +42,7 @@ export function Layout({ children }: LayoutProps) {
     { path: '/projetos', label: 'Projetos', icon: List, roles: ['projetos', 'admin', 'gerente_comercial', 'administrativo'], exact: true },
     { path: '/startup-projetos', label: 'Implantação', icon: ClipboardList, roles: ['implantacao', 'admin', 'administrativo'] },
     { path: '/carteira-clientes', label: 'Carteira de Clientes', icon: Briefcase, roles: ['projetos', 'admin', 'implantacao', 'administrativo'] },
+    { path: '/sucesso-cliente', label: 'Sucesso do Cliente', icon: Heart, roles: ['projetos', 'admin', 'implantacao', 'administrativo'] },
     { path: '/chamados', label: 'Meus Chamados', icon: ClipboardList, roles: ['projetos', 'admin', 'administrativo'] },
     { path: '/controle-estoque', label: 'Controle de Estoque', icon: Package, roles: ['admin', 'administrativo'] },
     { path: '/configuracoes', label: 'Configurações', icon: Settings, roles: ['admin', 'administrativo'] },

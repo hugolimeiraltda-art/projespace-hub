@@ -33,6 +33,7 @@ import {
   FileDown,
   Plus,
   Building,
+  Pencil,
 } from 'lucide-react';
 import { format, parseISO, addDays, differenceInDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -120,6 +121,11 @@ export default function ImplantacaoExecucao() {
   const [isSaving, setIsSaving] = useState(false);
   const [expandedEtapas, setExpandedEtapas] = useState<number[]>([1, 2, 3, 4, 5, 6, 7, 8, 9]);
   const [novaInteracao, setNovaInteracao] = useState('');
+  const [editingDates, setEditingDates] = useState(false);
+  const [tempStartDate, setTempStartDate] = useState('');
+  const [tempEndDate, setTempEndDate] = useState('');
+
+  const canEditDates = user?.role === 'admin' || user?.role === 'administrativo' || user?.role === 'implantacao';
 
   useEffect(() => {
     if (id) {
@@ -181,6 +187,52 @@ export default function ImplantacaoExecucao() {
       });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const updateProjectDates = async (startDate: string, endDate: string) => {
+    if (!id || !canEditDates) return;
+
+    try {
+      setIsSaving(true);
+      
+      const updateData: Record<string, unknown> = {};
+      
+      if (startDate) {
+        updateData.implantacao_started_at = new Date(startDate).toISOString();
+      }
+      if (endDate) {
+        updateData.prazo_entrega_projeto = endDate;
+      }
+
+      const { error } = await supabase
+        .from('projects')
+        .update(updateData)
+        .eq('id', id);
+
+      if (error) throw error;
+
+      setProject(prev => prev ? { 
+        ...prev, 
+        implantacao_started_at: startDate ? new Date(startDate).toISOString() : prev.implantacao_started_at,
+        prazo_entrega_projeto: endDate || prev.prazo_entrega_projeto
+      } : null);
+      
+      setEditingDates(false);
+
+      toast({
+        title: 'Datas atualizadas',
+        description: 'As datas do cronograma foram atualizadas com sucesso.',
+      });
+    } catch (error) {
+      console.error('Error updating dates:', error);
+      toast({
+        title: 'Erro',
+        description: 'Não foi possível atualizar as datas.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -495,6 +547,25 @@ export default function ImplantacaoExecucao() {
                 <Calendar className="w-4 h-4 text-primary" />
                 Cronograma do Projeto
               </h3>
+              {canEditDates && !editingDates && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    const startDate = project.implantacao_started_at 
+                      ? format(parseISO(project.implantacao_started_at), 'yyyy-MM-dd')
+                      : (etapas.contrato_assinado_at ? format(parseISO(etapas.contrato_assinado_at), 'yyyy-MM-dd') : format(new Date(project.created_at), 'yyyy-MM-dd'));
+                    const endDate = project.prazo_entrega_projeto 
+                      ? project.prazo_entrega_projeto
+                      : format(addDays(parseISO(startDate), 90), 'yyyy-MM-dd');
+                    setTempStartDate(startDate);
+                    setTempEndDate(endDate);
+                    setEditingDates(true);
+                  }}
+                >
+                  <Pencil className="w-4 h-4" />
+                </Button>
+              )}
             </div>
             
             {(() => {
@@ -513,22 +584,67 @@ export default function ImplantacaoExecucao() {
 
               return (
                 <div className="space-y-4">
-                  <div className="flex items-center justify-between text-sm">
-                    <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 rounded-full bg-primary" />
-                      <span className="font-medium">Início:</span>
-                      <span className="text-muted-foreground">
-                        {format(startDate, "dd/MM/yyyy", { locale: ptBR })}
-                      </span>
+                  {editingDates ? (
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 rounded-full bg-primary" />
+                        <Label htmlFor="start-date" className="font-medium whitespace-nowrap">Início:</Label>
+                        <Input
+                          id="start-date"
+                          type="date"
+                          value={tempStartDate}
+                          onChange={(e) => setTempStartDate(e.target.value)}
+                          className="w-auto"
+                        />
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 rounded-full bg-green-500" />
+                        <Label htmlFor="end-date" className="font-medium whitespace-nowrap">Prazo:</Label>
+                        <Input
+                          id="end-date"
+                          type="date"
+                          value={tempEndDate}
+                          onChange={(e) => setTempEndDate(e.target.value)}
+                          className="w-auto"
+                        />
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          onClick={() => updateProjectDates(tempStartDate, tempEndDate)}
+                          disabled={isSaving}
+                        >
+                          <Check className="w-4 h-4 mr-1" />
+                          Salvar
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setEditingDates(false)}
+                          disabled={isSaving}
+                        >
+                          Cancelar
+                        </Button>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <div className={cn("w-3 h-3 rounded-full", isOverdue ? "bg-destructive" : "bg-green-500")} />
-                      <span className="font-medium">Prazo:</span>
-                      <span className={cn("text-muted-foreground", isOverdue && "text-destructive font-medium")}>
-                        {format(endDate, "dd/MM/yyyy", { locale: ptBR })}
-                      </span>
+                  ) : (
+                    <div className="flex items-center justify-between text-sm">
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 rounded-full bg-primary" />
+                        <span className="font-medium">Início:</span>
+                        <span className="text-muted-foreground">
+                          {format(startDate, "dd/MM/yyyy", { locale: ptBR })}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className={cn("w-3 h-3 rounded-full", isOverdue ? "bg-destructive" : "bg-green-500")} />
+                        <span className="font-medium">Prazo:</span>
+                        <span className={cn("text-muted-foreground", isOverdue && "text-destructive font-medium")}>
+                          {format(endDate, "dd/MM/yyyy", { locale: ptBR })}
+                        </span>
+                      </div>
                     </div>
-                  </div>
+                  )}
 
                   <div className="relative">
                     <Progress value={progressPercentage} className="h-4" />

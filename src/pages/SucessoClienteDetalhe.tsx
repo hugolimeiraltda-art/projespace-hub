@@ -159,50 +159,82 @@ export default function SucessoClienteDetalhe() {
     }
   };
 
-  const handleSubmitReclamacao = () => {
-    toast({
-      title: 'Reclamação registrada',
-      description: 'A reclamação foi registrada com sucesso.',
-    });
-    setReclamacaoDialogOpen(false);
-    setReclamacaoForm({ assunto: '', descricao: '', prioridade: 'media' });
+  const handleSubmitReclamacao = async () => {
+    try {
+      const { error } = await supabase.from('customer_chamados').insert({
+        customer_id: id,
+        assunto: reclamacaoForm.assunto,
+        descricao: reclamacaoForm.descricao,
+        prioridade: reclamacaoForm.prioridade,
+      });
+      if (error) throw error;
+      toast({ title: 'Reclamação registrada', description: 'A reclamação foi registrada com sucesso.' });
+      setReclamacaoDialogOpen(false);
+      setReclamacaoForm({ assunto: '', descricao: '', prioridade: 'media' });
+    } catch (error) {
+      console.error(error);
+      toast({ title: 'Erro', description: 'Não foi possível registrar a reclamação.', variant: 'destructive' });
+    }
   };
 
-  const handleSubmitNps = () => {
-    toast({
-      title: 'Pesquisa NPS registrada',
-      description: 'A pesquisa de NPS foi registrada com sucesso.',
-    });
-    setNpsDialogOpen(false);
-    setNpsForm({ nota: '', comentario: '' });
+  const handleSubmitNps = async () => {
+    try {
+      const { error } = await supabase.from('customer_nps').insert({
+        customer_id: id,
+        nota: parseInt(npsForm.nota),
+        comentario: npsForm.comentario || null,
+      });
+      if (error) throw error;
+      toast({ title: 'Pesquisa NPS registrada', description: 'A pesquisa de NPS foi registrada com sucesso.' });
+      setNpsDialogOpen(false);
+      setNpsForm({ nota: '', comentario: '' });
+    } catch (error) {
+      console.error(error);
+      toast({ title: 'Erro', description: 'Não foi possível registrar a pesquisa NPS.', variant: 'destructive' });
+    }
   };
 
-  const handleSubmitSatisfacao = () => {
-    toast({
-      title: 'Pesquisa de Satisfação registrada',
-      description: 'A pesquisa de satisfação foi registrada com sucesso.',
-    });
-    setSatisfacaoDialogOpen(false);
-    setSatisfacaoForm({
-      tempoImplantacao: '',
-      ambienteOrganizado: '',
-      pendencias: '',
-      comunicacao: '',
-      facilidadeApp: '',
-      funcionalidadesSindico: '',
-      treinamentoAdequado: '',
-      expectativaAtendida: '',
-      notaNps: ''
-    });
+  const handleSubmitSatisfacao = async () => {
+    try {
+      const { error } = await supabase.from('customer_satisfacao').insert({
+        customer_id: id,
+        tempo_implantacao: satisfacaoForm.tempoImplantacao || null,
+        ambiente_organizado: satisfacaoForm.ambienteOrganizado || null,
+        pendencias: satisfacaoForm.pendencias || null,
+        comunicacao: satisfacaoForm.comunicacao || null,
+        facilidade_app: satisfacaoForm.facilidadeApp || null,
+        funcionalidades_sindico: satisfacaoForm.funcionalidadesSindico || null,
+        treinamento_adequado: satisfacaoForm.treinamentoAdequado || null,
+        expectativa_atendida: satisfacaoForm.expectativaAtendida || null,
+        nota_nps: satisfacaoForm.notaNps ? parseInt(satisfacaoForm.notaNps) : null,
+      });
+      if (error) throw error;
+      toast({ title: 'Pesquisa de Satisfação registrada', description: 'A pesquisa de satisfação foi registrada com sucesso.' });
+      setSatisfacaoDialogOpen(false);
+      setSatisfacaoForm({ tempoImplantacao: '', ambienteOrganizado: '', pendencias: '', comunicacao: '', facilidadeApp: '', funcionalidadesSindico: '', treinamentoAdequado: '', expectativaAtendida: '', notaNps: '' });
+    } catch (error) {
+      console.error(error);
+      toast({ title: 'Erro', description: 'Não foi possível registrar a pesquisa.', variant: 'destructive' });
+    }
   };
 
-  const handleSubmitDepoimento = () => {
-    toast({
-      title: 'Depoimento registrado',
-      description: 'O depoimento foi registrado com sucesso.',
-    });
-    setDepoimentoDialogOpen(false);
-    setDepoimentoForm({ texto: '', autor: '', cargo: '' });
+  const handleSubmitDepoimento = async () => {
+    try {
+      const { error } = await supabase.from('customer_depoimentos').insert({
+        customer_id: id,
+        texto: depoimentoForm.texto,
+        autor: depoimentoForm.autor,
+        cargo: depoimentoForm.cargo || null,
+        tipo: 'elogio',
+      });
+      if (error) throw error;
+      toast({ title: 'Depoimento registrado', description: 'O depoimento foi registrado com sucesso.' });
+      setDepoimentoDialogOpen(false);
+      setDepoimentoForm({ texto: '', autor: '', cargo: '' });
+    } catch (error) {
+      console.error(error);
+      toast({ title: 'Erro', description: 'Não foi possível registrar o depoimento.', variant: 'destructive' });
+    }
   };
 
   const handleSubmitRenovacao = () => {

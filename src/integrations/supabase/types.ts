@@ -14,6 +14,106 @@ export type Database = {
   }
   public: {
     Tables: {
+      customer_chamados: {
+        Row: {
+          assunto: string
+          created_at: string
+          created_by: string | null
+          created_by_name: string | null
+          customer_id: string
+          descricao: string | null
+          id: string
+          prioridade: string
+          resolved_at: string | null
+          resolved_by: string | null
+          resolved_by_name: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          assunto: string
+          created_at?: string
+          created_by?: string | null
+          created_by_name?: string | null
+          customer_id: string
+          descricao?: string | null
+          id?: string
+          prioridade?: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          resolved_by_name?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          assunto?: string
+          created_at?: string
+          created_by?: string | null
+          created_by_name?: string | null
+          customer_id?: string
+          descricao?: string | null
+          id?: string
+          prioridade?: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          resolved_by_name?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_chamados_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customer_portfolio"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      customer_depoimentos: {
+        Row: {
+          autor: string
+          cargo: string | null
+          created_at: string
+          created_by: string | null
+          created_by_name: string | null
+          customer_id: string
+          id: string
+          texto: string
+          tipo: string
+        }
+        Insert: {
+          autor: string
+          cargo?: string | null
+          created_at?: string
+          created_by?: string | null
+          created_by_name?: string | null
+          customer_id: string
+          id?: string
+          texto: string
+          tipo?: string
+        }
+        Update: {
+          autor?: string
+          cargo?: string | null
+          created_at?: string
+          created_by?: string | null
+          created_by_name?: string | null
+          customer_id?: string
+          id?: string
+          texto?: string
+          tipo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_depoimentos_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customer_portfolio"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       customer_documents: {
         Row: {
           arquivo_url: string
@@ -48,6 +148,50 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "customer_documents_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customer_portfolio"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      customer_nps: {
+        Row: {
+          comentario: string | null
+          created_at: string
+          created_by: string | null
+          created_by_name: string | null
+          customer_id: string
+          id: string
+          nota: number
+          ponto_forte: string | null
+          ponto_fraco: string | null
+        }
+        Insert: {
+          comentario?: string | null
+          created_at?: string
+          created_by?: string | null
+          created_by_name?: string | null
+          customer_id: string
+          id?: string
+          nota: number
+          ponto_forte?: string | null
+          ponto_fraco?: string | null
+        }
+        Update: {
+          comentario?: string | null
+          created_at?: string
+          created_by?: string | null
+          created_by_name?: string | null
+          customer_id?: string
+          id?: string
+          nota?: number
+          ponto_forte?: string | null
+          ponto_fraco?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_nps_customer_id_fkey"
             columns: ["customer_id"]
             isOneToOne: false
             referencedRelation: "customer_portfolio"
@@ -159,6 +303,65 @@ export type Database = {
           zonas_perimetro?: number | null
         }
         Relationships: []
+      }
+      customer_satisfacao: {
+        Row: {
+          ambiente_organizado: string | null
+          comunicacao: string | null
+          created_at: string
+          created_by: string | null
+          created_by_name: string | null
+          customer_id: string
+          expectativa_atendida: string | null
+          facilidade_app: string | null
+          funcionalidades_sindico: string | null
+          id: string
+          nota_nps: number | null
+          pendencias: string | null
+          tempo_implantacao: string | null
+          treinamento_adequado: string | null
+        }
+        Insert: {
+          ambiente_organizado?: string | null
+          comunicacao?: string | null
+          created_at?: string
+          created_by?: string | null
+          created_by_name?: string | null
+          customer_id: string
+          expectativa_atendida?: string | null
+          facilidade_app?: string | null
+          funcionalidades_sindico?: string | null
+          id?: string
+          nota_nps?: number | null
+          pendencias?: string | null
+          tempo_implantacao?: string | null
+          treinamento_adequado?: string | null
+        }
+        Update: {
+          ambiente_organizado?: string | null
+          comunicacao?: string | null
+          created_at?: string
+          created_by?: string | null
+          created_by_name?: string | null
+          customer_id?: string
+          expectativa_atendida?: string | null
+          facilidade_app?: string | null
+          funcionalidades_sindico?: string | null
+          id?: string
+          nota_nps?: number | null
+          pendencias?: string | null
+          tempo_implantacao?: string | null
+          treinamento_adequado?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_satisfacao_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customer_portfolio"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       estoque: {
         Row: {

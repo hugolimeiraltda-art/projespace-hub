@@ -153,7 +153,7 @@ export function useEstoque() {
     }
   };
 
-  // Create new product
+  // Create new product and add to all stock locations
   const createProduct = async (codigo: string, modelo: string): Promise<boolean> => {
     try {
       // Check if codigo already exists
@@ -167,15 +167,37 @@ export function useEstoque() {
         return false;
       }
 
-      const { error } = await supabase
+      // Create the product
+      const { data: newItem, error: itemError } = await supabase
         .from('estoque_itens')
-        .insert({ codigo, modelo });
+        .insert({ codigo, modelo })
+        .select()
+        .single();
 
-      if (error) throw error;
+      if (itemError) throw itemError;
+
+      // Create estoque entries for all locations with default values
+      if (newItem && locais.length > 0) {
+        const estoqueEntries = locais.map(local => ({
+          item_id: newItem.id,
+          local_estoque_id: local.id,
+          estoque_atual: 0,
+          estoque_minimo: 0,
+        }));
+
+        const { error: estoqueError } = await supabase
+          .from('estoque')
+          .insert(estoqueEntries);
+
+        if (estoqueError) {
+          console.error('Error creating stock entries:', estoqueError);
+          // Product was created but stock entries failed - still reload
+        }
+      }
 
       toast({
         title: 'Produto criado',
-        description: 'O novo produto foi adicionado com sucesso.',
+        description: 'O novo produto foi adicionado a todos os estoques.',
       });
 
       await loadData();

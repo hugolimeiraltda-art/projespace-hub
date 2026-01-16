@@ -121,6 +121,8 @@ interface Project {
 interface ContratoInfo {
   contrato: string;
   alarme_codigo: string;
+  mensalidade: string;
+  prazo_contrato: string;
 }
 
 export default function ImplantacaoExecucao() {
@@ -139,7 +141,7 @@ export default function ImplantacaoExecucao() {
   const [tempStartDate, setTempStartDate] = useState('');
   const [tempEndDate, setTempEndDate] = useState('');
   const [selectedNota, setSelectedNota] = useState<number | null>(null);
-  const [contratoInfo, setContratoInfo] = useState<ContratoInfo>({ contrato: '', alarme_codigo: '' });
+  const [contratoInfo, setContratoInfo] = useState<ContratoInfo>({ contrato: '', alarme_codigo: '', mensalidade: '', prazo_contrato: '' });
   const [editingContrato, setEditingContrato] = useState(false);
 
   const canEditDates = user?.role === 'admin' || user?.role === 'administrativo' || user?.role === 'implantacao';
@@ -827,7 +829,7 @@ export default function ImplantacaoExecucao() {
                         </div>
                       )}
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                       <div>
                         <Label htmlFor="contrato-numero" className="text-sm">Contrato</Label>
                         {editingContrato ? (
@@ -854,6 +856,34 @@ export default function ImplantacaoExecucao() {
                           />
                         ) : (
                           <p className="text-sm mt-1 font-medium">{contratoInfo.alarme_codigo || '-'}</p>
+                        )}
+                      </div>
+                      <div>
+                        <Label htmlFor="mensalidade" className="text-sm">Mensalidade (R$)</Label>
+                        {editingContrato ? (
+                          <Input
+                            id="mensalidade"
+                            value={contratoInfo.mensalidade}
+                            onChange={(e) => setContratoInfo({ ...contratoInfo, mensalidade: e.target.value })}
+                            placeholder="Ex: 5.000,00"
+                            className="mt-1"
+                          />
+                        ) : (
+                          <p className="text-sm mt-1 font-medium">{contratoInfo.mensalidade ? `R$ ${contratoInfo.mensalidade}` : '-'}</p>
+                        )}
+                      </div>
+                      <div>
+                        <Label htmlFor="prazo-contrato" className="text-sm">Prazo do Contrato</Label>
+                        {editingContrato ? (
+                          <Input
+                            id="prazo-contrato"
+                            value={contratoInfo.prazo_contrato}
+                            onChange={(e) => setContratoInfo({ ...contratoInfo, prazo_contrato: e.target.value })}
+                            placeholder="Ex: 36 meses"
+                            className="mt-1"
+                          />
+                        ) : (
+                          <p className="text-sm mt-1 font-medium">{contratoInfo.prazo_contrato || '-'}</p>
                         )}
                       </div>
                     </div>

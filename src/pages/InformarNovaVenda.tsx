@@ -71,6 +71,45 @@ export default function InformarNovaVenda() {
   const [isCreating, setIsCreating] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLocked, setIsLocked] = useState(false);
+  const [vendedores, setVendedores] = useState<{ id: string; nome: string; email: string }[]>([]);
+
+  // Check if user can edit vendedor fields
+  const canEditVendedor = user?.role === 'admin' || user?.role === 'administrativo' || user?.role === 'implantacao';
+
+  // Fetch vendedores list for select
+  useEffect(() => {
+    const fetchVendedores = async () => {
+      if (!canEditVendedor) return;
+      
+      try {
+        // Get users with vendedor role
+        const { data: userRoles, error: rolesError } = await supabase
+          .from('user_roles')
+          .select('user_id')
+          .eq('role', 'vendedor');
+        
+        if (rolesError) throw rolesError;
+        
+        if (userRoles && userRoles.length > 0) {
+          const userIds = userRoles.map(ur => ur.user_id);
+          
+          const { data: profiles, error: profilesError } = await supabase
+            .from('profiles')
+            .select('id, nome, email')
+            .in('id', userIds)
+            .order('nome');
+          
+          if (profilesError) throw profilesError;
+          
+          setVendedores(profiles || []);
+        }
+      } catch (error) {
+        console.error('Error fetching vendedores:', error);
+      }
+    };
+    
+    fetchVendedores();
+  }, [canEditVendedor]);
 
   // Initialize form with user data
   useEffect(() => {
@@ -428,11 +467,47 @@ export default function InformarNovaVenda() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <Label>Vendedor</Label>
-                <Input value={formData.vendedor_nome || ''} disabled className="bg-muted" />
+                {canEditVendedor ? (
+                  <Select
+                    value={vendedores.find(v => v.nome === formData.vendedor_nome)?.id || ''}
+                    onValueChange={(vendedorId) => {
+                      const vendedor = vendedores.find(v => v.id === vendedorId);
+                      if (vendedor) {
+                        updateField('vendedor_nome', vendedor.nome);
+                        updateField('vendedor_email', vendedor.email);
+                      }
+                    }}
+                    disabled={isLocked}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione o vendedor">
+                        {formData.vendedor_nome || 'Selecione o vendedor'}
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent>
+                      {vendedores.map((v) => (
+                        <SelectItem key={v.id} value={v.id}>
+                          {v.nome}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <Input value={formData.vendedor_nome || ''} disabled className="bg-muted" />
+                )}
               </div>
               <div className="space-y-2">
                 <Label>Email do Vendedor</Label>
-                <Input value={formData.vendedor_email || ''} disabled className="bg-muted" />
+                {canEditVendedor ? (
+                  <Input
+                    value={formData.vendedor_email || ''}
+                    onChange={(e) => updateField('vendedor_email', e.target.value)}
+                    disabled={isLocked}
+                    placeholder="Email do vendedor"
+                  />
+                ) : (
+                  <Input value={formData.vendedor_email || ''} disabled className="bg-muted" />
+                )}
               </div>
             </div>
           </div>

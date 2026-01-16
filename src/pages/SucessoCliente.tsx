@@ -53,6 +53,9 @@ export default function SucessoCliente() {
   const [expiringDialogOpen, setExpiringDialogOpen] = useState(false);
   const [expiringDialogData, setExpiringDialogData] = useState<{ title: string; customers: Customer[] }>({ title: '', customers: [] });
   const [customersDialogOpen, setCustomersDialogOpen] = useState(false);
+  const [actionDialogOpen, setActionDialogOpen] = useState(false);
+  const [actionDialogType, setActionDialogType] = useState<'reclamacao' | 'nps' | 'depoimento' | 'satisfacao' | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
     fetchCustomers();
@@ -137,6 +140,38 @@ export default function SucessoCliente() {
     setExpiringDialogData({ title, customers: customersList });
     setExpiringDialogOpen(true);
   };
+
+  const handleOpenActionDialog = (type: 'reclamacao' | 'nps' | 'depoimento' | 'satisfacao') => {
+    setActionDialogType(type);
+    setSearchTerm('');
+    setActionDialogOpen(true);
+  };
+
+  const getActionDialogTitle = () => {
+    switch (actionDialogType) {
+      case 'reclamacao': return 'Selecionar Cliente para Abrir Reclamação';
+      case 'nps': return 'Selecionar Cliente para Pesquisa NPS';
+      case 'depoimento': return 'Selecionar Cliente para Registrar Depoimento';
+      case 'satisfacao': return 'Selecionar Cliente para Pesquisa de Satisfação';
+      default: return 'Selecionar Cliente';
+    }
+  };
+
+  const getActionParam = () => {
+    switch (actionDialogType) {
+      case 'reclamacao': return 'reclamacao';
+      case 'nps': return 'nps';
+      case 'depoimento': return 'depoimento';
+      case 'satisfacao': return 'satisfacao';
+      default: return '';
+    }
+  };
+
+  const filteredCustomers = customers.filter(c => 
+    c.razao_social.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    c.contrato.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (c.filial && c.filial.toLowerCase().includes(searchTerm.toLowerCase()))
+  );
 
   if (loading) {
     return (
@@ -279,7 +314,10 @@ export default function SucessoCliente() {
         {/* Tickets and Feedback Section */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
           {/* Open Tickets */}
-          <Card>
+          <Card 
+            className="cursor-pointer hover:shadow-md transition-shadow"
+            onClick={() => handleOpenActionDialog('reclamacao')}
+          >
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">
                 <MessageSquare className="w-5 h-5 text-orange-500" />
@@ -296,7 +334,10 @@ export default function SucessoCliente() {
           </Card>
 
           {/* NPS Surveys */}
-          <Card>
+          <Card 
+            className="cursor-pointer hover:shadow-md transition-shadow"
+            onClick={() => handleOpenActionDialog('nps')}
+          >
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">
                 <Star className="w-5 h-5 text-purple-500" />
@@ -316,7 +357,10 @@ export default function SucessoCliente() {
         {/* Testimonials and Satisfaction */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Testimonials */}
-          <Card>
+          <Card 
+            className="cursor-pointer hover:shadow-md transition-shadow"
+            onClick={() => handleOpenActionDialog('depoimento')}
+          >
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">
                 <ThumbsUp className="w-5 h-5 text-green-500" />
@@ -333,7 +377,10 @@ export default function SucessoCliente() {
           </Card>
 
           {/* Satisfaction Index */}
-          <Card>
+          <Card 
+            className="cursor-pointer hover:shadow-md transition-shadow"
+            onClick={() => handleOpenActionDialog('satisfacao')}
+          >
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">
                 <TrendingUp className="w-5 h-5 text-blue-500" />
@@ -433,6 +480,53 @@ export default function SucessoCliente() {
                 </TableBody>
               </Table>
             )}
+          </DialogContent>
+        </Dialog>
+
+        {/* Dialog for action selection */}
+        <Dialog open={actionDialogOpen} onOpenChange={setActionDialogOpen}>
+          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>{getActionDialogTitle()}</DialogTitle>
+            </DialogHeader>
+            <div className="mb-4">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  placeholder="Buscar por nome, contrato ou filial..."
+                  className="pl-10"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </div>
+            </div>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Contrato</TableHead>
+                  <TableHead>Razão Social</TableHead>
+                  <TableHead>Filial</TableHead>
+                  <TableHead>Unidades</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredCustomers.map((customer) => (
+                  <TableRow 
+                    key={customer.id}
+                    className="cursor-pointer hover:bg-muted"
+                    onClick={() => {
+                      setActionDialogOpen(false);
+                      navigate(`/sucesso-cliente/${customer.id}?action=${getActionParam()}`);
+                    }}
+                  >
+                    <TableCell className="font-medium text-primary">{customer.contrato}</TableCell>
+                    <TableCell>{customer.razao_social}</TableCell>
+                    <TableCell>{customer.filial || '-'}</TableCell>
+                    <TableCell>{customer.unidades || '-'}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           </DialogContent>
         </Dialog>
       </div>

@@ -1201,6 +1201,7 @@ export type Database = {
         | "gerente_comercial"
         | "implantacao"
         | "administrativo"
+        | "sucesso_cliente"
       attachment_type:
         | "CROQUI"
         | "PLANTA_BAIXA"
@@ -1362,6 +1363,7 @@ export const Constants = {
         "gerente_comercial",
         "implantacao",
         "administrativo",
+        "sucesso_cliente",
       ],
       attachment_type: [
         "CROQUI",

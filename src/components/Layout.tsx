@@ -101,7 +101,7 @@ export function Layout({
       <aside className="fixed inset-y-0 left-0 z-50 w-64 bg-card border-r border-border shadow-card">
         {/* Logo */}
         <div className="flex flex-col items-center px-4 py-4 border-b border-border">
-          <img src={emiveLogo} alt="EMIVE Portarias Digitais" className="h-12 w-auto mb-2" />
+          <img src={emiveLogo} alt="EMIVE Portarias Digitais" className="h-auto w-full max-w-[180px] mb-2" />
           <div className="text-center">
             <h1 className="text-sm font-semibold text-foreground">EIXO</h1>
           </div>

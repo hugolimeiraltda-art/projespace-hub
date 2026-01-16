@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Layout } from '@/components/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -46,6 +46,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { format, addMonths, isBefore, isAfter, parseISO, subMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { FilialMultiSelect } from '@/components/FilialMultiSelect';
 
 interface Customer {
   id: string;
@@ -57,6 +58,12 @@ interface Customer {
   data_termino: string | null;
 }
 
+interface CustomerPortfolioRef {
+  razao_social: string;
+  contrato: string;
+  filial?: string | null;
+}
+
 interface Chamado {
   id: string;
   customer_id: string;
@@ -64,7 +71,7 @@ interface Chamado {
   prioridade: string;
   status: string;
   created_at: string;
-  customer_portfolio?: { razao_social: string; contrato: string };
+  customer_portfolio?: CustomerPortfolioRef;
 }
 
 interface NpsSurvey {
@@ -75,7 +82,7 @@ interface NpsSurvey {
   ponto_forte: string | null;
   ponto_fraco: string | null;
   created_at: string;
-  customer_portfolio?: { razao_social: string; contrato: string };
+  customer_portfolio?: CustomerPortfolioRef;
 }
 
 interface Depoimento {
@@ -86,7 +93,7 @@ interface Depoimento {
   cargo: string | null;
   tipo: string;
   created_at: string;
-  customer_portfolio?: { razao_social: string; contrato: string };
+  customer_portfolio?: CustomerPortfolioRef;
 }
 
 interface Satisfacao {
@@ -98,7 +105,7 @@ interface Satisfacao {
   treinamento_adequado: string | null;
   expectativa_atendida: string | null;
   created_at: string;
-  customer_portfolio?: { razao_social: string; contrato: string };
+  customer_portfolio?: CustomerPortfolioRef;
 }
 
 export default function SucessoCliente() {
@@ -126,6 +133,15 @@ export default function SucessoCliente() {
 
   // Satisfaction period filter
   const [satisfacaoPeriodo, setSatisfacaoPeriodo] = useState('12');
+
+  // Filial multi-select filters for each dialog
+  const [customersFilialFilter, setCustomersFilialFilter] = useState<string[]>([]);
+  const [expiringFilialFilter, setExpiringFilialFilter] = useState<string[]>([]);
+  const [chamadosFilialFilter, setChamadosFilialFilter] = useState<string[]>([]);
+  const [npsFilialFilter, setNpsFilialFilter] = useState<string[]>([]);
+  const [depoimentosFilialFilter, setDepoimentosFilialFilter] = useState<string[]>([]);
+  const [satisfacaoFilialFilter, setSatisfacaoFilialFilter] = useState<string[]>([]);
+  const [customerSelectFilialFilter, setCustomerSelectFilialFilter] = useState<string[]>([]);
 
   // Customer selection dialog
   const [customerSelectDialogOpen, setCustomerSelectDialogOpen] = useState(false);
@@ -161,7 +177,7 @@ export default function SucessoCliente() {
     try {
       const { data, error } = await supabase
         .from('customer_chamados')
-        .select('*, customer_portfolio(razao_social, contrato)')
+        .select('*, customer_portfolio(razao_social, contrato, filial)')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -178,7 +194,7 @@ export default function SucessoCliente() {
     try {
       const { data, error } = await supabase
         .from('customer_nps')
-        .select('*, customer_portfolio(razao_social, contrato)')
+        .select('*, customer_portfolio(razao_social, contrato, filial)')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -195,7 +211,7 @@ export default function SucessoCliente() {
     try {
       const { data, error } = await supabase
         .from('customer_depoimentos')
-        .select('*, customer_portfolio(razao_social, contrato)')
+        .select('*, customer_portfolio(razao_social, contrato, filial)')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -213,7 +229,7 @@ export default function SucessoCliente() {
       const dataInicio = subMonths(new Date(), meses).toISOString();
       const { data, error } = await supabase
         .from('customer_satisfacao')
-        .select('*, customer_portfolio(razao_social, contrato)')
+        .select('*, customer_portfolio(razao_social, contrato, filial)')
         .gte('created_at', dataInicio)
         .order('created_at', { ascending: false });
 
@@ -310,8 +326,84 @@ export default function SucessoCliente() {
 
   const handleOpenExpiringDialog = (title: string, customersList: Customer[]) => {
     setExpiringDialogData({ title, customers: customersList });
+    setExpiringFilialFilter([]);
     setExpiringDialogOpen(true);
   };
+
+  // Get all unique filiais from customers
+  const allFiliais = useMemo(() => {
+    return [...new Set(customers.map(c => c.filial).filter((f): f is string => !!f && f.trim() !== ''))].sort();
+  }, [customers]);
+
+  // Filtered customers for customer list dialog (text + filial filter)
+  const filteredCustomersDialog = useMemo(() => {
+    return customers.filter(c => {
+      const matchesSearch = 
+        c.razao_social.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        c.contrato.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (c.filial && c.filial.toLowerCase().includes(searchTerm.toLowerCase()));
+      
+      const matchesFilial = customersFilialFilter.length === 0 || 
+        (c.filial && customersFilialFilter.includes(c.filial));
+      
+      return matchesSearch && matchesFilial;
+    });
+  }, [customers, searchTerm, customersFilialFilter]);
+
+  // Filtered expiring contracts
+  const filteredExpiringCustomers = useMemo(() => {
+    return expiringDialogData.customers.filter(c => {
+      return expiringFilialFilter.length === 0 || 
+        (c.filial && expiringFilialFilter.includes(c.filial));
+    });
+  }, [expiringDialogData.customers, expiringFilialFilter]);
+
+  // Filtered chamados
+  const filteredChamados = useMemo(() => {
+    return chamados.filter(c => {
+      return chamadosFilialFilter.length === 0 || 
+        (c.customer_portfolio?.filial && chamadosFilialFilter.includes(c.customer_portfolio.filial));
+    });
+  }, [chamados, chamadosFilialFilter]);
+
+  // Filtered NPS surveys
+  const filteredNpsSurveys = useMemo(() => {
+    return npsSurveys.filter(n => {
+      return npsFilialFilter.length === 0 || 
+        (n.customer_portfolio?.filial && npsFilialFilter.includes(n.customer_portfolio.filial));
+    });
+  }, [npsSurveys, npsFilialFilter]);
+
+  // Filtered depoimentos
+  const filteredDepoimentos = useMemo(() => {
+    return depoimentos.filter(d => {
+      return depoimentosFilialFilter.length === 0 || 
+        (d.customer_portfolio?.filial && depoimentosFilialFilter.includes(d.customer_portfolio.filial));
+    });
+  }, [depoimentos, depoimentosFilialFilter]);
+
+  // Filtered satisfacao
+  const filteredSatisfacao = useMemo(() => {
+    return satisfacaoData.filter(s => {
+      return satisfacaoFilialFilter.length === 0 || 
+        (s.customer_portfolio?.filial && satisfacaoFilialFilter.includes(s.customer_portfolio.filial));
+    });
+  }, [satisfacaoData, satisfacaoFilialFilter]);
+
+  // Filtered customer select
+  const filteredCustomerSelect = useMemo(() => {
+    return customers.filter(c => {
+      const matchesSearch = 
+        c.razao_social.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        c.contrato.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (c.filial && c.filial.toLowerCase().includes(searchTerm.toLowerCase()));
+      
+      const matchesFilial = customerSelectFilialFilter.length === 0 || 
+        (c.filial && customerSelectFilialFilter.includes(c.filial));
+      
+      return matchesSearch && matchesFilial;
+    });
+  }, [customers, searchTerm, customerSelectFilialFilter]);
 
   const filteredCustomers = customers.filter(c => 
     c.razao_social.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -597,15 +689,21 @@ export default function SucessoCliente() {
             <DialogHeader>
               <DialogTitle>Lista de Clientes</DialogTitle>
             </DialogHeader>
-            <div className="mb-4">
-              <div className="relative">
+            <div className="mb-4 flex flex-col sm:flex-row gap-3">
+              <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
                   placeholder="Buscar por nome, contrato ou filial..."
                   className="pl-10"
-                  id="customer-search"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
                 />
               </div>
+              <FilialMultiSelect
+                filiais={allFiliais}
+                selectedFiliais={customersFilialFilter}
+                onSelectionChange={setCustomersFilialFilter}
+              />
             </div>
             <Table>
               <TableHeader>
@@ -617,7 +715,7 @@ export default function SucessoCliente() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {customers.map((customer) => (
+                {filteredCustomersDialog.map((customer) => (
                   <TableRow 
                     key={customer.id}
                     className="cursor-pointer hover:bg-muted"
@@ -643,7 +741,14 @@ export default function SucessoCliente() {
             <DialogHeader>
               <DialogTitle>{expiringDialogData.title}</DialogTitle>
             </DialogHeader>
-            {expiringDialogData.customers.length === 0 ? (
+            <div className="mb-4">
+              <FilialMultiSelect
+                filiais={allFiliais}
+                selectedFiliais={expiringFilialFilter}
+                onSelectionChange={setExpiringFilialFilter}
+              />
+            </div>
+            {filteredExpiringCustomers.length === 0 ? (
               <p className="text-muted-foreground py-4 text-center">Nenhum contrato encontrado neste período.</p>
             ) : (
               <Table>
@@ -656,7 +761,7 @@ export default function SucessoCliente() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {expiringDialogData.customers.map((customer) => (
+                  {filteredExpiringCustomers.map((customer) => (
                     <TableRow 
                       key={customer.id}
                       className="cursor-pointer hover:bg-muted"
@@ -691,13 +796,21 @@ export default function SucessoCliente() {
                 </Button>
               </DialogTitle>
             </DialogHeader>
+
+            <div className="my-4">
+              <FilialMultiSelect
+                filiais={allFiliais}
+                selectedFiliais={chamadosFilialFilter}
+                onSelectionChange={setChamadosFilialFilter}
+              />
+            </div>
             
-            <Tabs defaultValue="abertos" className="mt-4">
+            <Tabs defaultValue="abertos" className="mt-2">
               <TabsList>
-                <TabsTrigger value="abertos">Abertos ({chamados.filter(c => c.status === 'aberto').length})</TabsTrigger>
-                <TabsTrigger value="andamento">Em Andamento ({chamados.filter(c => c.status === 'em_andamento').length})</TabsTrigger>
-                <TabsTrigger value="resolvidos">Resolvidos ({chamados.filter(c => c.status === 'resolvido').length})</TabsTrigger>
-                <TabsTrigger value="todos">Todos ({chamados.length})</TabsTrigger>
+                <TabsTrigger value="abertos">Abertos ({filteredChamados.filter(c => c.status === 'aberto').length})</TabsTrigger>
+                <TabsTrigger value="andamento">Em Andamento ({filteredChamados.filter(c => c.status === 'em_andamento').length})</TabsTrigger>
+                <TabsTrigger value="resolvidos">Resolvidos ({filteredChamados.filter(c => c.status === 'resolvido').length})</TabsTrigger>
+                <TabsTrigger value="todos">Todos ({filteredChamados.length})</TabsTrigger>
               </TabsList>
 
               {['abertos', 'andamento', 'resolvidos', 'todos'].map(tab => (
@@ -719,7 +832,7 @@ export default function SucessoCliente() {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {chamados
+                        {filteredChamados
                           .filter(c => tab === 'todos' || 
                             (tab === 'abertos' && c.status === 'aberto') ||
                             (tab === 'andamento' && c.status === 'em_andamento') ||
@@ -743,7 +856,7 @@ export default function SucessoCliente() {
                             </TableCell>
                           </TableRow>
                         ))}
-                        {chamados.filter(c => tab === 'todos' || 
+                        {filteredChamados.filter(c => tab === 'todos' || 
                             (tab === 'abertos' && c.status === 'aberto') ||
                             (tab === 'andamento' && c.status === 'em_andamento') ||
                             (tab === 'resolvidos' && c.status === 'resolvido')).length === 0 && (
@@ -777,35 +890,47 @@ export default function SucessoCliente() {
               </DialogTitle>
             </DialogHeader>
 
+            <div className="my-4">
+              <FilialMultiSelect
+                filiais={allFiliais}
+                selectedFiliais={npsFilialFilter}
+                onSelectionChange={setNpsFilialFilter}
+              />
+            </div>
+
             {/* NPS Summary */}
-            <div className="grid grid-cols-4 gap-4 mt-4 mb-6">
+            <div className="grid grid-cols-4 gap-4 mb-6">
               <Card>
                 <CardContent className="pt-4 text-center">
-                  <p className="text-2xl font-bold text-primary">{npsScore !== null ? npsScore : '--'}</p>
+                  <p className="text-2xl font-bold text-primary">
+                    {filteredNpsSurveys.length > 0 
+                      ? Math.round(((filteredNpsSurveys.filter(n => getNpsCategory(n.nota) === 'promoter').length - filteredNpsSurveys.filter(n => getNpsCategory(n.nota) === 'detractor').length) / filteredNpsSurveys.length) * 100)
+                      : '--'}
+                  </p>
                   <p className="text-sm text-muted-foreground">NPS Score</p>
                 </CardContent>
               </Card>
               <Card>
                 <CardContent className="pt-4 text-center">
-                  <p className="text-2xl font-bold text-green-600">{promoters.length}</p>
+                  <p className="text-2xl font-bold text-green-600">{filteredNpsSurveys.filter(n => getNpsCategory(n.nota) === 'promoter').length}</p>
                   <p className="text-sm text-muted-foreground">Promotores (9-10)</p>
                 </CardContent>
               </Card>
               <Card>
                 <CardContent className="pt-4 text-center">
-                  <p className="text-2xl font-bold text-yellow-600">{npsSurveys.filter(n => getNpsCategory(n.nota) === 'neutral').length}</p>
+                  <p className="text-2xl font-bold text-yellow-600">{filteredNpsSurveys.filter(n => getNpsCategory(n.nota) === 'neutral').length}</p>
                   <p className="text-sm text-muted-foreground">Neutros (7-8)</p>
                 </CardContent>
               </Card>
               <Card>
                 <CardContent className="pt-4 text-center">
-                  <p className="text-2xl font-bold text-red-600">{detractors.length}</p>
+                  <p className="text-2xl font-bold text-red-600">{filteredNpsSurveys.filter(n => getNpsCategory(n.nota) === 'detractor').length}</p>
                   <p className="text-sm text-muted-foreground">Detratores (0-6)</p>
                 </CardContent>
               </Card>
             </div>
 
-            <Tabs defaultValue="detratores" className="mt-4">
+            <Tabs defaultValue="detratores" className="mt-2">
               <TabsList>
                 <TabsTrigger value="detratores">Detratores</TabsTrigger>
                 <TabsTrigger value="promotores">Promotores</TabsTrigger>
@@ -831,7 +956,7 @@ export default function SucessoCliente() {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {npsSurveys
+                        {filteredNpsSurveys
                           .filter(n => tab === 'todos' || 
                             (tab === 'detratores' && getNpsCategory(n.nota) === 'detractor') ||
                             (tab === 'promotores' && getNpsCategory(n.nota) === 'promoter'))
@@ -861,7 +986,7 @@ export default function SucessoCliente() {
                             </TableCell>
                           </TableRow>
                         ))}
-                        {npsSurveys.filter(n => tab === 'todos' || 
+                        {filteredNpsSurveys.filter(n => tab === 'todos' || 
                             (tab === 'detratores' && getNpsCategory(n.nota) === 'detractor') ||
                             (tab === 'promotores' && getNpsCategory(n.nota) === 'promoter')).length === 0 && (
                           <TableRow>
@@ -894,11 +1019,19 @@ export default function SucessoCliente() {
               </DialogTitle>
             </DialogHeader>
 
-            <Tabs defaultValue="elogios" className="mt-4">
+            <div className="my-4">
+              <FilialMultiSelect
+                filiais={allFiliais}
+                selectedFiliais={depoimentosFilialFilter}
+                onSelectionChange={setDepoimentosFilialFilter}
+              />
+            </div>
+
+            <Tabs defaultValue="elogios" className="mt-2">
               <TabsList>
-                <TabsTrigger value="elogios">Elogios ({depoimentos.filter(d => d.tipo === 'elogio').length})</TabsTrigger>
-                <TabsTrigger value="sugestoes">Sugestões ({depoimentos.filter(d => d.tipo === 'sugestao').length})</TabsTrigger>
-                <TabsTrigger value="todos">Todos ({depoimentos.length})</TabsTrigger>
+                <TabsTrigger value="elogios">Elogios ({filteredDepoimentos.filter(d => d.tipo === 'elogio').length})</TabsTrigger>
+                <TabsTrigger value="sugestoes">Sugestões ({filteredDepoimentos.filter(d => d.tipo === 'sugestao').length})</TabsTrigger>
+                <TabsTrigger value="todos">Todos ({filteredDepoimentos.length})</TabsTrigger>
               </TabsList>
 
               {['elogios', 'sugestoes', 'todos'].map(tab => (
@@ -909,7 +1042,7 @@ export default function SucessoCliente() {
                     </div>
                   ) : (
                     <div className="space-y-4">
-                      {depoimentos
+                      {filteredDepoimentos
                         .filter(d => tab === 'todos' || 
                           (tab === 'elogios' && d.tipo === 'elogio') ||
                           (tab === 'sugestoes' && d.tipo === 'sugestao'))
@@ -935,7 +1068,7 @@ export default function SucessoCliente() {
                           </CardContent>
                         </Card>
                       ))}
-                      {depoimentos.filter(d => tab === 'todos' || 
+                      {filteredDepoimentos.filter(d => tab === 'todos' || 
                           (tab === 'elogios' && d.tipo === 'elogio') ||
                           (tab === 'sugestoes' && d.tipo === 'sugestao')).length === 0 && (
                         <p className="text-center py-8 text-muted-foreground">Nenhum depoimento encontrado</p>
@@ -976,18 +1109,26 @@ export default function SucessoCliente() {
               </DialogTitle>
             </DialogHeader>
 
+            <div className="flex flex-col sm:flex-row gap-3 my-4">
+              <FilialMultiSelect
+                filiais={allFiliais}
+                selectedFiliais={satisfacaoFilialFilter}
+                onSelectionChange={setSatisfacaoFilialFilter}
+              />
+            </div>
+
             {/* Summary Cards */}
-            <div className="grid grid-cols-4 gap-4 mt-4 mb-6">
+            <div className="grid grid-cols-4 gap-4 mb-6">
               <Card>
                 <CardContent className="pt-4 text-center">
-                  <p className="text-2xl font-bold text-primary">{satisfacaoData.length}</p>
+                  <p className="text-2xl font-bold text-primary">{filteredSatisfacao.length}</p>
                   <p className="text-sm text-muted-foreground">Total Pesquisas</p>
                 </CardContent>
               </Card>
               <Card>
                 <CardContent className="pt-4 text-center">
                   <p className="text-2xl font-bold text-green-600">
-                    {satisfacaoData.filter(s => s.expectativa_atendida === 'sim').length}
+                    {filteredSatisfacao.filter(s => s.expectativa_atendida === 'sim').length}
                   </p>
                   <p className="text-sm text-muted-foreground">Expectativa Atendida</p>
                 </CardContent>
@@ -995,7 +1136,7 @@ export default function SucessoCliente() {
               <Card>
                 <CardContent className="pt-4 text-center">
                   <p className="text-2xl font-bold text-blue-600">
-                    {satisfacaoData.filter(s => s.facilidade_app === 'muito_satisfeito' || s.facilidade_app === 'satisfeito').length}
+                    {filteredSatisfacao.filter(s => s.facilidade_app === 'muito_satisfeito' || s.facilidade_app === 'satisfeito').length}
                   </p>
                   <p className="text-sm text-muted-foreground">Satisfeitos com App</p>
                 </CardContent>
@@ -1003,7 +1144,7 @@ export default function SucessoCliente() {
               <Card>
                 <CardContent className="pt-4 text-center">
                   <p className="text-2xl font-bold text-purple-600">
-                    {satisfacaoData.filter(s => s.treinamento_adequado === 'sim').length}
+                    {filteredSatisfacao.filter(s => s.treinamento_adequado === 'sim').length}
                   </p>
                   <p className="text-sm text-muted-foreground">Treinamento OK</p>
                 </CardContent>
@@ -1029,7 +1170,7 @@ export default function SucessoCliente() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {satisfacaoData.map((sat) => (
+                  {filteredSatisfacao.map((sat) => (
                     <TableRow key={sat.id}>
                       <TableCell>
                         <div>

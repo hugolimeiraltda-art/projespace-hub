@@ -46,7 +46,7 @@ const CHECKLIST_CONFIGS: Record<string, { title: string; items: string[] }> = {
     ],
   },
   laudo_visita_startup: {
-    title: 'Laudo e Check-list de Visita de Start-up',
+    title: 'Laudo e Check-list de Visita de Implantação',
     items: [
       'Infraestrutura existente avaliada',
       'Condições do local verificadas',

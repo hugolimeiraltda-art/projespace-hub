@@ -363,8 +363,8 @@ export default function ImplantacaoExecucao() {
       { title: '3.3 Síndico baixar APP', completed: etapas.sindico_app, date: etapas.sindico_app_at },
       { title: '3.4 Conferência de Tags', completed: etapas.conferencia_tags, date: etapas.conferencia_tags_at },
       { title: '4.1 Check de Projeto', completed: etapas.check_projeto, date: etapas.check_projeto_at },
-      { title: '4.2 Agendamento Visita Start-up', completed: etapas.agendamento_visita_startup, date: etapas.agendamento_visita_startup_at },
-      { title: '4.3 Laudo Visita Start-up', completed: etapas.laudo_visita_startup, date: etapas.laudo_visita_startup_at },
+      { title: '4.2 Agendamento Visita Implantação', completed: etapas.agendamento_visita_startup, date: etapas.agendamento_visita_startup_at },
+      { title: '4.3 Laudo Visita Implantação', completed: etapas.laudo_visita_startup, date: etapas.laudo_visita_startup_at },
       { title: '5.1 Laudo Instalador', completed: etapas.laudo_instalador, date: etapas.laudo_instalador_at },
       { title: '5.2 Laudo Vidraceiro', completed: etapas.laudo_vidraceiro, date: etapas.laudo_vidraceiro_at },
       { title: '5.3 Laudo Serralheiro', completed: etapas.laudo_serralheiro, date: etapas.laudo_serralheiro_at },
@@ -835,7 +835,7 @@ export default function ImplantacaoExecucao() {
                       )}>
                         {isEtapaComplete(4) ? <Check className="w-4 h-4" /> : <ClipboardCheck className="w-4 h-4" />}
                       </div>
-                      <CardTitle className="text-base">4 - Visita de Start-up</CardTitle>
+                      <CardTitle className="text-base">4 - Visita de Implantação</CardTitle>
                     </div>
                     {expandedEtapas.includes(4) ? <ChevronDown className="w-5 h-5" /> : <ChevronRight className="w-5 h-5" />}
                   </div>

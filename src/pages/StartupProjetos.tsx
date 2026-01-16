@@ -177,7 +177,7 @@ export default function StartupProjetos() {
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-2">
             <Rocket className="w-8 h-8 text-primary" />
-            <h1 className="text-2xl font-bold text-foreground">Start-up de Projetos</h1>
+            <h1 className="text-2xl font-bold text-foreground">Implantação de Projetos</h1>
           </div>
           <p className="text-muted-foreground">
             Gerencie a implantação dos projetos vendidos

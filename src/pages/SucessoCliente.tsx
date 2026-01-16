@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Layout } from '@/components/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import {
   Table,
   TableBody,
@@ -16,6 +18,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { 
@@ -29,10 +39,12 @@ import {
   TrendingUp,
   RefreshCw,
   Loader2,
-  Search
+  Search,
+  Plus,
+  ExternalLink
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
-import { format, addMonths, isBefore, isAfter, parseISO } from 'date-fns';
+import { format, addMonths, isBefore, isAfter, parseISO, subMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 interface Customer {
@@ -45,6 +57,50 @@ interface Customer {
   data_termino: string | null;
 }
 
+interface Chamado {
+  id: string;
+  customer_id: string;
+  assunto: string;
+  prioridade: string;
+  status: string;
+  created_at: string;
+  customer_portfolio?: { razao_social: string; contrato: string };
+}
+
+interface NpsSurvey {
+  id: string;
+  customer_id: string;
+  nota: number;
+  comentario: string | null;
+  ponto_forte: string | null;
+  ponto_fraco: string | null;
+  created_at: string;
+  customer_portfolio?: { razao_social: string; contrato: string };
+}
+
+interface Depoimento {
+  id: string;
+  customer_id: string;
+  texto: string;
+  autor: string;
+  cargo: string | null;
+  tipo: string;
+  created_at: string;
+  customer_portfolio?: { razao_social: string; contrato: string };
+}
+
+interface Satisfacao {
+  id: string;
+  customer_id: string;
+  nota_nps: number | null;
+  tempo_implantacao: string | null;
+  facilidade_app: string | null;
+  treinamento_adequado: string | null;
+  expectativa_atendida: string | null;
+  created_at: string;
+  customer_portfolio?: { razao_social: string; contrato: string };
+}
+
 export default function SucessoCliente() {
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -53,9 +109,27 @@ export default function SucessoCliente() {
   const [expiringDialogOpen, setExpiringDialogOpen] = useState(false);
   const [expiringDialogData, setExpiringDialogData] = useState<{ title: string; customers: Customer[] }>({ title: '', customers: [] });
   const [customersDialogOpen, setCustomersDialogOpen] = useState(false);
-  const [actionDialogOpen, setActionDialogOpen] = useState(false);
-  const [actionDialogType, setActionDialogType] = useState<'reclamacao' | 'nps' | 'depoimento' | 'satisfacao' | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+
+  // New dialog states for each card
+  const [chamadosDialogOpen, setChamadosDialogOpen] = useState(false);
+  const [npsDialogOpen, setNpsDialogOpen] = useState(false);
+  const [depoimentosDialogOpen, setDepoimentosDialogOpen] = useState(false);
+  const [satisfacaoDialogOpen, setSatisfacaoDialogOpen] = useState(false);
+
+  // Data states
+  const [chamados, setChamados] = useState<Chamado[]>([]);
+  const [npsSurveys, setNpsSurveys] = useState<NpsSurvey[]>([]);
+  const [depoimentos, setDepoimentos] = useState<Depoimento[]>([]);
+  const [satisfacaoData, setSatisfacaoData] = useState<Satisfacao[]>([]);
+  const [loadingData, setLoadingData] = useState(false);
+
+  // Satisfaction period filter
+  const [satisfacaoPeriodo, setSatisfacaoPeriodo] = useState('12');
+
+  // Customer selection dialog
+  const [customerSelectDialogOpen, setCustomerSelectDialogOpen] = useState(false);
+  const [customerSelectAction, setCustomerSelectAction] = useState<'reclamacao' | 'nps' | 'depoimento' | 'satisfacao' | null>(null);
 
   useEffect(() => {
     fetchCustomers();
@@ -80,6 +154,104 @@ export default function SucessoCliente() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const fetchChamados = async () => {
+    setLoadingData(true);
+    try {
+      const { data, error } = await supabase
+        .from('customer_chamados')
+        .select('*, customer_portfolio(razao_social, contrato)')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setChamados(data || []);
+    } catch (error) {
+      console.error('Error fetching chamados:', error);
+    } finally {
+      setLoadingData(false);
+    }
+  };
+
+  const fetchNpsSurveys = async () => {
+    setLoadingData(true);
+    try {
+      const { data, error } = await supabase
+        .from('customer_nps')
+        .select('*, customer_portfolio(razao_social, contrato)')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setNpsSurveys(data || []);
+    } catch (error) {
+      console.error('Error fetching NPS:', error);
+    } finally {
+      setLoadingData(false);
+    }
+  };
+
+  const fetchDepoimentos = async () => {
+    setLoadingData(true);
+    try {
+      const { data, error } = await supabase
+        .from('customer_depoimentos')
+        .select('*, customer_portfolio(razao_social, contrato)')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setDepoimentos(data || []);
+    } catch (error) {
+      console.error('Error fetching depoimentos:', error);
+    } finally {
+      setLoadingData(false);
+    }
+  };
+
+  const fetchSatisfacao = async (meses: number) => {
+    setLoadingData(true);
+    try {
+      const dataInicio = subMonths(new Date(), meses).toISOString();
+      const { data, error } = await supabase
+        .from('customer_satisfacao')
+        .select('*, customer_portfolio(razao_social, contrato)')
+        .gte('created_at', dataInicio)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setSatisfacaoData(data || []);
+    } catch (error) {
+      console.error('Error fetching satisfacao:', error);
+    } finally {
+      setLoadingData(false);
+    }
+  };
+
+  // Handle dialog open with data fetch
+  const handleOpenChamados = () => {
+    fetchChamados();
+    setChamadosDialogOpen(true);
+  };
+
+  const handleOpenNps = () => {
+    fetchNpsSurveys();
+    setNpsDialogOpen(true);
+  };
+
+  const handleOpenDepoimentos = () => {
+    fetchDepoimentos();
+    setDepoimentosDialogOpen(true);
+  };
+
+  const handleOpenSatisfacao = () => {
+    fetchSatisfacao(parseInt(satisfacaoPeriodo));
+    setSatisfacaoDialogOpen(true);
+  };
+
+  // Open customer selection dialog
+  const openCustomerSelect = (action: 'reclamacao' | 'nps' | 'depoimento' | 'satisfacao') => {
+    setCustomerSelectAction(action);
+    setSearchTerm('');
+    setCustomerSelectDialogOpen(true);
   };
 
   // Calculate contracts expiring
@@ -141,14 +313,51 @@ export default function SucessoCliente() {
     setExpiringDialogOpen(true);
   };
 
-  const handleOpenActionDialog = (type: 'reclamacao' | 'nps' | 'depoimento' | 'satisfacao') => {
-    setActionDialogType(type);
-    setSearchTerm('');
-    setActionDialogOpen(true);
+  const filteredCustomers = customers.filter(c => 
+    c.razao_social.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    c.contrato.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (c.filial && c.filial.toLowerCase().includes(searchTerm.toLowerCase()))
+  );
+
+  // NPS calculations
+  const getNpsCategory = (nota: number) => {
+    if (nota >= 9) return 'promoter';
+    if (nota >= 7) return 'neutral';
+    return 'detractor';
+  };
+
+  const promoters = npsSurveys.filter(n => getNpsCategory(n.nota) === 'promoter');
+  const detractors = npsSurveys.filter(n => getNpsCategory(n.nota) === 'detractor');
+  const npsScore = npsSurveys.length > 0 
+    ? Math.round(((promoters.length - detractors.length) / npsSurveys.length) * 100)
+    : null;
+
+  // Satisfaction calculations
+  const satisfacaoMedia = satisfacaoData.length > 0
+    ? (satisfacaoData.filter(s => s.nota_nps).reduce((acc, s) => acc + (s.nota_nps || 0), 0) / satisfacaoData.filter(s => s.nota_nps).length).toFixed(1)
+    : null;
+
+  const getPrioridadeBadge = (prioridade: string) => {
+    switch (prioridade) {
+      case 'urgente': return <Badge variant="destructive">Urgente</Badge>;
+      case 'alta': return <Badge className="bg-orange-500">Alta</Badge>;
+      case 'media': return <Badge className="bg-yellow-500">Média</Badge>;
+      case 'baixa': return <Badge className="bg-green-500">Baixa</Badge>;
+      default: return <Badge>{prioridade}</Badge>;
+    }
+  };
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'aberto': return <Badge variant="outline" className="border-red-500 text-red-500">Aberto</Badge>;
+      case 'em_andamento': return <Badge variant="outline" className="border-yellow-500 text-yellow-500">Em Andamento</Badge>;
+      case 'resolvido': return <Badge variant="outline" className="border-green-500 text-green-500">Resolvido</Badge>;
+      default: return <Badge variant="outline">{status}</Badge>;
+    }
   };
 
   const getActionDialogTitle = () => {
-    switch (actionDialogType) {
+    switch (customerSelectAction) {
       case 'reclamacao': return 'Selecionar Cliente para Abrir Reclamação';
       case 'nps': return 'Selecionar Cliente para Pesquisa NPS';
       case 'depoimento': return 'Selecionar Cliente para Registrar Depoimento';
@@ -156,22 +365,6 @@ export default function SucessoCliente() {
       default: return 'Selecionar Cliente';
     }
   };
-
-  const getActionParam = () => {
-    switch (actionDialogType) {
-      case 'reclamacao': return 'reclamacao';
-      case 'nps': return 'nps';
-      case 'depoimento': return 'depoimento';
-      case 'satisfacao': return 'satisfacao';
-      default: return '';
-    }
-  };
-
-  const filteredCustomers = customers.filter(c => 
-    c.razao_social.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    c.contrato.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (c.filial && c.filial.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
 
   if (loading) {
     return (
@@ -185,6 +378,7 @@ export default function SucessoCliente() {
 
   // Calculate totals
   const totalUnidades = customers.reduce((acc, c) => acc + (c.unidades || 0), 0);
+  const chamadosAbertos = chamados.filter(c => c.status === 'aberto').length;
 
   return (
     <Layout>
@@ -233,7 +427,7 @@ export default function SucessoCliente() {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Índice de Satisfação</p>
-                  <p className="text-2xl font-bold">--</p>
+                  <p className="text-2xl font-bold">{satisfacaoMedia || '--'}</p>
                 </div>
               </div>
             </CardContent>
@@ -246,7 +440,7 @@ export default function SucessoCliente() {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">NPS Médio</p>
-                  <p className="text-2xl font-bold">--</p>
+                  <p className="text-2xl font-bold">{npsScore !== null ? npsScore : '--'}</p>
                 </div>
               </div>
             </CardContent>
@@ -316,7 +510,7 @@ export default function SucessoCliente() {
           {/* Open Tickets */}
           <Card 
             className="cursor-pointer hover:shadow-md transition-shadow"
-            onClick={() => handleOpenActionDialog('reclamacao')}
+            onClick={handleOpenChamados}
           >
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">
@@ -327,8 +521,8 @@ export default function SucessoCliente() {
             <CardContent>
               <div className="text-center py-8 text-muted-foreground">
                 <MessageSquare className="w-12 h-12 mx-auto mb-3 opacity-30" />
-                <p>Nenhum chamado registrado</p>
-                <p className="text-sm">Os chamados de reclamações aparecerão aqui</p>
+                <p>Clique para ver chamados</p>
+                <p className="text-sm">Visualize e gerencie reclamações</p>
               </div>
             </CardContent>
           </Card>
@@ -336,7 +530,7 @@ export default function SucessoCliente() {
           {/* NPS Surveys */}
           <Card 
             className="cursor-pointer hover:shadow-md transition-shadow"
-            onClick={() => handleOpenActionDialog('nps')}
+            onClick={handleOpenNps}
           >
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">
@@ -347,8 +541,8 @@ export default function SucessoCliente() {
             <CardContent>
               <div className="text-center py-8 text-muted-foreground">
                 <Star className="w-12 h-12 mx-auto mb-3 opacity-30" />
-                <p>Nenhuma pesquisa registrada</p>
-                <p className="text-sm">As pesquisas de NPS aparecerão aqui</p>
+                <p>Clique para ver pesquisas</p>
+                <p className="text-sm">Promotores, detratores e pontos fortes</p>
               </div>
             </CardContent>
           </Card>
@@ -359,7 +553,7 @@ export default function SucessoCliente() {
           {/* Testimonials */}
           <Card 
             className="cursor-pointer hover:shadow-md transition-shadow"
-            onClick={() => handleOpenActionDialog('depoimento')}
+            onClick={handleOpenDepoimentos}
           >
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">
@@ -370,8 +564,8 @@ export default function SucessoCliente() {
             <CardContent>
               <div className="text-center py-8 text-muted-foreground">
                 <ThumbsUp className="w-12 h-12 mx-auto mb-3 opacity-30" />
-                <p>Nenhum depoimento registrado</p>
-                <p className="text-sm">Os depoimentos dos síndicos aparecerão aqui</p>
+                <p>Clique para ver depoimentos</p>
+                <p className="text-sm">Elogios e feedbacks positivos</p>
               </div>
             </CardContent>
           </Card>
@@ -379,7 +573,7 @@ export default function SucessoCliente() {
           {/* Satisfaction Index */}
           <Card 
             className="cursor-pointer hover:shadow-md transition-shadow"
-            onClick={() => handleOpenActionDialog('satisfacao')}
+            onClick={handleOpenSatisfacao}
           >
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">
@@ -390,8 +584,8 @@ export default function SucessoCliente() {
             <CardContent>
               <div className="text-center py-8 text-muted-foreground">
                 <TrendingUp className="w-12 h-12 mx-auto mb-3 opacity-30" />
-                <p>Sem dados de satisfação</p>
-                <p className="text-sm">Os índices de satisfação aparecerão aqui</p>
+                <p>Clique para ver índices</p>
+                <p className="text-sm">Análise por período (3, 6, 9, 12 meses)</p>
               </div>
             </CardContent>
           </Card>
@@ -483,8 +677,428 @@ export default function SucessoCliente() {
           </DialogContent>
         </Dialog>
 
-        {/* Dialog for action selection */}
-        <Dialog open={actionDialogOpen} onOpenChange={setActionDialogOpen}>
+        {/* Chamados Dialog */}
+        <Dialog open={chamadosDialogOpen} onOpenChange={setChamadosDialogOpen}>
+          <DialogContent className="max-w-5xl max-h-[85vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center justify-between">
+                <span className="flex items-center gap-2">
+                  <MessageSquare className="w-5 h-5 text-orange-500" />
+                  Chamados / Reclamações
+                </span>
+                <Button size="sm" onClick={() => { setChamadosDialogOpen(false); openCustomerSelect('reclamacao'); }}>
+                  <Plus className="w-4 h-4 mr-1" /> Novo Chamado
+                </Button>
+              </DialogTitle>
+            </DialogHeader>
+            
+            <Tabs defaultValue="abertos" className="mt-4">
+              <TabsList>
+                <TabsTrigger value="abertos">Abertos ({chamados.filter(c => c.status === 'aberto').length})</TabsTrigger>
+                <TabsTrigger value="andamento">Em Andamento ({chamados.filter(c => c.status === 'em_andamento').length})</TabsTrigger>
+                <TabsTrigger value="resolvidos">Resolvidos ({chamados.filter(c => c.status === 'resolvido').length})</TabsTrigger>
+                <TabsTrigger value="todos">Todos ({chamados.length})</TabsTrigger>
+              </TabsList>
+
+              {['abertos', 'andamento', 'resolvidos', 'todos'].map(tab => (
+                <TabsContent key={tab} value={tab}>
+                  {loadingData ? (
+                    <div className="flex justify-center py-8">
+                      <Loader2 className="w-6 h-6 animate-spin" />
+                    </div>
+                  ) : (
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Cliente</TableHead>
+                          <TableHead>Assunto</TableHead>
+                          <TableHead>Prioridade</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead>Data</TableHead>
+                          <TableHead></TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {chamados
+                          .filter(c => tab === 'todos' || 
+                            (tab === 'abertos' && c.status === 'aberto') ||
+                            (tab === 'andamento' && c.status === 'em_andamento') ||
+                            (tab === 'resolvidos' && c.status === 'resolvido'))
+                          .map((chamado) => (
+                          <TableRow key={chamado.id}>
+                            <TableCell>
+                              <div>
+                                <p className="font-medium">{chamado.customer_portfolio?.razao_social}</p>
+                                <p className="text-sm text-muted-foreground">{chamado.customer_portfolio?.contrato}</p>
+                              </div>
+                            </TableCell>
+                            <TableCell>{chamado.assunto}</TableCell>
+                            <TableCell>{getPrioridadeBadge(chamado.prioridade)}</TableCell>
+                            <TableCell>{getStatusBadge(chamado.status)}</TableCell>
+                            <TableCell>{formatDate(chamado.created_at)}</TableCell>
+                            <TableCell>
+                              <Button variant="ghost" size="sm" onClick={() => navigate(`/sucesso-cliente/${chamado.customer_id}`)}>
+                                <ExternalLink className="w-4 h-4" />
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                        {chamados.filter(c => tab === 'todos' || 
+                            (tab === 'abertos' && c.status === 'aberto') ||
+                            (tab === 'andamento' && c.status === 'em_andamento') ||
+                            (tab === 'resolvidos' && c.status === 'resolvido')).length === 0 && (
+                          <TableRow>
+                            <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                              Nenhum chamado encontrado
+                            </TableCell>
+                          </TableRow>
+                        )}
+                      </TableBody>
+                    </Table>
+                  )}
+                </TabsContent>
+              ))}
+            </Tabs>
+          </DialogContent>
+        </Dialog>
+
+        {/* NPS Dialog */}
+        <Dialog open={npsDialogOpen} onOpenChange={setNpsDialogOpen}>
+          <DialogContent className="max-w-5xl max-h-[85vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center justify-between">
+                <span className="flex items-center gap-2">
+                  <Star className="w-5 h-5 text-purple-500" />
+                  Pesquisas de NPS
+                </span>
+                <Button size="sm" onClick={() => { setNpsDialogOpen(false); openCustomerSelect('nps'); }}>
+                  <Plus className="w-4 h-4 mr-1" /> Nova Pesquisa
+                </Button>
+              </DialogTitle>
+            </DialogHeader>
+
+            {/* NPS Summary */}
+            <div className="grid grid-cols-4 gap-4 mt-4 mb-6">
+              <Card>
+                <CardContent className="pt-4 text-center">
+                  <p className="text-2xl font-bold text-primary">{npsScore !== null ? npsScore : '--'}</p>
+                  <p className="text-sm text-muted-foreground">NPS Score</p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="pt-4 text-center">
+                  <p className="text-2xl font-bold text-green-600">{promoters.length}</p>
+                  <p className="text-sm text-muted-foreground">Promotores (9-10)</p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="pt-4 text-center">
+                  <p className="text-2xl font-bold text-yellow-600">{npsSurveys.filter(n => getNpsCategory(n.nota) === 'neutral').length}</p>
+                  <p className="text-sm text-muted-foreground">Neutros (7-8)</p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="pt-4 text-center">
+                  <p className="text-2xl font-bold text-red-600">{detractors.length}</p>
+                  <p className="text-sm text-muted-foreground">Detratores (0-6)</p>
+                </CardContent>
+              </Card>
+            </div>
+
+            <Tabs defaultValue="detratores" className="mt-4">
+              <TabsList>
+                <TabsTrigger value="detratores">Detratores</TabsTrigger>
+                <TabsTrigger value="promotores">Promotores</TabsTrigger>
+                <TabsTrigger value="todos">Todos</TabsTrigger>
+              </TabsList>
+
+              {['detratores', 'promotores', 'todos'].map(tab => (
+                <TabsContent key={tab} value={tab}>
+                  {loadingData ? (
+                    <div className="flex justify-center py-8">
+                      <Loader2 className="w-6 h-6 animate-spin" />
+                    </div>
+                  ) : (
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Cliente</TableHead>
+                          <TableHead>Nota</TableHead>
+                          <TableHead>Ponto Forte</TableHead>
+                          <TableHead>Ponto Fraco</TableHead>
+                          <TableHead>Data</TableHead>
+                          <TableHead></TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {npsSurveys
+                          .filter(n => tab === 'todos' || 
+                            (tab === 'detratores' && getNpsCategory(n.nota) === 'detractor') ||
+                            (tab === 'promotores' && getNpsCategory(n.nota) === 'promoter'))
+                          .map((nps) => (
+                          <TableRow key={nps.id}>
+                            <TableCell>
+                              <div>
+                                <p className="font-medium">{nps.customer_portfolio?.razao_social}</p>
+                                <p className="text-sm text-muted-foreground">{nps.customer_portfolio?.contrato}</p>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <Badge className={
+                                getNpsCategory(nps.nota) === 'promoter' ? 'bg-green-500' :
+                                getNpsCategory(nps.nota) === 'neutral' ? 'bg-yellow-500' : 'bg-red-500'
+                              }>
+                                {nps.nota}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="max-w-48 truncate">{nps.ponto_forte || '-'}</TableCell>
+                            <TableCell className="max-w-48 truncate">{nps.ponto_fraco || '-'}</TableCell>
+                            <TableCell>{formatDate(nps.created_at)}</TableCell>
+                            <TableCell>
+                              <Button variant="ghost" size="sm" onClick={() => navigate(`/sucesso-cliente/${nps.customer_id}`)}>
+                                <ExternalLink className="w-4 h-4" />
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                        {npsSurveys.filter(n => tab === 'todos' || 
+                            (tab === 'detratores' && getNpsCategory(n.nota) === 'detractor') ||
+                            (tab === 'promotores' && getNpsCategory(n.nota) === 'promoter')).length === 0 && (
+                          <TableRow>
+                            <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                              Nenhuma pesquisa encontrada
+                            </TableCell>
+                          </TableRow>
+                        )}
+                      </TableBody>
+                    </Table>
+                  )}
+                </TabsContent>
+              ))}
+            </Tabs>
+          </DialogContent>
+        </Dialog>
+
+        {/* Depoimentos Dialog */}
+        <Dialog open={depoimentosDialogOpen} onOpenChange={setDepoimentosDialogOpen}>
+          <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center justify-between">
+                <span className="flex items-center gap-2">
+                  <ThumbsUp className="w-5 h-5 text-green-500" />
+                  Depoimentos e Elogios
+                </span>
+                <Button size="sm" onClick={() => { setDepoimentosDialogOpen(false); openCustomerSelect('depoimento'); }}>
+                  <Plus className="w-4 h-4 mr-1" /> Novo Depoimento
+                </Button>
+              </DialogTitle>
+            </DialogHeader>
+
+            <Tabs defaultValue="elogios" className="mt-4">
+              <TabsList>
+                <TabsTrigger value="elogios">Elogios ({depoimentos.filter(d => d.tipo === 'elogio').length})</TabsTrigger>
+                <TabsTrigger value="sugestoes">Sugestões ({depoimentos.filter(d => d.tipo === 'sugestao').length})</TabsTrigger>
+                <TabsTrigger value="todos">Todos ({depoimentos.length})</TabsTrigger>
+              </TabsList>
+
+              {['elogios', 'sugestoes', 'todos'].map(tab => (
+                <TabsContent key={tab} value={tab}>
+                  {loadingData ? (
+                    <div className="flex justify-center py-8">
+                      <Loader2 className="w-6 h-6 animate-spin" />
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {depoimentos
+                        .filter(d => tab === 'todos' || 
+                          (tab === 'elogios' && d.tipo === 'elogio') ||
+                          (tab === 'sugestoes' && d.tipo === 'sugestao'))
+                        .map((dep) => (
+                        <Card key={dep.id}>
+                          <CardContent className="pt-4">
+                            <div className="flex justify-between items-start mb-2">
+                              <div>
+                                <p className="font-medium">{dep.customer_portfolio?.razao_social}</p>
+                                <p className="text-sm text-muted-foreground">{dep.customer_portfolio?.contrato}</p>
+                              </div>
+                              <Badge className={dep.tipo === 'elogio' ? 'bg-green-500' : 'bg-blue-500'}>
+                                {dep.tipo === 'elogio' ? 'Elogio' : 'Sugestão'}
+                              </Badge>
+                            </div>
+                            <blockquote className="border-l-4 border-primary pl-4 italic my-3">
+                              "{dep.texto}"
+                            </blockquote>
+                            <div className="flex justify-between items-center text-sm text-muted-foreground">
+                              <span>— {dep.autor}{dep.cargo ? `, ${dep.cargo}` : ''}</span>
+                              <span>{formatDate(dep.created_at)}</span>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                      {depoimentos.filter(d => tab === 'todos' || 
+                          (tab === 'elogios' && d.tipo === 'elogio') ||
+                          (tab === 'sugestoes' && d.tipo === 'sugestao')).length === 0 && (
+                        <p className="text-center py-8 text-muted-foreground">Nenhum depoimento encontrado</p>
+                      )}
+                    </div>
+                  )}
+                </TabsContent>
+              ))}
+            </Tabs>
+          </DialogContent>
+        </Dialog>
+
+        {/* Satisfação Dialog */}
+        <Dialog open={satisfacaoDialogOpen} onOpenChange={setSatisfacaoDialogOpen}>
+          <DialogContent className="max-w-5xl max-h-[85vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center justify-between">
+                <span className="flex items-center gap-2">
+                  <TrendingUp className="w-5 h-5 text-blue-500" />
+                  Índice de Satisfação
+                </span>
+                <div className="flex items-center gap-2">
+                  <Select value={satisfacaoPeriodo} onValueChange={(v) => { setSatisfacaoPeriodo(v); fetchSatisfacao(parseInt(v)); }}>
+                    <SelectTrigger className="w-32">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="3">3 meses</SelectItem>
+                      <SelectItem value="6">6 meses</SelectItem>
+                      <SelectItem value="9">9 meses</SelectItem>
+                      <SelectItem value="12">12 meses</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Button size="sm" onClick={() => { setSatisfacaoDialogOpen(false); openCustomerSelect('satisfacao'); }}>
+                    <Plus className="w-4 h-4 mr-1" /> Nova Pesquisa
+                  </Button>
+                </div>
+              </DialogTitle>
+            </DialogHeader>
+
+            {/* Summary Cards */}
+            <div className="grid grid-cols-4 gap-4 mt-4 mb-6">
+              <Card>
+                <CardContent className="pt-4 text-center">
+                  <p className="text-2xl font-bold text-primary">{satisfacaoData.length}</p>
+                  <p className="text-sm text-muted-foreground">Total Pesquisas</p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="pt-4 text-center">
+                  <p className="text-2xl font-bold text-green-600">
+                    {satisfacaoData.filter(s => s.expectativa_atendida === 'sim').length}
+                  </p>
+                  <p className="text-sm text-muted-foreground">Expectativa Atendida</p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="pt-4 text-center">
+                  <p className="text-2xl font-bold text-blue-600">
+                    {satisfacaoData.filter(s => s.facilidade_app === 'muito_satisfeito' || s.facilidade_app === 'satisfeito').length}
+                  </p>
+                  <p className="text-sm text-muted-foreground">Satisfeitos com App</p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="pt-4 text-center">
+                  <p className="text-2xl font-bold text-purple-600">
+                    {satisfacaoData.filter(s => s.treinamento_adequado === 'sim').length}
+                  </p>
+                  <p className="text-sm text-muted-foreground">Treinamento OK</p>
+                </CardContent>
+              </Card>
+            </div>
+
+            {loadingData ? (
+              <div className="flex justify-center py-8">
+                <Loader2 className="w-6 h-6 animate-spin" />
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Cliente</TableHead>
+                    <TableHead>Nota NPS</TableHead>
+                    <TableHead>Tempo OK?</TableHead>
+                    <TableHead>App</TableHead>
+                    <TableHead>Treinamento</TableHead>
+                    <TableHead>Expectativa</TableHead>
+                    <TableHead>Data</TableHead>
+                    <TableHead></TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {satisfacaoData.map((sat) => (
+                    <TableRow key={sat.id}>
+                      <TableCell>
+                        <div>
+                          <p className="font-medium">{sat.customer_portfolio?.razao_social}</p>
+                          <p className="text-sm text-muted-foreground">{sat.customer_portfolio?.contrato}</p>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        {sat.nota_nps && (
+                          <Badge className={sat.nota_nps >= 9 ? 'bg-green-500' : sat.nota_nps >= 7 ? 'bg-yellow-500' : 'bg-red-500'}>
+                            {sat.nota_nps}
+                          </Badge>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {sat.tempo_implantacao === 'sim' ? (
+                          <Badge className="bg-green-500">Sim</Badge>
+                        ) : sat.tempo_implantacao === 'nao' ? (
+                          <Badge variant="destructive">Não</Badge>
+                        ) : '-'}
+                      </TableCell>
+                      <TableCell>
+                        {sat.facilidade_app === 'muito_satisfeito' ? (
+                          <Badge className="bg-green-500">Muito Satisfeito</Badge>
+                        ) : sat.facilidade_app === 'satisfeito' ? (
+                          <Badge className="bg-blue-500">Satisfeito</Badge>
+                        ) : sat.facilidade_app === 'indiferente' ? (
+                          <Badge variant="outline">Indiferente</Badge>
+                        ) : sat.facilidade_app === 'insatisfeito' ? (
+                          <Badge variant="destructive">Insatisfeito</Badge>
+                        ) : '-'}
+                      </TableCell>
+                      <TableCell>
+                        {sat.treinamento_adequado === 'sim' ? (
+                          <Badge className="bg-green-500">Sim</Badge>
+                        ) : sat.treinamento_adequado === 'nao' ? (
+                          <Badge variant="destructive">Não</Badge>
+                        ) : '-'}
+                      </TableCell>
+                      <TableCell>
+                        {sat.expectativa_atendida === 'sim' ? (
+                          <Badge className="bg-green-500">Sim</Badge>
+                        ) : sat.expectativa_atendida === 'nao' ? (
+                          <Badge variant="destructive">Não</Badge>
+                        ) : '-'}
+                      </TableCell>
+                      <TableCell>{formatDate(sat.created_at)}</TableCell>
+                      <TableCell>
+                        <Button variant="ghost" size="sm" onClick={() => navigate(`/sucesso-cliente/${sat.customer_id}`)}>
+                          <ExternalLink className="w-4 h-4" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {satisfacaoData.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                        Nenhuma pesquisa encontrada no período
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            )}
+          </DialogContent>
+        </Dialog>
+
+        {/* Customer Selection Dialog */}
+        <Dialog open={customerSelectDialogOpen} onOpenChange={setCustomerSelectDialogOpen}>
           <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>{getActionDialogTitle()}</DialogTitle>
@@ -515,8 +1129,8 @@ export default function SucessoCliente() {
                     key={customer.id}
                     className="cursor-pointer hover:bg-muted"
                     onClick={() => {
-                      setActionDialogOpen(false);
-                      navigate(`/sucesso-cliente/${customer.id}?action=${getActionParam()}`);
+                      setCustomerSelectDialogOpen(false);
+                      navigate(`/sucesso-cliente/${customer.id}?action=${customerSelectAction}`);
                     }}
                   >
                     <TableCell className="font-medium text-primary">{customer.contrato}</TableCell>

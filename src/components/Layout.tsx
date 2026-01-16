@@ -103,7 +103,7 @@ export function Layout({
         <div className="flex flex-col items-center px-4 py-4 border-b border-border">
           <img src={emiveLogo} alt="EMIVE Portarias Digitais" className="h-auto w-full max-w-[180px] mb-2" />
           <div className="text-center">
-            <h1 className="text-sm font-semibold text-foreground">EIXO</h1>
+            
           </div>
         </div>
 

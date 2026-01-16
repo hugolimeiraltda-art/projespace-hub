@@ -26,6 +26,7 @@ const ALL_ROLES: { value: UserRole; label: string }[] = [
   { value: 'projetos', label: 'Projetista' },
   { value: 'implantacao', label: 'Implantação' },
   { value: 'gerente_comercial', label: 'Gerente Comercial' },
+  { value: 'sucesso_cliente', label: 'Sucesso do Cliente' },
   { value: 'administrativo', label: 'Administrativo' },
   { value: 'admin', label: 'Administrador' },
 ];
@@ -37,6 +38,8 @@ const getRoleBadgeVariant = (role: UserRole) => {
     case 'projetos':
       return 'default';
     case 'implantacao':
+      return 'default';
+    case 'sucesso_cliente':
       return 'default';
     case 'gerente_comercial':
       return 'outline';
@@ -53,12 +56,16 @@ export default function GestaoUsuarios() {
 
   // Gerente comercial can only create vendedor users
   // Administrativo can create all except admin
+  // Sucesso cliente can only create sucesso_cliente users
   const isGerenteComercial = currentUser?.role === 'gerente_comercial';
   const isAdministrativo = currentUser?.role === 'administrativo';
+  const isSucessoCliente = currentUser?.role === 'sucesso_cliente';
   const availableRoles = isGerenteComercial 
     ? ALL_ROLES.filter(r => r.value === 'vendedor')
     : isAdministrativo
     ? ALL_ROLES.filter(r => r.value !== 'admin')
+    : isSucessoCliente
+    ? ALL_ROLES.filter(r => r.value === 'sucesso_cliente')
     : ALL_ROLES;
 
   const [users, setUsers] = useState<User[]>([]);

@@ -36,17 +36,17 @@ export function Layout({ children }: LayoutProps) {
 
   const navItems = [
     { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { path: '/projetos/novo', label: 'Novo Projeto', icon: FolderPlus, roles: ['vendedor', 'admin', 'administrativo'] },
-    { path: '/informar-venda', label: 'Informar Nova Venda', icon: ShoppingCart },
+    { path: '/projetos/novo', label: 'Novo Projeto', icon: FolderPlus, roles: ['vendedor', 'admin', 'administrativo', 'sucesso_cliente'] },
+    { path: '/informar-venda', label: 'Informar Nova Venda', icon: ShoppingCart, roles: ['vendedor', 'admin', 'administrativo', 'sucesso_cliente'] },
     { path: '/projetos', label: 'Meus Projetos', icon: List, roles: ['vendedor'] },
     { path: '/projetos', label: 'Projetos', icon: List, roles: ['projetos', 'admin', 'gerente_comercial', 'administrativo'], exact: true },
-    { path: '/startup-projetos', label: 'Implantação', icon: ClipboardList, roles: ['implantacao', 'admin', 'administrativo'] },
-    { path: '/carteira-clientes', label: 'Carteira de Clientes', icon: Briefcase, roles: ['projetos', 'admin', 'implantacao', 'administrativo'] },
-    { path: '/sucesso-cliente', label: 'Sucesso do Cliente', icon: Heart, roles: ['projetos', 'admin', 'implantacao', 'administrativo'] },
+    { path: '/startup-projetos', label: 'Implantação', icon: ClipboardList, roles: ['implantacao', 'admin', 'administrativo', 'sucesso_cliente'] },
+    { path: '/carteira-clientes', label: 'Carteira de Clientes', icon: Briefcase, roles: ['projetos', 'admin', 'implantacao', 'administrativo', 'sucesso_cliente'] },
+    { path: '/sucesso-cliente', label: 'Sucesso do Cliente', icon: Heart, roles: ['projetos', 'admin', 'implantacao', 'administrativo', 'sucesso_cliente'] },
     { path: '/chamados', label: 'Meus Chamados', icon: ClipboardList, roles: ['projetos', 'admin', 'administrativo'] },
     { path: '/controle-estoque', label: 'Controle de Estoque', icon: Package, roles: ['admin', 'administrativo'] },
     { path: '/configuracoes', label: 'Configurações', icon: Settings, roles: ['admin', 'administrativo'] },
-    { path: '/configuracoes/usuarios', label: 'Gestão de Usuários', icon: Users, roles: ['gerente_comercial', 'administrativo'] },
+    { path: '/configuracoes/usuarios', label: 'Gestão de Usuários', icon: Users, roles: ['gerente_comercial', 'administrativo', 'sucesso_cliente'] },
   ];
 
   const filteredNavItems = navItems.filter(item => {

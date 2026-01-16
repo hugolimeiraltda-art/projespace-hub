@@ -384,13 +384,21 @@ export default function InformarNovaVenda() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="filial">Filial *</Label>
-                <Input
-                  id="filial"
+                <Select
                   value={formData.filial || ''}
-                  onChange={(e) => updateField('filial', e.target.value)}
+                  onValueChange={(value) => updateField('filial', value)}
                   disabled={isLocked}
-                  placeholder="Digite a filial"
-                />
+                >
+                  <SelectTrigger id="filial">
+                    <SelectValue placeholder="Selecione a filial" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="BHZ">BHZ</SelectItem>
+                    <SelectItem value="RIO">RIO</SelectItem>
+                    <SelectItem value="VIX">VIX</SelectItem>
+                    <SelectItem value="SP">SP</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 

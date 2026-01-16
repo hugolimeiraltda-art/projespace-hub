@@ -38,6 +38,17 @@ import {
   SheetTrigger,
 } from '@/components/ui/sheet';
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+import {
   Upload,
   Download,
   Search,
@@ -52,6 +63,7 @@ import {
   FileSpreadsheet,
   ShoppingCart,
   CheckCheck,
+  Trash2,
 } from 'lucide-react';
 import { useEstoque } from '@/hooks/useEstoque';
 import { useToast } from '@/hooks/use-toast';
@@ -101,10 +113,14 @@ export default function ControleEstoque() {
     setSearchTerm,
     refresh,
     updateEstoqueAtual,
+    updateEstoqueMinimo,
     createProduct,
+    deleteProduct,
     marcarAlertaLido,
     marcarTodosAlertasLidos,
   } = useEstoque();
+
+  const [deletingProductId, setDeletingProductId] = useState<string | null>(null);
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -790,6 +806,7 @@ export default function ControleEstoque() {
                         </TableHead>
                       ))}
                       <TableHead>Status</TableHead>
+                      <TableHead className="w-[60px]">Ações</TableHead>
                     </TableRow>
                     <TableRow className="bg-muted/50">
                       <TableHead className="sticky left-0 bg-muted/50 z-10"></TableHead>
@@ -802,6 +819,7 @@ export default function ControleEstoque() {
                           </div>
                         </TableHead>
                       ))}
+                      <TableHead></TableHead>
                       <TableHead></TableHead>
                     </TableRow>
                   </TableHeader>
@@ -824,14 +842,22 @@ export default function ControleEstoque() {
                             return (
                               <TableCell key={`${local.id}-${item.id}`} className={cn("p-0", bgColor)} colSpan={2}>
                                 <div className="flex justify-around items-center">
-                                  <span className="text-center px-2 py-2 w-1/2 border-r border-border/50">
-                                    {est?.minimo ?? '-'}
-                                  </span>
+                                  <div 
+                                    className="text-center px-2 py-1 w-1/2 border-r border-border/50 cursor-pointer hover:bg-accent/50 transition-colors group flex items-center justify-center"
+                                  >
+                                    <EditableCellContent
+                                      id={`edit-min-${item.id}-${local.id}`}
+                                      value={est?.minimo ?? 0}
+                                      itemId={item.id}
+                                      localId={local.id}
+                                      onSave={updateEstoqueMinimo}
+                                    />
+                                  </div>
                                   <div 
                                     className="text-center px-2 py-1 w-1/2 cursor-pointer hover:bg-accent/50 transition-colors group flex items-center justify-center"
                                   >
                                     <EditableCellContent
-                                      id={`edit-${item.id}-${local.id}`}
+                                      id={`edit-atual-${item.id}-${local.id}`}
                                       value={est?.atual ?? 0}
                                       itemId={item.id}
                                       localId={local.id}
@@ -847,6 +873,45 @@ export default function ControleEstoque() {
                               {getStatusIcon(item.statusGeral)}
                               {ESTOQUE_STATUS_LABELS[item.statusGeral]}
                             </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Excluir Produto</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Tem certeza que deseja excluir o produto <strong>{item.codigo}</strong> - {item.modelo}?
+                                    Esta ação não pode ser desfeita e todos os registros de estoque serão removidos.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                  <AlertDialogAction
+                                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                    onClick={async () => {
+                                      setDeletingProductId(item.id);
+                                      await deleteProduct(item.id);
+                                      setDeletingProductId(null);
+                                    }}
+                                    disabled={deletingProductId === item.id}
+                                  >
+                                    {deletingProductId === item.id ? (
+                                      <RefreshCw className="h-4 w-4 animate-spin mr-2" />
+                                    ) : null}
+                                    Excluir
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
                           </TableCell>
                         </TableRow>
                       ));

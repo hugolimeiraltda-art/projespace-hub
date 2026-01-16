@@ -153,6 +153,92 @@ export function useEstoque() {
     }
   };
 
+  // Update stock minimo value
+  const updateEstoqueMinimo = async (itemId: string, localId: string, novoValor: number): Promise<boolean> => {
+    try {
+      // Check if estoque record exists
+      const existingEstoque = estoques.find(
+        e => e.item_id === itemId && e.local_estoque_id === localId
+      );
+
+      if (existingEstoque) {
+        // Update existing record
+        const { error } = await supabase
+          .from('estoque')
+          .update({ estoque_minimo: novoValor })
+          .eq('id', existingEstoque.id);
+
+        if (error) throw error;
+      } else {
+        // Create new record
+        const { error } = await supabase
+          .from('estoque')
+          .insert({
+            item_id: itemId,
+            local_estoque_id: localId,
+            estoque_atual: 0,
+            estoque_minimo: novoValor,
+          });
+
+        if (error) throw error;
+      }
+
+      // Reload to get updated alerts
+      await loadData();
+
+      toast({
+        title: 'Estoque mínimo atualizado',
+        description: 'O valor do estoque mínimo foi atualizado com sucesso.',
+      });
+
+      return true;
+    } catch (error) {
+      console.error('Error updating stock minimo:', error);
+      toast({
+        title: 'Erro ao atualizar',
+        description: 'Não foi possível atualizar o estoque mínimo.',
+        variant: 'destructive',
+      });
+      return false;
+    }
+  };
+
+  // Delete product and all related stock entries
+  const deleteProduct = async (itemId: string): Promise<boolean> => {
+    try {
+      // Delete the item (stock entries will be deleted via cascade or manually)
+      const { error: estoqueError } = await supabase
+        .from('estoque')
+        .delete()
+        .eq('item_id', itemId);
+
+      if (estoqueError) throw estoqueError;
+
+      const { error: itemError } = await supabase
+        .from('estoque_itens')
+        .delete()
+        .eq('id', itemId);
+
+      if (itemError) throw itemError;
+
+      toast({
+        title: 'Produto excluído',
+        description: 'O produto e todos os estoques relacionados foram excluídos.',
+      });
+
+      await loadData();
+      return true;
+    } catch (error) {
+      console.error('Error deleting product:', error);
+      toast({
+        title: 'Erro ao excluir',
+        description: 'Não foi possível excluir o produto.',
+        variant: 'destructive',
+      });
+      return false;
+    }
+  };
+
   // Create new product and add to all stock locations
   const createProduct = async (codigo: string, modelo: string): Promise<boolean> => {
     try {
@@ -452,7 +538,9 @@ export function useEstoque() {
     setSearchTerm,
     refresh: loadData,
     updateEstoqueAtual,
+    updateEstoqueMinimo,
     createProduct,
+    deleteProduct,
     marcarAlertaLido,
     marcarTodosAlertasLidos,
   };

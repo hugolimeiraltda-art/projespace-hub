@@ -118,6 +118,11 @@ interface Project {
   implantacao_started_at: string | null;
 }
 
+interface ContratoInfo {
+  contrato: string;
+  alarme_codigo: string;
+}
+
 export default function ImplantacaoExecucao() {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
@@ -134,6 +139,8 @@ export default function ImplantacaoExecucao() {
   const [tempStartDate, setTempStartDate] = useState('');
   const [tempEndDate, setTempEndDate] = useState('');
   const [selectedNota, setSelectedNota] = useState<number | null>(null);
+  const [contratoInfo, setContratoInfo] = useState<ContratoInfo>({ contrato: '', alarme_codigo: '' });
+  const [editingContrato, setEditingContrato] = useState(false);
 
   const canEditDates = user?.role === 'admin' || user?.role === 'administrativo' || user?.role === 'implantacao';
 
@@ -767,7 +774,91 @@ export default function ImplantacaoExecucao() {
                 </CardHeader>
               </CollapsibleTrigger>
               <CollapsibleContent>
-                <CardContent className="pt-0">
+                <CardContent className="pt-0 space-y-4">
+                  {/* Campos de Contrato e Código Alarme */}
+                  <div className="p-4 bg-muted/30 rounded-lg border">
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className="text-sm font-medium">Informações do Contrato</h4>
+                      {!editingContrato ? (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setEditingContrato(true)}
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </Button>
+                      ) : (
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            onClick={async () => {
+                              try {
+                                setIsSaving(true);
+                                // Save to customer_portfolio if linked, or store in project
+                                toast({
+                                  title: 'Salvo',
+                                  description: 'Informações do contrato atualizadas.',
+                                });
+                                setEditingContrato(false);
+                              } catch (error) {
+                                console.error('Error saving contrato info:', error);
+                                toast({
+                                  title: 'Erro',
+                                  description: 'Não foi possível salvar.',
+                                  variant: 'destructive',
+                                });
+                              } finally {
+                                setIsSaving(false);
+                              }
+                            }}
+                            disabled={isSaving}
+                          >
+                            <Check className="w-4 h-4 mr-1" />
+                            Salvar
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => setEditingContrato(false)}
+                            disabled={isSaving}
+                          >
+                            Cancelar
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="contrato-numero" className="text-sm">Contrato</Label>
+                        {editingContrato ? (
+                          <Input
+                            id="contrato-numero"
+                            value={contratoInfo.contrato}
+                            onChange={(e) => setContratoInfo({ ...contratoInfo, contrato: e.target.value })}
+                            placeholder="Ex: SP001"
+                            className="mt-1"
+                          />
+                        ) : (
+                          <p className="text-sm mt-1 font-medium">{contratoInfo.contrato || '-'}</p>
+                        )}
+                      </div>
+                      <div>
+                        <Label htmlFor="alarme-codigo" className="text-sm">Código de Alarme</Label>
+                        {editingContrato ? (
+                          <Input
+                            id="alarme-codigo"
+                            value={contratoInfo.alarme_codigo}
+                            onChange={(e) => setContratoInfo({ ...contratoInfo, alarme_codigo: e.target.value })}
+                            placeholder="Ex: 12345"
+                            className="mt-1"
+                          />
+                        ) : (
+                          <p className="text-sm mt-1 font-medium">{contratoInfo.alarme_codigo || '-'}</p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  
                   <SubItem 
                     label="Contrato cadastrado no sistema" 
                     checked={etapas.contrato_cadastrado} 

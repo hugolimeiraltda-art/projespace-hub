@@ -102,6 +102,8 @@ export default function CarteiraClientes() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [form, setForm] = useState(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
+  const [expiringDialogOpen, setExpiringDialogOpen] = useState(false);
+  const [expiringDialogData, setExpiringDialogData] = useState<{ title: string; customers: Customer[] }>({ title: '', customers: [] });
 
   const canCreate = user?.role === 'admin' || user?.role === 'implantacao';
 
@@ -588,7 +590,13 @@ export default function CarteiraClientes() {
 
         {/* Contracts Expiring Cards */}
         <div className="grid grid-cols-3 gap-4 mb-6">
-          <Card className="border-l-4 border-l-red-500">
+          <Card 
+            className="border-l-4 border-l-red-500 cursor-pointer hover:shadow-md transition-shadow"
+            onClick={() => {
+              setExpiringDialogData({ title: 'Contratos vencendo em 3 meses', customers: contractsExpiring3Months });
+              setExpiringDialogOpen(true);
+            }}
+          >
             <CardContent className="pt-4">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-red-100 rounded-lg">
@@ -599,19 +607,15 @@ export default function CarteiraClientes() {
                   <p className="text-2xl font-bold text-red-600">{contractsExpiring3Months.length}</p>
                 </div>
               </div>
-              {contractsExpiring3Months.length > 0 && (
-                <div className="mt-3 text-xs text-muted-foreground max-h-20 overflow-y-auto">
-                  {contractsExpiring3Months.slice(0, 3).map(c => (
-                    <div key={c.id} className="truncate">{c.contrato} - {c.razao_social}</div>
-                  ))}
-                  {contractsExpiring3Months.length > 3 && (
-                    <div className="text-red-600 font-medium">+{contractsExpiring3Months.length - 3} mais</div>
-                  )}
-                </div>
-              )}
             </CardContent>
           </Card>
-          <Card className="border-l-4 border-l-amber-500">
+          <Card 
+            className="border-l-4 border-l-amber-500 cursor-pointer hover:shadow-md transition-shadow"
+            onClick={() => {
+              setExpiringDialogData({ title: 'Contratos vencendo em 6 meses', customers: contractsExpiring6Months });
+              setExpiringDialogOpen(true);
+            }}
+          >
             <CardContent className="pt-4">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-amber-100 rounded-lg">
@@ -622,19 +626,15 @@ export default function CarteiraClientes() {
                   <p className="text-2xl font-bold text-amber-600">{contractsExpiring6Months.length}</p>
                 </div>
               </div>
-              {contractsExpiring6Months.length > 0 && (
-                <div className="mt-3 text-xs text-muted-foreground max-h-20 overflow-y-auto">
-                  {contractsExpiring6Months.slice(0, 3).map(c => (
-                    <div key={c.id} className="truncate">{c.contrato} - {c.razao_social}</div>
-                  ))}
-                  {contractsExpiring6Months.length > 3 && (
-                    <div className="text-amber-600 font-medium">+{contractsExpiring6Months.length - 3} mais</div>
-                  )}
-                </div>
-              )}
             </CardContent>
           </Card>
-          <Card className="border-l-4 border-l-blue-500">
+          <Card 
+            className="border-l-4 border-l-blue-500 cursor-pointer hover:shadow-md transition-shadow"
+            onClick={() => {
+              setExpiringDialogData({ title: 'Contratos vencendo em 1 ano', customers: contractsExpiring1Year });
+              setExpiringDialogOpen(true);
+            }}
+          >
             <CardContent className="pt-4">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-blue-100 rounded-lg">
@@ -645,19 +645,49 @@ export default function CarteiraClientes() {
                   <p className="text-2xl font-bold text-blue-600">{contractsExpiring1Year.length}</p>
                 </div>
               </div>
-              {contractsExpiring1Year.length > 0 && (
-                <div className="mt-3 text-xs text-muted-foreground max-h-20 overflow-y-auto">
-                  {contractsExpiring1Year.slice(0, 3).map(c => (
-                    <div key={c.id} className="truncate">{c.contrato} - {c.razao_social}</div>
-                  ))}
-                  {contractsExpiring1Year.length > 3 && (
-                    <div className="text-blue-600 font-medium">+{contractsExpiring1Year.length - 3} mais</div>
-                  )}
-                </div>
-              )}
             </CardContent>
           </Card>
         </div>
+
+        {/* Expiring Contracts Dialog */}
+        <Dialog open={expiringDialogOpen} onOpenChange={setExpiringDialogOpen}>
+          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>{expiringDialogData.title}</DialogTitle>
+            </DialogHeader>
+            <div className="py-4">
+              {expiringDialogData.customers.length === 0 ? (
+                <p className="text-muted-foreground text-center py-4">Nenhum contrato encontrado</p>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Contrato</TableHead>
+                      <TableHead>Razão Social</TableHead>
+                      <TableHead>Término</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {expiringDialogData.customers.map((customer) => (
+                      <TableRow 
+                        key={customer.id}
+                        className="cursor-pointer hover:bg-muted/50"
+                        onClick={() => {
+                          setExpiringDialogOpen(false);
+                          navigate(`/carteira-clientes/${customer.id}`);
+                        }}
+                      >
+                        <TableCell className="font-medium">{customer.contrato}</TableCell>
+                        <TableCell>{customer.razao_social}</TableCell>
+                        <TableCell>{calculateTermino(customer)}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
 
         {/* Search */}
         <div className="mb-4">

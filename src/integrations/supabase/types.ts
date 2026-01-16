@@ -400,6 +400,13 @@ export type Database = {
           operacao_assistida_fim: string | null
           operacao_assistida_inicio: string | null
           operacao_assistida_interacoes: Json | null
+          pesquisa_satisfacao_comentario: string | null
+          pesquisa_satisfacao_nota: number | null
+          pesquisa_satisfacao_pontos_negativos: string | null
+          pesquisa_satisfacao_pontos_positivos: string | null
+          pesquisa_satisfacao_realizada: boolean | null
+          pesquisa_satisfacao_realizada_at: string | null
+          pesquisa_satisfacao_recomendaria: boolean | null
           project_id: string
           sindico_app: boolean | null
           sindico_app_at: string | null
@@ -450,6 +457,13 @@ export type Database = {
           operacao_assistida_fim?: string | null
           operacao_assistida_inicio?: string | null
           operacao_assistida_interacoes?: Json | null
+          pesquisa_satisfacao_comentario?: string | null
+          pesquisa_satisfacao_nota?: number | null
+          pesquisa_satisfacao_pontos_negativos?: string | null
+          pesquisa_satisfacao_pontos_positivos?: string | null
+          pesquisa_satisfacao_realizada?: boolean | null
+          pesquisa_satisfacao_realizada_at?: string | null
+          pesquisa_satisfacao_recomendaria?: boolean | null
           project_id: string
           sindico_app?: boolean | null
           sindico_app_at?: string | null
@@ -500,6 +514,13 @@ export type Database = {
           operacao_assistida_fim?: string | null
           operacao_assistida_inicio?: string | null
           operacao_assistida_interacoes?: Json | null
+          pesquisa_satisfacao_comentario?: string | null
+          pesquisa_satisfacao_nota?: number | null
+          pesquisa_satisfacao_pontos_negativos?: string | null
+          pesquisa_satisfacao_pontos_positivos?: string | null
+          pesquisa_satisfacao_realizada?: boolean | null
+          pesquisa_satisfacao_realizada_at?: string | null
+          pesquisa_satisfacao_recomendaria?: boolean | null
           project_id?: string
           sindico_app?: boolean | null
           sindico_app_at?: string | null

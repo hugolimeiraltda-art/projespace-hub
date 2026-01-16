@@ -34,6 +34,7 @@ import {
   Plus,
   Building,
   Pencil,
+  Star,
 } from 'lucide-react';
 import { format, parseISO, addDays, differenceInDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -88,6 +89,14 @@ interface ImplantacaoEtapas {
   concluido_at: string | null;
   observacoes_manutencao: string | null;
   etapa_atual: number;
+  // Step 10: Satisfaction Survey
+  pesquisa_satisfacao_realizada: boolean;
+  pesquisa_satisfacao_realizada_at: string | null;
+  pesquisa_satisfacao_nota: number | null;
+  pesquisa_satisfacao_comentario: string | null;
+  pesquisa_satisfacao_pontos_positivos: string | null;
+  pesquisa_satisfacao_pontos_negativos: string | null;
+  pesquisa_satisfacao_recomendaria: boolean | null;
 }
 
 interface InteracaoAssistida {
@@ -119,11 +128,12 @@ export default function ImplantacaoExecucao() {
   const [etapas, setEtapas] = useState<ImplantacaoEtapas | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [expandedEtapas, setExpandedEtapas] = useState<number[]>([1, 2, 3, 4, 5, 6, 7, 8, 9]);
+  const [expandedEtapas, setExpandedEtapas] = useState<number[]>([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
   const [novaInteracao, setNovaInteracao] = useState('');
   const [editingDates, setEditingDates] = useState(false);
   const [tempStartDate, setTempStartDate] = useState('');
   const [tempEndDate, setTempEndDate] = useState('');
+  const [selectedNota, setSelectedNota] = useState<number | null>(null);
 
   const canEditDates = user?.role === 'admin' || user?.role === 'administrativo' || user?.role === 'implantacao';
 
@@ -420,6 +430,7 @@ export default function ImplantacaoExecucao() {
       7: Handshake,
       8: HeadphonesIcon,
       9: CheckCircle2,
+      10: Star,
     };
     return icons[etapaNum] || FileText;
   };
@@ -437,6 +448,7 @@ export default function ImplantacaoExecucao() {
       case 7: return etapas.agendamento_visita_comercial && etapas.laudo_visita_comercial;
       case 8: return (etapas.operacao_assistida_interacoes?.length || 0) > 0;
       case 9: return etapas.concluido;
+      case 10: return etapas.pesquisa_satisfacao_realizada;
       default: return false;
     }
   };
@@ -1162,6 +1174,120 @@ export default function ImplantacaoExecucao() {
                       field="concluido"
                       dateField="concluido_at"
                       date={etapas.concluido_at}
+                    />
+                  </div>
+                </CardContent>
+              </CollapsibleContent>
+            </Collapsible>
+          </Card>
+
+          {/* Etapa 10: Pesquisa de Satisfação */}
+          <Card>
+            <Collapsible open={expandedEtapas.includes(10)} onOpenChange={() => toggleEtapa(10)}>
+              <CollapsibleTrigger asChild>
+                <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className={cn(
+                        "w-8 h-8 rounded-full flex items-center justify-center",
+                        isEtapaComplete(10) ? "bg-green-500 text-white" : "bg-muted text-muted-foreground"
+                      )}>
+                        {isEtapaComplete(10) ? <Check className="w-4 h-4" /> : <Star className="w-4 h-4" />}
+                      </div>
+                      <CardTitle className="text-base">10 - Pesquisa de Satisfação com a Implantação</CardTitle>
+                    </div>
+                    {expandedEtapas.includes(10) ? <ChevronDown className="w-5 h-5" /> : <ChevronRight className="w-5 h-5" />}
+                  </div>
+                </CardHeader>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <CardContent className="pt-0 space-y-4">
+                  <div className="px-4">
+                    <Label className="text-sm font-medium">10.1 - Nota de Satisfação (1-10)</Label>
+                    <p className="text-sm text-muted-foreground mb-2">De 1 a 10, qual a nota para o processo de implantação?</p>
+                    <div className="flex gap-2 flex-wrap">
+                      {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => (
+                        <Button
+                          key={n}
+                          variant={(etapas.pesquisa_satisfacao_nota === n || selectedNota === n) ? 'default' : 'outline'}
+                          size="sm"
+                          className={cn(
+                            "w-10 h-10",
+                            n <= 6 && (etapas.pesquisa_satisfacao_nota === n || selectedNota === n) && "bg-red-500 hover:bg-red-600",
+                            n >= 7 && n <= 8 && (etapas.pesquisa_satisfacao_nota === n || selectedNota === n) && "bg-amber-500 hover:bg-amber-600",
+                            n >= 9 && (etapas.pesquisa_satisfacao_nota === n || selectedNota === n) && "bg-green-500 hover:bg-green-600"
+                          )}
+                          onClick={() => {
+                            setSelectedNota(n);
+                            updateEtapa('pesquisa_satisfacao_nota', n);
+                          }}
+                          disabled={isSaving}
+                        >
+                          {n}
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="px-4">
+                    <Label className="text-sm font-medium">10.2 - O cliente recomendaria nossos serviços?</Label>
+                    <div className="flex gap-4 mt-2">
+                      <Button
+                        variant={etapas.pesquisa_satisfacao_recomendaria === true ? 'default' : 'outline'}
+                        onClick={() => updateEtapa('pesquisa_satisfacao_recomendaria', true)}
+                        disabled={isSaving}
+                        className={cn(etapas.pesquisa_satisfacao_recomendaria === true && "bg-green-500 hover:bg-green-600")}
+                      >
+                        Sim
+                      </Button>
+                      <Button
+                        variant={etapas.pesquisa_satisfacao_recomendaria === false ? 'default' : 'outline'}
+                        onClick={() => updateEtapa('pesquisa_satisfacao_recomendaria', false)}
+                        disabled={isSaving}
+                        className={cn(etapas.pesquisa_satisfacao_recomendaria === false && "bg-red-500 hover:bg-red-600")}
+                      >
+                        Não
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="px-4">
+                    <Label className="text-sm font-medium">10.3 - Pontos Positivos</Label>
+                    <Textarea 
+                      value={etapas.pesquisa_satisfacao_pontos_positivos || ''}
+                      onChange={(e) => updateEtapa('pesquisa_satisfacao_pontos_positivos', e.target.value)}
+                      placeholder="O que o cliente destacou como pontos positivos da implantação?"
+                      className="mt-2"
+                    />
+                  </div>
+
+                  <div className="px-4">
+                    <Label className="text-sm font-medium">10.4 - Pontos de Melhoria</Label>
+                    <Textarea 
+                      value={etapas.pesquisa_satisfacao_pontos_negativos || ''}
+                      onChange={(e) => updateEtapa('pesquisa_satisfacao_pontos_negativos', e.target.value)}
+                      placeholder="O que o cliente apontou como pontos que podem melhorar?"
+                      className="mt-2"
+                    />
+                  </div>
+
+                  <div className="px-4">
+                    <Label className="text-sm font-medium">10.5 - Comentário Geral</Label>
+                    <Textarea 
+                      value={etapas.pesquisa_satisfacao_comentario || ''}
+                      onChange={(e) => updateEtapa('pesquisa_satisfacao_comentario', e.target.value)}
+                      placeholder="Comentários adicionais do cliente sobre a implantação..."
+                      className="mt-2"
+                    />
+                  </div>
+
+                  <div className="px-4 pt-2">
+                    <SubItem 
+                      label="Marcar pesquisa de satisfação como realizada" 
+                      checked={etapas.pesquisa_satisfacao_realizada} 
+                      field="pesquisa_satisfacao_realizada"
+                      dateField="pesquisa_satisfacao_realizada_at"
+                      date={etapas.pesquisa_satisfacao_realizada_at}
                     />
                   </div>
                 </CardContent>

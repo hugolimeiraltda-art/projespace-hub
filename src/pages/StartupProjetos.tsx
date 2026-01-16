@@ -21,6 +21,7 @@ import {
   User,
   Calendar,
   Eye,
+  RotateCcw,
 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -384,6 +385,17 @@ export default function StartupProjetos() {
                           >
                             <CheckCircle2 className="w-4 h-4 mr-1" />
                             Concluir
+                          </Button>
+                        )}
+                        {project.implantacao_status === 'CONCLUIDO_IMPLANTACAO' && user?.role === 'admin' && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="border-amber-300 text-amber-700 hover:bg-amber-50"
+                            onClick={() => handleStatusChange(project.id, 'EM_EXECUCAO')}
+                          >
+                            <RotateCcw className="w-4 h-4 mr-1" />
+                            Reabrir
                           </Button>
                         )}
                         

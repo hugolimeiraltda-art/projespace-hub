@@ -71,7 +71,17 @@ export default function SucessoClienteDetalhe() {
   // Form states
   const [reclamacaoForm, setReclamacaoForm] = useState({ assunto: '', descricao: '', prioridade: 'media' });
   const [npsForm, setNpsForm] = useState({ nota: '', comentario: '' });
-  const [satisfacaoForm, setSatisfacaoForm] = useState({ nota: '', aspectos: '', sugestoes: '' });
+  const [satisfacaoForm, setSatisfacaoForm] = useState({
+    tempoImplantacao: '',
+    ambienteOrganizado: '',
+    pendencias: '',
+    comunicacao: '',
+    facilidadeApp: '',
+    funcionalidadesSindico: '',
+    treinamentoAdequado: '',
+    expectativaAtendida: '',
+    notaNps: ''
+  });
   const [depoimentoForm, setDepoimentoForm] = useState({ texto: '', autor: '', cargo: '' });
   const [renovacaoForm, setRenovacaoForm] = useState({ observacoes: '', novaData: '' });
 
@@ -173,7 +183,17 @@ export default function SucessoClienteDetalhe() {
       description: 'A pesquisa de satisfação foi registrada com sucesso.',
     });
     setSatisfacaoDialogOpen(false);
-    setSatisfacaoForm({ nota: '', aspectos: '', sugestoes: '' });
+    setSatisfacaoForm({
+      tempoImplantacao: '',
+      ambienteOrganizado: '',
+      pendencias: '',
+      comunicacao: '',
+      facilidadeApp: '',
+      funcionalidadesSindico: '',
+      treinamentoAdequado: '',
+      expectativaAtendida: '',
+      notaNps: ''
+    });
   };
 
   const handleSubmitDepoimento = () => {
@@ -463,49 +483,156 @@ export default function SucessoClienteDetalhe() {
 
         {/* Satisfação Dialog */}
         <Dialog open={satisfacaoDialogOpen} onOpenChange={setSatisfacaoDialogOpen}>
-          <DialogContent className="max-w-lg">
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <ClipboardCheck className="w-5 h-5 text-blue-500" />
                 Pesquisa de Satisfação
               </DialogTitle>
             </DialogHeader>
-            <div className="space-y-4 py-4">
+            <div className="space-y-5 py-4">
+              {/* 1. Tempo de implantação */}
               <div>
-                <Label>Nota Geral (1-5)</Label>
-                <div className="flex gap-2 mt-2">
-                  {[1, 2, 3, 4, 5].map((n) => (
-                    <Button
-                      key={n}
-                      variant={satisfacaoForm.nota === String(n) ? 'default' : 'outline'}
-                      size="sm"
-                      className="w-12 h-12"
-                      onClick={() => setSatisfacaoForm({ ...satisfacaoForm, nota: String(n) })}
-                    >
-                      {n}
-                    </Button>
-                  ))}
-                </div>
+                <Label>Você considera que o tempo total de implantação atendeu às suas expectativas?</Label>
+                <Select 
+                  value={satisfacaoForm.tempoImplantacao} 
+                  onValueChange={(v) => setSatisfacaoForm({ ...satisfacaoForm, tempoImplantacao: v })}
+                >
+                  <SelectTrigger className="mt-2">
+                    <SelectValue placeholder="Selecione" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="sim">Sim</SelectItem>
+                    <SelectItem value="nao">Não</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
+
+              {/* 2. Ambiente organizado */}
               <div>
-                <Label htmlFor="aspectos">Aspectos Avaliados</Label>
+                <Label>A equipe de instalação deixou o ambiente organizado e em boas condições de conservação após a conclusão do serviço? Fios expostos ou outra avaria?</Label>
+                <Select 
+                  value={satisfacaoForm.ambienteOrganizado} 
+                  onValueChange={(v) => setSatisfacaoForm({ ...satisfacaoForm, ambienteOrganizado: v })}
+                >
+                  <SelectTrigger className="mt-2">
+                    <SelectValue placeholder="Selecione" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="sim">Sim</SelectItem>
+                    <SelectItem value="nao">Não</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* 3. Pendências */}
+              <div>
+                <Label htmlFor="pendencias">Ainda existe alguma pendência?</Label>
                 <Textarea
-                  id="aspectos"
-                  value={satisfacaoForm.aspectos}
-                  onChange={(e) => setSatisfacaoForm({ ...satisfacaoForm, aspectos: e.target.value })}
-                  placeholder="Quais aspectos foram avaliados?"
+                  id="pendencias"
+                  value={satisfacaoForm.pendencias}
+                  onChange={(e) => setSatisfacaoForm({ ...satisfacaoForm, pendencias: e.target.value })}
+                  placeholder="Descreva as pendências, se houver"
                   rows={2}
+                  className="mt-2"
                 />
               </div>
+
+              {/* 4. Comunicação */}
               <div>
-                <Label htmlFor="sugestoes">Sugestões de Melhoria</Label>
+                <Label htmlFor="comunicacao">Ao longo de todo processo a comunicação foi adequada? Quais pontos da comunicação poderiam ser melhorados?</Label>
                 <Textarea
-                  id="sugestoes"
-                  value={satisfacaoForm.sugestoes}
-                  onChange={(e) => setSatisfacaoForm({ ...satisfacaoForm, sugestoes: e.target.value })}
-                  placeholder="Sugestões do cliente"
-                  rows={3}
+                  id="comunicacao"
+                  value={satisfacaoForm.comunicacao}
+                  onChange={(e) => setSatisfacaoForm({ ...satisfacaoForm, comunicacao: e.target.value })}
+                  placeholder="Descreva sobre a comunicação"
+                  rows={2}
+                  className="mt-2"
                 />
+              </div>
+
+              {/* 5. Facilidade do app morador */}
+              <div>
+                <Label>Como você avalia a facilidade de uso do app morador?</Label>
+                <Select 
+                  value={satisfacaoForm.facilidadeApp} 
+                  onValueChange={(v) => setSatisfacaoForm({ ...satisfacaoForm, facilidadeApp: v })}
+                >
+                  <SelectTrigger className="mt-2">
+                    <SelectValue placeholder="Selecione" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="muito_satisfeito">Muito Satisfeito</SelectItem>
+                    <SelectItem value="satisfeito">Satisfeito</SelectItem>
+                    <SelectItem value="indiferente">Indiferente</SelectItem>
+                    <SelectItem value="insatisfeito">Insatisfeito</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* 6. Funcionalidades síndico */}
+              <div>
+                <Label htmlFor="funcionalidadesSindico">No aplicativo de síndico quais as funcionalidades mais úteis e que sente falta?</Label>
+                <Textarea
+                  id="funcionalidadesSindico"
+                  value={satisfacaoForm.funcionalidadesSindico}
+                  onChange={(e) => setSatisfacaoForm({ ...satisfacaoForm, funcionalidadesSindico: e.target.value })}
+                  placeholder="Descreva as funcionalidades"
+                  rows={2}
+                  className="mt-2"
+                />
+              </div>
+
+              {/* 7. Treinamento adequado */}
+              <div>
+                <Label>O treinamento aos usuários moradores, síndico e porteiro foi adequado?</Label>
+                <Select 
+                  value={satisfacaoForm.treinamentoAdequado} 
+                  onValueChange={(v) => setSatisfacaoForm({ ...satisfacaoForm, treinamentoAdequado: v })}
+                >
+                  <SelectTrigger className="mt-2">
+                    <SelectValue placeholder="Selecione" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="sim">Sim</SelectItem>
+                    <SelectItem value="nao">Não</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* 8. Expectativa atendida */}
+              <div>
+                <Label>A solução atendeu o que o condomínio tinha de expectativa?</Label>
+                <Select 
+                  value={satisfacaoForm.expectativaAtendida} 
+                  onValueChange={(v) => setSatisfacaoForm({ ...satisfacaoForm, expectativaAtendida: v })}
+                >
+                  <SelectTrigger className="mt-2">
+                    <SelectValue placeholder="Selecione" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="sim">Sim</SelectItem>
+                    <SelectItem value="nao">Não</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* 9. NPS */}
+              <div>
+                <Label>Em uma escala 1 a 10, quão provável é que você recomende nosso sistema para um amigo ou colega?</Label>
+                <Select 
+                  value={satisfacaoForm.notaNps} 
+                  onValueChange={(v) => setSatisfacaoForm({ ...satisfacaoForm, notaNps: v })}
+                >
+                  <SelectTrigger className="mt-2">
+                    <SelectValue placeholder="Selecione a nota" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => (
+                      <SelectItem key={n} value={String(n)}>{n}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
             <DialogFooter>

@@ -76,6 +76,8 @@ export default function ControleEstoque() {
   const [newProductCodigo, setNewProductCodigo] = useState('');
   const [newProductModelo, setNewProductModelo] = useState('');
   const [isCreatingProduct, setIsCreatingProduct] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 50;
 
   const {
     isLoading,
@@ -804,52 +806,104 @@ export default function ControleEstoque() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredData.slice(0, 100).map(item => (
-                      <TableRow key={item.id}>
-                        <TableCell className="sticky left-0 bg-background font-mono text-sm">{item.codigo}</TableCell>
-                        <TableCell className="sticky left-[80px] bg-background max-w-[200px] truncate" title={item.modelo}>
-                          {item.modelo}
-                        </TableCell>
-                        {displayLocais.map(local => {
-                          const est = item.estoques[local.id];
-                          const status = est?.status || 'SEM_BASE';
-                          const bgColor = status === 'CRITICO' ? 'bg-red-50' : status === 'OK' ? 'bg-green-50' : '';
-                          return (
-                            <TableCell key={`${local.id}-${item.id}`} className={cn("p-0", bgColor)} colSpan={2}>
-                              <div className="flex justify-around items-center">
-                                <span className="text-center px-2 py-2 w-1/2 border-r border-border/50">
-                                  {est?.minimo ?? '-'}
-                                </span>
-                                <div 
-                                  className="text-center px-2 py-1 w-1/2 cursor-pointer hover:bg-accent/50 transition-colors group flex items-center justify-center"
-                                >
-                                  <EditableCellContent
-                                    id={`edit-${item.id}-${local.id}`}
-                                    value={est?.atual ?? 0}
-                                    itemId={item.id}
-                                    localId={local.id}
-                                    onSave={updateEstoqueAtual}
-                                  />
+                    {(() => {
+                      const startIndex = (currentPage - 1) * itemsPerPage;
+                      const endIndex = startIndex + itemsPerPage;
+                      const paginatedData = filteredData.slice(startIndex, endIndex);
+                      
+                      return paginatedData.map(item => (
+                        <TableRow key={item.id}>
+                          <TableCell className="sticky left-0 bg-background font-mono text-sm">{item.codigo}</TableCell>
+                          <TableCell className="sticky left-[80px] bg-background max-w-[200px] truncate" title={item.modelo}>
+                            {item.modelo}
+                          </TableCell>
+                          {displayLocais.map(local => {
+                            const est = item.estoques[local.id];
+                            const status = est?.status || 'SEM_BASE';
+                            const bgColor = status === 'CRITICO' ? 'bg-red-50' : status === 'OK' ? 'bg-green-50' : '';
+                            return (
+                              <TableCell key={`${local.id}-${item.id}`} className={cn("p-0", bgColor)} colSpan={2}>
+                                <div className="flex justify-around items-center">
+                                  <span className="text-center px-2 py-2 w-1/2 border-r border-border/50">
+                                    {est?.minimo ?? '-'}
+                                  </span>
+                                  <div 
+                                    className="text-center px-2 py-1 w-1/2 cursor-pointer hover:bg-accent/50 transition-colors group flex items-center justify-center"
+                                  >
+                                    <EditableCellContent
+                                      id={`edit-${item.id}-${local.id}`}
+                                      value={est?.atual ?? 0}
+                                      itemId={item.id}
+                                      localId={local.id}
+                                      onSave={updateEstoqueAtual}
+                                    />
+                                  </div>
                                 </div>
-                              </div>
-                            </TableCell>
-                          );
-                        })}
-                        <TableCell>
-                          <Badge className={`${ESTOQUE_STATUS_COLORS[item.statusGeral].bg} ${ESTOQUE_STATUS_COLORS[item.statusGeral].text} gap-1`}>
-                            {getStatusIcon(item.statusGeral)}
-                            {ESTOQUE_STATUS_LABELS[item.statusGeral]}
-                          </Badge>
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                              </TableCell>
+                            );
+                          })}
+                          <TableCell>
+                            <Badge className={`${ESTOQUE_STATUS_COLORS[item.statusGeral].bg} ${ESTOQUE_STATUS_COLORS[item.statusGeral].text} gap-1`}>
+                              {getStatusIcon(item.statusGeral)}
+                              {ESTOQUE_STATUS_LABELS[item.statusGeral]}
+                            </Badge>
+                          </TableCell>
+                        </TableRow>
+                      ));
+                    })()}
                   </TableBody>
                 </Table>
               </div>
             )}
-            {filteredData.length > 100 && (
-              <div className="p-4 text-center text-sm text-muted-foreground border-t">
-                Mostrando 100 de {filteredData.length} itens. Use os filtros para refinar a busca.
+            {filteredData.length > 0 && (
+              <div className="p-4 border-t flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">
+                  Mostrando {Math.min((currentPage - 1) * itemsPerPage + 1, filteredData.length)} - {Math.min(currentPage * itemsPerPage, filteredData.length)} de {filteredData.length} itens
+                </span>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                  >
+                    Anterior
+                  </Button>
+                  <div className="flex items-center gap-1">
+                    {Array.from({ length: Math.ceil(filteredData.length / itemsPerPage) }, (_, i) => i + 1)
+                      .filter(page => {
+                        const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+                        if (totalPages <= 7) return true;
+                        if (page === 1 || page === totalPages) return true;
+                        if (Math.abs(page - currentPage) <= 1) return true;
+                        return false;
+                      })
+                      .map((page, index, arr) => {
+                        const showEllipsis = index > 0 && page - arr[index - 1] > 1;
+                        return (
+                          <span key={page} className="flex items-center">
+                            {showEllipsis && <span className="px-2 text-muted-foreground">...</span>}
+                            <Button
+                              variant={currentPage === page ? "default" : "outline"}
+                              size="sm"
+                              onClick={() => setCurrentPage(page)}
+                              className="min-w-[36px]"
+                            >
+                              {page}
+                            </Button>
+                          </span>
+                        );
+                      })}
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(p => Math.min(Math.ceil(filteredData.length / itemsPerPage), p + 1))}
+                    disabled={currentPage >= Math.ceil(filteredData.length / itemsPerPage)}
+                  >
+                    Próximo
+                  </Button>
+                </div>
               </div>
             )}
           </CardContent>

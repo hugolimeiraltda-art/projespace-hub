@@ -28,8 +28,10 @@ import {
   Star,
   TrendingUp,
   RefreshCw,
-  Loader2
+  Loader2,
+  Search
 } from 'lucide-react';
+import { Input } from '@/components/ui/input';
 import { format, addMonths, isBefore, isAfter, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -50,6 +52,7 @@ export default function SucessoCliente() {
   const [loading, setLoading] = useState(true);
   const [expiringDialogOpen, setExpiringDialogOpen] = useState(false);
   const [expiringDialogData, setExpiringDialogData] = useState<{ title: string; customers: Customer[] }>({ title: '', customers: [] });
+  const [customersDialogOpen, setCustomersDialogOpen] = useState(false);
 
   useEffect(() => {
     fetchCustomers();
@@ -158,7 +161,10 @@ export default function SucessoCliente() {
 
         {/* Overview Stats */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <Card>
+          <Card 
+            className="cursor-pointer hover:shadow-md transition-shadow"
+            onClick={() => setCustomersDialogOpen(true)}
+          >
             <CardContent className="pt-6">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-primary/10 rounded-lg">
@@ -344,6 +350,52 @@ export default function SucessoCliente() {
           </Card>
         </div>
 
+        {/* Dialog for customers list */}
+        <Dialog open={customersDialogOpen} onOpenChange={setCustomersDialogOpen}>
+          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Lista de Clientes</DialogTitle>
+            </DialogHeader>
+            <div className="mb-4">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  placeholder="Buscar por nome, contrato ou filial..."
+                  className="pl-10"
+                  id="customer-search"
+                />
+              </div>
+            </div>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Contrato</TableHead>
+                  <TableHead>Razão Social</TableHead>
+                  <TableHead>Filial</TableHead>
+                  <TableHead>Unidades</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {customers.map((customer) => (
+                  <TableRow 
+                    key={customer.id}
+                    className="cursor-pointer hover:bg-muted"
+                    onClick={() => {
+                      setCustomersDialogOpen(false);
+                      navigate(`/sucesso-cliente/${customer.id}`);
+                    }}
+                  >
+                    <TableCell className="font-medium text-primary">{customer.contrato}</TableCell>
+                    <TableCell>{customer.razao_social}</TableCell>
+                    <TableCell>{customer.filial || '-'}</TableCell>
+                    <TableCell>{customer.unidades || '-'}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </DialogContent>
+        </Dialog>
+
         {/* Dialog for expiring contracts */}
         <Dialog open={expiringDialogOpen} onOpenChange={setExpiringDialogOpen}>
           <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
@@ -369,7 +421,7 @@ export default function SucessoCliente() {
                       className="cursor-pointer hover:bg-muted"
                       onClick={() => {
                         setExpiringDialogOpen(false);
-                        navigate(`/carteira-clientes/${customer.id}`);
+                        navigate(`/sucesso-cliente/${customer.id}`);
                       }}
                     >
                       <TableCell className="font-medium text-primary">{customer.contrato}</TableCell>

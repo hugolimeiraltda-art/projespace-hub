@@ -9,6 +9,18 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
+// HTML sanitization to prevent injection attacks
+function escapeHtml(text: string): string {
+  const map: Record<string, string> = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#039;'
+  };
+  return text.replace(/[&<>"']/g, m => map[m]);
+}
+
 interface StatusEmailRequest {
   vendedor_email: string;
   vendedor_nome: string;
@@ -86,22 +98,22 @@ const handler = async (req: Request): Promise<Response> => {
           <!-- Content -->
           <div style="padding: 32px;">
             <p style="color: #374151; font-size: 16px; margin-bottom: 24px;">
-              Olá <strong>${vendedor_nome}</strong>,
+              Olá <strong>${escapeHtml(vendedor_nome)}</strong>,
             </p>
             
             <p style="color: #374151; font-size: 16px; margin-bottom: 24px;">
-              O projeto <strong>"${projeto_nome}"</strong> teve seu status alterado:
+              O projeto <strong>"${escapeHtml(projeto_nome)}"</strong> teve seu status alterado:
             </p>
             
             <!-- Status Badge -->
             <div style="text-align: center; margin-bottom: 24px;">
               <div style="display: inline-block; background-color: ${statusColor}; color: white; padding: 12px 24px; border-radius: 8px; font-size: 18px; font-weight: bold;">
-                ${new_status_label}
+                ${escapeHtml(new_status_label)}
               </div>
             </div>
             
             <p style="color: #6B7280; font-size: 14px; text-align: center; margin-bottom: 24px;">
-              Alterado por: ${changed_by}
+              Alterado por: ${escapeHtml(changed_by)}
             </p>
     `;
 
@@ -114,7 +126,7 @@ const handler = async (req: Request): Promise<Response> => {
                 ⚠️ Informações Pendentes:
               </p>
               <p style="color: #78350F; margin: 0; font-size: 14px; white-space: pre-wrap;">
-                ${comment}
+                ${escapeHtml(comment)}
               </p>
             </div>
             
@@ -146,8 +158,8 @@ const handler = async (req: Request): Promise<Response> => {
     `;
 
     const subject = isPendingInfo 
-      ? `⚠️ Ação Necessária: Projeto "${projeto_nome}" requer informações`
-      : `Atualização: Projeto "${projeto_nome}" - ${new_status_label}`;
+      ? `⚠️ Ação Necessária: Projeto "${escapeHtml(projeto_nome)}" requer informações`
+      : `Atualização: Projeto "${escapeHtml(projeto_nome)}" - ${escapeHtml(new_status_label)}`;
 
     const emailResponse = await resend.emails.send({
       from: "Projetos <onboarding@resend.dev>",

@@ -62,13 +62,16 @@ export function EngineeringDeliverables({
           nome_arquivo: file.name,
         });
       } else {
-        const { data: { publicUrl } } = supabase.storage
+        // Get signed URL (bucket is now private)
+        const { data: signedUrlData, error: signedUrlError } = await supabase.storage
           .from('project-attachments')
-          .getPublicUrl(uploadData.path);
+          .createSignedUrl(uploadData.path, 60 * 60 * 24 * 365); // 1 year expiry
+        
+        const fileUrl = signedUrlError ? URL.createObjectURL(file) : signedUrlData.signedUrl;
         
         await addAttachment(project.id, {
           tipo: tipo,
-          arquivo_url: publicUrl,
+          arquivo_url: fileUrl,
           nome_arquivo: file.name,
         });
       }

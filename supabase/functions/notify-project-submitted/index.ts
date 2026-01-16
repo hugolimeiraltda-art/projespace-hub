@@ -7,6 +7,18 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// HTML sanitization to prevent injection attacks
+function escapeHtml(text: string): string {
+  const map: Record<string, string> = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#039;'
+  };
+  return text.replace(/[&<>"']/g, m => map[m]);
+}
+
 interface NotifyProjectRequest {
   projectId?: string;
   project_id?: string;
@@ -150,21 +162,26 @@ const handler = async (req: Request): Promise<Response> => {
           ? 'Um projeto foi reenviado com informações adicionais e está aguardando nova análise:'
           : 'Um novo projeto foi enviado e está aguardando análise:';
         
+        const safeProjectName = escapeHtml(projectName);
+        const safeVendedorNome = escapeHtml(vendedorNome);
+        const safeVendedorEmail = vendedorEmail ? escapeHtml(vendedorEmail) : '';
+        const safeLocation = escapeHtml(location);
+        
         const emailResponse = await resend.emails.send({
           from: "Projetos PCI <onboarding@resend.dev>",
           to: emails,
           subject: emailSubject,
           html: `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-              <h1 style="color: #1E40AF;">${emailTitle}</h1>
+              <h1 style="color: #1E40AF;">${escapeHtml(emailTitle)}</h1>
               <p>Olá,</p>
-              <p>${emailIntro}</p>
+              <p>${escapeHtml(emailIntro)}</p>
               
               <div style="background-color: #F3F4F6; padding: 20px; border-radius: 8px; margin: 20px 0;">
-                <h2 style="color: #374151; margin-top: 0;">${projectName}</h2>
-                <p><strong>Vendedor:</strong> ${vendedorNome}</p>
-                ${vendedorEmail ? `<p><strong>Email:</strong> ${vendedorEmail}</p>` : ''}
-                <p><strong>Localização:</strong> ${location}</p>
+                <h2 style="color: #374151; margin-top: 0;">${safeProjectName}</h2>
+                <p><strong>Vendedor:</strong> ${safeVendedorNome}</p>
+                ${safeVendedorEmail ? `<p><strong>Email:</strong> ${safeVendedorEmail}</p>` : ''}
+                <p><strong>Localização:</strong> ${safeLocation}</p>
               </div>
               
               <p>Acesse o sistema para visualizar os detalhes e ${is_resubmission ? 'continuar' : 'iniciar'} a análise.</p>

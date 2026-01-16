@@ -25,6 +25,7 @@ import ImplantacaoChecklist from "./pages/ImplantacaoChecklist";
 import CarteiraClientes from "./pages/CarteiraClientes";
 import CustomerDetail from "./pages/CustomerDetail";
 import ControleEstoque from "./pages/ControleEstoque";
+import SucessoCliente from "./pages/SucessoCliente";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -136,6 +137,10 @@ function AppRoutes() {
       <Route 
         path="/controle-estoque" 
         element={<ProtectedRoute><ControleEstoque /></ProtectedRoute>} 
+      />
+      <Route 
+        path="/sucesso-cliente" 
+        element={<ProtectedRoute><SucessoCliente /></ProtectedRoute>} 
       />
       <Route path="*" element={<NotFound />} />
     </Routes>

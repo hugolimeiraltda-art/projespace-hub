@@ -1,10 +1,14 @@
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProjects } from '@/contexts/ProjectsContext';
 import { Layout } from '@/components/Layout';
 import { StatusBadge } from '@/components/StatusBadge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Link } from 'react-router-dom';
+import { Progress } from '@/components/ui/progress';
+import { Badge } from '@/components/ui/badge';
+import { Link, useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
 import { 
   FolderPlus, 
   Clock, 
@@ -13,19 +17,96 @@ import {
   FileText,
   ArrowRight,
   Calendar,
-  Building
+  Building,
+  Rocket,
+  PlayCircle
 } from 'lucide-react';
 import { ProjectStatus, STATUS_LABELS } from '@/types/project';
 import { format, parseISO, isAfter } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
+interface ImplantacaoProject {
+  id: string;
+  numero_projeto: number;
+  cliente_condominio_nome: string;
+  implantacao_status: 'A_EXECUTAR' | 'EM_EXECUCAO' | 'CONCLUIDO_IMPLANTACAO' | null;
+  implantacao_started_at: string | null;
+  etapas_concluidas?: number;
+}
+
 export default function Dashboard() {
   const { user } = useAuth();
   const { projects, getProjectsByUser } = useProjects();
+  const navigate = useNavigate();
+
+  const [implantacaoProjects, setImplantacaoProjects] = useState<ImplantacaoProject[]>([]);
+  const [implantacaoEtapas, setImplantacaoEtapas] = useState<Record<string, number>>({});
 
   const userProjects = user?.role === 'vendedor' 
     ? getProjectsByUser(user.id) 
     : projects;
+
+  // Fetch projects in implantação for the current user (vendedor)
+  useEffect(() => {
+    const fetchImplantacaoProjects = async () => {
+      if (!user) return;
+
+      try {
+        // Get projects with sale_status = CONCLUIDO that belong to this user (or all if not vendedor)
+        let query = supabase
+          .from('projects')
+          .select('id, numero_projeto, cliente_condominio_nome, implantacao_status, implantacao_started_at')
+          .eq('sale_status', 'CONCLUIDO');
+
+        if (user.role === 'vendedor') {
+          query = query.eq('created_by_user_id', user.id);
+        }
+
+        const { data: projectsData, error: projectsError } = await query;
+
+        if (projectsError) {
+          console.error('Error fetching implantação projects:', projectsError);
+          return;
+        }
+
+        if (projectsData && projectsData.length > 0) {
+          setImplantacaoProjects(projectsData);
+
+          // Fetch etapas for each project to calculate progress
+          const projectIds = projectsData.map(p => p.id);
+          const { data: etapasData, error: etapasError } = await supabase
+            .from('implantacao_etapas')
+            .select('project_id, contrato_assinado, contrato_cadastrado, ligacao_boas_vindas, cadastro_gear, sindico_app, conferencia_tags, check_projeto, agendamento_visita_startup, laudo_visita_startup, laudo_instalador, laudo_vidraceiro, laudo_serralheiro, laudo_conclusao_supervisor, check_programacao, confirmacao_ativacao_financeira, agendamento_visita_comercial, laudo_visita_comercial, concluido')
+            .in('project_id', projectIds);
+
+          if (!etapasError && etapasData) {
+            const etapasMap: Record<string, number> = {};
+            etapasData.forEach(etapa => {
+              // Count completed stages (1-9)
+              let completed = 0;
+              if (etapa.contrato_assinado) completed++;
+              if (etapa.contrato_cadastrado) completed++;
+              if (etapa.ligacao_boas_vindas && etapa.cadastro_gear && etapa.sindico_app && etapa.conferencia_tags) completed++;
+              if (etapa.check_projeto && etapa.agendamento_visita_startup && etapa.laudo_visita_startup) completed++;
+              if (etapa.laudo_instalador && etapa.laudo_vidraceiro && etapa.laudo_serralheiro && etapa.laudo_conclusao_supervisor) completed++;
+              if (etapa.check_programacao && etapa.confirmacao_ativacao_financeira) completed++;
+              if (etapa.agendamento_visita_comercial && etapa.laudo_visita_comercial) completed++;
+              // Stage 8 (operação assistida) - check if started
+              if (etapa.laudo_visita_comercial) completed++;
+              if (etapa.concluido) completed++;
+              
+              etapasMap[etapa.project_id] = completed;
+            });
+            setImplantacaoEtapas(etapasMap);
+          }
+        }
+      } catch (error) {
+        console.error('Error:', error);
+      }
+    };
+
+    fetchImplantacaoProjects();
+  }, [user]);
 
   // Stats
   const stats = {
@@ -34,6 +115,7 @@ export default function Dashboard() {
     emAnalise: userProjects.filter(p => ['ENVIADO', 'EM_ANALISE'].includes(p.status)).length,
     pendente: userProjects.filter(p => p.status === 'PENDENTE_INFO').length,
     aprovado: userProjects.filter(p => p.status === 'APROVADO_PROJETO').length,
+    emImplantacao: implantacaoProjects.filter(p => p.implantacao_status === 'EM_EXECUCAO').length,
   };
 
   const recentProjects = [...userProjects]
@@ -47,6 +129,18 @@ export default function Dashboard() {
     const diffDays = Math.ceil((prazo.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
     return diffDays <= 7 && diffDays >= 0;
   });
+
+  const IMPLANTACAO_STATUS_LABELS: Record<string, string> = {
+    A_EXECUTAR: 'A Executar',
+    EM_EXECUCAO: 'Em Execução',
+    CONCLUIDO_IMPLANTACAO: 'Concluído',
+  };
+
+  const IMPLANTACAO_STATUS_COLORS: Record<string, string> = {
+    A_EXECUTAR: 'bg-amber-100 text-amber-800 border-amber-300',
+    EM_EXECUCAO: 'bg-blue-100 text-blue-800 border-blue-300',
+    CONCLUIDO_IMPLANTACAO: 'bg-green-100 text-green-800 border-green-300',
+  };
 
   return (
     <Layout>
@@ -143,6 +237,80 @@ export default function Dashboard() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Projects in Implantação */}
+        {implantacaoProjects.length > 0 && (
+          <Card className="shadow-card mb-6">
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Rocket className="w-5 h-5 text-blue-600" />
+                Projetos em Implantação
+              </CardTitle>
+              <Badge className="bg-blue-100 text-blue-800 border-blue-300">
+                {implantacaoProjects.length} {implantacaoProjects.length === 1 ? 'projeto' : 'projetos'}
+              </Badge>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {implantacaoProjects.slice(0, 5).map((project) => {
+                  const progress = implantacaoEtapas[project.id] || 0;
+                  const progressPercentage = (progress / 9) * 100;
+                  const status = project.implantacao_status || 'A_EXECUTAR';
+                  
+                  return (
+                    <div
+                      key={project.id}
+                      onClick={() => navigate(`/startup-projetos/${project.id}/execucao`)}
+                      className="p-4 rounded-lg border border-border bg-card hover:bg-accent transition-colors cursor-pointer"
+                    >
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 rounded-lg bg-blue-100">
+                            <Rocket className="w-4 h-4 text-blue-600" />
+                          </div>
+                          <div>
+                            <p className="font-medium text-foreground flex items-center gap-2">
+                              <span className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">#{project.numero_projeto}</span>
+                              {project.cliente_condominio_nome}
+                            </p>
+                            {project.implantacao_started_at && (
+                              <p className="text-xs text-muted-foreground">
+                                Iniciado em {format(parseISO(project.implantacao_started_at), "dd/MM/yyyy", { locale: ptBR })}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                        <Badge className={`border ${IMPLANTACAO_STATUS_COLORS[status]}`}>
+                          {status === 'EM_EXECUCAO' && <PlayCircle className="w-3 h-3 mr-1" />}
+                          {status === 'CONCLUIDO_IMPLANTACAO' && <CheckCircle2 className="w-3 h-3 mr-1" />}
+                          {status === 'A_EXECUTAR' && <Clock className="w-3 h-3 mr-1" />}
+                          {IMPLANTACAO_STATUS_LABELS[status]}
+                        </Badge>
+                      </div>
+                      <div className="space-y-1">
+                        <div className="flex items-center justify-between text-xs text-muted-foreground">
+                          <span>Progresso</span>
+                          <span>{progress}/9 etapas</span>
+                        </div>
+                        <Progress value={progressPercentage} className="h-2" />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              {implantacaoProjects.length > 5 && (
+                <div className="mt-4 text-center">
+                  <Button variant="ghost" size="sm" asChild>
+                    <Link to="/startup-projetos">
+                      Ver todos os {implantacaoProjects.length} projetos
+                      <ArrowRight className="w-4 h-4 ml-1" />
+                    </Link>
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Recent Projects */}

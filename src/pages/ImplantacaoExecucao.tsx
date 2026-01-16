@@ -236,7 +236,7 @@ export default function ImplantacaoExecucao() {
       const { error } = await supabase
         .from('implantacao_etapas')
         .update({ 
-          operacao_assistida_interacoes: updatedInteracoes as unknown as Record<string, unknown>[],
+          operacao_assistida_interacoes: JSON.parse(JSON.stringify(updatedInteracoes)),
           operacao_assistida_inicio: etapas.operacao_assistida_inicio || new Date().toISOString(),
           operacao_assistida_fim: addDays(new Date(), 30).toISOString()
         })

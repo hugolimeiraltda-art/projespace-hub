@@ -39,7 +39,7 @@ export function Layout({ children }: LayoutProps) {
     { path: '/informar-venda', label: 'Informar Nova Venda', icon: ShoppingCart },
     { path: '/projetos', label: 'Meus Projetos', icon: List, roles: ['vendedor'] },
     { path: '/projetos', label: 'Projetos', icon: List, roles: ['projetos', 'admin', 'gerente_comercial', 'administrativo'], exact: true },
-    { path: '/startup-projetos', label: 'Start-up de Projetos', icon: ClipboardList, roles: ['implantacao', 'admin', 'administrativo'] },
+    { path: '/startup-projetos', label: 'Implantação', icon: ClipboardList, roles: ['implantacao', 'admin', 'administrativo'] },
     { path: '/carteira-clientes', label: 'Carteira de Clientes', icon: Briefcase, roles: ['projetos', 'admin', 'implantacao', 'administrativo'] },
     { path: '/chamados', label: 'Meus Chamados', icon: ClipboardList, roles: ['projetos', 'admin', 'administrativo'] },
     { path: '/controle-estoque', label: 'Controle de Estoque', icon: Package, roles: ['admin', 'administrativo'] },

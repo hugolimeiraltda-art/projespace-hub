@@ -241,7 +241,7 @@ export default function ImplantacaoChecklist() {
         const result = await supabase
           .from('implantacao_checklists')
           .update({
-            dados: checklistData as unknown as Record<string, unknown>,
+            dados: JSON.parse(JSON.stringify(checklistData)),
             observacoes: observacoesGerais,
             updated_at: new Date().toISOString(),
           })
@@ -251,14 +251,14 @@ export default function ImplantacaoChecklist() {
       } else {
         const result = await supabase
           .from('implantacao_checklists')
-          .insert({
+          .insert([{
             project_id: id,
             tipo: tipo,
-            dados: checklistData as unknown as Record<string, unknown>,
+            dados: JSON.parse(JSON.stringify(checklistData)),
             observacoes: observacoesGerais,
             created_by: user?.id,
             created_by_name: user?.nome,
-          });
+          }]);
         error = result.error;
       }
 

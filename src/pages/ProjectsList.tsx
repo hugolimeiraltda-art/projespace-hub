@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProjects } from '@/contexts/ProjectsContext';
 import { Layout } from '@/components/Layout';
@@ -16,8 +16,10 @@ import {
   User,
   MapPin,
   FolderPlus,
-  X
+  X,
+  Rocket
 } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 import { ProjectStatus, STATUS_LABELS } from '@/types/project';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -26,6 +28,7 @@ export default function ProjectsList() {
   const { user } = useAuth();
   const { projects, getProjectsByUser } = useProjects();
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
 
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<ProjectStatus | 'ALL'>(
@@ -217,6 +220,19 @@ export default function ProjectsList() {
                         </div>
                       </div>
                       <div className="flex items-center gap-4">
+                        {project.sale_status === 'CONCLUIDO' && (
+                          <Badge 
+                            className="cursor-pointer bg-blue-100 text-blue-800 border-blue-300 hover:bg-blue-200 transition-colors"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              navigate(`/startup-projetos/${project.id}/execucao`);
+                            }}
+                          >
+                            <Rocket className="w-3 h-3 mr-1" />
+                            Em Implantação
+                          </Badge>
+                        )}
                         <StatusBadge status={project.status} />
                         <span className="text-sm text-muted-foreground">
                           Atualizado {format(parseISO(project.updated_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}

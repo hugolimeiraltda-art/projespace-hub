@@ -13,4 +13,7 @@ verify_jwt = false
 verify_jwt = true
 
 [functions.customer-portfolio-api]
+verify_jwt = false
+
+[functions.import-estoque]
 verify_jwt = true

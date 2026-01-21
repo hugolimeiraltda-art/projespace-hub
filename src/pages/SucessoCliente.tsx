@@ -42,6 +42,8 @@ import {
   Search,
   Clock,
   Building,
+  ChevronLeft,
+  ChevronRight,
   Plus,
   ExternalLink
 } from 'lucide-react';
@@ -161,6 +163,15 @@ export default function SucessoCliente() {
   const [selectedPendencia, setSelectedPendencia] = useState<Pendencia | null>(null);
   const [comentarioPendencia, setComentarioPendencia] = useState('');
   const [savingComentario, setSavingComentario] = useState(false);
+
+  // Pagination for pendencias
+  const [pendenciasClientesPage, setPendenciasClientesPage] = useState(0);
+  const [pendenciasDeptPage, setPendenciasDeptPage] = useState(0);
+  const PENDENCIAS_PER_PAGE = 3;
+
+  // All pendencias dialog
+  const [allPendenciasDialogOpen, setAllPendenciasDialogOpen] = useState(false);
+  const [allPendenciasType, setAllPendenciasType] = useState<'clientes' | 'departamento'>('clientes');
 
   // Satisfaction period filter
   const [satisfacaoPeriodo, setSatisfacaoPeriodo] = useState('12');
@@ -772,148 +783,216 @@ export default function SucessoCliente() {
         {/* Pendências de Clientes Section */}
         {pendenciasClientes.length > 0 && (
           <div className="mt-6">
-            <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-              <AlertTriangle className="w-5 h-5 text-status-pending" />
-              Pendências de Clientes ({pendenciasClientes.length})
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {pendenciasClientes.slice(0, 6).map((pendencia) => {
-                const hoje = new Date();
-                const prazo = new Date(pendencia.data_prazo);
-                const diasRestantes = Math.ceil((prazo.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24));
-                const isAtrasado = diasRestantes < 0;
-                const isUrgente = diasRestantes >= 0 && diasRestantes <= 2;
-
-                return (
-                  <Card 
-                    key={pendencia.id} 
-                    className={`cursor-pointer hover:shadow-md transition-shadow ${
-                      isAtrasado ? 'border-l-4 border-l-destructive' : 
-                      isUrgente ? 'border-l-4 border-l-status-pending' : 
-                      'border-l-4 border-l-primary'
-                    }`}
-                    onClick={() => handleOpenPendenciaDetail(pendencia)}
-                  >
-                    <CardContent className="pt-4">
-                      <div className="flex items-start justify-between gap-2 mb-2">
-                        <h3 className="font-semibold text-sm line-clamp-1">{pendencia.razao_social}</h3>
-                        <Badge variant={pendencia.status === 'ABERTO' ? 'destructive' : 'secondary'} className="text-xs shrink-0">
-                          {pendencia.status === 'ABERTO' ? 'Aberto' : 'Em Andamento'}
-                        </Badge>
-                      </div>
-                      <p className="text-xs text-muted-foreground mb-2">
-                        Contrato: {pendencia.contrato}
-                      </p>
-                      <p className="text-xs text-muted-foreground mb-2 line-clamp-1">
-                        OS: {pendencia.numero_os} {pendencia.numero_ticket && `• Ticket: ${pendencia.numero_ticket}`}
-                      </p>
-                      <div className="flex items-center justify-between">
-                        <Badge variant="outline" className="text-xs">
-                          {pendencia.tipo.replace('CLIENTE_', '').replace('_', ' ')}
-                        </Badge>
-                        <span className={`text-xs font-medium ${
-                          isAtrasado ? 'text-destructive' : 
-                          isUrgente ? 'text-status-pending' : 
-                          'text-muted-foreground'
-                        }`}>
-                          {isAtrasado 
-                            ? `Atrasado ${Math.abs(diasRestantes)} dias` 
-                            : diasRestantes === 0 
-                              ? 'Vence hoje' 
-                              : `${diasRestantes} dias restantes`}
-                        </span>
-                      </div>
-                      {pendencia.comentario_sucesso_cliente && (
-                        <div className="mt-2 pt-2 border-t">
-                          <p className="text-xs text-primary line-clamp-1">💬 {pendencia.comentario_sucesso_cliente}</p>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </div>
-            {pendenciasClientes.length > 6 && (
-              <div className="mt-4 text-center">
-                <Button variant="outline" onClick={() => navigate('/manutencao')}>
-                  Ver todas as {pendenciasClientes.length} pendências de clientes
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold flex items-center gap-2">
+                <AlertTriangle className="w-5 h-5 text-status-pending" />
+                Pendências de Clientes ({pendenciasClientes.length})
+              </h2>
+              <div className="flex items-center gap-2">
+                {pendenciasClientes.length > PENDENCIAS_PER_PAGE && (
+                  <>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={() => setPendenciasClientesPage(Math.max(0, pendenciasClientesPage - 1))}
+                      disabled={pendenciasClientesPage === 0}
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                    </Button>
+                    <span className="text-sm text-muted-foreground min-w-[60px] text-center">
+                      {pendenciasClientesPage + 1} / {Math.ceil(pendenciasClientes.length / PENDENCIAS_PER_PAGE)}
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={() => setPendenciasClientesPage(Math.min(Math.ceil(pendenciasClientes.length / PENDENCIAS_PER_PAGE) - 1, pendenciasClientesPage + 1))}
+                      disabled={pendenciasClientesPage >= Math.ceil(pendenciasClientes.length / PENDENCIAS_PER_PAGE) - 1}
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </>
+                )}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setAllPendenciasType('clientes');
+                    setAllPendenciasDialogOpen(true);
+                  }}
+                >
+                  Ver todas
                 </Button>
               </div>
-            )}
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {pendenciasClientes
+                .slice(pendenciasClientesPage * PENDENCIAS_PER_PAGE, (pendenciasClientesPage + 1) * PENDENCIAS_PER_PAGE)
+                .map((pendencia) => {
+                  const hoje = new Date();
+                  const prazo = new Date(pendencia.data_prazo);
+                  const diasRestantes = Math.ceil((prazo.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24));
+                  const isAtrasado = diasRestantes < 0;
+                  const isUrgente = diasRestantes >= 0 && diasRestantes <= 2;
+
+                  return (
+                    <Card 
+                      key={pendencia.id} 
+                      className={`cursor-pointer hover:shadow-md transition-shadow ${
+                        isAtrasado ? 'border-l-4 border-l-destructive' : 
+                        isUrgente ? 'border-l-4 border-l-status-pending' : 
+                        'border-l-4 border-l-primary'
+                      }`}
+                      onClick={() => handleOpenPendenciaDetail(pendencia)}
+                    >
+                      <CardContent className="pt-4">
+                        <div className="flex items-start justify-between gap-2 mb-2">
+                          <h3 className="font-semibold text-sm line-clamp-1">{pendencia.razao_social}</h3>
+                          <Badge variant={pendencia.status === 'ABERTO' ? 'destructive' : 'secondary'} className="text-xs shrink-0">
+                            {pendencia.status === 'ABERTO' ? 'Aberto' : 'Em Andamento'}
+                          </Badge>
+                        </div>
+                        <p className="text-xs text-muted-foreground mb-2">
+                          Contrato: {pendencia.contrato}
+                        </p>
+                        <p className="text-xs text-muted-foreground mb-2 line-clamp-1">
+                          OS: {pendencia.numero_os} {pendencia.numero_ticket && `• Ticket: ${pendencia.numero_ticket}`}
+                        </p>
+                        <div className="flex items-center justify-between">
+                          <Badge variant="outline" className="text-xs">
+                            {pendencia.tipo.replace('CLIENTE_', '').replace('_', ' ')}
+                          </Badge>
+                          <span className={`text-xs font-medium ${
+                            isAtrasado ? 'text-destructive' : 
+                            isUrgente ? 'text-status-pending' : 
+                            'text-muted-foreground'
+                          }`}>
+                            {isAtrasado 
+                              ? `Atrasado ${Math.abs(diasRestantes)} dias` 
+                              : diasRestantes === 0 
+                                ? 'Vence hoje' 
+                                : `${diasRestantes} dias restantes`}
+                          </span>
+                        </div>
+                        {pendencia.comentario_sucesso_cliente && (
+                          <div className="mt-2 pt-2 border-t">
+                            <p className="text-xs text-primary line-clamp-1">💬 {pendencia.comentario_sucesso_cliente}</p>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+            </div>
           </div>
         )}
 
         {/* Pendências de Departamento Section */}
         {pendenciasDepartamento.length > 0 && (
           <div className="mt-6">
-            <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-              <Building className="w-5 h-5 text-primary" />
-              Pendências de Departamento ({pendenciasDepartamento.length})
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {pendenciasDepartamento.slice(0, 6).map((pendencia) => {
-                const hoje = new Date();
-                const prazo = new Date(pendencia.data_prazo);
-                const diasRestantes = Math.ceil((prazo.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24));
-                const isAtrasado = diasRestantes < 0;
-                const isUrgente = diasRestantes >= 0 && diasRestantes <= 2;
-
-                return (
-                  <Card 
-                    key={pendencia.id} 
-                    className={`cursor-pointer hover:shadow-md transition-shadow ${
-                      isAtrasado ? 'border-l-4 border-l-destructive' : 
-                      isUrgente ? 'border-l-4 border-l-status-pending' : 
-                      'border-l-4 border-l-primary'
-                    }`}
-                    onClick={() => handleOpenPendenciaDetail(pendencia)}
-                  >
-                    <CardContent className="pt-4">
-                      <div className="flex items-start justify-between gap-2 mb-2">
-                        <h3 className="font-semibold text-sm line-clamp-1">{pendencia.razao_social}</h3>
-                        <Badge variant={pendencia.status === 'ABERTO' ? 'destructive' : 'secondary'} className="text-xs shrink-0">
-                          {pendencia.status === 'ABERTO' ? 'Aberto' : 'Em Andamento'}
-                        </Badge>
-                      </div>
-                      <p className="text-xs text-muted-foreground mb-2">
-                        Contrato: {pendencia.contrato}
-                      </p>
-                      <p className="text-xs text-muted-foreground mb-2 line-clamp-1">
-                        OS: {pendencia.numero_os} {pendencia.numero_ticket && `• Ticket: ${pendencia.numero_ticket}`}
-                      </p>
-                      <div className="flex items-center justify-between">
-                        <Badge variant="outline" className="text-xs bg-primary/10">
-                          {pendencia.tipo.replace('DEPT_', '').replace('_', ' ')}
-                        </Badge>
-                        <span className={`text-xs font-medium ${
-                          isAtrasado ? 'text-destructive' : 
-                          isUrgente ? 'text-status-pending' : 
-                          'text-muted-foreground'
-                        }`}>
-                          {isAtrasado 
-                            ? `Atrasado ${Math.abs(diasRestantes)} dias` 
-                            : diasRestantes === 0 
-                              ? 'Vence hoje' 
-                              : `${diasRestantes} dias restantes`}
-                        </span>
-                      </div>
-                      {pendencia.comentario_sucesso_cliente && (
-                        <div className="mt-2 pt-2 border-t">
-                          <p className="text-xs text-primary line-clamp-1">💬 {pendencia.comentario_sucesso_cliente}</p>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </div>
-            {pendenciasDepartamento.length > 6 && (
-              <div className="mt-4 text-center">
-                <Button variant="outline" onClick={() => navigate('/manutencao')}>
-                  Ver todas as {pendenciasDepartamento.length} pendências de departamento
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold flex items-center gap-2">
+                <Building className="w-5 h-5 text-primary" />
+                Pendências de Departamento ({pendenciasDepartamento.length})
+              </h2>
+              <div className="flex items-center gap-2">
+                {pendenciasDepartamento.length > PENDENCIAS_PER_PAGE && (
+                  <>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={() => setPendenciasDeptPage(Math.max(0, pendenciasDeptPage - 1))}
+                      disabled={pendenciasDeptPage === 0}
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                    </Button>
+                    <span className="text-sm text-muted-foreground min-w-[60px] text-center">
+                      {pendenciasDeptPage + 1} / {Math.ceil(pendenciasDepartamento.length / PENDENCIAS_PER_PAGE)}
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={() => setPendenciasDeptPage(Math.min(Math.ceil(pendenciasDepartamento.length / PENDENCIAS_PER_PAGE) - 1, pendenciasDeptPage + 1))}
+                      disabled={pendenciasDeptPage >= Math.ceil(pendenciasDepartamento.length / PENDENCIAS_PER_PAGE) - 1}
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </>
+                )}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setAllPendenciasType('departamento');
+                    setAllPendenciasDialogOpen(true);
+                  }}
+                >
+                  Ver todas
                 </Button>
               </div>
-            )}
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {pendenciasDepartamento
+                .slice(pendenciasDeptPage * PENDENCIAS_PER_PAGE, (pendenciasDeptPage + 1) * PENDENCIAS_PER_PAGE)
+                .map((pendencia) => {
+                  const hoje = new Date();
+                  const prazo = new Date(pendencia.data_prazo);
+                  const diasRestantes = Math.ceil((prazo.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24));
+                  const isAtrasado = diasRestantes < 0;
+                  const isUrgente = diasRestantes >= 0 && diasRestantes <= 2;
+
+                  return (
+                    <Card 
+                      key={pendencia.id} 
+                      className={`cursor-pointer hover:shadow-md transition-shadow ${
+                        isAtrasado ? 'border-l-4 border-l-destructive' : 
+                        isUrgente ? 'border-l-4 border-l-status-pending' : 
+                        'border-l-4 border-l-primary'
+                      }`}
+                      onClick={() => handleOpenPendenciaDetail(pendencia)}
+                    >
+                      <CardContent className="pt-4">
+                        <div className="flex items-start justify-between gap-2 mb-2">
+                          <h3 className="font-semibold text-sm line-clamp-1">{pendencia.razao_social}</h3>
+                          <Badge variant={pendencia.status === 'ABERTO' ? 'destructive' : 'secondary'} className="text-xs shrink-0">
+                            {pendencia.status === 'ABERTO' ? 'Aberto' : 'Em Andamento'}
+                          </Badge>
+                        </div>
+                        <p className="text-xs text-muted-foreground mb-2">
+                          Contrato: {pendencia.contrato}
+                        </p>
+                        <p className="text-xs text-muted-foreground mb-2 line-clamp-1">
+                          OS: {pendencia.numero_os} {pendencia.numero_ticket && `• Ticket: ${pendencia.numero_ticket}`}
+                        </p>
+                        <div className="flex items-center justify-between">
+                          <Badge variant="outline" className="text-xs bg-primary/10">
+                            {pendencia.tipo.replace('DEPT_', '').replace('_', ' ')}
+                          </Badge>
+                          <span className={`text-xs font-medium ${
+                            isAtrasado ? 'text-destructive' : 
+                            isUrgente ? 'text-status-pending' : 
+                            'text-muted-foreground'
+                          }`}>
+                            {isAtrasado 
+                              ? `Atrasado ${Math.abs(diasRestantes)} dias` 
+                              : diasRestantes === 0 
+                                ? 'Vence hoje' 
+                                : `${diasRestantes} dias restantes`}
+                          </span>
+                        </div>
+                        {pendencia.comentario_sucesso_cliente && (
+                          <div className="mt-2 pt-2 border-t">
+                            <p className="text-xs text-primary line-clamp-1">💬 {pendencia.comentario_sucesso_cliente}</p>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+            </div>
           </div>
         )}
 
@@ -1660,6 +1739,91 @@ export default function SucessoCliente() {
                 </div>
               </div>
             )}
+          </DialogContent>
+        </Dialog>
+
+        {/* All Pendencias Dialog */}
+        <Dialog open={allPendenciasDialogOpen} onOpenChange={setAllPendenciasDialogOpen}>
+          <DialogContent className="max-w-5xl max-h-[85vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                {allPendenciasType === 'clientes' ? (
+                  <>
+                    <AlertTriangle className="w-5 h-5 text-status-pending" />
+                    Todas as Pendências de Clientes ({pendenciasClientes.length})
+                  </>
+                ) : (
+                  <>
+                    <Building className="w-5 h-5 text-primary" />
+                    Todas as Pendências de Departamento ({pendenciasDepartamento.length})
+                  </>
+                )}
+              </DialogTitle>
+            </DialogHeader>
+
+            <div className="space-y-3 mt-4">
+              {(allPendenciasType === 'clientes' ? pendenciasClientes : pendenciasDepartamento).map((pendencia) => {
+                const hoje = new Date();
+                const prazo = new Date(pendencia.data_prazo);
+                const diasRestantes = Math.ceil((prazo.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24));
+                const isAtrasado = diasRestantes < 0;
+                const isUrgente = diasRestantes >= 0 && diasRestantes <= 2;
+
+                return (
+                  <Card 
+                    key={pendencia.id} 
+                    className={`cursor-pointer hover:shadow-md transition-shadow ${
+                      isAtrasado ? 'border-l-4 border-l-destructive' : 
+                      isUrgente ? 'border-l-4 border-l-status-pending' : 
+                      'border-l-4 border-l-primary'
+                    }`}
+                    onClick={() => {
+                      setAllPendenciasDialogOpen(false);
+                      handleOpenPendenciaDetail(pendencia);
+                    }}
+                  >
+                    <CardContent className="py-3">
+                      <div className="flex items-center justify-between gap-4">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <h3 className="font-semibold text-sm truncate">{pendencia.razao_social}</h3>
+                            <Badge variant={pendencia.status === 'ABERTO' ? 'destructive' : 'secondary'} className="text-xs shrink-0">
+                              {pendencia.status === 'ABERTO' ? 'Aberto' : 'Em Andamento'}
+                            </Badge>
+                          </div>
+                          <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                            <span>Contrato: {pendencia.contrato}</span>
+                            <span>OS: {pendencia.numero_os}</span>
+                            <Badge variant="outline" className="text-xs">
+                              {pendencia.tipo.replace('CLIENTE_', '').replace('DEPT_', '').replace('_', ' ')}
+                            </Badge>
+                          </div>
+                        </div>
+                        <div className="text-right shrink-0">
+                          <span className={`text-sm font-medium ${
+                            isAtrasado ? 'text-destructive' : 
+                            isUrgente ? 'text-status-pending' : 
+                            'text-muted-foreground'
+                          }`}>
+                            {isAtrasado 
+                              ? `Atrasado ${Math.abs(diasRestantes)} dias` 
+                              : diasRestantes === 0 
+                                ? 'Vence hoje' 
+                                : `${diasRestantes} dias restantes`}
+                          </span>
+                          {pendencia.comentario_sucesso_cliente && (
+                            <p className="text-xs text-primary mt-1">💬 Comentário registrado</p>
+                          )}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+              {(allPendenciasType === 'clientes' ? pendenciasClientes : pendenciasDepartamento).length === 0 && (
+                <p className="text-center py-8 text-muted-foreground">Nenhuma pendência encontrada</p>
+              )}
+            </div>
           </DialogContent>
         </Dialog>
       </div>

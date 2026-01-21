@@ -40,10 +40,13 @@ import {
   RefreshCw,
   Loader2,
   Search,
+  Clock,
+  Building,
   Plus,
   ExternalLink
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { format, addMonths, isBefore, isAfter, parseISO, subMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { FilialMultiSelect } from '@/components/FilialMultiSelect';
@@ -123,6 +126,9 @@ interface Pendencia {
   data_abertura: string;
   data_prazo: string;
   data_conclusao: string | null;
+  comentario_sucesso_cliente: string | null;
+  comentario_sucesso_cliente_at: string | null;
+  comentario_sucesso_cliente_by: string | null;
 }
 
 export default function SucessoCliente() {
@@ -147,7 +153,14 @@ export default function SucessoCliente() {
   const [depoimentos, setDepoimentos] = useState<Depoimento[]>([]);
   const [satisfacaoData, setSatisfacaoData] = useState<Satisfacao[]>([]);
   const [pendenciasClientes, setPendenciasClientes] = useState<Pendencia[]>([]);
+  const [pendenciasDepartamento, setPendenciasDepartamento] = useState<Pendencia[]>([]);
   const [loadingData, setLoadingData] = useState(false);
+
+  // Pendencia detail dialog
+  const [pendenciaDetailDialogOpen, setPendenciaDetailDialogOpen] = useState(false);
+  const [selectedPendencia, setSelectedPendencia] = useState<Pendencia | null>(null);
+  const [comentarioPendencia, setComentarioPendencia] = useState('');
+  const [savingComentario, setSavingComentario] = useState(false);
 
   // Satisfaction period filter
   const [satisfacaoPeriodo, setSatisfacaoPeriodo] = useState('12');
@@ -168,6 +181,7 @@ export default function SucessoCliente() {
   useEffect(() => {
     fetchCustomers();
     fetchPendenciasClientes();
+    fetchPendenciasDepartamento();
   }, []);
 
   const fetchCustomers = async () => {
@@ -274,7 +288,81 @@ export default function SucessoCliente() {
       if (error) throw error;
       setPendenciasClientes(data || []);
     } catch (error) {
-      console.error('Error fetching pendencias:', error);
+      console.error('Error fetching pendencias clientes:', error);
+    }
+  };
+
+  const fetchPendenciasDepartamento = async () => {
+    try {
+      // Buscar pendências de departamento (tipos DEPT_*)
+      const { data, error } = await supabase
+        .from('manutencao_pendencias')
+        .select('*')
+        .in('tipo', ['DEPT_COMPRAS', 'DEPT_CADASTRO', 'DEPT_ALMOXARIFADO', 'DEPT_FATURAMENTO', 'DEPT_CONTAS_RECEBER', 'DEPT_FISCAL', 'DEPT_IMPLANTACAO'])
+        .in('status', ['ABERTO', 'EM_ANDAMENTO'])
+        .order('data_prazo', { ascending: true });
+
+      if (error) throw error;
+      setPendenciasDepartamento(data || []);
+    } catch (error) {
+      console.error('Error fetching pendencias departamento:', error);
+    }
+  };
+
+  const handleOpenPendenciaDetail = (pendencia: Pendencia) => {
+    setSelectedPendencia(pendencia);
+    setComentarioPendencia(pendencia.comentario_sucesso_cliente || '');
+    setPendenciaDetailDialogOpen(true);
+  };
+
+  const handleSaveComentario = async () => {
+    if (!selectedPendencia) return;
+    
+    setSavingComentario(true);
+    try {
+      const { data: userData } = await supabase.auth.getUser();
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('nome')
+        .eq('id', userData.user?.id || '')
+        .single();
+
+      const { error } = await supabase
+        .from('manutencao_pendencias')
+        .update({
+          comentario_sucesso_cliente: comentarioPendencia || null,
+          comentario_sucesso_cliente_at: new Date().toISOString(),
+          comentario_sucesso_cliente_by: profileData?.nome || userData.user?.email || 'Usuário',
+        })
+        .eq('id', selectedPendencia.id);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Comentário salvo',
+        description: 'O comentário foi salvo com sucesso.',
+      });
+
+      // Refresh the data
+      fetchPendenciasClientes();
+      fetchPendenciasDepartamento();
+      
+      // Update local state
+      setSelectedPendencia({
+        ...selectedPendencia,
+        comentario_sucesso_cliente: comentarioPendencia,
+        comentario_sucesso_cliente_at: new Date().toISOString(),
+        comentario_sucesso_cliente_by: profileData?.nome || 'Usuário',
+      });
+    } catch (error) {
+      console.error('Error saving comentario:', error);
+      toast({
+        title: 'Erro ao salvar',
+        description: 'Não foi possível salvar o comentário.',
+        variant: 'destructive',
+      });
+    } finally {
+      setSavingComentario(false);
     }
   };
 
@@ -704,7 +792,7 @@ export default function SucessoCliente() {
                       isUrgente ? 'border-l-4 border-l-status-pending' : 
                       'border-l-4 border-l-primary'
                     }`}
-                    onClick={() => navigate('/manutencao')}
+                    onClick={() => handleOpenPendenciaDetail(pendencia)}
                   >
                     <CardContent className="pt-4">
                       <div className="flex items-start justify-between gap-2 mb-2">
@@ -735,6 +823,11 @@ export default function SucessoCliente() {
                               : `${diasRestantes} dias restantes`}
                         </span>
                       </div>
+                      {pendencia.comentario_sucesso_cliente && (
+                        <div className="mt-2 pt-2 border-t">
+                          <p className="text-xs text-primary line-clamp-1">💬 {pendencia.comentario_sucesso_cliente}</p>
+                        </div>
+                      )}
                     </CardContent>
                   </Card>
                 );
@@ -743,7 +836,81 @@ export default function SucessoCliente() {
             {pendenciasClientes.length > 6 && (
               <div className="mt-4 text-center">
                 <Button variant="outline" onClick={() => navigate('/manutencao')}>
-                  Ver todas as {pendenciasClientes.length} pendências
+                  Ver todas as {pendenciasClientes.length} pendências de clientes
+                </Button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Pendências de Departamento Section */}
+        {pendenciasDepartamento.length > 0 && (
+          <div className="mt-6">
+            <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+              <Building className="w-5 h-5 text-primary" />
+              Pendências de Departamento ({pendenciasDepartamento.length})
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {pendenciasDepartamento.slice(0, 6).map((pendencia) => {
+                const hoje = new Date();
+                const prazo = new Date(pendencia.data_prazo);
+                const diasRestantes = Math.ceil((prazo.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24));
+                const isAtrasado = diasRestantes < 0;
+                const isUrgente = diasRestantes >= 0 && diasRestantes <= 2;
+
+                return (
+                  <Card 
+                    key={pendencia.id} 
+                    className={`cursor-pointer hover:shadow-md transition-shadow ${
+                      isAtrasado ? 'border-l-4 border-l-destructive' : 
+                      isUrgente ? 'border-l-4 border-l-status-pending' : 
+                      'border-l-4 border-l-primary'
+                    }`}
+                    onClick={() => handleOpenPendenciaDetail(pendencia)}
+                  >
+                    <CardContent className="pt-4">
+                      <div className="flex items-start justify-between gap-2 mb-2">
+                        <h3 className="font-semibold text-sm line-clamp-1">{pendencia.razao_social}</h3>
+                        <Badge variant={pendencia.status === 'ABERTO' ? 'destructive' : 'secondary'} className="text-xs shrink-0">
+                          {pendencia.status === 'ABERTO' ? 'Aberto' : 'Em Andamento'}
+                        </Badge>
+                      </div>
+                      <p className="text-xs text-muted-foreground mb-2">
+                        Contrato: {pendencia.contrato}
+                      </p>
+                      <p className="text-xs text-muted-foreground mb-2 line-clamp-1">
+                        OS: {pendencia.numero_os} {pendencia.numero_ticket && `• Ticket: ${pendencia.numero_ticket}`}
+                      </p>
+                      <div className="flex items-center justify-between">
+                        <Badge variant="outline" className="text-xs bg-primary/10">
+                          {pendencia.tipo.replace('DEPT_', '').replace('_', ' ')}
+                        </Badge>
+                        <span className={`text-xs font-medium ${
+                          isAtrasado ? 'text-destructive' : 
+                          isUrgente ? 'text-status-pending' : 
+                          'text-muted-foreground'
+                        }`}>
+                          {isAtrasado 
+                            ? `Atrasado ${Math.abs(diasRestantes)} dias` 
+                            : diasRestantes === 0 
+                              ? 'Vence hoje' 
+                              : `${diasRestantes} dias restantes`}
+                        </span>
+                      </div>
+                      {pendencia.comentario_sucesso_cliente && (
+                        <div className="mt-2 pt-2 border-t">
+                          <p className="text-xs text-primary line-clamp-1">💬 {pendencia.comentario_sucesso_cliente}</p>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+            {pendenciasDepartamento.length > 6 && (
+              <div className="mt-4 text-center">
+                <Button variant="outline" onClick={() => navigate('/manutencao')}>
+                  Ver todas as {pendenciasDepartamento.length} pendências de departamento
                 </Button>
               </div>
             )}
@@ -1349,6 +1516,150 @@ export default function SucessoCliente() {
                 ))}
               </TableBody>
             </Table>
+          </DialogContent>
+        </Dialog>
+
+        {/* Pendencia Detail Dialog */}
+        <Dialog open={pendenciaDetailDialogOpen} onOpenChange={setPendenciaDetailDialogOpen}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                {selectedPendencia?.tipo.startsWith('CLIENTE_') ? (
+                  <AlertTriangle className="w-5 h-5 text-status-pending" />
+                ) : (
+                  <Building className="w-5 h-5 text-primary" />
+                )}
+                Detalhes da Pendência
+              </DialogTitle>
+            </DialogHeader>
+
+            {selectedPendencia && (
+              <div className="space-y-4">
+                {/* Status e prazo */}
+                <div className="flex items-center justify-between">
+                  <Badge variant={selectedPendencia.status === 'ABERTO' ? 'destructive' : 'secondary'}>
+                    {selectedPendencia.status === 'ABERTO' ? 'Aberto' : 'Em Andamento'}
+                  </Badge>
+                  {(() => {
+                    const hoje = new Date();
+                    const prazo = new Date(selectedPendencia.data_prazo);
+                    const diasRestantes = Math.ceil((prazo.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24));
+                    const isAtrasado = diasRestantes < 0;
+                    return (
+                      <span className={`text-sm font-medium ${isAtrasado ? 'text-destructive' : 'text-muted-foreground'}`}>
+                        <Clock className="w-4 h-4 inline mr-1" />
+                        {isAtrasado 
+                          ? `Atrasado ${Math.abs(diasRestantes)} dias` 
+                          : diasRestantes === 0 
+                            ? 'Vence hoje' 
+                            : `${diasRestantes} dias restantes`}
+                      </span>
+                    );
+                  })()}
+                </div>
+
+                {/* Informações principais */}
+                <div className="grid grid-cols-2 gap-4 p-4 bg-muted/50 rounded-lg">
+                  <div>
+                    <p className="text-xs text-muted-foreground">Cliente</p>
+                    <p className="font-medium">{selectedPendencia.razao_social}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Contrato</p>
+                    <p className="font-medium">{selectedPendencia.contrato}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Número OS</p>
+                    <p className="font-medium">{selectedPendencia.numero_os}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Tipo</p>
+                    <Badge variant="outline">
+                      {selectedPendencia.tipo.replace('CLIENTE_', '').replace('DEPT_', '').replace('_', ' ')}
+                    </Badge>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Setor</p>
+                    <p className="font-medium">{selectedPendencia.setor}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">SLA</p>
+                    <p className="font-medium">{selectedPendencia.sla_dias} dias</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Data Abertura</p>
+                    <p className="font-medium">{formatDate(selectedPendencia.data_abertura)}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Prazo</p>
+                    <p className="font-medium">{formatDate(selectedPendencia.data_prazo)}</p>
+                  </div>
+                  {selectedPendencia.numero_ticket && (
+                    <div className="col-span-2">
+                      <p className="text-xs text-muted-foreground">Ticket</p>
+                      <p className="font-medium">{selectedPendencia.numero_ticket}</p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Descrição */}
+                {selectedPendencia.descricao && (
+                  <div>
+                    <p className="text-sm font-medium mb-2">Descrição</p>
+                    <p className="text-sm text-muted-foreground bg-muted/50 p-3 rounded-lg">
+                      {selectedPendencia.descricao}
+                    </p>
+                  </div>
+                )}
+
+                {/* Comentário do Sucesso do Cliente */}
+                <div className="border-t pt-4">
+                  <p className="text-sm font-medium mb-2 flex items-center gap-2">
+                    💬 Comentário do Sucesso do Cliente
+                  </p>
+                  <Textarea
+                    value={comentarioPendencia}
+                    onChange={(e) => setComentarioPendencia(e.target.value)}
+                    placeholder="Adicione observações, atualizações ou comentários sobre esta pendência..."
+                    className="min-h-[100px]"
+                  />
+                  {selectedPendencia.comentario_sucesso_cliente_at && selectedPendencia.comentario_sucesso_cliente_by && (
+                    <p className="text-xs text-muted-foreground mt-2">
+                      Última atualização por {selectedPendencia.comentario_sucesso_cliente_by} em {formatDate(selectedPendencia.comentario_sucesso_cliente_at)}
+                    </p>
+                  )}
+                  <div className="flex gap-2 mt-3">
+                    <Button 
+                      onClick={handleSaveComentario} 
+                      disabled={savingComentario}
+                      size="sm"
+                    >
+                      {savingComentario ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Salvando...
+                        </>
+                      ) : (
+                        'Salvar Comentário'
+                      )}
+                    </Button>
+                    {selectedPendencia.customer_id && (
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => {
+                          setPendenciaDetailDialogOpen(false);
+                          navigate(`/sucesso-cliente/${selectedPendencia.customer_id}`);
+                        }}
+                      >
+                        <ExternalLink className="w-4 h-4 mr-2" />
+                        Ver Cliente
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
           </DialogContent>
         </Dialog>
       </div>

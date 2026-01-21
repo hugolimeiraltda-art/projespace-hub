@@ -108,6 +108,23 @@ interface Satisfacao {
   customer_portfolio?: CustomerPortfolioRef;
 }
 
+interface Pendencia {
+  id: string;
+  numero_os: string;
+  customer_id: string | null;
+  contrato: string;
+  razao_social: string;
+  numero_ticket: string | null;
+  tipo: string;
+  setor: string;
+  descricao: string | null;
+  status: string;
+  sla_dias: number;
+  data_abertura: string;
+  data_prazo: string;
+  data_conclusao: string | null;
+}
+
 export default function SucessoCliente() {
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -129,6 +146,7 @@ export default function SucessoCliente() {
   const [npsSurveys, setNpsSurveys] = useState<NpsSurvey[]>([]);
   const [depoimentos, setDepoimentos] = useState<Depoimento[]>([]);
   const [satisfacaoData, setSatisfacaoData] = useState<Satisfacao[]>([]);
+  const [pendenciasClientes, setPendenciasClientes] = useState<Pendencia[]>([]);
   const [loadingData, setLoadingData] = useState(false);
 
   // Satisfaction period filter
@@ -149,6 +167,7 @@ export default function SucessoCliente() {
 
   useEffect(() => {
     fetchCustomers();
+    fetchPendenciasClientes();
   }, []);
 
   const fetchCustomers = async () => {
@@ -242,7 +261,23 @@ export default function SucessoCliente() {
     }
   };
 
-  // Handle dialog open with data fetch
+  const fetchPendenciasClientes = async () => {
+    try {
+      // Buscar pendências de cliente (tipos CLIENTE_*)
+      const { data, error } = await supabase
+        .from('manutencao_pendencias')
+        .select('*')
+        .in('tipo', ['CLIENTE_OBRA', 'CLIENTE_AGENDA', 'CLIENTE_LIMPEZA_VEGETACAO', 'CLIENTE_CONTRATACAO_SERVICOS'])
+        .in('status', ['ABERTO', 'EM_ANDAMENTO'])
+        .order('data_prazo', { ascending: true });
+
+      if (error) throw error;
+      setPendenciasClientes(data || []);
+    } catch (error) {
+      console.error('Error fetching pendencias:', error);
+    }
+  };
+
   const handleOpenChamados = () => {
     fetchChamados();
     setChamadosDialogOpen(true);
@@ -682,6 +717,75 @@ export default function SucessoCliente() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Pendências de Clientes Section */}
+        {pendenciasClientes.length > 0 && (
+          <div className="mt-6">
+            <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-status-pending" />
+              Pendências de Clientes ({pendenciasClientes.length})
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {pendenciasClientes.slice(0, 6).map((pendencia) => {
+                const hoje = new Date();
+                const prazo = new Date(pendencia.data_prazo);
+                const diasRestantes = Math.ceil((prazo.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24));
+                const isAtrasado = diasRestantes < 0;
+                const isUrgente = diasRestantes >= 0 && diasRestantes <= 2;
+
+                return (
+                  <Card 
+                    key={pendencia.id} 
+                    className={`cursor-pointer hover:shadow-md transition-shadow ${
+                      isAtrasado ? 'border-l-4 border-l-destructive' : 
+                      isUrgente ? 'border-l-4 border-l-status-pending' : 
+                      'border-l-4 border-l-primary'
+                    }`}
+                    onClick={() => navigate('/manutencao')}
+                  >
+                    <CardContent className="pt-4">
+                      <div className="flex items-start justify-between gap-2 mb-2">
+                        <h3 className="font-semibold text-sm line-clamp-1">{pendencia.razao_social}</h3>
+                        <Badge variant={pendencia.status === 'ABERTO' ? 'destructive' : 'secondary'} className="text-xs shrink-0">
+                          {pendencia.status === 'ABERTO' ? 'Aberto' : 'Em Andamento'}
+                        </Badge>
+                      </div>
+                      <p className="text-xs text-muted-foreground mb-2">
+                        Contrato: {pendencia.contrato}
+                      </p>
+                      <p className="text-xs text-muted-foreground mb-2 line-clamp-1">
+                        OS: {pendencia.numero_os} {pendencia.numero_ticket && `• Ticket: ${pendencia.numero_ticket}`}
+                      </p>
+                      <div className="flex items-center justify-between">
+                        <Badge variant="outline" className="text-xs">
+                          {pendencia.tipo.replace('CLIENTE_', '').replace('_', ' ')}
+                        </Badge>
+                        <span className={`text-xs font-medium ${
+                          isAtrasado ? 'text-destructive' : 
+                          isUrgente ? 'text-status-pending' : 
+                          'text-muted-foreground'
+                        }`}>
+                          {isAtrasado 
+                            ? `Atrasado ${Math.abs(diasRestantes)} dias` 
+                            : diasRestantes === 0 
+                              ? 'Vence hoje' 
+                              : `${diasRestantes} dias restantes`}
+                        </span>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+            {pendenciasClientes.length > 6 && (
+              <div className="mt-4 text-center">
+                <Button variant="outline" onClick={() => navigate('/manutencao')}>
+                  Ver todas as {pendenciasClientes.length} pendências
+                </Button>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Dialog for customers list */}
         <Dialog open={customersDialogOpen} onOpenChange={setCustomersDialogOpen}>

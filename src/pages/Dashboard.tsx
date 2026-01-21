@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProjects } from '@/contexts/ProjectsContext';
 import { Layout } from '@/components/Layout';
@@ -28,10 +28,8 @@ import {
   ClipboardList,
   AlertTriangle,
   TrendingUp,
-  Star,
-  DollarSign
+  Star
 } from 'lucide-react';
-import { ProjectStatus, STATUS_LABELS } from '@/types/project';
 import { format, parseISO, isAfter, isBefore, addMonths, differenceInDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -41,7 +39,6 @@ interface ImplantacaoProject {
   cliente_condominio_nome: string;
   implantacao_status: 'A_EXECUTAR' | 'EM_EXECUCAO' | 'CONCLUIDO_IMPLANTACAO' | null;
   implantacao_started_at: string | null;
-  etapas_concluidas?: number;
 }
 
 interface DashboardStats {
@@ -51,17 +48,13 @@ interface DashboardStats {
   projectsEmAnalise: number;
   projectsPendente: number;
   projectsAprovado: number;
-  projectsEmImplantacao: number;
   // Customer Portfolio
   clientesTotal: number;
   clientesUnidades: number;
-  clientesCameras: number;
-  clientesMensalidade: number;
   contratosVencendo3Meses: number;
   contratosVencendo6Meses: number;
   // Sucesso Cliente
   npsScore: number | null;
-  satisfacaoMedia: number | null;
   chamadosAbertos: number;
   // Estoque
   estoqueTotal: number;
@@ -92,15 +85,11 @@ export default function Dashboard() {
     projectsEmAnalise: 0,
     projectsPendente: 0,
     projectsAprovado: 0,
-    projectsEmImplantacao: 0,
     clientesTotal: 0,
     clientesUnidades: 0,
-    clientesCameras: 0,
-    clientesMensalidade: 0,
     contratosVencendo3Meses: 0,
     contratosVencendo6Meses: 0,
     npsScore: null,
-    satisfacaoMedia: null,
     chamadosAbertos: 0,
     estoqueTotal: 0,
     estoqueOk: 0,
@@ -114,176 +103,222 @@ export default function Dashboard() {
     chamadosEmProducao: 0,
     chamadosConcluidos: 0,
   });
-  const [loading, setLoading] = useState(true);
+
+  // Define which sections each role can see - matching Layout.tsx menu permissions
+  const permissions = useMemo(() => {
+    const role = user?.role || '';
+    return {
+      // Projetos menu: projetos, admin, gerente_comercial, administrativo + vendedor (own projects)
+      canSeeProjects: ['admin', 'vendedor', 'projetos', 'gerente_comercial', 'administrativo'].includes(role),
+      // Implantação menu: implantacao, admin, administrativo, sucesso_cliente, supervisor_operacoes
+      canSeeImplantacao: ['admin', 'implantacao', 'administrativo', 'sucesso_cliente', 'supervisor_operacoes'].includes(role),
+      // Carteira de Clientes: projetos, admin, implantacao, administrativo, sucesso_cliente, supervisor_operacoes
+      canSeeCarteira: ['admin', 'projetos', 'implantacao', 'administrativo', 'sucesso_cliente', 'supervisor_operacoes'].includes(role),
+      // Sucesso do Cliente: projetos, admin, implantacao, administrativo, sucesso_cliente
+      canSeeSucesso: ['admin', 'projetos', 'implantacao', 'administrativo', 'sucesso_cliente'].includes(role),
+      // Meus Chamados: projetos, admin, administrativo
+      canSeeChamados: ['admin', 'projetos', 'administrativo'].includes(role),
+      // Controle de Estoque: admin, administrativo, supervisor_operacoes
+      canSeeEstoque: ['admin', 'administrativo', 'supervisor_operacoes'].includes(role),
+      // Manutenção: admin, implantacao, administrativo, supervisor_operacoes
+      canSeeManutencao: ['admin', 'implantacao', 'administrativo', 'supervisor_operacoes'].includes(role),
+    };
+  }, [user?.role]);
 
   const userProjects = user?.role === 'vendedor' 
     ? getProjectsByUser(user.id) 
     : projects;
 
-  // Fetch all dashboard data
+  // Fetch dashboard data based on user permissions
   useEffect(() => {
     const fetchDashboardData = async () => {
       if (!user) return;
 
-      try {
-        // Fetch implantação projects
-        let implantacaoQuery = supabase
-          .from('projects')
-          .select('id, numero_projeto, cliente_condominio_nome, implantacao_status, implantacao_started_at')
-          .eq('sale_status', 'CONCLUIDO');
+      const newStats: Partial<DashboardStats> = {};
 
-        if (user.role === 'vendedor') {
-          implantacaoQuery = implantacaoQuery.eq('created_by_user_id', user.id);
-        }
+      // Fetch implantação projects only if user can see implantacao
+      if (permissions.canSeeImplantacao) {
+        try {
+          let implantacaoQuery = supabase
+            .from('projects')
+            .select('id, numero_projeto, cliente_condominio_nome, implantacao_status, implantacao_started_at')
+            .eq('sale_status', 'CONCLUIDO');
 
-        const { data: projectsData } = await implantacaoQuery;
-
-        if (projectsData && projectsData.length > 0) {
-          setImplantacaoProjects(projectsData);
-
-          const projectIds = projectsData.map(p => p.id);
-          const { data: etapasData } = await supabase
-            .from('implantacao_etapas')
-            .select('project_id, contrato_assinado, contrato_cadastrado, ligacao_boas_vindas, cadastro_gear, sindico_app, conferencia_tags, check_projeto, agendamento_visita_startup, laudo_visita_startup, laudo_instalador, laudo_vidraceiro, laudo_serralheiro, laudo_conclusao_supervisor, check_programacao, confirmacao_ativacao_financeira, agendamento_visita_comercial, laudo_visita_comercial, concluido')
-            .in('project_id', projectIds);
-
-          if (etapasData) {
-            const etapasMap: Record<string, number> = {};
-            etapasData.forEach(etapa => {
-              let completed = 0;
-              if (etapa.contrato_assinado) completed++;
-              if (etapa.contrato_cadastrado) completed++;
-              if (etapa.ligacao_boas_vindas && etapa.cadastro_gear && etapa.sindico_app && etapa.conferencia_tags) completed++;
-              if (etapa.check_projeto && etapa.agendamento_visita_startup && etapa.laudo_visita_startup) completed++;
-              if (etapa.laudo_instalador && etapa.laudo_vidraceiro && etapa.laudo_serralheiro && etapa.laudo_conclusao_supervisor) completed++;
-              if (etapa.check_programacao && etapa.confirmacao_ativacao_financeira) completed++;
-              if (etapa.agendamento_visita_comercial && etapa.laudo_visita_comercial) completed++;
-              if (etapa.laudo_visita_comercial) completed++;
-              if (etapa.concluido) completed++;
-              
-              etapasMap[etapa.project_id] = completed;
-            });
-            setImplantacaoEtapas(etapasMap);
+          if (user.role === 'vendedor') {
+            implantacaoQuery = implantacaoQuery.eq('created_by_user_id', user.id);
           }
-        }
 
-        // Fetch customer portfolio stats
-        const { data: customers } = await supabase
-          .from('customer_portfolio')
-          .select('*');
+          const { data: projectsData } = await implantacaoQuery;
 
-        // Fetch customer NPS
-        const { data: npsData } = await supabase
-          .from('customer_nps')
-          .select('nota');
+          if (projectsData && projectsData.length > 0) {
+            setImplantacaoProjects(projectsData);
 
-        // Fetch customer chamados (tickets)
-        const { data: customerChamados } = await supabase
-          .from('customer_chamados')
-          .select('status')
-          .neq('status', 'resolvido');
+            const projectIds = projectsData.map(p => p.id);
+            const { data: etapasData } = await supabase
+              .from('implantacao_etapas')
+              .select('project_id, contrato_assinado, contrato_cadastrado, ligacao_boas_vindas, cadastro_gear, sindico_app, conferencia_tags, check_projeto, agendamento_visita_startup, laudo_visita_startup, laudo_instalador, laudo_vidraceiro, laudo_serralheiro, laudo_conclusao_supervisor, check_programacao, confirmacao_ativacao_financeira, agendamento_visita_comercial, laudo_visita_comercial, concluido')
+              .in('project_id', projectIds);
 
-        // Fetch estoque stats
-        const { data: estoqueItems } = await supabase
-          .from('estoque_itens')
-          .select('id');
-
-        const { data: estoqueData } = await supabase
-          .from('estoque')
-          .select('estoque_atual, estoque_minimo');
-
-        // Fetch pendencias (maintenance)
-        const { data: pendencias } = await supabase
-          .from('manutencao_pendencias')
-          .select('status, data_prazo');
-
-        // Calculate stats
-        const now = new Date();
-        const in3Months = addMonths(now, 3);
-        const in6Months = addMonths(now, 6);
-
-        const customerStats = customers?.reduce((acc, c) => {
-          const endDate = c.data_termino ? parseISO(c.data_termino) : c.data_ativacao ? addMonths(parseISO(c.data_ativacao), 36) : null;
-          
-          return {
-            total: acc.total + 1,
-            unidades: acc.unidades + (c.unidades || 0),
-            cameras: acc.cameras + (c.cameras || 0),
-            mensalidade: acc.mensalidade + (c.mensalidade || 0),
-            vencendo3m: acc.vencendo3m + (endDate && isAfter(endDate, now) && isBefore(endDate, in3Months) ? 1 : 0),
-            vencendo6m: acc.vencendo6m + (endDate && isAfter(endDate, in3Months) && isBefore(endDate, in6Months) ? 1 : 0),
-          };
-        }, { total: 0, unidades: 0, cameras: 0, mensalidade: 0, vencendo3m: 0, vencendo6m: 0 }) || { total: 0, unidades: 0, cameras: 0, mensalidade: 0, vencendo3m: 0, vencendo6m: 0 };
-
-        const npsAverage = npsData && npsData.length > 0 
-          ? Math.round(npsData.reduce((sum, n) => sum + n.nota, 0) / npsData.length * 10) / 10
-          : null;
-
-        // Estoque stats
-        let estoqueOk = 0;
-        let estoqueCritico = 0;
-        estoqueData?.forEach(e => {
-          if (e.estoque_atual >= e.estoque_minimo) {
-            estoqueOk++;
-          } else {
-            estoqueCritico++;
+            if (etapasData) {
+              const etapasMap: Record<string, number> = {};
+              etapasData.forEach(etapa => {
+                let completed = 0;
+                if (etapa.contrato_assinado) completed++;
+                if (etapa.contrato_cadastrado) completed++;
+                if (etapa.ligacao_boas_vindas && etapa.cadastro_gear && etapa.sindico_app && etapa.conferencia_tags) completed++;
+                if (etapa.check_projeto && etapa.agendamento_visita_startup && etapa.laudo_visita_startup) completed++;
+                if (etapa.laudo_instalador && etapa.laudo_vidraceiro && etapa.laudo_serralheiro && etapa.laudo_conclusao_supervisor) completed++;
+                if (etapa.check_programacao && etapa.confirmacao_ativacao_financeira) completed++;
+                if (etapa.agendamento_visita_comercial && etapa.laudo_visita_comercial) completed++;
+                if (etapa.laudo_visita_comercial) completed++;
+                if (etapa.concluido) completed++;
+                
+                etapasMap[etapa.project_id] = completed;
+              });
+              setImplantacaoEtapas(etapasMap);
+            }
           }
-        });
-
-        // Pendencias stats
-        const pendenciasStats = pendencias?.reduce((acc, p) => {
-          const isPendenciaAtrasada = p.status !== 'CONCLUIDO' && p.status !== 'CANCELADO' && differenceInDays(parseISO(p.data_prazo), now) < 0;
-          const isVenceHoje = p.status !== 'CONCLUIDO' && p.status !== 'CANCELADO' && differenceInDays(parseISO(p.data_prazo), now) === 0;
-          
-          return {
-            abertas: acc.abertas + (p.status === 'ABERTO' ? 1 : 0),
-            emAndamento: acc.emAndamento + (p.status === 'EM_ANDAMENTO' ? 1 : 0),
-            atrasadas: acc.atrasadas + (isPendenciaAtrasada ? 1 : 0),
-            venceHoje: acc.venceHoje + (isVenceHoje ? 1 : 0),
-          };
-        }, { abertas: 0, emAndamento: 0, atrasadas: 0, venceHoje: 0 }) || { abertas: 0, emAndamento: 0, atrasadas: 0, venceHoje: 0 };
-
-        // Chamados (projetos role)
-        const chamadosProjects = projects.filter(p => p.status !== 'RASCUNHO');
-
-        setStats({
-          projectsTotal: userProjects.length,
-          projectsRascunho: userProjects.filter(p => p.status === 'RASCUNHO').length,
-          projectsEmAnalise: userProjects.filter(p => ['ENVIADO', 'EM_ANALISE'].includes(p.status)).length,
-          projectsPendente: userProjects.filter(p => p.status === 'PENDENTE_INFO').length,
-          projectsAprovado: userProjects.filter(p => p.status === 'APROVADO_PROJETO').length,
-          projectsEmImplantacao: projectsData?.filter(p => p.implantacao_status === 'EM_EXECUCAO').length || 0,
-          clientesTotal: customerStats.total,
-          clientesUnidades: customerStats.unidades,
-          clientesCameras: customerStats.cameras,
-          clientesMensalidade: customerStats.mensalidade,
-          contratosVencendo3Meses: customerStats.vencendo3m,
-          contratosVencendo6Meses: customerStats.vencendo6m,
-          npsScore: npsAverage,
-          satisfacaoMedia: null,
-          chamadosAbertos: customerChamados?.length || 0,
-          estoqueTotal: estoqueItems?.length || 0,
-          estoqueOk,
-          estoqueCritico,
-          pendenciasAbertas: pendenciasStats.abertas,
-          pendenciasEmAndamento: pendenciasStats.emAndamento,
-          pendenciasAtrasadas: pendenciasStats.atrasadas,
-          pendenciasVenceHoje: pendenciasStats.venceHoje,
-          chamadosTotal: chamadosProjects.length,
-          chamadosEmRecebimento: chamadosProjects.filter(p => p.engineering_status === 'EM_RECEBIMENTO').length,
-          chamadosEmProducao: chamadosProjects.filter(p => p.engineering_status === 'EM_PRODUCAO').length,
-          chamadosConcluidos: chamadosProjects.filter(p => p.engineering_status === 'CONCLUIDO').length,
-        });
-
-      } catch (error) {
-        console.error('Error fetching dashboard data:', error);
-      } finally {
-        setLoading(false);
+        } catch (error) {
+          console.error('Error fetching implantacao data:', error);
+        }
       }
+
+      // Fetch customer portfolio stats only if user can see carteira
+      if (permissions.canSeeCarteira) {
+        try {
+          const { data: customers } = await supabase
+            .from('customer_portfolio')
+            .select('unidades, data_ativacao, data_termino');
+
+          if (customers) {
+            const now = new Date();
+            const in3Months = addMonths(now, 3);
+            const in6Months = addMonths(now, 6);
+
+            const customerStats = customers.reduce((acc, c) => {
+              const endDate = c.data_termino ? parseISO(c.data_termino) : c.data_ativacao ? addMonths(parseISO(c.data_ativacao), 36) : null;
+              
+              return {
+                total: acc.total + 1,
+                unidades: acc.unidades + (c.unidades || 0),
+                vencendo3m: acc.vencendo3m + (endDate && isAfter(endDate, now) && isBefore(endDate, in3Months) ? 1 : 0),
+                vencendo6m: acc.vencendo6m + (endDate && isAfter(endDate, in3Months) && isBefore(endDate, in6Months) ? 1 : 0),
+              };
+            }, { total: 0, unidades: 0, vencendo3m: 0, vencendo6m: 0 });
+
+            newStats.clientesTotal = customerStats.total;
+            newStats.clientesUnidades = customerStats.unidades;
+            newStats.contratosVencendo3Meses = customerStats.vencendo3m;
+            newStats.contratosVencendo6Meses = customerStats.vencendo6m;
+          }
+        } catch (error) {
+          console.error('Error fetching customer portfolio:', error);
+        }
+      }
+
+      // Fetch sucesso cliente stats only if user can see sucesso
+      if (permissions.canSeeSucesso) {
+        try {
+          const { data: npsData } = await supabase
+            .from('customer_nps')
+            .select('nota');
+
+          if (npsData && npsData.length > 0) {
+            newStats.npsScore = Math.round(npsData.reduce((sum, n) => sum + n.nota, 0) / npsData.length * 10) / 10;
+          }
+
+          const { data: customerChamados } = await supabase
+            .from('customer_chamados')
+            .select('status')
+            .neq('status', 'resolvido');
+
+          newStats.chamadosAbertos = customerChamados?.length || 0;
+        } catch (error) {
+          console.error('Error fetching sucesso cliente data:', error);
+        }
+      }
+
+      // Fetch estoque stats only if user can see estoque
+      if (permissions.canSeeEstoque) {
+        try {
+          const { data: estoqueItems } = await supabase
+            .from('estoque_itens')
+            .select('id');
+
+          const { data: estoqueData } = await supabase
+            .from('estoque')
+            .select('estoque_atual, estoque_minimo');
+
+          newStats.estoqueTotal = estoqueItems?.length || 0;
+          
+          let estoqueOk = 0;
+          let estoqueCritico = 0;
+          estoqueData?.forEach(e => {
+            if (e.estoque_atual >= e.estoque_minimo) {
+              estoqueOk++;
+            } else {
+              estoqueCritico++;
+            }
+          });
+          newStats.estoqueOk = estoqueOk;
+          newStats.estoqueCritico = estoqueCritico;
+        } catch (error) {
+          console.error('Error fetching estoque data:', error);
+        }
+      }
+
+      // Fetch manutencao stats only if user can see manutencao
+      if (permissions.canSeeManutencao) {
+        try {
+          const { data: pendencias } = await supabase
+            .from('manutencao_pendencias')
+            .select('status, data_prazo');
+
+          if (pendencias) {
+            const now = new Date();
+            const pendenciasStats = pendencias.reduce((acc, p) => {
+              const isPendenciaAtrasada = p.status !== 'CONCLUIDO' && p.status !== 'CANCELADO' && differenceInDays(parseISO(p.data_prazo), now) < 0;
+              const isVenceHoje = p.status !== 'CONCLUIDO' && p.status !== 'CANCELADO' && differenceInDays(parseISO(p.data_prazo), now) === 0;
+              
+              return {
+                abertas: acc.abertas + (p.status === 'ABERTO' ? 1 : 0),
+                emAndamento: acc.emAndamento + (p.status === 'EM_ANDAMENTO' ? 1 : 0),
+                atrasadas: acc.atrasadas + (isPendenciaAtrasada ? 1 : 0),
+                venceHoje: acc.venceHoje + (isVenceHoje ? 1 : 0),
+              };
+            }, { abertas: 0, emAndamento: 0, atrasadas: 0, venceHoje: 0 });
+
+            newStats.pendenciasAbertas = pendenciasStats.abertas;
+            newStats.pendenciasEmAndamento = pendenciasStats.emAndamento;
+            newStats.pendenciasAtrasadas = pendenciasStats.atrasadas;
+            newStats.pendenciasVenceHoje = pendenciasStats.venceHoje;
+          }
+        } catch (error) {
+          console.error('Error fetching manutencao data:', error);
+        }
+      }
+
+      // Update stats with project data
+      newStats.projectsTotal = userProjects.length;
+      newStats.projectsRascunho = userProjects.filter(p => p.status === 'RASCUNHO').length;
+      newStats.projectsEmAnalise = userProjects.filter(p => ['ENVIADO', 'EM_ANALISE'].includes(p.status)).length;
+      newStats.projectsPendente = userProjects.filter(p => p.status === 'PENDENTE_INFO').length;
+      newStats.projectsAprovado = userProjects.filter(p => p.status === 'APROVADO_PROJETO').length;
+
+      // Chamados (projetos role)
+      if (permissions.canSeeChamados) {
+        const chamadosProjects = projects.filter(p => p.status !== 'RASCUNHO');
+        newStats.chamadosTotal = chamadosProjects.length;
+        newStats.chamadosEmRecebimento = chamadosProjects.filter(p => p.engineering_status === 'EM_RECEBIMENTO').length;
+        newStats.chamadosEmProducao = chamadosProjects.filter(p => p.engineering_status === 'EM_PRODUCAO').length;
+        newStats.chamadosConcluidos = chamadosProjects.filter(p => p.engineering_status === 'CONCLUIDO').length;
+      }
+
+      setStats(prev => ({ ...prev, ...newStats }));
     };
 
     fetchDashboardData();
-  }, [user, projects, userProjects]);
+  }, [user, projects, userProjects, permissions]);
 
   const recentProjects = [...userProjects]
     .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
@@ -301,15 +336,6 @@ export default function Dashboard() {
     CONCLUIDO_IMPLANTACAO: 'bg-green-100 text-green-800 border-green-300',
   };
 
-  // Define which sections each role can see
-  const canSeeProjects = ['admin', 'vendedor', 'projetos', 'gerente_comercial', 'administrativo'].includes(user?.role || '');
-  const canSeeImplantacao = ['admin', 'implantacao', 'administrativo', 'sucesso_cliente', 'supervisor_operacoes'].includes(user?.role || '');
-  const canSeeCarteira = ['admin', 'projetos', 'implantacao', 'administrativo', 'sucesso_cliente', 'supervisor_operacoes'].includes(user?.role || '');
-  const canSeeSucesso = ['admin', 'projetos', 'implantacao', 'administrativo', 'sucesso_cliente'].includes(user?.role || '');
-  const canSeeChamados = ['admin', 'projetos', 'administrativo'].includes(user?.role || '');
-  const canSeeEstoque = ['admin', 'administrativo', 'supervisor_operacoes'].includes(user?.role || '');
-  const canSeeManutencao = ['admin', 'implantacao', 'administrativo', 'supervisor_operacoes'].includes(user?.role || '');
-
   return (
     <Layout>
       <div className="p-8">
@@ -321,7 +347,7 @@ export default function Dashboard() {
               Bem-vindo, {user?.nome}
             </p>
           </div>
-          {(user?.role === 'vendedor' || user?.role === 'admin') && (
+          {(user?.role === 'vendedor' || user?.role === 'admin' || user?.role === 'administrativo' || user?.role === 'sucesso_cliente' || user?.role === 'supervisor_operacoes') && (
             <Button asChild>
               <Link to="/projetos/novo">
                 <FolderPlus className="w-4 h-4 mr-2" />
@@ -332,7 +358,7 @@ export default function Dashboard() {
         </div>
 
         {/* Projects Stats */}
-        {canSeeProjects && (
+        {permissions.canSeeProjects && (
           <div className="mb-8">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold flex items-center gap-2">
@@ -416,13 +442,13 @@ export default function Dashboard() {
         )}
 
         {/* Implantacao Section */}
-        {canSeeImplantacao && implantacaoProjects.length > 0 && (
+        {permissions.canSeeImplantacao && implantacaoProjects.length > 0 && (
           <div className="mb-8">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold flex items-center gap-2">
-                <Rocket className="w-5 h-5 text-blue-600" />
+                <Rocket className="w-5 h-5 text-primary" />
                 Implantação
-                <Badge className="bg-blue-100 text-blue-800 border-blue-300 ml-2">
+                <Badge variant="secondary" className="ml-2">
                   {implantacaoProjects.length}
                 </Badge>
               </h2>
@@ -470,7 +496,7 @@ export default function Dashboard() {
         )}
 
         {/* Carteira de Clientes */}
-        {canSeeCarteira && (
+        {permissions.canSeeCarteira && (
           <div className="mb-8">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold flex items-center gap-2">
@@ -500,8 +526,8 @@ export default function Dashboard() {
               <Card className="shadow-card">
                 <CardContent className="pt-4">
                   <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-blue-100">
-                      <Building className="w-4 h-4 text-blue-600" />
+                    <div className="p-2 rounded-lg bg-secondary">
+                      <Building className="w-4 h-4 text-secondary-foreground" />
                     </div>
                     <div>
                       <p className="text-2xl font-bold text-foreground">{stats.clientesUnidades.toLocaleString('pt-BR')}</p>
@@ -510,27 +536,27 @@ export default function Dashboard() {
                   </div>
                 </CardContent>
               </Card>
-              <Card className="shadow-card border-l-4 border-l-red-500">
+              <Card className="shadow-card border-l-4 border-l-destructive">
                 <CardContent className="pt-4">
                   <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-red-100">
-                      <AlertTriangle className="w-4 h-4 text-red-600" />
+                    <div className="p-2 rounded-lg bg-destructive/10">
+                      <AlertTriangle className="w-4 h-4 text-destructive" />
                     </div>
                     <div>
-                      <p className="text-2xl font-bold text-red-600">{stats.contratosVencendo3Meses}</p>
+                      <p className="text-2xl font-bold text-destructive">{stats.contratosVencendo3Meses}</p>
                       <p className="text-xs text-muted-foreground">Vencendo 3m</p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
-              <Card className="shadow-card border-l-4 border-l-amber-500">
+              <Card className="shadow-card border-l-4 border-l-warning">
                 <CardContent className="pt-4">
                   <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-amber-100">
-                      <Calendar className="w-4 h-4 text-amber-600" />
+                    <div className="p-2 rounded-lg bg-warning/10">
+                      <Calendar className="w-4 h-4 text-warning" />
                     </div>
                     <div>
-                      <p className="text-2xl font-bold text-amber-600">{stats.contratosVencendo6Meses}</p>
+                      <p className="text-2xl font-bold text-warning">{stats.contratosVencendo6Meses}</p>
                       <p className="text-xs text-muted-foreground">Vencendo 6m</p>
                     </div>
                   </div>
@@ -541,11 +567,11 @@ export default function Dashboard() {
         )}
 
         {/* Sucesso do Cliente */}
-        {canSeeSucesso && (
+        {permissions.canSeeSucesso && (
           <div className="mb-8">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold flex items-center gap-2">
-                <Heart className="w-5 h-5 text-pink-600" />
+                <Heart className="w-5 h-5 text-primary" />
                 Sucesso do Cliente
               </h2>
               <Button variant="ghost" size="sm" asChild>
@@ -554,12 +580,12 @@ export default function Dashboard() {
                 </Link>
               </Button>
             </div>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-2 gap-4">
               <Card className="shadow-card">
                 <CardContent className="pt-4">
                   <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-purple-100">
-                      <Star className="w-4 h-4 text-purple-600" />
+                    <div className="p-2 rounded-lg bg-secondary">
+                      <Star className="w-4 h-4 text-secondary-foreground" />
                     </div>
                     <div>
                       <p className="text-2xl font-bold text-foreground">{stats.npsScore !== null ? stats.npsScore : '--'}</p>
@@ -571,21 +597,8 @@ export default function Dashboard() {
               <Card className="shadow-card">
                 <CardContent className="pt-4">
                   <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-green-100">
-                      <TrendingUp className="w-4 h-4 text-green-600" />
-                    </div>
-                    <div>
-                      <p className="text-2xl font-bold text-foreground">{stats.satisfacaoMedia !== null ? stats.satisfacaoMedia : '--'}</p>
-                      <p className="text-xs text-muted-foreground">Satisfação</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-              <Card className="shadow-card">
-                <CardContent className="pt-4">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-orange-100">
-                      <AlertCircle className="w-4 h-4 text-orange-600" />
+                    <div className="p-2 rounded-lg bg-warning/10">
+                      <AlertCircle className="w-4 h-4 text-warning" />
                     </div>
                     <div>
                       <p className="text-2xl font-bold text-foreground">{stats.chamadosAbertos}</p>
@@ -599,11 +612,11 @@ export default function Dashboard() {
         )}
 
         {/* Meus Chamados (projetos role) */}
-        {canSeeChamados && (
+        {permissions.canSeeChamados && (
           <div className="mb-8">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold flex items-center gap-2">
-                <ClipboardList className="w-5 h-5 text-indigo-600" />
+                <ClipboardList className="w-5 h-5 text-primary" />
                 Chamados de Projetos
               </h2>
               <Button variant="ghost" size="sm" asChild>
@@ -642,11 +655,11 @@ export default function Dashboard() {
         )}
 
         {/* Controle de Estoque */}
-        {canSeeEstoque && (
+        {permissions.canSeeEstoque && (
           <div className="mb-8">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold flex items-center gap-2">
-                <Package className="w-5 h-5 text-cyan-600" />
+                <Package className="w-5 h-5 text-primary" />
                 Controle de Estoque
               </h2>
               <Button variant="ghost" size="sm" asChild>
@@ -664,13 +677,13 @@ export default function Dashboard() {
               </Card>
               <Card className="shadow-card">
                 <CardContent className="pt-4">
-                  <div className="text-2xl font-bold text-green-600">{stats.estoqueOk}</div>
+                  <div className="text-2xl font-bold text-status-approved">{stats.estoqueOk}</div>
                   <p className="text-xs text-muted-foreground">Estoque OK</p>
                 </CardContent>
               </Card>
-              <Card className="shadow-card border-l-4 border-l-red-500">
+              <Card className="shadow-card border-l-4 border-l-destructive">
                 <CardContent className="pt-4">
-                  <div className="text-2xl font-bold text-red-600">{stats.estoqueCritico}</div>
+                  <div className="text-2xl font-bold text-destructive">{stats.estoqueCritico}</div>
                   <p className="text-xs text-muted-foreground">Crítico</p>
                 </CardContent>
               </Card>
@@ -679,11 +692,11 @@ export default function Dashboard() {
         )}
 
         {/* Manutenção */}
-        {canSeeManutencao && (
+        {permissions.canSeeManutencao && (
           <div className="mb-8">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold flex items-center gap-2">
-                <Wrench className="w-5 h-5 text-orange-600" />
+                <Wrench className="w-5 h-5 text-primary" />
                 Manutenção
               </h2>
               <Button variant="ghost" size="sm" asChild>
@@ -701,19 +714,19 @@ export default function Dashboard() {
               </Card>
               <Card className="shadow-card">
                 <CardContent className="pt-4">
-                  <div className="text-2xl font-bold text-blue-600">{stats.pendenciasEmAndamento}</div>
+                  <div className="text-2xl font-bold text-primary">{stats.pendenciasEmAndamento}</div>
                   <p className="text-xs text-muted-foreground">Em Andamento</p>
                 </CardContent>
               </Card>
-              <Card className="shadow-card border-l-4 border-l-red-500">
+              <Card className="shadow-card border-l-4 border-l-destructive">
                 <CardContent className="pt-4">
-                  <div className="text-2xl font-bold text-red-600">{stats.pendenciasAtrasadas}</div>
+                  <div className="text-2xl font-bold text-destructive">{stats.pendenciasAtrasadas}</div>
                   <p className="text-xs text-muted-foreground">Atrasadas</p>
                 </CardContent>
               </Card>
-              <Card className="shadow-card border-l-4 border-l-orange-500">
+              <Card className="shadow-card border-l-4 border-l-warning">
                 <CardContent className="pt-4">
-                  <div className="text-2xl font-bold text-orange-600">{stats.pendenciasVenceHoje}</div>
+                  <div className="text-2xl font-bold text-warning">{stats.pendenciasVenceHoje}</div>
                   <p className="text-xs text-muted-foreground">Vence Hoje</p>
                 </CardContent>
               </Card>
@@ -722,7 +735,7 @@ export default function Dashboard() {
         )}
 
         {/* Recent Projects */}
-        {canSeeProjects && recentProjects.length > 0 && (
+        {permissions.canSeeProjects && recentProjects.length > 0 && (
           <div className="mb-8">
             <Card className="shadow-card">
               <CardHeader className="flex flex-row items-center justify-between">

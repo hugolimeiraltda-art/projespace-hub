@@ -73,7 +73,7 @@ export type CroquiItem =
   | 'ALARME_PERIMETRAL' 
   | 'OUTROS';
 
-export type UserRole = 'vendedor' | 'projetos' | 'admin' | 'gerente_comercial' | 'implantacao' | 'administrativo';
+export type UserRole = 'vendedor' | 'projetos' | 'admin' | 'gerente_comercial' | 'implantacao' | 'administrativo' | 'sucesso_cliente' | 'supervisor_operacoes';
 
 // Implantação status
 export type ImplantacaoStatus = 'A_EXECUTAR' | 'EM_EXECUCAO' | 'CONCLUIDO_IMPLANTACAO';

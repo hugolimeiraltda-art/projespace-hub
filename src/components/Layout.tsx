@@ -30,12 +30,12 @@ export function Layout({
     path: '/projetos/novo',
     label: 'Novo Projeto',
     icon: FolderPlus,
-    roles: ['vendedor', 'admin', 'administrativo', 'sucesso_cliente']
+    roles: ['vendedor', 'admin', 'administrativo', 'sucesso_cliente', 'supervisor_operacoes']
   }, {
     path: '/informar-venda',
     label: 'Informar Nova Venda',
     icon: ShoppingCart,
-    roles: ['vendedor', 'admin', 'administrativo', 'sucesso_cliente']
+    roles: ['vendedor', 'admin', 'administrativo', 'sucesso_cliente', 'supervisor_operacoes']
   }, {
     path: '/projetos',
     label: 'Meus Projetos',
@@ -51,12 +51,12 @@ export function Layout({
     path: '/startup-projetos',
     label: 'Implantação',
     icon: ClipboardList,
-    roles: ['implantacao', 'admin', 'administrativo', 'sucesso_cliente']
+    roles: ['implantacao', 'admin', 'administrativo', 'sucesso_cliente', 'supervisor_operacoes']
   }, {
     path: '/carteira-clientes',
     label: 'Carteira de Clientes',
     icon: Briefcase,
-    roles: ['projetos', 'admin', 'implantacao', 'administrativo', 'sucesso_cliente']
+    roles: ['projetos', 'admin', 'implantacao', 'administrativo', 'sucesso_cliente', 'supervisor_operacoes']
   }, {
     path: '/sucesso-cliente',
     label: 'Sucesso do Cliente',
@@ -71,7 +71,7 @@ export function Layout({
     path: '/controle-estoque',
     label: 'Controle de Estoque',
     icon: Package,
-    roles: ['admin', 'administrativo']
+    roles: ['admin', 'administrativo', 'supervisor_operacoes']
   }, {
     path: '/configuracoes',
     label: 'Configurações',

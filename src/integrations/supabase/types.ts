@@ -1426,6 +1426,7 @@ export type Database = {
         | "implantacao"
         | "administrativo"
         | "sucesso_cliente"
+        | "supervisor_operacoes"
       attachment_type:
         | "CROQUI"
         | "PLANTA_BAIXA"
@@ -1588,6 +1589,7 @@ export const Constants = {
         "implantacao",
         "administrativo",
         "sucesso_cliente",
+        "supervisor_operacoes",
       ],
       attachment_type: [
         "CROQUI",

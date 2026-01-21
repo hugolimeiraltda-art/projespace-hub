@@ -14,7 +14,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, AlertTriangle, Clock, CheckCircle, XCircle, Wrench, Search, Eye, FileText, Download, List } from 'lucide-react';
+import { Plus, AlertTriangle, Clock, CheckCircle, XCircle, Wrench, Search, Eye, FileText, Download, List, Timer, CalendarClock } from 'lucide-react';
 import { format, differenceInDays, addDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -338,6 +338,29 @@ export default function Manutencao() {
     return new Date(p.data_prazo) < new Date();
   }).length;
 
+  // Tempo médio de conclusão (em dias)
+  const tempoMedioConclusao = (() => {
+    const concluidas = pendencias.filter(p => p.status === 'CONCLUIDO' && p.data_conclusao);
+    if (concluidas.length === 0) return null;
+    
+    const totalDias = concluidas.reduce((acc, p) => {
+      const abertura = new Date(p.data_abertura);
+      const conclusao = new Date(p.data_conclusao!);
+      return acc + differenceInDays(conclusao, abertura);
+    }, 0);
+    
+    return Math.round(totalDias / concluidas.length);
+  })();
+
+  // Pendências críticas (vencidas ou a vencer em 24h)
+  const agora = new Date();
+  const em24h = addDays(agora, 1);
+  const pendenciasCriticas = pendencias.filter(p => {
+    if (p.status === 'CONCLUIDO' || p.status === 'CANCELADO') return false;
+    const prazo = new Date(p.data_prazo);
+    return prazo <= em24h;
+  }).length;
+
   // Filter pendencias
   const filteredPendencias = pendencias.filter(p => {
     const matchesSearch = 
@@ -542,7 +565,7 @@ export default function Manutencao() {
         </div>
 
         {/* Dashboard Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
@@ -585,6 +608,32 @@ export default function Manutencao() {
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold text-red-600">{atrasadas}</div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                <Timer className="h-4 w-4 text-purple-500" />
+                Tempo Médio
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-purple-600">
+                {tempoMedioConclusao !== null ? `${tempoMedioConclusao}d` : '-'}
+              </div>
+              <p className="text-xs text-muted-foreground">dias para conclusão</p>
+            </CardContent>
+          </Card>
+          <Card className={pendenciasCriticas > 0 ? 'border-orange-300 bg-orange-50 dark:bg-orange-950/20' : ''}>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                <CalendarClock className="h-4 w-4 text-orange-500" />
+                Críticas (24h)
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-orange-600">{pendenciasCriticas}</div>
+              <p className="text-xs text-muted-foreground">vencidas ou a vencer</p>
             </CardContent>
           </Card>
         </div>

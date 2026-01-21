@@ -546,7 +546,10 @@ export default function SucessoCliente() {
               </div>
             </CardContent>
           </Card>
-          <Card>
+          <Card 
+            className="cursor-pointer hover:shadow-md transition-shadow"
+            onClick={handleOpenSatisfacao}
+          >
             <CardContent className="pt-6">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-green-100 rounded-lg">
@@ -559,7 +562,10 @@ export default function SucessoCliente() {
               </div>
             </CardContent>
           </Card>
-          <Card>
+          <Card 
+            className="cursor-pointer hover:shadow-md transition-shadow"
+            onClick={handleOpenNps}
+          >
             <CardContent className="pt-6">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-purple-100 rounded-lg">
@@ -633,7 +639,7 @@ export default function SucessoCliente() {
         </div>
 
         {/* Tickets and Feedback Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Open Tickets */}
           <Card 
             className="cursor-pointer hover:shadow-md transition-shadow"
@@ -654,29 +660,6 @@ export default function SucessoCliente() {
             </CardContent>
           </Card>
 
-          {/* NPS Surveys */}
-          <Card 
-            className="cursor-pointer hover:shadow-md transition-shadow"
-            onClick={handleOpenNps}
-          >
-            <CardHeader>
-              <CardTitle className="text-lg flex items-center gap-2">
-                <Star className="w-5 h-5 text-purple-500" />
-                Pesquisas de NPS
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-8 text-muted-foreground">
-                <Star className="w-12 h-12 mx-auto mb-3 opacity-30" />
-                <p>Clique para ver pesquisas</p>
-                <p className="text-sm">Promotores, detratores e pontos fortes</p>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Testimonials and Satisfaction */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Testimonials */}
           <Card 
             className="cursor-pointer hover:shadow-md transition-shadow"
@@ -693,26 +676,6 @@ export default function SucessoCliente() {
                 <ThumbsUp className="w-12 h-12 mx-auto mb-3 opacity-30" />
                 <p>Clique para ver depoimentos</p>
                 <p className="text-sm">Elogios e feedbacks positivos</p>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Satisfaction Index */}
-          <Card 
-            className="cursor-pointer hover:shadow-md transition-shadow"
-            onClick={handleOpenSatisfacao}
-          >
-            <CardHeader>
-              <CardTitle className="text-lg flex items-center gap-2">
-                <TrendingUp className="w-5 h-5 text-blue-500" />
-                Índice de Satisfação
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-8 text-muted-foreground">
-                <TrendingUp className="w-12 h-12 mx-auto mb-3 opacity-30" />
-                <p>Clique para ver índices</p>
-                <p className="text-sm">Análise por período (3, 6, 9, 12 meses)</p>
               </div>
             </CardContent>
           </Card>

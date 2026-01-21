@@ -14,10 +14,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, AlertTriangle, Clock, CheckCircle, XCircle, Wrench, Search, Eye, FileText, Download, List, Timer, CalendarClock } from 'lucide-react';
+import { useManutencaoExport } from '@/hooks/useManutencaoExport';
+import { Plus, AlertTriangle, Clock, CheckCircle, XCircle, Wrench, Search, Eye, FileText, Download, List, Timer, CalendarClock, FileSpreadsheet } from 'lucide-react';
 import { format, differenceInDays, addDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
 interface Customer {
   id: string;
@@ -99,7 +101,15 @@ const STATUS_OPTIONS = [
 export default function Manutencao() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const {
+    exportPendenciasXLSX,
+    exportPendenciasPDF,
+    exportIndicadoresXLSX,
+    exportRelatorioCompletoPDF,
+  } = useManutencaoExport();
+  
   const [pendencias, setPendencias] = useState<Pendencia[]>([]);
+  const [chamados, setChamados] = useState<{ id: string; contrato: string; razao_social: string; tipo: string; status: string; descricao: string | null; equipamentos: string | null; tecnico_responsavel: string | null; data_agendada: string; data_conclusao: string | null }[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -128,6 +138,7 @@ export default function Manutencao() {
   useEffect(() => {
     fetchPendencias();
     fetchCustomers();
+    fetchChamados();
   }, []);
 
   const fetchPendencias = async () => {
@@ -148,6 +159,20 @@ export default function Manutencao() {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchChamados = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('manutencao_chamados')
+        .select('id, contrato, razao_social, tipo, status, descricao, equipamentos, tecnico_responsavel, data_agendada, data_conclusao')
+        .order('data_agendada', { ascending: true });
+
+      if (error) throw error;
+      setChamados(data || []);
+    } catch (error) {
+      console.error('Error fetching chamados:', error);
     }
   };
 
@@ -361,6 +386,52 @@ export default function Manutencao() {
     return prazo <= em24h;
   }).length;
 
+  // Separar pendências por tipo
+  const pendenciasClientes = pendencias.filter(p => p.tipo.startsWith('CLIENTE_'));
+  const pendenciasDepartamento = pendencias.filter(p => p.tipo.startsWith('DEPT_'));
+  
+  // Métricas de chamados
+  const chamadosPreventivos = chamados.filter(c => c.tipo === 'PREVENTIVO').length;
+  const chamadosEletivos = chamados.filter(c => c.tipo === 'ELETIVO').length;
+  const chamadosCorretivos = chamados.filter(c => c.tipo === 'CORRETIVO').length;
+
+  // Indicadores para exportação
+  const indicadores = {
+    abertas,
+    emAndamento,
+    concluidas: concluidas,
+    atrasadas,
+    tempoMedioConclusao,
+    pendenciasCriticas,
+    chamadosPreventivos,
+    chamadosEletivos,
+    chamadosCorretivos,
+  };
+
+  const handleExportPendenciasClientesPDF = () => {
+    exportPendenciasPDF(pendenciasClientes, 'Pendencias_Clientes');
+  };
+
+  const handleExportPendenciasClientesXLSX = () => {
+    exportPendenciasXLSX(pendenciasClientes, 'Pendencias_Clientes');
+  };
+
+  const handleExportPendenciasDeptPDF = () => {
+    exportPendenciasPDF(pendenciasDepartamento, 'Pendencias_Departamento');
+  };
+
+  const handleExportPendenciasDeptXLSX = () => {
+    exportPendenciasXLSX(pendenciasDepartamento, 'Pendencias_Departamento');
+  };
+
+  const handleExportRelatorioCompletoPDF = () => {
+    exportRelatorioCompletoPDF(indicadores, pendenciasClientes, pendenciasDepartamento, chamados);
+  };
+
+  const handleExportRelatorioCompletoXLSX = () => {
+    exportIndicadoresXLSX(indicadores, pendencias, chamados);
+  };
+
   // Filter pendencias
   const filteredPendencias = pendencias.filter(p => {
     const matchesSearch = 
@@ -432,7 +503,7 @@ export default function Manutencao() {
   return (
     <Layout>
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-4">
           <div>
             <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
               <Wrench className="h-6 w-6" />
@@ -442,13 +513,50 @@ export default function Manutencao() {
               Gerencie pendências de clientes e departamentos
             </p>
           </div>
-          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-            <DialogTrigger asChild>
-              <Button className="flex items-center gap-2">
-                <Plus className="h-4 w-4" />
-                Nova Pendência
-              </Button>
-            </DialogTrigger>
+          <div className="flex items-center gap-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="flex items-center gap-2">
+                  <Download className="h-4 w-4" />
+                  Exportar
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={handleExportRelatorioCompletoPDF}>
+                  <FileText className="h-4 w-4 mr-2" />
+                  Relatório Completo (PDF)
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleExportRelatorioCompletoXLSX}>
+                  <FileSpreadsheet className="h-4 w-4 mr-2" />
+                  Relatório Completo (Excel)
+                </DropdownMenuItem>
+                <Separator className="my-1" />
+                <DropdownMenuItem onClick={handleExportPendenciasClientesPDF}>
+                  <FileText className="h-4 w-4 mr-2" />
+                  Pendências Clientes (PDF)
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleExportPendenciasClientesXLSX}>
+                  <FileSpreadsheet className="h-4 w-4 mr-2" />
+                  Pendências Clientes (Excel)
+                </DropdownMenuItem>
+                <Separator className="my-1" />
+                <DropdownMenuItem onClick={handleExportPendenciasDeptPDF}>
+                  <FileText className="h-4 w-4 mr-2" />
+                  Pendências Departamento (PDF)
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleExportPendenciasDeptXLSX}>
+                  <FileSpreadsheet className="h-4 w-4 mr-2" />
+                  Pendências Departamento (Excel)
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+              <DialogTrigger asChild>
+                <Button className="flex items-center gap-2">
+                  <Plus className="h-4 w-4" />
+                  Nova Pendência
+                </Button>
+              </DialogTrigger>
             <DialogContent className="max-w-2xl">
               <DialogHeader>
                 <DialogTitle>Registrar Nova Pendência</DialogTitle>
@@ -562,6 +670,7 @@ export default function Manutencao() {
               </form>
             </DialogContent>
           </Dialog>
+          </div>
         </div>
 
         {/* Dashboard Cards */}

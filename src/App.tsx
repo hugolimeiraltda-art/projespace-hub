@@ -27,6 +27,7 @@ import CustomerDetail from "./pages/CustomerDetail";
 import ControleEstoque from "./pages/ControleEstoque";
 import SucessoCliente from "./pages/SucessoCliente";
 import SucessoClienteDetalhe from "./pages/SucessoClienteDetalhe";
+import Manutencao from "./pages/Manutencao";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -146,6 +147,10 @@ function AppRoutes() {
       <Route 
         path="/sucesso-cliente/:id" 
         element={<ProtectedRoute><SucessoClienteDetalhe /></ProtectedRoute>} 
+      />
+      <Route 
+        path="/manutencao" 
+        element={<ProtectedRoute><Manutencao /></ProtectedRoute>} 
       />
       <Route path="*" element={<NotFound />} />
     </Routes>

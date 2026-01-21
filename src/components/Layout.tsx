@@ -4,7 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { NotificationsSidebarItem } from '@/components/NotificationsSidebarItem';
 import { cn } from '@/lib/utils';
-import { LayoutDashboard, FolderPlus, List, Settings, LogOut, User, ClipboardList, Users, Briefcase, ShoppingCart, Package, Heart } from 'lucide-react';
+import { LayoutDashboard, FolderPlus, List, Settings, LogOut, User, ClipboardList, Users, Briefcase, ShoppingCart, Package, Heart, Wrench } from 'lucide-react';
 import emiveLogo from '@/assets/emive-logo.png';
 interface LayoutProps {
   children: ReactNode;
@@ -72,6 +72,11 @@ export function Layout({
     label: 'Controle de Estoque',
     icon: Package,
     roles: ['admin', 'administrativo', 'supervisor_operacoes']
+  }, {
+    path: '/manutencao',
+    label: 'Manutenção',
+    icon: Wrench,
+    roles: ['admin', 'implantacao', 'administrativo', 'supervisor_operacoes']
   }, {
     path: '/configuracoes',
     label: 'Configurações',

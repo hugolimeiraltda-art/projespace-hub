@@ -14,7 +14,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, AlertTriangle, Clock, CheckCircle, XCircle, Wrench, Search, Eye, FileText, Download } from 'lucide-react';
+import { Plus, AlertTriangle, Clock, CheckCircle, XCircle, Wrench, Search, Eye, FileText, Download, List } from 'lucide-react';
 import { format, differenceInDays, addDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -110,6 +110,9 @@ export default function Manutencao() {
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [customerDocuments, setCustomerDocuments] = useState<CustomerDocument[]>([]);
   const [loadingCustomer, setLoadingCustomer] = useState(false);
+  const [showAllPendencias, setShowAllPendencias] = useState(false);
+  
+  const PENDENCIAS_DISPLAY_LIMIT = 3;
 
   // Form state
   const [formData, setFormData] = useState({
@@ -633,8 +636,19 @@ export default function Manutencao() {
 
         {/* Pendencias Table */}
         <Card>
-          <CardHeader>
+          <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>Pendências ({filteredPendencias.length})</CardTitle>
+            {filteredPendencias.length > PENDENCIAS_DISPLAY_LIMIT && (
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => setShowAllPendencias(true)}
+                className="flex items-center gap-2"
+              >
+                <List className="h-4 w-4" />
+                Ver todas
+              </Button>
+            )}
           </CardHeader>
           <CardContent>
             {loading ? (
@@ -647,6 +661,106 @@ export default function Manutencao() {
               </div>
             ) : (
               <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Nº OS</TableHead>
+                      <TableHead>Ticket</TableHead>
+                      <TableHead>Cliente</TableHead>
+                      <TableHead>Contrato</TableHead>
+                      <TableHead>Tipo</TableHead>
+                      <TableHead>Setor</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Prazo</TableHead>
+                      <TableHead>Abertura</TableHead>
+                      <TableHead>Ações</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredPendencias.slice(0, PENDENCIAS_DISPLAY_LIMIT).map((pendencia) => (
+                      <TableRow key={pendencia.id}>
+                        <TableCell className="font-medium">{pendencia.numero_os}</TableCell>
+                        <TableCell>{pendencia.numero_ticket || '-'}</TableCell>
+                        <TableCell className="max-w-[200px] truncate" title={pendencia.razao_social}>
+                          {pendencia.razao_social}
+                        </TableCell>
+                        <TableCell>{pendencia.contrato}</TableCell>
+                        <TableCell>{getTipoLabel(pendencia.tipo)}</TableCell>
+                        <TableCell>{pendencia.setor}</TableCell>
+                        <TableCell>{getStatusBadge(pendencia.status)}</TableCell>
+                        <TableCell>
+                          <div className="flex flex-col gap-1">
+                            <span className="text-xs text-muted-foreground">
+                              {format(new Date(pendencia.data_prazo), 'dd/MM/yyyy', { locale: ptBR })}
+                            </span>
+                            {getPrazoBadge(pendencia)}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-xs text-muted-foreground">
+                          {format(new Date(pendencia.data_abertura), 'dd/MM/yyyy', { locale: ptBR })}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleViewCustomer(pendencia.customer_id)}
+                              className="flex items-center gap-1"
+                            >
+                              <Eye className="h-3 w-3" />
+                              Detalhes
+                            </Button>
+                            {pendencia.status !== 'CONCLUIDO' && pendencia.status !== 'CANCELADO' && (
+                              <Select
+                                value={pendencia.status}
+                                onValueChange={(value) => handleStatusChange(pendencia.id, value)}
+                              >
+                                <SelectTrigger className="w-[130px] h-8">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {STATUS_OPTIONS.map((status) => (
+                                    <SelectItem key={status.value} value={status.value}>
+                                      {status.label}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+                {filteredPendencias.length > PENDENCIAS_DISPLAY_LIMIT && (
+                  <div className="mt-4 text-center">
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      onClick={() => setShowAllPendencias(true)}
+                      className="text-muted-foreground hover:text-foreground"
+                    >
+                      + {filteredPendencias.length - PENDENCIAS_DISPLAY_LIMIT} pendências restantes
+                    </Button>
+                  </div>
+                )}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Dialog para ver todas pendências */}
+        <Dialog open={showAllPendencias} onOpenChange={setShowAllPendencias}>
+          <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <List className="h-5 w-5" />
+                Todas as Pendências ({filteredPendencias.length})
+              </DialogTitle>
+            </DialogHeader>
+            <ScrollArea className="max-h-[70vh]">
+              <div className="overflow-x-auto pr-4">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -720,9 +834,9 @@ export default function Manutencao() {
                   </TableBody>
                 </Table>
               </div>
-            )}
-          </CardContent>
-        </Card>
+            </ScrollArea>
+          </DialogContent>
+        </Dialog>
 
         {/* Customer Details Dialog */}
         <Dialog open={customerDetailOpen} onOpenChange={setCustomerDetailOpen}>

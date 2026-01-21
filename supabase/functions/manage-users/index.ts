@@ -11,7 +11,7 @@ interface CreateUserRequest {
   email: string;
   password: string;
   nome: string;
-  role: 'admin' | 'vendedor' | 'projetos' | 'gerente_comercial' | 'implantacao' | 'administrativo';
+  role: 'admin' | 'vendedor' | 'projetos' | 'gerente_comercial' | 'implantacao' | 'administrativo' | 'sucesso_cliente' | 'supervisor_operacoes';
   filial?: string;
   filiais?: string[];
   telefone?: string;
@@ -21,7 +21,7 @@ interface UpdateUserRequest {
   action: 'update';
   userId: string;
   nome?: string;
-  role?: 'admin' | 'vendedor' | 'projetos' | 'gerente_comercial' | 'implantacao' | 'administrativo';
+  role?: 'admin' | 'vendedor' | 'projetos' | 'gerente_comercial' | 'implantacao' | 'administrativo' | 'sucesso_cliente' | 'supervisor_operacoes';
   filial?: string;
   filiais?: string[];
   telefone?: string;

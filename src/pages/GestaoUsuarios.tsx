@@ -27,6 +27,7 @@ const ALL_ROLES: { value: UserRole; label: string }[] = [
   { value: 'implantacao', label: 'Implantação' },
   { value: 'gerente_comercial', label: 'Gerente Comercial' },
   { value: 'sucesso_cliente', label: 'Sucesso do Cliente' },
+  { value: 'supervisor_operacoes', label: 'Supervisor de Operações' },
   { value: 'administrativo', label: 'Administrativo' },
   { value: 'admin', label: 'Administrador' },
 ];
@@ -40,6 +41,8 @@ const getRoleBadgeVariant = (role: UserRole) => {
     case 'implantacao':
       return 'default';
     case 'sucesso_cliente':
+      return 'default';
+    case 'supervisor_operacoes':
       return 'default';
     case 'gerente_comercial':
       return 'outline';

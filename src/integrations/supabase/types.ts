@@ -763,6 +763,142 @@ export type Database = {
         }
         Relationships: []
       }
+      manutencao_agendas_preventivas: {
+        Row: {
+          ativo: boolean
+          contrato: string
+          created_at: string
+          created_by: string | null
+          created_by_name: string | null
+          customer_id: string
+          descricao: string
+          equipamentos: string | null
+          frequencia: Database["public"]["Enums"]["recorrencia_frequencia"]
+          id: string
+          proxima_execucao: string
+          razao_social: string
+          tecnico_responsavel: string | null
+          ultima_execucao: string | null
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          contrato: string
+          created_at?: string
+          created_by?: string | null
+          created_by_name?: string | null
+          customer_id: string
+          descricao: string
+          equipamentos?: string | null
+          frequencia: Database["public"]["Enums"]["recorrencia_frequencia"]
+          id?: string
+          proxima_execucao: string
+          razao_social: string
+          tecnico_responsavel?: string | null
+          ultima_execucao?: string | null
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          contrato?: string
+          created_at?: string
+          created_by?: string | null
+          created_by_name?: string | null
+          customer_id?: string
+          descricao?: string
+          equipamentos?: string | null
+          frequencia?: Database["public"]["Enums"]["recorrencia_frequencia"]
+          id?: string
+          proxima_execucao?: string
+          razao_social?: string
+          tecnico_responsavel?: string | null
+          ultima_execucao?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "manutencao_agendas_preventivas_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customer_portfolio"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      manutencao_chamados: {
+        Row: {
+          contrato: string
+          created_at: string
+          created_by: string | null
+          created_by_name: string | null
+          customer_id: string | null
+          data_agendada: string
+          data_conclusao: string | null
+          data_inicio: string | null
+          data_previsao_conclusao: string | null
+          descricao: string | null
+          equipamentos: string | null
+          historico: Json | null
+          id: string
+          observacoes_conclusao: string | null
+          razao_social: string
+          status: Database["public"]["Enums"]["manutencao_chamado_status"]
+          tecnico_responsavel: string | null
+          tipo: Database["public"]["Enums"]["manutencao_chamado_tipo"]
+          updated_at: string
+        }
+        Insert: {
+          contrato: string
+          created_at?: string
+          created_by?: string | null
+          created_by_name?: string | null
+          customer_id?: string | null
+          data_agendada: string
+          data_conclusao?: string | null
+          data_inicio?: string | null
+          data_previsao_conclusao?: string | null
+          descricao?: string | null
+          equipamentos?: string | null
+          historico?: Json | null
+          id?: string
+          observacoes_conclusao?: string | null
+          razao_social: string
+          status?: Database["public"]["Enums"]["manutencao_chamado_status"]
+          tecnico_responsavel?: string | null
+          tipo: Database["public"]["Enums"]["manutencao_chamado_tipo"]
+          updated_at?: string
+        }
+        Update: {
+          contrato?: string
+          created_at?: string
+          created_by?: string | null
+          created_by_name?: string | null
+          customer_id?: string | null
+          data_agendada?: string
+          data_conclusao?: string | null
+          data_inicio?: string | null
+          data_previsao_conclusao?: string | null
+          descricao?: string | null
+          equipamentos?: string | null
+          historico?: Json | null
+          id?: string
+          observacoes_conclusao?: string | null
+          razao_social?: string
+          status?: Database["public"]["Enums"]["manutencao_chamado_status"]
+          tecnico_responsavel?: string | null
+          tipo?: Database["public"]["Enums"]["manutencao_chamado_tipo"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "manutencao_chamados_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customer_portfolio"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       manutencao_pendencias: {
         Row: {
           contrato: string
@@ -1516,6 +1652,13 @@ export type Database = {
         | "RETORNAR"
       estoque_tipo: "INSTALACAO" | "MANUTENCAO" | "URGENCIA"
       implantacao_status: "A_EXECUTAR" | "EM_EXECUCAO" | "CONCLUIDO_IMPLANTACAO"
+      manutencao_chamado_status:
+        | "AGENDADO"
+        | "EM_ANDAMENTO"
+        | "CONCLUIDO"
+        | "CANCELADO"
+        | "REAGENDADO"
+      manutencao_chamado_tipo: "PREVENTIVO" | "ELETIVO" | "CORRETIVO"
       pendencia_status: "ABERTO" | "EM_ANDAMENTO" | "CONCLUIDO" | "CANCELADO"
       pendencia_tipo:
         | "CLIENTE_OBRA"
@@ -1537,6 +1680,14 @@ export type Database = {
         | "APROVADO_PROJETO"
         | "RECUSADO"
         | "CANCELADO"
+      recorrencia_frequencia:
+        | "SEMANAL"
+        | "QUINZENAL"
+        | "MENSAL"
+        | "BIMESTRAL"
+        | "TRIMESTRAL"
+        | "SEMESTRAL"
+        | "ANUAL"
       sale_status: "NAO_INICIADO" | "EM_ANDAMENTO" | "CONCLUIDO"
     }
     CompositeTypes: {
@@ -1699,6 +1850,14 @@ export const Constants = {
         "EM_EXECUCAO",
         "CONCLUIDO_IMPLANTACAO",
       ],
+      manutencao_chamado_status: [
+        "AGENDADO",
+        "EM_ANDAMENTO",
+        "CONCLUIDO",
+        "CANCELADO",
+        "REAGENDADO",
+      ],
+      manutencao_chamado_tipo: ["PREVENTIVO", "ELETIVO", "CORRETIVO"],
       pendencia_status: ["ABERTO", "EM_ANDAMENTO", "CONCLUIDO", "CANCELADO"],
       pendencia_tipo: [
         "CLIENTE_OBRA",
@@ -1721,6 +1880,15 @@ export const Constants = {
         "APROVADO_PROJETO",
         "RECUSADO",
         "CANCELADO",
+      ],
+      recorrencia_frequencia: [
+        "SEMANAL",
+        "QUINZENAL",
+        "MENSAL",
+        "BIMESTRAL",
+        "TRIMESTRAL",
+        "SEMESTRAL",
+        "ANUAL",
       ],
       sale_status: ["NAO_INICIADO", "EM_ANDAMENTO", "CONCLUIDO"],
     },

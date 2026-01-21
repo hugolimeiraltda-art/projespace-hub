@@ -78,7 +78,7 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // Check if requesting user is admin, gerente_comercial or administrativo
+    // Check if requesting user is admin, gerente_comercial, administrativo or sucesso_cliente
     const { data: roleData } = await supabaseAdmin
       .from("user_roles")
       .select("role")
@@ -88,10 +88,12 @@ const handler = async (req: Request): Promise<Response> => {
     const isAdmin = roleData?.role === "admin";
     const isGerenteComercial = roleData?.role === "gerente_comercial";
     const isAdministrativo = roleData?.role === "administrativo";
+    const isSucessoCliente = roleData?.role === "sucesso_cliente";
 
-    if (!roleData || (!isAdmin && !isGerenteComercial && !isAdministrativo)) {
+    if (!roleData || (!isAdmin && !isGerenteComercial && !isAdministrativo && !isSucessoCliente)) {
+      console.error("Permission denied for role:", roleData?.role);
       return new Response(
-        JSON.stringify({ error: "Only admins, administrative and commercial managers can manage users" }),
+        JSON.stringify({ error: "Only admins, administrative, commercial managers and customer success can manage users" }),
         { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -111,10 +113,10 @@ const handler = async (req: Request): Promise<Response> => {
           );
         }
 
-        // Administrativo can create all except admin
-        if (isAdministrativo && role === "admin") {
+        // Administrativo and Sucesso Cliente can create all except admin
+        if ((isAdministrativo || isSucessoCliente) && role === "admin") {
           return new Response(
-            JSON.stringify({ error: "Administrative users cannot create admin users" }),
+            JSON.stringify({ error: "You cannot create admin users" }),
             { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
           );
         }
@@ -173,10 +175,10 @@ const handler = async (req: Request): Promise<Response> => {
           );
         }
 
-        // Administrativo cannot set admin role
-        if (isAdministrativo && role === "admin") {
+        // Administrativo and Sucesso Cliente cannot set admin role
+        if ((isAdministrativo || isSucessoCliente) && role === "admin") {
           return new Response(
-            JSON.stringify({ error: "Administrative users cannot set admin role" }),
+            JSON.stringify({ error: "You cannot set admin role" }),
             { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
           );
         }
@@ -203,8 +205,8 @@ const handler = async (req: Request): Promise<Response> => {
           }
         }
 
-        // Update role (admin and administrativo can change roles)
-        if (role && (isAdmin || isAdministrativo)) {
+        // Update role (admin, administrativo and sucesso_cliente can change roles)
+        if (role && (isAdmin || isAdministrativo || isSucessoCliente)) {
           const { error: roleError } = await supabaseAdmin
             .from("user_roles")
             .update({ role })
@@ -264,10 +266,10 @@ const handler = async (req: Request): Promise<Response> => {
           );
         }
 
-        // Gerente comercial cannot delete users
-        if (isGerenteComercial) {
+        // Gerente comercial and Sucesso Cliente cannot delete users
+        if (isGerenteComercial || isSucessoCliente) {
           return new Response(
-            JSON.stringify({ error: "Commercial managers cannot delete users" }),
+            JSON.stringify({ error: "You cannot delete users" }),
             { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
           );
         }

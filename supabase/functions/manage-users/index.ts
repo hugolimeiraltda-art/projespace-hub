@@ -41,14 +41,27 @@ interface DeleteUserRequest {
 type RequestBody = CreateUserRequest | UpdateUserRequest | ResetPasswordRequest | DeleteUserRequest;
 
 const handler = async (req: Request): Promise<Response> => {
+  console.log("manage-users function called");
+  
   // Handle CORS preflight
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    
+    console.log("SUPABASE_URL exists:", !!supabaseUrl);
+    console.log("SUPABASE_SERVICE_ROLE_KEY exists:", !!serviceRoleKey);
+    
+    if (!supabaseUrl || !serviceRoleKey) {
+      console.error("Missing environment variables");
+      return new Response(
+        JSON.stringify({ error: "Server configuration error" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
     
     // Create admin client with service role
     const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey, {
@@ -60,7 +73,10 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Get the user token from the request to verify they're admin
     const authHeader = req.headers.get("Authorization");
+    console.log("Authorization header present:", !!authHeader);
+    
     if (!authHeader) {
+      console.error("Missing authorization header");
       return new Response(
         JSON.stringify({ error: "Missing authorization header" }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -69,14 +85,27 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Verify the requesting user is an admin
     const token = authHeader.replace("Bearer ", "");
+    console.log("Token extracted, verifying user...");
+    
     const { data: { user: requestingUser }, error: authError } = await supabaseAdmin.auth.getUser(token);
     
-    if (authError || !requestingUser) {
+    if (authError) {
+      console.error("Auth error:", authError.message);
       return new Response(
-        JSON.stringify({ error: "Invalid token" }),
+        JSON.stringify({ error: "Invalid token: " + authError.message }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+    
+    if (!requestingUser) {
+      console.error("No user found for token");
+      return new Response(
+        JSON.stringify({ error: "Invalid token - user not found" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    
+    console.log("User verified:", requestingUser.id);
 
     // Check if requesting user is admin, gerente_comercial, administrativo or sucesso_cliente
     const { data: roleData } = await supabaseAdmin

@@ -901,6 +901,9 @@ export type Database = {
       }
       manutencao_pendencias: {
         Row: {
+          comentario_sucesso_cliente: string | null
+          comentario_sucesso_cliente_at: string | null
+          comentario_sucesso_cliente_by: string | null
           contrato: string
           created_at: string
           created_by: string | null
@@ -921,6 +924,9 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          comentario_sucesso_cliente?: string | null
+          comentario_sucesso_cliente_at?: string | null
+          comentario_sucesso_cliente_by?: string | null
           contrato: string
           created_at?: string
           created_by?: string | null
@@ -941,6 +947,9 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          comentario_sucesso_cliente?: string | null
+          comentario_sucesso_cliente_at?: string | null
+          comentario_sucesso_cliente_by?: string | null
           contrato?: string
           created_at?: string
           created_by?: string | null

@@ -11,8 +11,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Calendar, Wrench, Shield, AlertTriangle, Search, Clock, CheckCircle, PlayCircle, XCircle, CalendarClock, History } from 'lucide-react';
+import { useManutencaoExport } from '@/hooks/useManutencaoExport';
+import { Plus, Calendar, Wrench, Shield, AlertTriangle, Search, Clock, CheckCircle, PlayCircle, XCircle, CalendarClock, History, Download, FileText, FileSpreadsheet } from 'lucide-react';
 import { format, addDays, addWeeks, addMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -94,6 +97,8 @@ interface ManutencaoChamadosProps {
 export function ManutencaoChamados({ customers }: ManutencaoChamadosProps) {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { exportChamadosXLSX, exportChamadosPDF } = useManutencaoExport();
+  
   const [activeTab, setActiveTab] = useState('chamados');
   const [chamados, setChamados] = useState<Chamado[]>([]);
   const [agendas, setAgendas] = useState<AgendaPreventiva[]>([]);
@@ -434,9 +439,33 @@ export function ManutencaoChamados({ customers }: ManutencaoChamadosProps) {
 
   const canManage = ['admin', 'supervisor_operacoes', 'implantacao'].includes(user?.role || '');
 
+  // Exportação de chamados
+  const handleExportChamadosPDF = () => {
+    exportChamadosPDF(filteredChamados, 'Chamados_Manutencao');
+  };
+
+  const handleExportChamadosXLSX = () => {
+    exportChamadosXLSX(filteredChamados, 'Chamados_Manutencao');
+  };
+
+  const handleExportPreventivosPDF = () => {
+    const preventivos = chamados.filter(c => c.tipo === 'PREVENTIVO');
+    exportChamadosPDF(preventivos, 'Chamados_Preventivos');
+  };
+
+  const handleExportEletivosPDF = () => {
+    const eletivos = chamados.filter(c => c.tipo === 'ELETIVO');
+    exportChamadosPDF(eletivos, 'Chamados_Eletivos');
+  };
+
+  const handleExportCorretivosPDF = () => {
+    const corretivos = chamados.filter(c => c.tipo === 'CORRETIVO');
+    exportChamadosPDF(corretivos, 'Chamados_Corretivos');
+  };
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
           <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
             <Wrench className="h-5 w-5" />
@@ -446,8 +475,40 @@ export function ManutencaoChamados({ customers }: ManutencaoChamadosProps) {
             Controle de manutenções preventivas, eletivas e corretivas
           </p>
         </div>
-        {canManage && (
-          <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="flex items-center gap-2">
+                <Download className="h-4 w-4" />
+                Exportar
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={handleExportChamadosPDF}>
+                <FileText className="h-4 w-4 mr-2" />
+                Todos Chamados (PDF)
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleExportChamadosXLSX}>
+                <FileSpreadsheet className="h-4 w-4 mr-2" />
+                Todos Chamados (Excel)
+              </DropdownMenuItem>
+              <Separator className="my-1" />
+              <DropdownMenuItem onClick={handleExportPreventivosPDF}>
+                <FileText className="h-4 w-4 mr-2" />
+                Preventivos (PDF)
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleExportEletivosPDF}>
+                <FileText className="h-4 w-4 mr-2" />
+                Eletivos (PDF)
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleExportCorretivosPDF}>
+                <FileText className="h-4 w-4 mr-2" />
+                Corretivos (PDF)
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          {canManage && (
+            <>
             <Dialog open={agendaDialogOpen} onOpenChange={setAgendaDialogOpen}>
               <DialogTrigger asChild>
                 <Button variant="outline" className="flex items-center gap-2">
@@ -666,8 +727,9 @@ export function ManutencaoChamados({ customers }: ManutencaoChamadosProps) {
                 </form>
               </DialogContent>
             </Dialog>
-          </div>
-        )}
+            </>
+          )}
+        </div>
       </div>
 
       {/* Metrics */}

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Layout } from '@/components/Layout';
+import { ManutencaoChamados } from '@/components/ManutencaoChamados';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,12 +12,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { Plus, AlertTriangle, Clock, CheckCircle, XCircle, Wrench, Search, Eye, FileText, Download } from 'lucide-react';
 import { format, differenceInDays, addDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Separator } from '@/components/ui/separator';
 
 interface Customer {
   id: string;
@@ -895,6 +896,10 @@ export default function Manutencao() {
             )}
           </DialogContent>
         </Dialog>
+
+        {/* Seção de Chamados de Manutenção */}
+        <Separator className="my-8" />
+        <ManutencaoChamados customers={customers} />
       </div>
     </Layout>
   );

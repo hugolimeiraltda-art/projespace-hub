@@ -3,6 +3,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Layout } from '@/components/Layout';
 import { ManutencaoChamados } from '@/components/ManutencaoChamados';
+import { PendenciasFullScreenTable } from '@/components/PendenciasFullScreenTable';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,7 +16,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { useManutencaoExport } from '@/hooks/useManutencaoExport';
-import { Plus, AlertTriangle, Clock, CheckCircle, XCircle, Wrench, Search, Eye, FileText, Download, List, Timer, CalendarClock, FileSpreadsheet } from 'lucide-react';
+import { Plus, AlertTriangle, Clock, CheckCircle, Wrench, Search, Eye, FileText, Download, List, Timer, CalendarClock, FileSpreadsheet } from 'lucide-react';
 import { format, differenceInDays, addDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -908,93 +909,16 @@ export default function Manutencao() {
           </CardContent>
         </Card>
 
-        {/* Dialog para ver todas pendências */}
-        <Dialog open={showAllPendencias} onOpenChange={setShowAllPendencias}>
-          <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <List className="h-5 w-5" />
-                Todas as Pendências ({filteredPendencias.length})
-              </DialogTitle>
-            </DialogHeader>
-            <ScrollArea className="max-h-[70vh]">
-              <div className="overflow-x-auto pr-4">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Nº OS</TableHead>
-                      <TableHead>Ticket</TableHead>
-                      <TableHead>Cliente</TableHead>
-                      <TableHead>Contrato</TableHead>
-                      <TableHead>Tipo</TableHead>
-                      <TableHead>Setor</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Prazo</TableHead>
-                      <TableHead>Abertura</TableHead>
-                      <TableHead>Ações</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredPendencias.map((pendencia) => (
-                      <TableRow key={pendencia.id}>
-                        <TableCell className="font-medium">{pendencia.numero_os}</TableCell>
-                        <TableCell>{pendencia.numero_ticket || '-'}</TableCell>
-                        <TableCell className="max-w-[200px] truncate" title={pendencia.razao_social}>
-                          {pendencia.razao_social}
-                        </TableCell>
-                        <TableCell>{pendencia.contrato}</TableCell>
-                        <TableCell>{getTipoLabel(pendencia.tipo)}</TableCell>
-                        <TableCell>{pendencia.setor}</TableCell>
-                        <TableCell>{getStatusBadge(pendencia.status)}</TableCell>
-                        <TableCell>
-                          <div className="flex flex-col gap-1">
-                            <span className="text-xs text-muted-foreground">
-                              {format(new Date(pendencia.data_prazo), 'dd/MM/yyyy', { locale: ptBR })}
-                            </span>
-                            {getPrazoBadge(pendencia)}
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-xs text-muted-foreground">
-                          {format(new Date(pendencia.data_abertura), 'dd/MM/yyyy', { locale: ptBR })}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleViewCustomer(pendencia.customer_id)}
-                              className="flex items-center gap-1"
-                            >
-                              <Eye className="h-3 w-3" />
-                              Detalhes
-                            </Button>
-                            {pendencia.status !== 'CONCLUIDO' && pendencia.status !== 'CANCELADO' && (
-                              <Select
-                                value={pendencia.status}
-                                onValueChange={(value) => handleStatusChange(pendencia.id, value)}
-                              >
-                                <SelectTrigger className="w-[130px] h-8">
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {STATUS_OPTIONS.map((status) => (
-                                    <SelectItem key={status.value} value={status.value}>
-                                      {status.label}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            )}
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            </ScrollArea>
-          </DialogContent>
-        </Dialog>
+        {/* Full screen table para ver todas pendências */}
+        <PendenciasFullScreenTable
+          pendencias={filteredPendencias}
+          isOpen={showAllPendencias}
+          onClose={() => setShowAllPendencias(false)}
+          onViewCustomer={handleViewCustomer}
+          onStatusChange={handleStatusChange}
+          getTipoLabel={getTipoLabel}
+          statusOptions={STATUS_OPTIONS}
+        />
 
         {/* Customer Details Dialog */}
         <Dialog open={customerDetailOpen} onOpenChange={setCustomerDetailOpen}>

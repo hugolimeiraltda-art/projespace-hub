@@ -1528,6 +1528,7 @@ export type Database = {
         | "DEPT_FATURAMENTO"
         | "DEPT_CONTAS_RECEBER"
         | "DEPT_FISCAL"
+        | "DEPT_IMPLANTACAO"
       project_status:
         | "RASCUNHO"
         | "ENVIADO"
@@ -1710,6 +1711,7 @@ export const Constants = {
         "DEPT_FATURAMENTO",
         "DEPT_CONTAS_RECEBER",
         "DEPT_FISCAL",
+        "DEPT_IMPLANTACAO",
       ],
       project_status: [
         "RASCUNHO",

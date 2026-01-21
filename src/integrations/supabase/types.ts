@@ -763,6 +763,77 @@ export type Database = {
         }
         Relationships: []
       }
+      manutencao_pendencias: {
+        Row: {
+          contrato: string
+          created_at: string
+          created_by: string | null
+          created_by_name: string | null
+          customer_id: string | null
+          data_abertura: string
+          data_conclusao: string | null
+          data_prazo: string
+          descricao: string | null
+          id: string
+          numero_os: string
+          numero_ticket: string | null
+          razao_social: string
+          setor: string
+          sla_dias: number
+          status: Database["public"]["Enums"]["pendencia_status"]
+          tipo: Database["public"]["Enums"]["pendencia_tipo"]
+          updated_at: string
+        }
+        Insert: {
+          contrato: string
+          created_at?: string
+          created_by?: string | null
+          created_by_name?: string | null
+          customer_id?: string | null
+          data_abertura?: string
+          data_conclusao?: string | null
+          data_prazo: string
+          descricao?: string | null
+          id?: string
+          numero_os: string
+          numero_ticket?: string | null
+          razao_social: string
+          setor: string
+          sla_dias?: number
+          status?: Database["public"]["Enums"]["pendencia_status"]
+          tipo: Database["public"]["Enums"]["pendencia_tipo"]
+          updated_at?: string
+        }
+        Update: {
+          contrato?: string
+          created_at?: string
+          created_by?: string | null
+          created_by_name?: string | null
+          customer_id?: string | null
+          data_abertura?: string
+          data_conclusao?: string | null
+          data_prazo?: string
+          descricao?: string | null
+          id?: string
+          numero_os?: string
+          numero_ticket?: string | null
+          razao_social?: string
+          setor?: string
+          sla_dias?: number
+          status?: Database["public"]["Enums"]["pendencia_status"]
+          tipo?: Database["public"]["Enums"]["pendencia_tipo"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "manutencao_pendencias_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customer_portfolio"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string
@@ -1445,6 +1516,18 @@ export type Database = {
         | "RETORNAR"
       estoque_tipo: "INSTALACAO" | "MANUTENCAO" | "URGENCIA"
       implantacao_status: "A_EXECUTAR" | "EM_EXECUCAO" | "CONCLUIDO_IMPLANTACAO"
+      pendencia_status: "ABERTO" | "EM_ANDAMENTO" | "CONCLUIDO" | "CANCELADO"
+      pendencia_tipo:
+        | "CLIENTE_OBRA"
+        | "CLIENTE_AGENDA"
+        | "CLIENTE_LIMPEZA_VEGETACAO"
+        | "CLIENTE_CONTRATACAO_SERVICOS"
+        | "DEPT_COMPRAS"
+        | "DEPT_CADASTRO"
+        | "DEPT_ALMOXARIFADO"
+        | "DEPT_FATURAMENTO"
+        | "DEPT_CONTAS_RECEBER"
+        | "DEPT_FISCAL"
       project_status:
         | "RASCUNHO"
         | "ENVIADO"
@@ -1614,6 +1697,19 @@ export const Constants = {
         "A_EXECUTAR",
         "EM_EXECUCAO",
         "CONCLUIDO_IMPLANTACAO",
+      ],
+      pendencia_status: ["ABERTO", "EM_ANDAMENTO", "CONCLUIDO", "CANCELADO"],
+      pendencia_tipo: [
+        "CLIENTE_OBRA",
+        "CLIENTE_AGENDA",
+        "CLIENTE_LIMPEZA_VEGETACAO",
+        "CLIENTE_CONTRATACAO_SERVICOS",
+        "DEPT_COMPRAS",
+        "DEPT_CADASTRO",
+        "DEPT_ALMOXARIFADO",
+        "DEPT_FATURAMENTO",
+        "DEPT_CONTAS_RECEBER",
+        "DEPT_FISCAL",
       ],
       project_status: [
         "RASCUNHO",

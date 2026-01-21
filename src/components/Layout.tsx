@@ -22,72 +22,90 @@ export function Layout({
     logout();
     navigate('/login');
   };
-  const navItems = [{
-    path: '/dashboard',
-    label: 'Dashboard',
-    icon: LayoutDashboard
-  }, {
-    path: '/projetos/novo',
-    label: 'Novo Projeto',
-    icon: FolderPlus,
-    roles: ['vendedor', 'admin', 'administrativo', 'sucesso_cliente', 'supervisor_operacoes']
-  }, {
-    path: '/informar-venda',
-    label: 'Informar Nova Venda',
-    icon: ShoppingCart,
-    roles: ['vendedor', 'admin', 'administrativo', 'sucesso_cliente', 'supervisor_operacoes']
-  }, {
-    path: '/projetos',
-    label: 'Meus Projetos',
-    icon: List,
-    roles: ['vendedor']
-  }, {
-    path: '/projetos',
-    label: 'Projetos',
-    icon: List,
-    roles: ['projetos', 'admin', 'gerente_comercial', 'administrativo'],
-    exact: true
-  }, {
-    path: '/startup-projetos',
-    label: 'Implantação',
-    icon: ClipboardList,
-    roles: ['implantacao', 'admin', 'administrativo', 'sucesso_cliente', 'supervisor_operacoes']
-  }, {
-    path: '/carteira-clientes',
-    label: 'Carteira de Clientes',
-    icon: Briefcase,
-    roles: ['projetos', 'admin', 'implantacao', 'administrativo', 'sucesso_cliente', 'supervisor_operacoes']
-  }, {
-    path: '/sucesso-cliente',
-    label: 'Sucesso do Cliente',
-    icon: Heart,
-    roles: ['projetos', 'admin', 'implantacao', 'administrativo', 'sucesso_cliente']
-  }, {
-    path: '/chamados',
-    label: 'Meus Chamados',
-    icon: ClipboardList,
-    roles: ['projetos', 'admin', 'administrativo']
-  }, {
-    path: '/controle-estoque',
-    label: 'Controle de Estoque',
-    icon: Package,
-    roles: ['admin', 'administrativo', 'supervisor_operacoes']
-  }, {
-    path: '/manutencao',
-    label: 'Manutenção',
-    icon: Wrench,
-    roles: ['admin', 'implantacao', 'administrativo', 'supervisor_operacoes']
-  }, {
-    path: '/configuracoes',
-    label: 'Configurações',
-    icon: Settings,
-    roles: ['admin', 'administrativo']
-  }, {
-    path: '/configuracoes/usuarios',
-    label: 'Gestão de Usuários',
-    icon: Users,
-    roles: ['gerente_comercial', 'administrativo', 'sucesso_cliente']
-  }];
+  const navItems = [
+    // 1. Dashboard - todos
+    {
+      path: '/dashboard',
+      label: 'Dashboard',
+      icon: LayoutDashboard
+    },
+    // 2. Novo Projeto
+    {
+      path: '/projetos/novo',
+      label: 'Novo Projeto',
+      icon: FolderPlus,
+      roles: ['vendedor', 'admin', 'administrativo', 'sucesso_cliente', 'supervisor_operacoes']
+    },
+    // 3. Informar Nova Venda
+    {
+      path: '/informar-venda',
+      label: 'Informar Nova Venda',
+      icon: ShoppingCart,
+      roles: ['vendedor', 'admin', 'administrativo', 'sucesso_cliente', 'supervisor_operacoes']
+    },
+    // 4. Projetos (Meus Projetos para vendedor, Projetos para outros)
+    {
+      path: '/projetos',
+      label: 'Meus Projetos',
+      icon: List,
+      roles: ['vendedor']
+    },
+    {
+      path: '/projetos',
+      label: 'Projetos',
+      icon: List,
+      roles: ['projetos', 'admin', 'gerente_comercial', 'administrativo'],
+      exact: true
+    },
+    // 5. Implantação
+    {
+      path: '/startup-projetos',
+      label: 'Implantação',
+      icon: ClipboardList,
+      roles: ['implantacao', 'admin', 'administrativo', 'sucesso_cliente', 'supervisor_operacoes']
+    },
+    // 6. Controle de Estoque
+    {
+      path: '/controle-estoque',
+      label: 'Controle de Estoque',
+      icon: Package,
+      roles: ['admin', 'administrativo', 'supervisor_operacoes']
+    },
+    // 7. Manutenção
+    {
+      path: '/manutencao',
+      label: 'Manutenção',
+      icon: Wrench,
+      roles: ['admin', 'implantacao', 'administrativo', 'supervisor_operacoes']
+    },
+    // 8. Carteira de Clientes
+    {
+      path: '/carteira-clientes',
+      label: 'Carteira de Clientes',
+      icon: Briefcase,
+      roles: ['projetos', 'admin', 'implantacao', 'administrativo', 'sucesso_cliente', 'supervisor_operacoes']
+    },
+    // 9. Sucesso do Cliente
+    {
+      path: '/sucesso-cliente',
+      label: 'Sucesso do Cliente',
+      icon: Heart,
+      roles: ['projetos', 'admin', 'implantacao', 'administrativo', 'sucesso_cliente']
+    },
+    // 10. Configurações (inclui Gestão de Usuários)
+    {
+      path: '/configuracoes',
+      label: 'Configurações',
+      icon: Settings,
+      roles: ['admin', 'administrativo']
+    },
+    {
+      path: '/configuracoes/usuarios',
+      label: 'Gestão de Usuários',
+      icon: Users,
+      roles: ['gerente_comercial', 'sucesso_cliente']
+    }
+  ];
   const filteredNavItems = navItems.filter(item => {
     if (!item.roles) return true;
     return user && item.roles.includes(user.role);

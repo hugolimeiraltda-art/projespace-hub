@@ -25,9 +25,7 @@ import {
   Package,
   Wrench,
   Heart,
-  ClipboardList,
   AlertTriangle,
-  TrendingUp,
   Star
 } from 'lucide-react';
 import { format, parseISO, isAfter, isBefore, addMonths, differenceInDays } from 'date-fns';
@@ -65,11 +63,6 @@ interface DashboardStats {
   pendenciasEmAndamento: number;
   pendenciasAtrasadas: number;
   pendenciasVenceHoje: number;
-  // Chamados (projetos role)
-  chamadosTotal: number;
-  chamadosEmRecebimento: number;
-  chamadosEmProducao: number;
-  chamadosConcluidos: number;
 }
 
 export default function Dashboard() {
@@ -98,10 +91,6 @@ export default function Dashboard() {
     pendenciasEmAndamento: 0,
     pendenciasAtrasadas: 0,
     pendenciasVenceHoje: 0,
-    chamadosTotal: 0,
-    chamadosEmRecebimento: 0,
-    chamadosEmProducao: 0,
-    chamadosConcluidos: 0,
   });
 
   // Define which sections each role can see - matching Layout.tsx menu permissions
@@ -116,8 +105,6 @@ export default function Dashboard() {
       canSeeCarteira: ['admin', 'projetos', 'implantacao', 'administrativo', 'sucesso_cliente', 'supervisor_operacoes'].includes(role),
       // Sucesso do Cliente: projetos, admin, implantacao, administrativo, sucesso_cliente
       canSeeSucesso: ['admin', 'projetos', 'implantacao', 'administrativo', 'sucesso_cliente'].includes(role),
-      // Meus Chamados: projetos, admin, administrativo
-      canSeeChamados: ['admin', 'projetos', 'administrativo'].includes(role),
       // Controle de Estoque: admin, administrativo, supervisor_operacoes
       canSeeEstoque: ['admin', 'administrativo', 'supervisor_operacoes'].includes(role),
       // Manutenção: admin, implantacao, administrativo, supervisor_operacoes
@@ -304,15 +291,6 @@ export default function Dashboard() {
       newStats.projectsEmAnalise = userProjects.filter(p => ['ENVIADO', 'EM_ANALISE'].includes(p.status)).length;
       newStats.projectsPendente = userProjects.filter(p => p.status === 'PENDENTE_INFO').length;
       newStats.projectsAprovado = userProjects.filter(p => p.status === 'APROVADO_PROJETO').length;
-
-      // Chamados (projetos role)
-      if (permissions.canSeeChamados) {
-        const chamadosProjects = projects.filter(p => p.status !== 'RASCUNHO');
-        newStats.chamadosTotal = chamadosProjects.length;
-        newStats.chamadosEmRecebimento = chamadosProjects.filter(p => p.engineering_status === 'EM_RECEBIMENTO').length;
-        newStats.chamadosEmProducao = chamadosProjects.filter(p => p.engineering_status === 'EM_PRODUCAO').length;
-        newStats.chamadosConcluidos = chamadosProjects.filter(p => p.engineering_status === 'CONCLUIDO').length;
-      }
 
       setStats(prev => ({ ...prev, ...newStats }));
     };
@@ -611,48 +589,6 @@ export default function Dashboard() {
           </div>
         )}
 
-        {/* Meus Chamados (projetos role) */}
-        {permissions.canSeeChamados && (
-          <div className="mb-8">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold flex items-center gap-2">
-                <ClipboardList className="w-5 h-5 text-primary" />
-                Chamados de Projetos
-              </h2>
-              <Button variant="ghost" size="sm" asChild>
-                <Link to="/chamados">
-                  Ver todos <ArrowRight className="w-4 h-4 ml-1" />
-                </Link>
-              </Button>
-            </div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <Card className="shadow-card">
-                <CardContent className="pt-4">
-                  <div className="text-2xl font-bold text-foreground">{stats.chamadosTotal}</div>
-                  <p className="text-xs text-muted-foreground">Total</p>
-                </CardContent>
-              </Card>
-              <Card className="shadow-card">
-                <CardContent className="pt-4">
-                  <div className="text-2xl font-bold text-status-sent">{stats.chamadosEmRecebimento}</div>
-                  <p className="text-xs text-muted-foreground">Em Recebimento</p>
-                </CardContent>
-              </Card>
-              <Card className="shadow-card">
-                <CardContent className="pt-4">
-                  <div className="text-2xl font-bold text-status-analysis">{stats.chamadosEmProducao}</div>
-                  <p className="text-xs text-muted-foreground">Em Produção</p>
-                </CardContent>
-              </Card>
-              <Card className="shadow-card">
-                <CardContent className="pt-4">
-                  <div className="text-2xl font-bold text-status-approved">{stats.chamadosConcluidos}</div>
-                  <p className="text-xs text-muted-foreground">Concluídos</p>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-        )}
 
         {/* Controle de Estoque */}
         {permissions.canSeeEstoque && (

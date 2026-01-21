@@ -12,14 +12,42 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, AlertTriangle, Clock, CheckCircle, XCircle, Wrench, Search } from 'lucide-react';
+import { Plus, AlertTriangle, Clock, CheckCircle, XCircle, Wrench, Search, Eye, FileText, Download } from 'lucide-react';
 import { format, differenceInDays, addDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Separator } from '@/components/ui/separator';
 
 interface Customer {
   id: string;
   contrato: string;
   razao_social: string;
+  endereco?: string | null;
+  contato_nome?: string | null;
+  contato_telefone?: string | null;
+  filial?: string | null;
+  sistema?: string | null;
+  noc?: string | null;
+  app?: string | null;
+  unidades?: number | null;
+  data_ativacao?: string | null;
+  mensalidade?: number | null;
+  transbordo?: boolean | null;
+  gateway?: boolean | null;
+  portoes?: number | null;
+  portas?: number | null;
+  cameras?: number | null;
+  catracas?: number | null;
+  cancelas?: number | null;
+}
+
+interface CustomerDocument {
+  id: string;
+  nome_arquivo: string;
+  arquivo_url: string;
+  tipo_arquivo: string | null;
+  tamanho: number | null;
+  created_at: string;
 }
 
 interface Pendencia {
@@ -55,6 +83,7 @@ const TIPOS_DEPARTAMENTO = [
   { value: 'DEPT_FATURAMENTO', label: 'Faturamento', setor: 'Faturamento', sla: 1 },
   { value: 'DEPT_CONTAS_RECEBER', label: 'Contas a Receber', setor: 'Contas a Receber', sla: 4 },
   { value: 'DEPT_FISCAL', label: 'Fiscal', setor: 'Fiscal', sla: 2 },
+  { value: 'DEPT_IMPLANTACAO', label: 'Implantação', setor: 'Implantação', sla: 4 },
 ];
 
 const TODOS_TIPOS = [...TIPOS_CLIENTE, ...TIPOS_DEPARTAMENTO];
@@ -76,6 +105,10 @@ export default function Manutencao() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [filterSetor, setFilterSetor] = useState<string>('all');
+  const [customerDetailOpen, setCustomerDetailOpen] = useState(false);
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+  const [customerDocuments, setCustomerDocuments] = useState<CustomerDocument[]>([]);
+  const [loadingCustomer, setLoadingCustomer] = useState(false);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -118,7 +151,7 @@ export default function Manutencao() {
     try {
       const { data, error } = await supabase
         .from('customer_portfolio')
-        .select('id, contrato, razao_social')
+        .select('*')
         .order('razao_social');
 
       if (error) throw error;
@@ -126,6 +159,60 @@ export default function Manutencao() {
     } catch (error) {
       console.error('Error fetching customers:', error);
     }
+  };
+
+  const fetchCustomerDetails = async (customerId: string) => {
+    setLoadingCustomer(true);
+    try {
+      // Fetch customer data
+      const { data: customerData, error: customerError } = await supabase
+        .from('customer_portfolio')
+        .select('*')
+        .eq('id', customerId)
+        .single();
+
+      if (customerError) throw customerError;
+      setSelectedCustomer(customerData);
+
+      // Fetch documents
+      const { data: docsData, error: docsError } = await supabase
+        .from('customer_documents')
+        .select('*')
+        .eq('customer_id', customerId)
+        .order('created_at', { ascending: false });
+
+      if (docsError) throw docsError;
+      setCustomerDocuments(docsData || []);
+      setCustomerDetailOpen(true);
+    } catch (error) {
+      console.error('Error fetching customer details:', error);
+      toast({
+        title: 'Erro',
+        description: 'Erro ao carregar detalhes do cliente',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoadingCustomer(false);
+    }
+  };
+
+  const handleViewCustomer = (customerId: string | null) => {
+    if (!customerId) {
+      toast({
+        title: 'Aviso',
+        description: 'Esta pendência não está vinculada a um cliente da carteira',
+        variant: 'destructive',
+      });
+      return;
+    }
+    fetchCustomerDetails(customerId);
+  };
+
+  const formatFileSize = (bytes: number | null) => {
+    if (!bytes) return '-';
+    const kb = bytes / 1024;
+    if (kb < 1024) return `${kb.toFixed(1)} KB`;
+    return `${(kb / 1024).toFixed(1)} MB`;
   };
 
   const handleCustomerSelect = (customerId: string) => {
@@ -171,7 +258,7 @@ export default function Manutencao() {
           contrato: formData.contrato,
           razao_social: formData.razao_social,
           numero_ticket: formData.numero_ticket || null,
-          tipo: formData.tipo as "CLIENTE_OBRA" | "CLIENTE_AGENDA" | "CLIENTE_LIMPEZA_VEGETACAO" | "CLIENTE_CONTRATACAO_SERVICOS" | "DEPT_COMPRAS" | "DEPT_CADASTRO" | "DEPT_ALMOXARIFADO" | "DEPT_FATURAMENTO" | "DEPT_CONTAS_RECEBER" | "DEPT_FISCAL",
+          tipo: formData.tipo as "CLIENTE_OBRA" | "CLIENTE_AGENDA" | "CLIENTE_LIMPEZA_VEGETACAO" | "CLIENTE_CONTRATACAO_SERVICOS" | "DEPT_COMPRAS" | "DEPT_CADASTRO" | "DEPT_ALMOXARIFADO" | "DEPT_FATURAMENTO" | "DEPT_CONTAS_RECEBER" | "DEPT_FISCAL" | "DEPT_IMPLANTACAO",
           setor: tipoInfo.setor,
           descricao: formData.descricao || null,
           sla_dias: tipoInfo.sla,
@@ -598,23 +685,34 @@ export default function Manutencao() {
                           {format(new Date(pendencia.data_abertura), 'dd/MM/yyyy', { locale: ptBR })}
                         </TableCell>
                         <TableCell>
-                          {pendencia.status !== 'CONCLUIDO' && pendencia.status !== 'CANCELADO' && (
-                            <Select
-                              value={pendencia.status}
-                              onValueChange={(value) => handleStatusChange(pendencia.id, value)}
+                          <div className="flex items-center gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleViewCustomer(pendencia.customer_id)}
+                              className="flex items-center gap-1"
                             >
-                              <SelectTrigger className="w-[130px] h-8">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {STATUS_OPTIONS.map((status) => (
-                                  <SelectItem key={status.value} value={status.value}>
-                                    {status.label}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          )}
+                              <Eye className="h-3 w-3" />
+                              Detalhes
+                            </Button>
+                            {pendencia.status !== 'CONCLUIDO' && pendencia.status !== 'CANCELADO' && (
+                              <Select
+                                value={pendencia.status}
+                                onValueChange={(value) => handleStatusChange(pendencia.id, value)}
+                              >
+                                <SelectTrigger className="w-[130px] h-8">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {STATUS_OPTIONS.map((status) => (
+                                    <SelectItem key={status.value} value={status.value}>
+                                      {status.label}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            )}
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -624,6 +722,179 @@ export default function Manutencao() {
             )}
           </CardContent>
         </Card>
+
+        {/* Customer Details Dialog */}
+        <Dialog open={customerDetailOpen} onOpenChange={setCustomerDetailOpen}>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Eye className="h-5 w-5" />
+                Detalhes do Cliente
+              </DialogTitle>
+            </DialogHeader>
+            {loadingCustomer ? (
+              <div className="flex justify-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            ) : selectedCustomer && (
+              <ScrollArea className="max-h-[70vh]">
+                <div className="space-y-6 pr-4">
+                  {/* Informações Gerais */}
+                  <div>
+                    <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
+                      <Wrench className="h-4 w-4" />
+                      Informações Gerais
+                    </h3>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                      <div>
+                        <Label className="text-muted-foreground text-xs">Razão Social</Label>
+                        <p className="font-medium">{selectedCustomer.razao_social}</p>
+                      </div>
+                      <div>
+                        <Label className="text-muted-foreground text-xs">Contrato</Label>
+                        <p className="font-medium">{selectedCustomer.contrato}</p>
+                      </div>
+                      <div>
+                        <Label className="text-muted-foreground text-xs">Filial</Label>
+                        <p className="font-medium">{selectedCustomer.filial || '-'}</p>
+                      </div>
+                      <div>
+                        <Label className="text-muted-foreground text-xs">Endereço</Label>
+                        <p className="font-medium">{selectedCustomer.endereco || '-'}</p>
+                      </div>
+                      <div>
+                        <Label className="text-muted-foreground text-xs">Contato</Label>
+                        <p className="font-medium">{selectedCustomer.contato_nome || '-'}</p>
+                      </div>
+                      <div>
+                        <Label className="text-muted-foreground text-xs">Telefone</Label>
+                        <p className="font-medium">{selectedCustomer.contato_telefone || '-'}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <Separator />
+
+                  {/* Informações Técnicas */}
+                  <div>
+                    <h3 className="text-lg font-semibold mb-3">Informações Técnicas</h3>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      <div>
+                        <Label className="text-muted-foreground text-xs">Sistema</Label>
+                        <p className="font-medium">{selectedCustomer.sistema || '-'}</p>
+                      </div>
+                      <div>
+                        <Label className="text-muted-foreground text-xs">NOC</Label>
+                        <p className="font-medium">{selectedCustomer.noc || '-'}</p>
+                      </div>
+                      <div>
+                        <Label className="text-muted-foreground text-xs">App</Label>
+                        <p className="font-medium">{selectedCustomer.app || '-'}</p>
+                      </div>
+                      <div>
+                        <Label className="text-muted-foreground text-xs">Unidades</Label>
+                        <p className="font-medium">{selectedCustomer.unidades || '-'}</p>
+                      </div>
+                      <div>
+                        <Label className="text-muted-foreground text-xs">Portões</Label>
+                        <p className="font-medium">{selectedCustomer.portoes || 0}</p>
+                      </div>
+                      <div>
+                        <Label className="text-muted-foreground text-xs">Portas</Label>
+                        <p className="font-medium">{selectedCustomer.portas || 0}</p>
+                      </div>
+                      <div>
+                        <Label className="text-muted-foreground text-xs">Câmeras</Label>
+                        <p className="font-medium">{selectedCustomer.cameras || 0}</p>
+                      </div>
+                      <div>
+                        <Label className="text-muted-foreground text-xs">Catracas</Label>
+                        <p className="font-medium">{selectedCustomer.catracas || 0}</p>
+                      </div>
+                      <div>
+                        <Label className="text-muted-foreground text-xs">Cancelas</Label>
+                        <p className="font-medium">{selectedCustomer.cancelas || 0}</p>
+                      </div>
+                      <div>
+                        <Label className="text-muted-foreground text-xs">Transbordo</Label>
+                        <p className="font-medium">{selectedCustomer.transbordo ? 'Sim' : 'Não'}</p>
+                      </div>
+                      <div>
+                        <Label className="text-muted-foreground text-xs">Gateway</Label>
+                        <p className="font-medium">{selectedCustomer.gateway ? 'Sim' : 'Não'}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <Separator />
+
+                  {/* Informações Financeiras */}
+                  <div>
+                    <h3 className="text-lg font-semibold mb-3">Informações Financeiras</h3>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                      <div>
+                        <Label className="text-muted-foreground text-xs">Mensalidade</Label>
+                        <p className="font-medium">
+                          {selectedCustomer.mensalidade 
+                            ? `R$ ${selectedCustomer.mensalidade.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
+                            : '-'}
+                        </p>
+                      </div>
+                      <div>
+                        <Label className="text-muted-foreground text-xs">Data de Ativação</Label>
+                        <p className="font-medium">
+                          {selectedCustomer.data_ativacao 
+                            ? format(new Date(selectedCustomer.data_ativacao), 'dd/MM/yyyy', { locale: ptBR })
+                            : '-'}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <Separator />
+
+                  {/* Documentos */}
+                  <div>
+                    <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
+                      <FileText className="h-4 w-4" />
+                      Documentos ({customerDocuments.length})
+                    </h3>
+                    {customerDocuments.length === 0 ? (
+                      <p className="text-muted-foreground text-sm">Nenhum documento cadastrado</p>
+                    ) : (
+                      <div className="space-y-2">
+                        {customerDocuments.map((doc) => (
+                          <div 
+                            key={doc.id} 
+                            className="flex items-center justify-between p-3 border rounded-lg hover:bg-accent/50 transition-colors"
+                          >
+                            <div className="flex items-center gap-3">
+                              <FileText className="h-5 w-5 text-muted-foreground" />
+                              <div>
+                                <p className="font-medium text-sm">{doc.nome_arquivo}</p>
+                                <p className="text-xs text-muted-foreground">
+                                  {doc.tipo_arquivo || 'Documento'} • {formatFileSize(doc.tamanho)} • {format(new Date(doc.created_at), 'dd/MM/yyyy', { locale: ptBR })}
+                                </p>
+                              </div>
+                            </div>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => window.open(doc.arquivo_url, '_blank')}
+                            >
+                              <Download className="h-4 w-4 mr-1" />
+                              Baixar
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </ScrollArea>
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </Layout>
   );

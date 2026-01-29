@@ -122,6 +122,15 @@ export default function ControleEstoque() {
 
   const [deletingProductId, setDeletingProductId] = useState<string | null>(null);
 
+  // Mapeamento de códigos de local de estoque para cidade e tipo
+  const LOCATION_CODE_MAP: Record<string, { cidade: string; tipo: string }> = {
+    '135000': { cidade: 'BH', tipo: 'INSTALACAO' },
+    '139000': { cidade: 'BH', tipo: 'MANUTENCAO' },
+    '225104': { cidade: 'VIX', tipo: 'MANUTENCAO' },
+    '2205900': { cidade: 'RIO', tipo: 'MANUTENCAO' },
+    '2250800': { cidade: 'CD_SR', tipo: 'INSTALACAO' },
+  };
+
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -141,131 +150,103 @@ export default function ControleEstoque() {
       const data = await file.arrayBuffer();
       const workbook = XLSX.read(data, { type: 'array' });
 
-      const sheetTypeMap: Record<string, string> = {
-        'Instalação': 'INSTALACAO',
-        'Manutenção': 'MANUTENCAO',
-        'Urgência': 'URGENCIA',
-      };
+      // Pegar a primeira aba
+      const sheetName = workbook.SheetNames[0];
+      const sheet = workbook.Sheets[sheetName];
+      const jsonData = XLSX.utils.sheet_to_json(sheet, { header: 1 }) as (string | number)[][];
 
-      const itemMap = new Map<string, { modelo: string; estoques: { cidade: string; tipo: string; minimo: number; atual: number }[] }>();
+      // Encontrar a linha de cabeçalho (procurar por "Código" ou "Produto")
+      let headerRowIndex = -1;
+      let codigoColIndex = -1;  // Coluna D - Código
+      let produtoColIndex = -1; // Coluna E - Produto
+      let localColIndex = -1;   // Coluna F - Local (código do local de estoque)
+      let estoqueColIndex = -1; // Coluna J - Estoque
 
-      for (const sheetName of workbook.SheetNames) {
-        const sheet = workbook.Sheets[sheetName];
-        const jsonData = XLSX.utils.sheet_to_json(sheet, { header: 1 }) as (string | number)[][];
+      for (let i = 0; i < Math.min(20, jsonData.length); i++) {
+        const row = jsonData[i];
+        if (!row) continue;
 
-        let tipo = '';
-        
-        for (const [key, value] of Object.entries(sheetTypeMap)) {
-          if (sheetName.toLowerCase().includes(key.toLowerCase())) {
-            tipo = value;
-            break;
+        for (let j = 0; j < row.length; j++) {
+          const cellValue = String(row[j] || '').toLowerCase();
+          
+          if (cellValue === 'código') {
+            codigoColIndex = j;
+            headerRowIndex = i;
+          }
+          if (cellValue === 'produto') {
+            produtoColIndex = j;
+          }
+          if (cellValue === 'local') {
+            localColIndex = j;
+          }
+          if (cellValue === 'estoque') {
+            estoqueColIndex = j;
           }
         }
 
-        if (!tipo && jsonData[0] && jsonData[0][0]) {
-          const firstCell = String(jsonData[0][0]).toLowerCase();
-          if (firstCell.includes('instalação') || firstCell.includes('instalacao')) {
-            tipo = 'INSTALACAO';
-          } else if (firstCell.includes('manutenção') || firstCell.includes('manutencao')) {
-            tipo = 'MANUTENCAO';
-          } else if (firstCell.includes('urgência') || firstCell.includes('urgencia')) {
-            tipo = 'URGENCIA';
-          }
-        }
-
-        if (!tipo) continue;
-
-        let headerRowIndex = -1;
-        let codigoColIndex = -1;
-        let modeloColIndex = -1;
-        const cidadeColIndexes: Record<string, number> = {};
-
-        for (let i = 0; i < Math.min(20, jsonData.length); i++) {
-          const row = jsonData[i];
-          if (!row) continue;
-
-          for (let j = 0; j < row.length; j++) {
-            const cellValue = String(row[j] || '').toLowerCase();
-            
-            if (cellValue.includes('sankhya') || cellValue === 'cód sankhya') {
-              codigoColIndex = j;
-              headerRowIndex = i;
-            }
-            if (cellValue.includes('modelo') || cellValue === 'modelo') {
-              modeloColIndex = j;
-            }
-          }
-
-          if (headerRowIndex === i) {
-            for (let j = 0; j < row.length; j++) {
-              const cellValue = String(row[j] || '').toUpperCase();
-              const prevRowValue = i > 0 ? String(jsonData[i - 1]?.[j] || '').toUpperCase() : '';
-              
-              if (cellValue.includes('BH') || prevRowValue.includes('BH')) {
-                cidadeColIndexes['BH'] = j;
-              }
-              if (cellValue.includes('VIX') || prevRowValue.includes('VIX')) {
-                cidadeColIndexes['VIX'] = j;
-              }
-              if (cellValue.includes('RIO') || prevRowValue.includes('RIO')) {
-                cidadeColIndexes['RIO'] = j;
-              }
-            }
-            break;
-          }
-        }
-
-        if (headerRowIndex === -1 || codigoColIndex === -1) continue;
-
-        if (modeloColIndex === -1) {
-          modeloColIndex = codigoColIndex - 1;
-        }
-
-        for (let i = headerRowIndex + 1; i < jsonData.length; i++) {
-          const row = jsonData[i];
-          if (!row) continue;
-
-          const codigo = String(row[codigoColIndex] || '').trim();
-          if (!codigo || codigo === 'undefined' || codigo === 'null' || codigo === '') continue;
-
-          const modelo = String(row[modeloColIndex] || 'Sem modelo').trim();
-
-          if (!itemMap.has(codigo)) {
-            itemMap.set(codigo, { modelo, estoques: [] });
-          }
-
-          const item = itemMap.get(codigo)!;
-
-          for (const [cidade, colIndex] of Object.entries(cidadeColIndexes)) {
-            const minValue = row[colIndex];
-            const minimo = typeof minValue === 'number' ? minValue : parseInt(String(minValue || '0'), 10) || 0;
-            
-            if (minimo > 0) {
-              item.estoques.push({
-                cidade,
-                tipo,
-                minimo,
-                atual: 0,
-              });
-            }
-          }
-        }
+        if (headerRowIndex === i) break;
       }
 
-      const stockData: { codigo: string; modelo: string; estoques: { cidade: string; tipo: string; minimo: number; atual: number }[] }[] = [];
-      for (const [codigo, data] of itemMap) {
-        stockData.push({ codigo, ...data });
-      }
-
-      if (stockData.length === 0) {
+      if (headerRowIndex === -1 || codigoColIndex === -1 || localColIndex === -1 || estoqueColIndex === -1) {
         toast({
-          title: 'Nenhum dado encontrado',
-          description: 'Não foi possível encontrar dados válidos na planilha.',
+          title: 'Formato de planilha inválido',
+          description: 'Não foi possível encontrar as colunas necessárias (Código, Local, Estoque).',
           variant: 'destructive',
         });
         setIsImporting(false);
         return;
       }
+
+      // Processar linhas de dados filtrando apenas os locais válidos
+      const stockRows: { codigo: string; modelo: string; localCode: string; estoque: number }[] = [];
+
+      for (let i = headerRowIndex + 1; i < jsonData.length; i++) {
+        const row = jsonData[i];
+        if (!row) continue;
+
+        const codigo = String(row[codigoColIndex] || '').trim();
+        if (!codigo || codigo === 'undefined' || codigo === 'null' || codigo === '') continue;
+
+        const localCode = String(row[localColIndex] || '').trim();
+        
+        // Verificar se é um local válido
+        if (!LOCATION_CODE_MAP[localCode]) continue;
+
+        const modelo = String(row[produtoColIndex] || 'Sem modelo').trim();
+        
+        // Pegar estoque da coluna J - converter string com vírgula para número
+        let estoqueValue = row[estoqueColIndex];
+        let estoque = 0;
+        
+        if (typeof estoqueValue === 'number') {
+          estoque = estoqueValue;
+        } else if (typeof estoqueValue === 'string') {
+          // Remover separadores de milhar (.) e converter vírgula para ponto
+          const cleanValue = estoqueValue.replace(/\./g, '').replace(',', '.');
+          estoque = parseFloat(cleanValue) || 0;
+        }
+
+        if (estoque > 0) {
+          stockRows.push({
+            codigo,
+            modelo,
+            localCode,
+            estoque,
+          });
+        }
+      }
+
+      if (stockRows.length === 0) {
+        toast({
+          title: 'Nenhum dado encontrado',
+          description: 'Não foram encontrados registros válidos nos locais de estoque permitidos (BH, VIX, RIO, CD_SR).',
+          variant: 'destructive',
+        });
+        setIsImporting(false);
+        return;
+      }
+
+      console.log(`Enviando ${stockRows.length} linhas para importação`);
 
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
@@ -279,7 +260,7 @@ export default function ControleEstoque() {
       }
 
       const { data: result, error } = await supabase.functions.invoke('import-estoque', {
-        body: { stockData, fileName: file.name },
+        body: { stockRows, fileName: file.name },
       });
 
       if (error) {

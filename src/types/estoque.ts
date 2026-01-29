@@ -4,7 +4,7 @@ export type EstoqueStatus = 'OK' | 'CRITICO' | 'SEM_BASE';
 
 export interface LocalEstoque {
   id: string;
-  cidade: 'BH' | 'VIX' | 'RIO';
+  cidade: 'BH' | 'VIX' | 'RIO' | 'CD_SR';
   tipo: EstoqueTipo;
   nome_local: string;
   created_at: string;

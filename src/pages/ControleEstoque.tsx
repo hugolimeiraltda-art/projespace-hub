@@ -6,6 +6,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Progress } from '@/components/ui/progress';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import {
   Select,
   SelectContent,
@@ -64,6 +66,8 @@ import {
   ShoppingCart,
   CheckCheck,
   Trash2,
+  XCircle,
+  Loader2,
 } from 'lucide-react';
 import { useEstoque } from '@/hooks/useEstoque';
 import { useToast } from '@/hooks/use-toast';
@@ -80,10 +84,24 @@ import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
+interface ImportStatus {
+  stage: 'idle' | 'reading' | 'processing' | 'uploading' | 'success' | 'error';
+  progress: number;
+  message: string;
+  details?: string;
+  itemsProcessed?: number;
+  totalItems?: number;
+}
+
 export default function ControleEstoque() {
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isImporting, setIsImporting] = useState(false);
+  const [importStatus, setImportStatus] = useState<ImportStatus>({
+    stage: 'idle',
+    progress: 0,
+    message: '',
+  });
   const [showNewProductDialog, setShowNewProductDialog] = useState(false);
   const [newProductCodigo, setNewProductCodigo] = useState('');
   const [newProductModelo, setNewProductModelo] = useState('');
@@ -131,6 +149,14 @@ export default function ControleEstoque() {
     '2250800': { cidade: 'CD_SR', tipo: 'INSTALACAO' },
   };
 
+  const resetImportStatus = () => {
+    setImportStatus({
+      stage: 'idle',
+      progress: 0,
+      message: '',
+    });
+  };
+
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -145,10 +171,23 @@ export default function ControleEstoque() {
     }
 
     setIsImporting(true);
+    setImportStatus({
+      stage: 'reading',
+      progress: 10,
+      message: 'Lendo arquivo Excel...',
+      details: file.name,
+    });
 
     try {
       const data = await file.arrayBuffer();
       const workbook = XLSX.read(data, { type: 'array' });
+
+      setImportStatus({
+        stage: 'processing',
+        progress: 20,
+        message: 'Processando planilha...',
+        details: 'Buscando cabeçalhos e colunas',
+      });
 
       // Pegar a primeira aba
       const sheetName = workbook.SheetNames[0];
@@ -210,25 +249,47 @@ export default function ControleEstoque() {
       if (headerRowIndex === -1 || codigoColIndex === -1 || localColIndex === -1 || estoqueColIndex === -1) {
         console.error('Colunas não encontradas:', { headerRowIndex, codigoColIndex, localColIndex, estoqueColIndex });
         console.log('Primeiras 5 linhas da planilha:', jsonData.slice(0, 5));
-        toast({
-          title: 'Formato de planilha inválido',
-          description: `Não foi possível encontrar as colunas necessárias. Encontrado: Código=${codigoColIndex >= 0 ? 'Sim' : 'Não'}, Local=${localColIndex >= 0 ? 'Sim' : 'Não'}, Estoque=${estoqueColIndex >= 0 ? 'Sim' : 'Não'}`,
-          variant: 'destructive',
+        setImportStatus({
+          stage: 'error',
+          progress: 100,
+          message: 'Formato de planilha inválido',
+          details: `Não foi possível encontrar as colunas necessárias. Encontrado: Código=${codigoColIndex >= 0 ? 'Sim' : 'Não'}, Local=${localColIndex >= 0 ? 'Sim' : 'Não'}, Estoque=${estoqueColIndex >= 0 ? 'Sim' : 'Não'}`,
         });
         setIsImporting(false);
         return;
       }
 
+      setImportStatus({
+        stage: 'processing',
+        progress: 40,
+        message: 'Filtrando dados válidos...',
+        details: 'Verificando locais de estoque permitidos',
+      });
+
       // Processar linhas de dados filtrando apenas os locais válidos
       const stockRows: { codigo: string; modelo: string; localCode: string; estoque: number }[] = [];
       let linhasProcessadas = 0;
       let linhasComLocalValido = 0;
+      const totalLinhas = jsonData.length - headerRowIndex - 1;
 
       for (let i = headerRowIndex + 1; i < jsonData.length; i++) {
         const row = jsonData[i];
         if (!row) continue;
 
         linhasProcessadas++;
+
+        // Update progress every 1000 rows
+        if (linhasProcessadas % 1000 === 0) {
+          const progressPercent = 40 + Math.round((linhasProcessadas / totalLinhas) * 30);
+          setImportStatus({
+            stage: 'processing',
+            progress: Math.min(progressPercent, 70),
+            message: 'Processando dados...',
+            details: `${linhasProcessadas.toLocaleString('pt-BR')} linhas processadas`,
+            itemsProcessed: linhasProcessadas,
+            totalItems: totalLinhas,
+          });
+        }
 
         const codigo = String(row[codigoColIndex] || '').trim();
         if (!codigo || codigo === 'undefined' || codigo === 'null' || codigo === '') continue;
@@ -268,27 +329,44 @@ export default function ControleEstoque() {
       console.log(`Linhas processadas: ${linhasProcessadas}, com local válido: ${linhasComLocalValido}, para importar: ${stockRows.length}`);
 
       if (stockRows.length === 0) {
-        toast({
-          title: 'Nenhum dado encontrado',
-          description: `Processadas ${linhasProcessadas} linhas, mas nenhuma com locais válidos (135000, 139000, 225104, 2205900, 2250800).`,
-          variant: 'destructive',
+        setImportStatus({
+          stage: 'error',
+          progress: 100,
+          message: 'Nenhum dado encontrado',
+          details: `Processadas ${linhasProcessadas.toLocaleString('pt-BR')} linhas, mas nenhuma com locais válidos (135000, 139000, 225104, 2205900, 2250800).`,
         });
         setIsImporting(false);
         return;
       }
+
+      setImportStatus({
+        stage: 'uploading',
+        progress: 75,
+        message: 'Enviando para o servidor...',
+        details: `${stockRows.length.toLocaleString('pt-BR')} registros para importar`,
+        itemsProcessed: stockRows.length,
+      });
 
       console.log(`Enviando ${stockRows.length} linhas para importação`);
 
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
-        toast({
-          title: 'Sessão expirada',
-          description: 'Por favor, faça login novamente.',
-          variant: 'destructive',
+        setImportStatus({
+          stage: 'error',
+          progress: 100,
+          message: 'Sessão expirada',
+          details: 'Por favor, faça login novamente.',
         });
         setIsImporting(false);
         return;
       }
+
+      setImportStatus({
+        stage: 'uploading',
+        progress: 85,
+        message: 'Salvando no banco de dados...',
+        details: 'Aguarde enquanto os dados são gravados',
+      });
 
       const { data: result, error } = await supabase.functions.invoke('import-estoque', {
         body: { stockRows, fileName: file.name },
@@ -296,24 +374,29 @@ export default function ControleEstoque() {
 
       if (error) {
         console.error('Import error:', error);
-        toast({
-          title: 'Erro na importação',
-          description: error.message || 'Ocorreu um erro ao importar os dados.',
-          variant: 'destructive',
+        setImportStatus({
+          stage: 'error',
+          progress: 100,
+          message: 'Erro na importação',
+          details: error.message || 'Ocorreu um erro ao importar os dados.',
         });
       } else {
-        toast({
-          title: 'Importação concluída',
-          description: result.message,
+        setImportStatus({
+          stage: 'success',
+          progress: 100,
+          message: 'Importação concluída com sucesso!',
+          details: result.message,
+          itemsProcessed: result.itemsProcessed,
         });
         refresh();
       }
     } catch (error) {
       console.error('Error processing file:', error);
-      toast({
-        title: 'Erro ao processar arquivo',
-        description: 'Ocorreu um erro ao ler o arquivo Excel.',
-        variant: 'destructive',
+      setImportStatus({
+        stage: 'error',
+        progress: 100,
+        message: 'Erro ao processar arquivo',
+        details: 'Ocorreu um erro ao ler o arquivo Excel.',
       });
     } finally {
       setIsImporting(false);
@@ -663,6 +746,60 @@ export default function ControleEstoque() {
             </Button>
           </div>
         </div>
+
+        {/* Import Status Progress */}
+        {importStatus.stage !== 'idle' && (
+          <Alert
+            variant={importStatus.stage === 'error' ? 'destructive' : 'default'}
+            className={cn(
+              'relative',
+              importStatus.stage === 'success' && 'border-green-500 bg-green-50',
+              (importStatus.stage === 'reading' || importStatus.stage === 'processing' || importStatus.stage === 'uploading') && 'border-blue-500 bg-blue-50'
+            )}
+          >
+            <div className="flex items-start gap-3">
+              {importStatus.stage === 'error' && <XCircle className="h-5 w-5 text-destructive" />}
+              {importStatus.stage === 'success' && <CheckCircle className="h-5 w-5 text-green-600" />}
+              {(importStatus.stage === 'reading' || importStatus.stage === 'processing' || importStatus.stage === 'uploading') && (
+                <Loader2 className="h-5 w-5 text-blue-600 animate-spin" />
+              )}
+              <div className="flex-1 space-y-2">
+                <AlertTitle className={cn(
+                  importStatus.stage === 'success' && 'text-green-800',
+                  (importStatus.stage === 'reading' || importStatus.stage === 'processing' || importStatus.stage === 'uploading') && 'text-blue-800'
+                )}>
+                  {importStatus.message}
+                </AlertTitle>
+                {importStatus.details && (
+                  <AlertDescription className={cn(
+                    importStatus.stage === 'success' && 'text-green-700',
+                    (importStatus.stage === 'reading' || importStatus.stage === 'processing' || importStatus.stage === 'uploading') && 'text-blue-700'
+                  )}>
+                    {importStatus.details}
+                  </AlertDescription>
+                )}
+                {(importStatus.stage === 'reading' || importStatus.stage === 'processing' || importStatus.stage === 'uploading') && (
+                  <Progress value={importStatus.progress} className="h-2 mt-2" />
+                )}
+                {importStatus.itemsProcessed !== undefined && importStatus.stage === 'success' && (
+                  <p className="text-sm text-green-700 font-medium">
+                    {importStatus.itemsProcessed.toLocaleString('pt-BR')} produtos processados
+                  </p>
+                )}
+              </div>
+              {(importStatus.stage === 'success' || importStatus.stage === 'error') && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={resetImportStatus}
+                  className="shrink-0"
+                >
+                  Fechar
+                </Button>
+              )}
+            </div>
+          </Alert>
+        )}
 
         {/* Stats Cards - Clickable */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">

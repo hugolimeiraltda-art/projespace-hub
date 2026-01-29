@@ -6,15 +6,20 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-interface StockData {
+// Mapeamento de códigos de local de estoque para cidade e tipo
+const LOCATION_CODE_MAP: Record<string, { cidade: string; tipo: string }> = {
+  '135000': { cidade: 'BH', tipo: 'INSTALACAO' },
+  '139000': { cidade: 'BH', tipo: 'MANUTENCAO' },
+  '225104': { cidade: 'VIX', tipo: 'MANUTENCAO' },
+  '2205900': { cidade: 'RIO', tipo: 'MANUTENCAO' },
+  '2250800': { cidade: 'CD_SR', tipo: 'INSTALACAO' },
+};
+
+interface StockRow {
   codigo: string;
   modelo: string;
-  estoques: {
-    cidade: string;
-    tipo: string;
-    minimo: number;
-    atual: number;
-  }[];
+  localCode: string;
+  estoque: number;
 }
 
 serve(async (req) => {
@@ -62,16 +67,16 @@ serve(async (req) => {
     }
 
     // Parse request body
-    const { stockData, fileName } = await req.json() as { stockData: StockData[]; fileName: string };
+    const { stockRows, fileName } = await req.json() as { stockRows: StockRow[]; fileName: string };
 
-    if (!stockData || !Array.isArray(stockData) || stockData.length === 0) {
+    if (!stockRows || !Array.isArray(stockRows) || stockRows.length === 0) {
       return new Response(
         JSON.stringify({ error: 'Dados de estoque inválidos' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    console.log(`Importando ${stockData.length} itens do arquivo ${fileName}`);
+    console.log(`Importando ${stockRows.length} linhas do arquivo ${fileName}`);
 
     // Get all stock locations
     const { data: locations, error: locError } = await supabaseAdmin
@@ -92,22 +97,53 @@ serve(async (req) => {
       locationMap.set(`${loc.cidade}_${loc.tipo}`, loc.id);
     }
 
-    let itemsProcessed = 0;
-    let stockRecordsCreated = 0;
+    // Group stock by item code
+    const itemMap = new Map<string, { 
+      modelo: string; 
+      estoques: Map<string, number>; // localId -> quantidade
+    }>();
 
-    for (const item of stockData) {
-      // Normalize codigo to string
-      const codigo = String(item.codigo).trim();
+    for (const row of stockRows) {
+      const codigo = String(row.codigo).trim();
       if (!codigo || codigo === 'undefined' || codigo === 'null') {
-        console.log('Skipping item with invalid codigo:', item);
         continue;
       }
 
+      // Get location info from code
+      const locationInfo = LOCATION_CODE_MAP[row.localCode];
+      if (!locationInfo) {
+        console.log(`Código de local não mapeado: ${row.localCode}`);
+        continue;
+      }
+
+      const localId = locationMap.get(`${locationInfo.cidade}_${locationInfo.tipo}`);
+      if (!localId) {
+        console.log(`Local não encontrado para: ${locationInfo.cidade}_${locationInfo.tipo}`);
+        continue;
+      }
+
+      if (!itemMap.has(codigo)) {
+        itemMap.set(codigo, { 
+          modelo: row.modelo || 'Sem modelo',
+          estoques: new Map()
+        });
+      }
+
+      const item = itemMap.get(codigo)!;
+      // Accumulate stock if same item appears multiple times for same location
+      const currentStock = item.estoques.get(localId) || 0;
+      item.estoques.set(localId, currentStock + row.estoque);
+    }
+
+    let itemsProcessed = 0;
+    let stockRecordsCreated = 0;
+
+    for (const [codigo, data] of itemMap) {
       // Upsert item
       const { data: existingItem, error: itemError } = await supabaseAdmin
         .from('estoque_itens')
         .upsert(
-          { codigo, modelo: item.modelo || 'Sem modelo' },
+          { codigo, modelo: data.modelo },
           { onConflict: 'codigo', ignoreDuplicates: false }
         )
         .select()
@@ -121,30 +157,29 @@ serve(async (req) => {
       itemsProcessed++;
 
       // Process stock data for each location
-      for (const estoque of item.estoques) {
-        const locationKey = `${estoque.cidade}_${estoque.tipo}`;
-        const localId = locationMap.get(locationKey);
+      for (const [localId, estoqueAtual] of data.estoques) {
+        // Upsert stock record - only update estoque_atual, keep minimo as is or default to 0
+        const { data: existingStock } = await supabaseAdmin
+          .from('estoque')
+          .select('estoque_minimo')
+          .eq('item_id', existingItem.id)
+          .eq('local_estoque_id', localId)
+          .maybeSingle();
 
-        if (!localId) {
-          console.log(`Location not found for ${locationKey}`);
-          continue;
-        }
-
-        // Upsert stock record
         const { error: stockError } = await supabaseAdmin
           .from('estoque')
           .upsert(
             {
               item_id: existingItem.id,
               local_estoque_id: localId,
-              estoque_minimo: estoque.minimo || 0,
-              estoque_atual: estoque.atual || 0,
+              estoque_minimo: existingStock?.estoque_minimo ?? 0,
+              estoque_atual: Math.floor(estoqueAtual),
             },
             { onConflict: 'item_id,local_estoque_id', ignoreDuplicates: false }
           );
 
         if (stockError) {
-          console.error(`Error upserting stock for ${codigo} at ${locationKey}:`, stockError);
+          console.error(`Error upserting stock for ${codigo} at ${localId}:`, stockError);
         } else {
           stockRecordsCreated++;
         }
@@ -165,7 +200,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({
         success: true,
-        message: `Importação concluída: ${itemsProcessed} itens processados, ${stockRecordsCreated} registros de estoque criados/atualizados.`,
+        message: `Importação concluída: ${itemsProcessed} produtos processados, ${stockRecordsCreated} registros de estoque criados/atualizados.`,
         itemsProcessed,
         stockRecordsCreated,
       }),

@@ -162,35 +162,57 @@ export default function ControleEstoque() {
       let localColIndex = -1;   // Coluna F - Local (código do local de estoque)
       let estoqueColIndex = -1; // Coluna J - Estoque
 
+      // Função para normalizar texto (remover acentos e espaços extras)
+      const normalizeText = (text: string): string => {
+        return text
+          .toLowerCase()
+          .trim()
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, ''); // Remove acentos
+      };
+
+      console.log('Procurando cabeçalhos na planilha...');
+      
       for (let i = 0; i < Math.min(20, jsonData.length); i++) {
         const row = jsonData[i];
         if (!row) continue;
 
         for (let j = 0; j < row.length; j++) {
-          const cellValue = String(row[j] || '').toLowerCase();
+          const cellValue = normalizeText(String(row[j] || ''));
           
-          if (cellValue === 'código') {
+          // Verificar variações do nome da coluna
+          if (cellValue === 'codigo' || cellValue === 'cod' || cellValue === 'cod.') {
             codigoColIndex = j;
             headerRowIndex = i;
           }
-          if (cellValue === 'produto') {
+          if (cellValue === 'produto' || cellValue === 'descricao' || cellValue === 'modelo') {
             produtoColIndex = j;
           }
-          if (cellValue === 'local') {
+          if (cellValue === 'local' || cellValue === 'loc' || cellValue === 'local est.' || cellValue === 'local estoque') {
             localColIndex = j;
           }
-          if (cellValue === 'estoque') {
+          if (cellValue === 'estoque' || cellValue === 'qtd' || cellValue === 'quantidade' || cellValue === 'saldo') {
             estoqueColIndex = j;
           }
         }
 
-        if (headerRowIndex === i) break;
+        if (headerRowIndex === i) {
+          console.log(`Cabeçalho encontrado na linha ${i}:`, {
+            codigoCol: codigoColIndex,
+            produtoCol: produtoColIndex,
+            localCol: localColIndex,
+            estoqueCol: estoqueColIndex
+          });
+          break;
+        }
       }
 
       if (headerRowIndex === -1 || codigoColIndex === -1 || localColIndex === -1 || estoqueColIndex === -1) {
+        console.error('Colunas não encontradas:', { headerRowIndex, codigoColIndex, localColIndex, estoqueColIndex });
+        console.log('Primeiras 5 linhas da planilha:', jsonData.slice(0, 5));
         toast({
           title: 'Formato de planilha inválido',
-          description: 'Não foi possível encontrar as colunas necessárias (Código, Local, Estoque).',
+          description: `Não foi possível encontrar as colunas necessárias. Encontrado: Código=${codigoColIndex >= 0 ? 'Sim' : 'Não'}, Local=${localColIndex >= 0 ? 'Sim' : 'Não'}, Estoque=${estoqueColIndex >= 0 ? 'Sim' : 'Não'}`,
           variant: 'destructive',
         });
         setIsImporting(false);
@@ -199,10 +221,14 @@ export default function ControleEstoque() {
 
       // Processar linhas de dados filtrando apenas os locais válidos
       const stockRows: { codigo: string; modelo: string; localCode: string; estoque: number }[] = [];
+      let linhasProcessadas = 0;
+      let linhasComLocalValido = 0;
 
       for (let i = headerRowIndex + 1; i < jsonData.length; i++) {
         const row = jsonData[i];
         if (!row) continue;
+
+        linhasProcessadas++;
 
         const codigo = String(row[codigoColIndex] || '').trim();
         if (!codigo || codigo === 'undefined' || codigo === 'null' || codigo === '') continue;
@@ -211,6 +237,8 @@ export default function ControleEstoque() {
         
         // Verificar se é um local válido
         if (!LOCATION_CODE_MAP[localCode]) continue;
+
+        linhasComLocalValido++;
 
         const modelo = String(row[produtoColIndex] || 'Sem modelo').trim();
         
@@ -226,7 +254,8 @@ export default function ControleEstoque() {
           estoque = parseFloat(cleanValue) || 0;
         }
 
-        if (estoque > 0) {
+        // Incluir mesmo itens com estoque 0 ou maior
+        if (estoque >= 0) {
           stockRows.push({
             codigo,
             modelo,
@@ -236,10 +265,12 @@ export default function ControleEstoque() {
         }
       }
 
+      console.log(`Linhas processadas: ${linhasProcessadas}, com local válido: ${linhasComLocalValido}, para importar: ${stockRows.length}`);
+
       if (stockRows.length === 0) {
         toast({
           title: 'Nenhum dado encontrado',
-          description: 'Não foram encontrados registros válidos nos locais de estoque permitidos (BH, VIX, RIO, CD_SR).',
+          description: `Processadas ${linhasProcessadas} linhas, mas nenhuma com locais válidos (135000, 139000, 225104, 2205900, 2250800).`,
           variant: 'destructive',
         });
         setIsImporting(false);

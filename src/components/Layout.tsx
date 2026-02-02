@@ -1,28 +1,46 @@
-import { ReactNode } from 'react';
+import { ReactNode, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { NotificationsSidebarItem } from '@/components/NotificationsSidebarItem';
 import { cn } from '@/lib/utils';
-import { LayoutDashboard, FolderPlus, List, Settings, LogOut, User, ClipboardList, Users, Briefcase, ShoppingCart, Package, Heart, Wrench } from 'lucide-react';
+import { LayoutDashboard, FolderPlus, List, Settings, LogOut, User, ClipboardList, Users, Briefcase, ShoppingCart, Package, Heart, Wrench, ChevronDown, ChevronRight, AlertTriangle, Calendar } from 'lucide-react';
 import emiveLogo from '@/assets/emive-logo.png';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+
 interface LayoutProps {
   children: ReactNode;
 }
-export function Layout({
-  children
-}: LayoutProps) {
-  const {
-    user,
-    logout
-  } = useAuth();
+
+interface NavItem {
+  path: string;
+  label: string;
+  icon: typeof LayoutDashboard;
+  roles?: string[];
+  exact?: boolean;
+  subItems?: { path: string; label: string; icon: typeof LayoutDashboard }[];
+}
+
+export function Layout({ children }: LayoutProps) {
+  const { user, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
+  const [expandedMenus, setExpandedMenus] = useState<string[]>(['manutencao']);
+
   const handleLogout = () => {
     logout();
     navigate('/login');
   };
-  const navItems = [
+
+  const toggleMenu = (menu: string) => {
+    setExpandedMenus(prev => 
+      prev.includes(menu) 
+        ? prev.filter(m => m !== menu)
+        : [...prev, menu]
+    );
+  };
+
+  const navItems: NavItem[] = [
     // 1. Dashboard - todos
     {
       path: '/dashboard',
@@ -71,12 +89,17 @@ export function Layout({
       icon: Package,
       roles: ['admin', 'administrativo', 'supervisor_operacoes']
     },
-    // 7. Manutenção
+    // 7. Manutenção com submenus
     {
       path: '/manutencao',
       label: 'Manutenção',
       icon: Wrench,
-      roles: ['admin', 'implantacao', 'administrativo', 'supervisor_operacoes']
+      roles: ['admin', 'implantacao', 'administrativo', 'supervisor_operacoes'],
+      subItems: [
+        { path: '/manutencao/preventivas', label: 'Agendas Preventivas', icon: Calendar },
+        { path: '/manutencao/chamados', label: 'Chamados', icon: Wrench },
+        { path: '/manutencao/pendencias', label: 'Controle de Pendências', icon: AlertTriangle },
+      ]
     },
     // 8. Carteira de Clientes
     {
@@ -106,6 +129,7 @@ export function Layout({
       roles: ['gerente_comercial', 'sucesso_cliente']
     }
   ];
+
   const filteredNavItems = navItems.filter(item => {
     if (!item.roles) return true;
     return user && item.roles.includes(user.role);
@@ -119,27 +143,103 @@ export function Layout({
     }
     return acc;
   }, [] as typeof filteredNavItems);
-  return <div className="min-h-screen bg-background">
+
+  const isPathActive = (path: string, exact?: boolean) => {
+    if (exact) {
+      return location.pathname === path;
+    }
+    return location.pathname === path || (path !== '/dashboard' && location.pathname.startsWith(path));
+  };
+
+  return (
+    <div className="min-h-screen bg-background">
       {/* Sidebar */}
       <aside className="fixed inset-y-0 left-0 z-50 w-64 bg-card border-r border-border shadow-card">
         {/* Logo */}
         <div className="flex flex-col items-center px-4 py-4 border-b border-border">
           <img src={emiveLogo} alt="EMIVE Portarias Digitais" className="h-auto w-full max-w-[180px] mb-2" />
-          <div className="text-center">
-            
-          </div>
         </div>
 
         {/* Navigation */}
-        <nav className="px-3 py-4 space-y-1">
+        <nav className="px-3 py-4 space-y-1 overflow-y-auto max-h-[calc(100vh-250px)]">
           {uniqueNavItems.map(item => {
-          const Icon = item.icon;
-          const isActive = location.pathname === item.path || item.path !== '/dashboard' && !item.exact && location.pathname.startsWith(item.path);
-          return <Link key={`${item.path}-${item.label}`} to={item.path} className={cn('flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors', isActive ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-accent hover:text-foreground')}>
+            const Icon = item.icon;
+            
+            // Item with submenu
+            if (item.subItems && item.subItems.length > 0) {
+              const isExpanded = expandedMenus.includes(item.path);
+              const isAnySubActive = item.subItems.some(sub => location.pathname === sub.path);
+              const isParentActive = location.pathname === item.path || isAnySubActive;
+              
+              return (
+                <div key={`${item.path}-${item.label}`}>
+                  <Collapsible open={isExpanded} onOpenChange={() => toggleMenu(item.path)}>
+                    <CollapsibleTrigger asChild>
+                      <button
+                        className={cn(
+                          'flex items-center justify-between w-full gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
+                          isParentActive
+                            ? 'bg-primary text-primary-foreground'
+                            : 'text-muted-foreground hover:bg-accent hover:text-foreground'
+                        )}
+                      >
+                        <div className="flex items-center gap-3">
+                          <Icon className="w-5 h-5" />
+                          {item.label}
+                        </div>
+                        {isExpanded ? (
+                          <ChevronDown className="w-4 h-4" />
+                        ) : (
+                          <ChevronRight className="w-4 h-4" />
+                        )}
+                      </button>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent>
+                      <div className="mt-1 ml-4 space-y-1 border-l border-border pl-3">
+                        {item.subItems.map(subItem => {
+                          const SubIcon = subItem.icon;
+                          const isSubActive = location.pathname === subItem.path;
+                          return (
+                            <Link
+                              key={subItem.path}
+                              to={subItem.path}
+                              className={cn(
+                                'flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors',
+                                isSubActive
+                                  ? 'bg-primary/10 text-primary font-medium'
+                                  : 'text-muted-foreground hover:bg-accent hover:text-foreground'
+                              )}
+                            >
+                              <SubIcon className="w-4 h-4" />
+                              {subItem.label}
+                            </Link>
+                          );
+                        })}
+                      </div>
+                    </CollapsibleContent>
+                  </Collapsible>
+                </div>
+              );
+            }
+            
+            // Regular item without submenu
+            const isActive = isPathActive(item.path, item.exact);
+            return (
+              <Link
+                key={`${item.path}-${item.label}`}
+                to={item.path}
+                className={cn(
+                  'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
+                  isActive
+                    ? 'bg-primary text-primary-foreground'
+                    : 'text-muted-foreground hover:bg-accent hover:text-foreground'
+                )}
+              >
                 <Icon className="w-5 h-5" />
                 {item.label}
-              </Link>;
-        })}
+              </Link>
+            );
+          })}
           
           {/* Notifications in sidebar */}
           <NotificationsSidebarItem />
@@ -149,7 +249,11 @@ export function Layout({
         <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-border bg-card">
           <Link to="/meu-perfil" className="flex items-center gap-3 mb-3 p-2 -mx-2 rounded-lg hover:bg-accent transition-colors">
             <div className="flex items-center justify-center w-9 h-9 rounded-full bg-secondary overflow-hidden">
-              {user?.foto ? <img src={user.foto} alt="Foto do perfil" className="w-full h-full object-cover" /> : <User className="w-4 h-4 text-secondary-foreground" />}
+              {user?.foto ? (
+                <img src={user.foto} alt="Foto do perfil" className="w-full h-full object-cover" />
+              ) : (
+                <User className="w-4 h-4 text-secondary-foreground" />
+              )}
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-foreground truncate">{user?.nome}</p>
@@ -167,5 +271,6 @@ export function Layout({
       <main className="ml-64 min-h-screen">
         {children}
       </main>
-    </div>;
+    </div>
+  );
 }

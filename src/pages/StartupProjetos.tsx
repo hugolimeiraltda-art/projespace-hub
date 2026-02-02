@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { useImplantacaoIntegration } from '@/hooks/useImplantacaoIntegration';
 import { cn } from '@/lib/utils';
 import {
   Search,
@@ -101,7 +102,9 @@ export default function StartupProjetos() {
     }
   };
 
-  const handleStatusChange = async (projectId: string, newStatus: ImplantacaoStatus) => {
+  const { createCustomerOnStart, updateCustomerOnComplete } = useImplantacaoIntegration();
+
+  const handleStatusChange = async (projectId: string, newStatus: ImplantacaoStatus, project?: StartupProject) => {
     try {
       const updateData: Record<string, unknown> = {
         implantacao_status: newStatus,
@@ -109,8 +112,23 @@ export default function StartupProjetos() {
 
       if (newStatus === 'EM_EXECUCAO') {
         updateData.implantacao_started_at = new Date().toISOString();
+        
+        // Create customer in portfolio when starting
+        if (project) {
+          await createCustomerOnStart({
+            id: project.id,
+            numero_projeto: project.numero_projeto,
+            cliente_condominio_nome: project.cliente_condominio_nome,
+            cliente_cidade: project.cliente_cidade,
+            cliente_estado: project.cliente_estado,
+            vendedor_nome: project.vendedor_nome,
+          });
+        }
       } else if (newStatus === 'CONCLUIDO_IMPLANTACAO') {
         updateData.implantacao_completed_at = new Date().toISOString();
+        
+        // Update customer status to IMPLANTADO
+        await updateCustomerOnComplete(projectId);
       }
 
       const { error } = await supabase
@@ -357,7 +375,7 @@ export default function StartupProjetos() {
                             size="sm"
                             className="border-green-300 text-green-700 hover:bg-green-50"
                             onClick={() => {
-                              handleStatusChange(project.id, 'EM_EXECUCAO');
+                              handleStatusChange(project.id, 'EM_EXECUCAO', project);
                               navigate(`/startup-projetos/${project.id}/execucao`);
                             }}
                           >

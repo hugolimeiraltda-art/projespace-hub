@@ -339,16 +339,6 @@ export default function ControleEstoque() {
         return;
       }
 
-      setImportStatus({
-        stage: 'uploading',
-        progress: 75,
-        message: 'Enviando para o servidor...',
-        details: `${stockRows.length.toLocaleString('pt-BR')} registros para importar`,
-        itemsProcessed: stockRows.length,
-      });
-
-      console.log(`Enviando ${stockRows.length} linhas para importação`);
-
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
         setImportStatus({
@@ -361,42 +351,95 @@ export default function ControleEstoque() {
         return;
       }
 
-      setImportStatus({
-        stage: 'uploading',
-        progress: 85,
-        message: 'Salvando no banco de dados...',
-        details: 'Aguarde enquanto os dados são gravados',
-      });
+      // Process in batches to avoid timeout
+      const BATCH_SIZE = 200;
+      const batches = [];
+      for (let i = 0; i < stockRows.length; i += BATCH_SIZE) {
+        batches.push(stockRows.slice(i, i + BATCH_SIZE));
+      }
 
-      const { data: result, error } = await supabase.functions.invoke('import-estoque', {
-        body: { stockRows, fileName: file.name },
-      });
+      let totalItemsProcessed = 0;
+      let totalStockRecords = 0;
+      let hasError = false;
 
-      if (error) {
-        console.error('Import error:', error);
+      for (let batchIndex = 0; batchIndex < batches.length; batchIndex++) {
+        const batch = batches[batchIndex];
+        const progressPercent = 75 + Math.round((batchIndex / batches.length) * 20);
+
         setImportStatus({
-          stage: 'error',
-          progress: 100,
-          message: 'Erro na importação',
-          details: error.message || 'Ocorreu um erro ao importar os dados.',
+          stage: 'uploading',
+          progress: progressPercent,
+          message: `Enviando lote ${batchIndex + 1} de ${batches.length}...`,
+          details: `${batch.length} registros neste lote`,
+          itemsProcessed: totalItemsProcessed,
+          totalItems: stockRows.length,
         });
-      } else {
+
+        console.log(`Enviando lote ${batchIndex + 1}/${batches.length} com ${batch.length} registros`);
+
+        try {
+          const { data: result, error } = await supabase.functions.invoke('import-estoque', {
+            body: { stockRows: batch, fileName: file.name },
+          });
+
+          if (error) {
+            console.error('Import error on batch:', batchIndex + 1, error);
+            let errorMessage = error.message || 'Ocorreu um erro ao importar os dados.';
+            
+            if (errorMessage.includes('Failed to fetch') || errorMessage.includes('NetworkError')) {
+              errorMessage = 'Timeout ou erro de conexão. Tente novamente em alguns instantes.';
+            }
+            
+            setImportStatus({
+              stage: 'error',
+              progress: 100,
+              message: `Erro no lote ${batchIndex + 1}`,
+              details: errorMessage,
+            });
+            hasError = true;
+            break;
+          } else {
+            totalItemsProcessed += result.itemsProcessed || 0;
+            totalStockRecords += result.stockRecordsCreated || 0;
+          }
+        } catch (invokeError: any) {
+          console.error('Edge function invoke error on batch:', batchIndex + 1, invokeError);
+          let errorDetail = 'Falha ao comunicar com o servidor.';
+          
+          if (invokeError?.message?.includes('Failed to fetch')) {
+            errorDetail = 'Timeout ou erro de conexão. Tente novamente em alguns instantes.';
+          } else if (invokeError?.message) {
+            errorDetail = invokeError.message;
+          }
+          
+          setImportStatus({
+            stage: 'error',
+            progress: 100,
+            message: `Erro no lote ${batchIndex + 1}`,
+            details: errorDetail,
+          });
+          hasError = true;
+          break;
+        }
+      }
+
+      if (!hasError) {
         setImportStatus({
           stage: 'success',
           progress: 100,
           message: 'Importação concluída com sucesso!',
-          details: result.message,
-          itemsProcessed: result.itemsProcessed,
+          details: `${totalItemsProcessed} produtos processados, ${totalStockRecords} registros de estoque atualizados.`,
+          itemsProcessed: totalItemsProcessed,
         });
         refresh();
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error processing file:', error);
       setImportStatus({
         stage: 'error',
         progress: 100,
         message: 'Erro ao processar arquivo',
-        details: 'Ocorreu um erro ao ler o arquivo Excel.',
+        details: error?.message || 'Ocorreu um erro ao ler o arquivo Excel.',
       });
     } finally {
       setIsImporting(false);

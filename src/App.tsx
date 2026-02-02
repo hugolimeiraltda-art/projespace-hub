@@ -28,6 +28,9 @@ import ControleEstoque from "./pages/ControleEstoque";
 import SucessoCliente from "./pages/SucessoCliente";
 import SucessoClienteDetalhe from "./pages/SucessoClienteDetalhe";
 import Manutencao from "./pages/Manutencao";
+import ManutencaoPreventivas from "./pages/ManutencaoPreventivas";
+import ManutencaoChamados from "./pages/ManutencaoChamados";
+import ManutencaoPendencias from "./pages/ManutencaoPendencias";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -148,9 +151,22 @@ function AppRoutes() {
         path="/sucesso-cliente/:id" 
         element={<ProtectedRoute><SucessoClienteDetalhe /></ProtectedRoute>} 
       />
+      {/* Manutenção routes */}
       <Route 
         path="/manutencao" 
-        element={<ProtectedRoute><Manutencao /></ProtectedRoute>} 
+        element={<Navigate to="/manutencao/preventivas" replace />} 
+      />
+      <Route 
+        path="/manutencao/preventivas" 
+        element={<ProtectedRoute><ManutencaoPreventivas /></ProtectedRoute>} 
+      />
+      <Route 
+        path="/manutencao/chamados" 
+        element={<ProtectedRoute><ManutencaoChamados /></ProtectedRoute>} 
+      />
+      <Route 
+        path="/manutencao/pendencias" 
+        element={<ProtectedRoute><ManutencaoPendencias /></ProtectedRoute>} 
       />
       <Route path="*" element={<NotFound />} />
     </Routes>

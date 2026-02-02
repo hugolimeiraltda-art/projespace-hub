@@ -222,9 +222,13 @@ export type Database = {
           noc: string | null
           portas: number | null
           portoes: number | null
+          praca: string | null
+          project_id: string | null
           quantidade_leitores: number | null
           razao_social: string
           sistema: string | null
+          status_implantacao: string | null
+          supervisor_responsavel_id: string | null
           taxa_ativacao: number | null
           tipo: string | null
           totem_duplo: number | null
@@ -256,9 +260,13 @@ export type Database = {
           noc?: string | null
           portas?: number | null
           portoes?: number | null
+          praca?: string | null
+          project_id?: string | null
           quantidade_leitores?: number | null
           razao_social: string
           sistema?: string | null
+          status_implantacao?: string | null
+          supervisor_responsavel_id?: string | null
           taxa_ativacao?: number | null
           tipo?: string | null
           totem_duplo?: number | null
@@ -290,9 +298,13 @@ export type Database = {
           noc?: string | null
           portas?: number | null
           portoes?: number | null
+          praca?: string | null
+          project_id?: string | null
           quantidade_leitores?: number | null
           razao_social?: string
           sistema?: string | null
+          status_implantacao?: string | null
+          supervisor_responsavel_id?: string | null
           taxa_ativacao?: number | null
           tipo?: string | null
           totem_duplo?: number | null
@@ -302,7 +314,15 @@ export type Database = {
           updated_at?: string
           zonas_perimetro?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "customer_portfolio_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       customer_satisfacao: {
         Row: {
@@ -775,8 +795,13 @@ export type Database = {
           equipamentos: string | null
           frequencia: Database["public"]["Enums"]["recorrencia_frequencia"]
           id: string
+          notificacao_enviada: boolean | null
+          notificacao_enviada_at: string | null
+          praca: string | null
           proxima_execucao: string
           razao_social: string
+          supervisor_responsavel_id: string | null
+          supervisor_responsavel_nome: string | null
           tecnico_responsavel: string | null
           ultima_execucao: string | null
           updated_at: string
@@ -792,8 +817,13 @@ export type Database = {
           equipamentos?: string | null
           frequencia: Database["public"]["Enums"]["recorrencia_frequencia"]
           id?: string
+          notificacao_enviada?: boolean | null
+          notificacao_enviada_at?: string | null
+          praca?: string | null
           proxima_execucao: string
           razao_social: string
+          supervisor_responsavel_id?: string | null
+          supervisor_responsavel_nome?: string | null
           tecnico_responsavel?: string | null
           ultima_execucao?: string | null
           updated_at?: string
@@ -809,8 +839,13 @@ export type Database = {
           equipamentos?: string | null
           frequencia?: Database["public"]["Enums"]["recorrencia_frequencia"]
           id?: string
+          notificacao_enviada?: boolean | null
+          notificacao_enviada_at?: string | null
+          praca?: string | null
           proxima_execucao?: string
           razao_social?: string
+          supervisor_responsavel_id?: string | null
+          supervisor_responsavel_nome?: string | null
           tecnico_responsavel?: string | null
           ultima_execucao?: string | null
           updated_at?: string
@@ -827,6 +862,7 @@ export type Database = {
       }
       manutencao_chamados: {
         Row: {
+          cliente_acompanhante: string | null
           contrato: string
           created_at: string
           created_by: string | null
@@ -840,14 +876,19 @@ export type Database = {
           equipamentos: string | null
           historico: Json | null
           id: string
+          is_auditoria: boolean | null
+          laudo_texto: string | null
           observacoes_conclusao: string | null
+          praca: string | null
           razao_social: string
           status: Database["public"]["Enums"]["manutencao_chamado_status"]
+          tecnico_executor: string | null
           tecnico_responsavel: string | null
           tipo: Database["public"]["Enums"]["manutencao_chamado_tipo"]
           updated_at: string
         }
         Insert: {
+          cliente_acompanhante?: string | null
           contrato: string
           created_at?: string
           created_by?: string | null
@@ -861,14 +902,19 @@ export type Database = {
           equipamentos?: string | null
           historico?: Json | null
           id?: string
+          is_auditoria?: boolean | null
+          laudo_texto?: string | null
           observacoes_conclusao?: string | null
+          praca?: string | null
           razao_social: string
           status?: Database["public"]["Enums"]["manutencao_chamado_status"]
+          tecnico_executor?: string | null
           tecnico_responsavel?: string | null
           tipo: Database["public"]["Enums"]["manutencao_chamado_tipo"]
           updated_at?: string
         }
         Update: {
+          cliente_acompanhante?: string | null
           contrato?: string
           created_at?: string
           created_by?: string | null
@@ -882,9 +928,13 @@ export type Database = {
           equipamentos?: string | null
           historico?: Json | null
           id?: string
+          is_auditoria?: boolean | null
+          laudo_texto?: string | null
           observacoes_conclusao?: string | null
+          praca?: string | null
           razao_social?: string
           status?: Database["public"]["Enums"]["manutencao_chamado_status"]
+          tecnico_executor?: string | null
           tecnico_responsavel?: string | null
           tipo?: Database["public"]["Enums"]["manutencao_chamado_tipo"]
           updated_at?: string
@@ -895,6 +945,60 @@ export type Database = {
             columns: ["customer_id"]
             isOneToOne: false
             referencedRelation: "customer_portfolio"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      manutencao_notificacoes: {
+        Row: {
+          agenda_id: string | null
+          chamado_id: string | null
+          created_at: string
+          for_role: string | null
+          for_user_id: string | null
+          id: string
+          mensagem: string
+          read: boolean | null
+          tipo: string
+          titulo: string
+        }
+        Insert: {
+          agenda_id?: string | null
+          chamado_id?: string | null
+          created_at?: string
+          for_role?: string | null
+          for_user_id?: string | null
+          id?: string
+          mensagem: string
+          read?: boolean | null
+          tipo: string
+          titulo: string
+        }
+        Update: {
+          agenda_id?: string | null
+          chamado_id?: string | null
+          created_at?: string
+          for_role?: string | null
+          for_user_id?: string | null
+          id?: string
+          mensagem?: string
+          read?: boolean | null
+          tipo?: string
+          titulo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "manutencao_notificacoes_agenda_id_fkey"
+            columns: ["agenda_id"]
+            isOneToOne: false
+            referencedRelation: "manutencao_agendas_preventivas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "manutencao_notificacoes_chamado_id_fkey"
+            columns: ["chamado_id"]
+            isOneToOne: false
+            referencedRelation: "manutencao_chamados"
             referencedColumns: ["id"]
           },
         ]
@@ -975,6 +1079,41 @@ export type Database = {
             columns: ["customer_id"]
             isOneToOne: false
             referencedRelation: "customer_portfolio"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      manutencao_pendencias_comentarios: {
+        Row: {
+          comentario: string
+          created_at: string
+          created_by: string | null
+          created_by_name: string | null
+          id: string
+          pendencia_id: string
+        }
+        Insert: {
+          comentario: string
+          created_at?: string
+          created_by?: string | null
+          created_by_name?: string | null
+          id?: string
+          pendencia_id: string
+        }
+        Update: {
+          comentario?: string
+          created_at?: string
+          created_by?: string | null
+          created_by_name?: string | null
+          id?: string
+          pendencia_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "manutencao_pendencias_comentarios_pendencia_id_fkey"
+            columns: ["pendencia_id"]
+            isOneToOne: false
+            referencedRelation: "manutencao_pendencias"
             referencedColumns: ["id"]
           },
         ]

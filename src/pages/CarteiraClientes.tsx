@@ -110,6 +110,7 @@ export default function CarteiraClientes() {
   const [saving, setSaving] = useState(false);
   const [expiringDialogOpen, setExpiringDialogOpen] = useState(false);
   const [expiringDialogData, setExpiringDialogData] = useState<{ title: string; customers: Customer[] }>({ title: '', customers: [] });
+  const [faciaisDialogOpen, setFaciaisDialogOpen] = useState(false);
 
   const canCreate = user?.role === 'admin' || user?.role === 'implantacao';
 
@@ -621,7 +622,10 @@ export default function CarteiraClientes() {
               </div>
             </CardContent>
           </Card>
-          <Card>
+          <Card 
+            className="cursor-pointer hover:shadow-md transition-shadow"
+            onClick={() => setFaciaisDialogOpen(true)}
+          >
             <CardContent className="pt-4">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-primary/10 rounded-lg">
@@ -834,6 +838,74 @@ export default function CarteiraClientes() {
             )}
           </CardContent>
         </Card>
+
+        {/* Faciais Dialog */}
+        <Dialog open={faciaisDialogOpen} onOpenChange={setFaciaisDialogOpen}>
+          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Detalhamento de Faciais por Cliente</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="grid grid-cols-4 gap-4 p-4 bg-muted/50 rounded-lg">
+                <div className="text-center">
+                  <p className="text-sm text-muted-foreground">Total Portas</p>
+                  <p className="text-xl font-bold">{totals.portas}</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-sm text-muted-foreground">Faciais Hik</p>
+                  <p className="text-xl font-bold">{totals.faciais_hik}</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-sm text-muted-foreground">Faciais Avicam</p>
+                  <p className="text-xl font-bold">{totals.faciais_avicam}</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-sm text-muted-foreground">Faciais Outros</p>
+                  <p className="text-xl font-bold">{totals.faciais_outros}</p>
+                </div>
+              </div>
+              
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Contrato</TableHead>
+                    <TableHead>Cliente</TableHead>
+                    <TableHead className="text-right">Portas</TableHead>
+                    <TableHead className="text-right">Hik</TableHead>
+                    <TableHead className="text-right">Avicam</TableHead>
+                    <TableHead className="text-right">Outros</TableHead>
+                    <TableHead className="text-right">Total Faciais</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {customers
+                    .filter(c => c.portas > 0 || c.faciais_hik > 0 || c.faciais_avicam > 0 || c.faciais_outros > 0)
+                    .map(customer => {
+                      const totalClienteFaciais = (customer.faciais_hik || 0) + (customer.faciais_avicam || 0) + (customer.faciais_outros || 0);
+                      return (
+                        <TableRow 
+                          key={customer.id}
+                          className="cursor-pointer hover:bg-muted/50"
+                          onClick={() => {
+                            setFaciaisDialogOpen(false);
+                            handleRowClick(customer.id);
+                          }}
+                        >
+                          <TableCell className="font-medium text-primary">{customer.contrato}</TableCell>
+                          <TableCell>{customer.razao_social}</TableCell>
+                          <TableCell className="text-right">{customer.portas || 0}</TableCell>
+                          <TableCell className="text-right">{customer.faciais_hik || 0}</TableCell>
+                          <TableCell className="text-right">{customer.faciais_avicam || 0}</TableCell>
+                          <TableCell className="text-right">{customer.faciais_outros || 0}</TableCell>
+                          <TableCell className="text-right font-semibold">{totalClienteFaciais}</TableCell>
+                        </TableRow>
+                      );
+                    })}
+                </TableBody>
+              </Table>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </Layout>
   );

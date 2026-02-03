@@ -62,6 +62,9 @@ interface Customer {
   totem_simples: number;
   totem_duplo: number;
   catracas: number;
+  faciais_hik: number;
+  faciais_avicam: number;
+  faciais_outros: number;
   created_at: string;
 }
 
@@ -90,6 +93,9 @@ const EMPTY_FORM = {
   totem_simples: '0',
   totem_duplo: '0',
   catracas: '0',
+  faciais_hik: '0',
+  faciais_avicam: '0',
+  faciais_outros: '0',
 };
 
 export default function CarteiraClientes() {
@@ -174,6 +180,9 @@ export default function CarteiraClientes() {
         totem_simples: parseInt(form.totem_simples) || 0,
         totem_duplo: parseInt(form.totem_duplo) || 0,
         catracas: parseInt(form.catracas) || 0,
+        faciais_hik: parseInt(form.faciais_hik) || 0,
+        faciais_avicam: parseInt(form.faciais_avicam) || 0,
+        faciais_outros: parseInt(form.faciais_outros) || 0,
       };
 
       const { error } = await supabase
@@ -213,7 +222,12 @@ export default function CarteiraClientes() {
     cameras: acc.cameras + (c.cameras || 0),
     portas: acc.portas + (c.portas || 0),
     mensalidade: acc.mensalidade + (c.mensalidade || 0),
-  }), { unidades: 0, cameras: 0, portas: 0, mensalidade: 0 });
+    faciais_hik: acc.faciais_hik + (c.faciais_hik || 0),
+    faciais_avicam: acc.faciais_avicam + (c.faciais_avicam || 0),
+    faciais_outros: acc.faciais_outros + (c.faciais_outros || 0),
+  }), { unidades: 0, cameras: 0, portas: 0, mensalidade: 0, faciais_hik: 0, faciais_avicam: 0, faciais_outros: 0 });
+
+  const totalFaciais = totals.faciais_hik + totals.faciais_avicam + totals.faciais_outros;
 
   // Calculate contracts expiring
   const now = new Date();
@@ -515,6 +529,40 @@ export default function CarteiraClientes() {
                         />
                       </div>
                     </div>
+                    
+                    {/* Faciais por marca */}
+                    <div className="mt-4">
+                      <h4 className="text-sm font-medium mb-2">Faciais por Marca</h4>
+                      <div className="grid grid-cols-3 gap-4">
+                        <div>
+                          <Label htmlFor="faciais_hik">Hik (Hikvision)</Label>
+                          <Input
+                            id="faciais_hik"
+                            type="number"
+                            value={form.faciais_hik}
+                            onChange={(e) => setForm({ ...form, faciais_hik: e.target.value })}
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="faciais_avicam">Avicam</Label>
+                          <Input
+                            id="faciais_avicam"
+                            type="number"
+                            value={form.faciais_avicam}
+                            onChange={(e) => setForm({ ...form, faciais_avicam: e.target.value })}
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="faciais_outros">Outros</Label>
+                          <Input
+                            id="faciais_outros"
+                            type="number"
+                            value={form.faciais_outros}
+                            onChange={(e) => setForm({ ...form, faciais_outros: e.target.value })}
+                          />
+                        </div>
+                      </div>
+                    </div>
                   </div>
 
                   <div className="flex justify-end gap-2 pt-4 border-t">
@@ -579,9 +627,22 @@ export default function CarteiraClientes() {
                 <div className="p-2 bg-primary/10 rounded-lg">
                   <DoorOpen className="w-5 h-5 text-primary" />
                 </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Total Portas</p>
-                  <p className="text-2xl font-bold">{totals.portas.toLocaleString('pt-BR')}</p>
+                <div className="flex-1">
+                  <p className="text-sm text-muted-foreground">Total Portas / Faciais</p>
+                  <p className="text-2xl font-bold">{totals.portas.toLocaleString('pt-BR')} / {totalFaciais.toLocaleString('pt-BR')}</p>
+                  {totalFaciais > 0 && (
+                    <div className="mt-1 text-xs text-muted-foreground space-y-0.5">
+                      {totals.faciais_hik > 0 && (
+                        <p><span className="font-medium text-foreground">{totals.faciais_hik}</span> Hik</p>
+                      )}
+                      {totals.faciais_avicam > 0 && (
+                        <p><span className="font-medium text-foreground">{totals.faciais_avicam}</span> Avicam</p>
+                      )}
+                      {totals.faciais_outros > 0 && (
+                        <p><span className="font-medium text-foreground">{totals.faciais_outros}</span> Outros</p>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             </CardContent>

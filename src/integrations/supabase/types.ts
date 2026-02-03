@@ -214,6 +214,9 @@ export type Database = {
           data_termino: string | null
           dvr_nvr: number | null
           endereco: string | null
+          faciais_avicam: number | null
+          faciais_hik: number | null
+          faciais_outros: number | null
           filial: string | null
           gateway: boolean | null
           id: string
@@ -252,6 +255,9 @@ export type Database = {
           data_termino?: string | null
           dvr_nvr?: number | null
           endereco?: string | null
+          faciais_avicam?: number | null
+          faciais_hik?: number | null
+          faciais_outros?: number | null
           filial?: string | null
           gateway?: boolean | null
           id?: string
@@ -290,6 +296,9 @@ export type Database = {
           data_termino?: string | null
           dvr_nvr?: number | null
           endereco?: string | null
+          faciais_avicam?: number | null
+          faciais_hik?: number | null
+          faciais_outros?: number | null
           filial?: string | null
           gateway?: boolean | null
           id?: string

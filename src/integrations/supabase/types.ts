@@ -14,6 +14,80 @@ export type Database = {
   }
   public: {
     Tables: {
+      customer_administradores: {
+        Row: {
+          atende_celular: boolean | null
+          created_at: string
+          created_by: string | null
+          created_by_name: string | null
+          customer_id: string
+          data_aniversario: string | null
+          data_validade_mandato: string | null
+          email: string | null
+          endereco: string | null
+          horario_trabalho: Json | null
+          id: string
+          nome: string
+          nome_responsavel: string | null
+          numero_apto: string | null
+          numero_bloco: string | null
+          razao_social: string | null
+          telefone: string | null
+          tipo: Database["public"]["Enums"]["administrador_tipo"]
+          updated_at: string
+        }
+        Insert: {
+          atende_celular?: boolean | null
+          created_at?: string
+          created_by?: string | null
+          created_by_name?: string | null
+          customer_id: string
+          data_aniversario?: string | null
+          data_validade_mandato?: string | null
+          email?: string | null
+          endereco?: string | null
+          horario_trabalho?: Json | null
+          id?: string
+          nome: string
+          nome_responsavel?: string | null
+          numero_apto?: string | null
+          numero_bloco?: string | null
+          razao_social?: string | null
+          telefone?: string | null
+          tipo: Database["public"]["Enums"]["administrador_tipo"]
+          updated_at?: string
+        }
+        Update: {
+          atende_celular?: boolean | null
+          created_at?: string
+          created_by?: string | null
+          created_by_name?: string | null
+          customer_id?: string
+          data_aniversario?: string | null
+          data_validade_mandato?: string | null
+          email?: string | null
+          endereco?: string | null
+          horario_trabalho?: Json | null
+          id?: string
+          nome?: string
+          nome_responsavel?: string | null
+          numero_apto?: string | null
+          numero_bloco?: string | null
+          razao_social?: string | null
+          telefone?: string | null
+          tipo?: Database["public"]["Enums"]["administrador_tipo"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_administradores_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customer_portfolio"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       customer_chamados: {
         Row: {
           assunto: string
@@ -1782,6 +1856,13 @@ export type Database = {
       sync_estoque_alertas: { Args: never; Returns: undefined }
     }
     Enums: {
+      administrador_tipo:
+        | "sindico_profissional"
+        | "sindico_organico"
+        | "subsindico"
+        | "conselheiro"
+        | "zelador"
+        | "administradora"
       app_role:
         | "admin"
         | "vendedor"
@@ -1973,6 +2054,14 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      administrador_tipo: [
+        "sindico_profissional",
+        "sindico_organico",
+        "subsindico",
+        "conselheiro",
+        "zelador",
+        "administradora",
+      ],
       app_role: [
         "admin",
         "vendedor",

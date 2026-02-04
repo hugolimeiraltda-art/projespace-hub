@@ -19,6 +19,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { ArrowLeft, Save, Loader2, Upload, Trash2, FileText, Image, Video, File, Calendar } from 'lucide-react';
 import { format, addMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { AdministradoresCondominio } from '@/components/AdministradoresCondominio';
 
 interface Customer {
   id: string;
@@ -653,6 +654,9 @@ export default function CustomerDetail() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Documentação */}
+        <AdministradoresCondominio customerId={id!} canEdit={canEdit} />
 
         {/* Documentação */}
         <Card>

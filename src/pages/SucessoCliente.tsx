@@ -1097,16 +1097,21 @@ export default function SucessoCliente() {
 
         {/* Chamados Dialog */}
         <Dialog open={chamadosDialogOpen} onOpenChange={setChamadosDialogOpen}>
-          <DialogContent className="max-w-5xl max-h-[85vh] overflow-y-auto">
-            <DialogHeader>
+          <DialogContent className="max-w-5xl max-h-[85vh] overflow-y-auto cursor-pointer" onClick={() => { setChamadosDialogOpen(false); navigate('/sucesso-cliente/chamados'); }}>
+            <DialogHeader onClick={(e) => e.stopPropagation()}>
               <DialogTitle className="flex items-center justify-between">
                 <span className="flex items-center gap-2">
                   <MessageSquare className="w-5 h-5 text-orange-500" />
                   Chamados / Reclamações
                 </span>
-                <Button size="sm" onClick={() => { setChamadosDialogOpen(false); openCustomerSelect('reclamacao'); }}>
-                  <Plus className="w-4 h-4 mr-1" /> Novo Chamado
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button size="sm" variant="outline" onClick={(e) => { e.stopPropagation(); setChamadosDialogOpen(false); navigate('/sucesso-cliente/chamados'); }}>
+                    <ExternalLink className="w-4 h-4 mr-1" /> Abrir Página
+                  </Button>
+                  <Button size="sm" onClick={(e) => { e.stopPropagation(); setChamadosDialogOpen(false); openCustomerSelect('reclamacao'); }}>
+                    <Plus className="w-4 h-4 mr-1" /> Novo Chamado
+                  </Button>
+                </div>
               </DialogTitle>
             </DialogHeader>
 
@@ -1190,16 +1195,21 @@ export default function SucessoCliente() {
 
         {/* NPS Dialog */}
         <Dialog open={npsDialogOpen} onOpenChange={setNpsDialogOpen}>
-          <DialogContent className="max-w-5xl max-h-[85vh] overflow-y-auto">
-            <DialogHeader>
+          <DialogContent className="max-w-5xl max-h-[85vh] overflow-y-auto cursor-pointer" onClick={() => { setNpsDialogOpen(false); navigate('/sucesso-cliente/nps'); }}>
+            <DialogHeader onClick={(e) => e.stopPropagation()}>
               <DialogTitle className="flex items-center justify-between">
                 <span className="flex items-center gap-2">
                   <Star className="w-5 h-5 text-purple-500" />
                   Pesquisas de NPS
                 </span>
-                <Button size="sm" onClick={() => { setNpsDialogOpen(false); openCustomerSelect('nps'); }}>
-                  <Plus className="w-4 h-4 mr-1" /> Nova Pesquisa
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button size="sm" variant="outline" onClick={(e) => { e.stopPropagation(); setNpsDialogOpen(false); navigate('/sucesso-cliente/nps'); }}>
+                    <ExternalLink className="w-4 h-4 mr-1" /> Abrir Página
+                  </Button>
+                  <Button size="sm" onClick={(e) => { e.stopPropagation(); setNpsDialogOpen(false); openCustomerSelect('nps'); }}>
+                    <Plus className="w-4 h-4 mr-1" /> Nova Pesquisa
+                  </Button>
+                </div>
               </DialogTitle>
             </DialogHeader>
 
@@ -1319,16 +1329,21 @@ export default function SucessoCliente() {
 
         {/* Depoimentos Dialog */}
         <Dialog open={depoimentosDialogOpen} onOpenChange={setDepoimentosDialogOpen}>
-          <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto">
-            <DialogHeader>
+          <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto cursor-pointer" onClick={() => { setDepoimentosDialogOpen(false); navigate('/sucesso-cliente/depoimentos'); }}>
+            <DialogHeader onClick={(e) => e.stopPropagation()}>
               <DialogTitle className="flex items-center justify-between">
                 <span className="flex items-center gap-2">
                   <ThumbsUp className="w-5 h-5 text-green-500" />
                   Depoimentos e Elogios
                 </span>
-                <Button size="sm" onClick={() => { setDepoimentosDialogOpen(false); openCustomerSelect('depoimento'); }}>
-                  <Plus className="w-4 h-4 mr-1" /> Novo Depoimento
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button size="sm" variant="outline" onClick={(e) => { e.stopPropagation(); setDepoimentosDialogOpen(false); navigate('/sucesso-cliente/depoimentos'); }}>
+                    <ExternalLink className="w-4 h-4 mr-1" /> Abrir Página
+                  </Button>
+                  <Button size="sm" onClick={(e) => { e.stopPropagation(); setDepoimentosDialogOpen(false); openCustomerSelect('depoimento'); }}>
+                    <Plus className="w-4 h-4 mr-1" /> Novo Depoimento
+                  </Button>
+                </div>
               </DialogTitle>
             </DialogHeader>
 
@@ -1396,16 +1411,19 @@ export default function SucessoCliente() {
 
         {/* Satisfação Dialog */}
         <Dialog open={satisfacaoDialogOpen} onOpenChange={setSatisfacaoDialogOpen}>
-          <DialogContent className="max-w-5xl max-h-[85vh] overflow-y-auto">
-            <DialogHeader>
+          <DialogContent className="max-w-5xl max-h-[85vh] overflow-y-auto cursor-pointer" onClick={() => { setSatisfacaoDialogOpen(false); navigate('/sucesso-cliente/satisfacao'); }}>
+            <DialogHeader onClick={(e) => e.stopPropagation()}>
               <DialogTitle className="flex items-center justify-between">
                 <span className="flex items-center gap-2">
                   <TrendingUp className="w-5 h-5 text-blue-500" />
                   Índice de Satisfação
                 </span>
                 <div className="flex items-center gap-2">
+                  <Button size="sm" variant="outline" onClick={(e) => { e.stopPropagation(); setSatisfacaoDialogOpen(false); navigate('/sucesso-cliente/satisfacao'); }}>
+                    <ExternalLink className="w-4 h-4 mr-1" /> Abrir Página
+                  </Button>
                   <Select value={satisfacaoPeriodo} onValueChange={(v) => { setSatisfacaoPeriodo(v); fetchSatisfacao(parseInt(v)); }}>
-                    <SelectTrigger className="w-32">
+                    <SelectTrigger className="w-32" onClick={(e) => e.stopPropagation()}>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -1415,7 +1433,7 @@ export default function SucessoCliente() {
                       <SelectItem value="12">12 meses</SelectItem>
                     </SelectContent>
                   </Select>
-                  <Button size="sm" onClick={() => { setSatisfacaoDialogOpen(false); openCustomerSelect('satisfacao'); }}>
+                  <Button size="sm" onClick={(e) => { e.stopPropagation(); setSatisfacaoDialogOpen(false); openCustomerSelect('satisfacao'); }}>
                     <Plus className="w-4 h-4 mr-1" /> Nova Pesquisa
                   </Button>
                 </div>

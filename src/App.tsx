@@ -27,6 +27,10 @@ import CustomerDetail from "./pages/CustomerDetail";
 import ControleEstoque from "./pages/ControleEstoque";
 import SucessoCliente from "./pages/SucessoCliente";
 import SucessoClienteDetalhe from "./pages/SucessoClienteDetalhe";
+import SucessoClienteChamados from "./pages/SucessoClienteChamados";
+import SucessoClienteNPS from "./pages/SucessoClienteNPS";
+import SucessoClienteDepoimentos from "./pages/SucessoClienteDepoimentos";
+import SucessoClienteSatisfacao from "./pages/SucessoClienteSatisfacao";
 import Manutencao from "./pages/Manutencao";
 import ManutencaoPreventivas from "./pages/ManutencaoPreventivas";
 import ManutencaoChamados from "./pages/ManutencaoChamados";
@@ -146,6 +150,22 @@ function AppRoutes() {
       <Route 
         path="/sucesso-cliente" 
         element={<ProtectedRoute><SucessoCliente /></ProtectedRoute>} 
+      />
+      <Route 
+        path="/sucesso-cliente/chamados" 
+        element={<ProtectedRoute><SucessoClienteChamados /></ProtectedRoute>} 
+      />
+      <Route 
+        path="/sucesso-cliente/nps" 
+        element={<ProtectedRoute><SucessoClienteNPS /></ProtectedRoute>} 
+      />
+      <Route 
+        path="/sucesso-cliente/depoimentos" 
+        element={<ProtectedRoute><SucessoClienteDepoimentos /></ProtectedRoute>} 
+      />
+      <Route 
+        path="/sucesso-cliente/satisfacao" 
+        element={<ProtectedRoute><SucessoClienteSatisfacao /></ProtectedRoute>} 
       />
       <Route 
         path="/sucesso-cliente/:id" 

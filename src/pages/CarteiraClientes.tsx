@@ -31,9 +31,10 @@ import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { Plus, Search, Users, Building2, Camera, DoorOpen, Loader2, CalendarClock, AlertTriangle } from 'lucide-react';
+import { Plus, Users, Building2, Camera, DoorOpen, Loader2, CalendarClock, AlertTriangle } from 'lucide-react';
 import { format, addMonths, isBefore, isAfter, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { CarteiraClientesTable } from '@/components/CarteiraClientesTable';
 
 interface Customer {
   id: string;
@@ -104,7 +105,7 @@ export default function CarteiraClientes() {
   const { user } = useAuth();
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
+  
   const [dialogOpen, setDialogOpen] = useState(false);
   const [form, setForm] = useState(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
@@ -211,11 +212,6 @@ export default function CarteiraClientes() {
     navigate(`/carteira-clientes/${customerId}`);
   };
 
-  const filteredCustomers = customers.filter(c =>
-    c.razao_social.toLowerCase().includes(search.toLowerCase()) ||
-    c.contrato.toLowerCase().includes(search.toLowerCase()) ||
-    c.filial?.toLowerCase().includes(search.toLowerCase())
-  );
 
   // Calculate totals
   const totals = customers.reduce((acc, c) => ({
@@ -754,87 +750,15 @@ export default function CarteiraClientes() {
           </DialogContent>
         </Dialog>
 
-        {/* Search */}
-        <div className="mb-4">
-          <div className="relative max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input
-              placeholder="Buscar por nome, contrato ou filial..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="pl-9"
-            />
-          </div>
-        </div>
-
-        {/* Table */}
+        {/* Table with Excel-like filters */}
         <Card>
-          <CardContent className="p-0">
+          <CardContent className="p-4">
             {loading ? (
               <div className="flex items-center justify-center py-12">
                 <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Contrato</TableHead>
-                      <TableHead>Razão Social</TableHead>
-                      <TableHead>Filial</TableHead>
-                      <TableHead>Início</TableHead>
-                      <TableHead>Término</TableHead>
-                      <TableHead className="text-right">Taxa Ativação</TableHead>
-                      <TableHead className="text-right">Portões</TableHead>
-                      <TableHead className="text-right">Zonas</TableHead>
-                      <TableHead className="text-right">Câmeras</TableHead>
-                      <TableHead className="text-right">Mensalidade</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredCustomers.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={10} className="text-center py-8 text-muted-foreground">
-                          {search ? 'Nenhum cliente encontrado' : 'Nenhum cliente cadastrado'}
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      filteredCustomers.map((customer) => (
-                        <TableRow 
-                          key={customer.id} 
-                          className="cursor-pointer hover:bg-muted/50"
-                          onClick={() => handleRowClick(customer.id)}
-                        >
-                          <TableCell className="font-medium text-primary hover:underline">
-                            {customer.contrato}
-                          </TableCell>
-                          <TableCell className="max-w-[200px] truncate text-primary hover:underline">
-                            {customer.razao_social}
-                          </TableCell>
-                          <TableCell>{customer.filial || '-'}</TableCell>
-                          <TableCell>{formatDate(customer.data_ativacao)}</TableCell>
-                          <TableCell>{calculateTermino(customer)}</TableCell>
-                          <TableCell className="text-right">
-                            {customer.taxa_ativacao 
-                              ? `R$ ${customer.taxa_ativacao.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
-                              : '-'
-                            }
-                          </TableCell>
-                          <TableCell className="text-right">{customer.portoes}</TableCell>
-                          <TableCell className="text-right">{customer.zonas_perimetro}</TableCell>
-                          <TableCell className="text-right">{customer.cameras}</TableCell>
-                          <TableCell className="text-right">
-                            {customer.mensalidade 
-                              ? `R$ ${customer.mensalidade.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
-                              : '-'
-                            }
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
+              <CarteiraClientesTable customers={customers} />
             )}
           </CardContent>
         </Card>

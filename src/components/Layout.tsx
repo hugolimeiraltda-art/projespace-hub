@@ -25,7 +25,7 @@ export function Layout({ children }: LayoutProps) {
   const { user, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
-  const [expandedMenus, setExpandedMenus] = useState<string[]>(['manutencao']);
+  const [expandedMenus, setExpandedMenus] = useState<string[]>(['/manutencao']);
 
   const handleLogout = () => {
     logout();
@@ -169,31 +169,44 @@ export function Layout({ children }: LayoutProps) {
             if (item.subItems && item.subItems.length > 0) {
               const isExpanded = expandedMenus.includes(item.path);
               const isAnySubActive = item.subItems.some(sub => location.pathname === sub.path);
-              const isParentActive = location.pathname === item.path || isAnySubActive;
+              const isParentActive = location.pathname === item.path;
+              
+              // Keep menu expanded if any subitem is active
+              const shouldBeExpanded = isExpanded || isAnySubActive;
               
               return (
                 <div key={`${item.path}-${item.label}`}>
-                  <Collapsible open={isExpanded} onOpenChange={() => toggleMenu(item.path)}>
-                    <CollapsibleTrigger asChild>
-                      <button
+                  <Collapsible open={shouldBeExpanded} onOpenChange={() => toggleMenu(item.path)}>
+                    <div className="flex items-center">
+                      <Link
+                        to={item.path}
                         className={cn(
-                          'flex items-center justify-between w-full gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
-                          isParentActive
+                          'flex items-center flex-1 gap-3 px-3 py-2.5 rounded-l-lg text-sm font-medium transition-colors',
+                          isParentActive || isAnySubActive
                             ? 'bg-primary text-primary-foreground'
                             : 'text-muted-foreground hover:bg-accent hover:text-foreground'
                         )}
                       >
-                        <div className="flex items-center gap-3">
-                          <Icon className="w-5 h-5" />
-                          {item.label}
-                        </div>
-                        {isExpanded ? (
-                          <ChevronDown className="w-4 h-4" />
-                        ) : (
-                          <ChevronRight className="w-4 h-4" />
-                        )}
-                      </button>
-                    </CollapsibleTrigger>
+                        <Icon className="w-5 h-5" />
+                        {item.label}
+                      </Link>
+                      <CollapsibleTrigger asChild>
+                        <button
+                          className={cn(
+                            'px-2 py-2.5 rounded-r-lg text-sm font-medium transition-colors',
+                            isParentActive || isAnySubActive
+                              ? 'bg-primary text-primary-foreground'
+                              : 'text-muted-foreground hover:bg-accent hover:text-foreground'
+                          )}
+                        >
+                          {shouldBeExpanded ? (
+                            <ChevronDown className="w-4 h-4" />
+                          ) : (
+                            <ChevronRight className="w-4 h-4" />
+                          )}
+                        </button>
+                      </CollapsibleTrigger>
+                    </div>
                     <CollapsibleContent>
                       <div className="mt-1 ml-4 space-y-1 border-l border-border pl-3">
                         {item.subItems.map(subItem => {

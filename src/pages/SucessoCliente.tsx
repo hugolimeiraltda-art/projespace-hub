@@ -45,7 +45,9 @@ import {
   ChevronLeft,
   ChevronRight,
   Plus,
-  ExternalLink
+  ExternalLink,
+  Cake,
+  UserCheck
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -133,6 +135,18 @@ interface Pendencia {
   comentario_sucesso_cliente_by: string | null;
 }
 
+interface Administrador {
+  id: string;
+  customer_id: string;
+  nome: string;
+  tipo: string;
+  email: string | null;
+  telefone: string | null;
+  data_validade_mandato: string | null;
+  data_aniversario: string | null;
+  customer_portfolio?: CustomerPortfolioRef;
+}
+
 export default function SucessoCliente() {
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -189,10 +203,17 @@ export default function SucessoCliente() {
   const [customerSelectDialogOpen, setCustomerSelectDialogOpen] = useState(false);
   const [customerSelectAction, setCustomerSelectAction] = useState<'reclamacao' | 'nps' | 'depoimento' | 'satisfacao' | null>(null);
 
+  // Administradores (síndicos) state
+  const [administradores, setAdministradores] = useState<Administrador[]>([]);
+  const [mandatosDialogOpen, setMandatosDialogOpen] = useState(false);
+  const [mandatosDialogData, setMandatosDialogData] = useState<{ title: string; administradores: Administrador[] }>({ title: '', administradores: [] });
+  const [aniversariantesDialogOpen, setAniversariantesDialogOpen] = useState(false);
+
   useEffect(() => {
     fetchCustomers();
     fetchPendenciasClientes();
     fetchPendenciasDepartamento();
+    fetchAdministradores();
   }, []);
 
   const fetchCustomers = async () => {
@@ -317,6 +338,48 @@ export default function SucessoCliente() {
       setPendenciasDepartamento(data || []);
     } catch (error) {
       console.error('Error fetching pendencias departamento:', error);
+    }
+  };
+
+  const fetchAdministradores = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('customer_administradores')
+        .select('id, customer_id, nome, tipo, email, telefone, data_validade_mandato, data_aniversario, customer_portfolio(razao_social, contrato, filial)')
+        .in('tipo', ['sindico_profissional', 'sindico_organico', 'subsindico'])
+        .order('data_validade_mandato', { ascending: true });
+
+      if (error) throw error;
+      setAdministradores(data || []);
+      
+      // Check for upcoming birthdays and show notification
+      checkBirthdayNotifications(data || []);
+    } catch (error) {
+      console.error('Error fetching administradores:', error);
+    }
+  };
+
+  const checkBirthdayNotifications = (admins: Administrador[]) => {
+    const now = new Date();
+    const in7Days = addMonths(now, 0);
+    in7Days.setDate(now.getDate() + 7);
+    
+    const upcomingBirthdays = admins.filter(admin => {
+      if (!admin.data_aniversario) return false;
+      const aniversario = parseISO(admin.data_aniversario);
+      const thisYearBirthday = new Date(now.getFullYear(), aniversario.getMonth(), aniversario.getDate());
+      
+      // Check if birthday is within next 7 days
+      const diffDays = Math.ceil((thisYearBirthday.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+      return diffDays >= 0 && diffDays <= 7;
+    });
+
+    if (upcomingBirthdays.length > 0) {
+      toast({
+        title: '🎂 Aniversários Próximos!',
+        description: `${upcomingBirthdays.length} síndico(s) fazem aniversário nos próximos 7 dias.`,
+        duration: 8000,
+      });
     }
   };
 
@@ -563,6 +626,48 @@ export default function SucessoCliente() {
     ? (satisfacaoData.filter(s => s.nota_nps).reduce((acc, s) => acc + (s.nota_nps || 0), 0) / satisfacaoData.filter(s => s.nota_nps).length).toFixed(1)
     : null;
 
+  // Mandates expiring calculations
+  const mandatosExpiring3Months = useMemo(() => {
+    const now = new Date();
+    const in3Months = addMonths(now, 3);
+    return administradores.filter(admin => {
+      if (!admin.data_validade_mandato) return false;
+      const dataValidade = parseISO(admin.data_validade_mandato);
+      return isAfter(dataValidade, now) && isBefore(dataValidade, in3Months);
+    });
+  }, [administradores]);
+
+  const mandatosExpiring6Months = useMemo(() => {
+    const now = new Date();
+    const in3Months = addMonths(now, 3);
+    const in6Months = addMonths(now, 6);
+    return administradores.filter(admin => {
+      if (!admin.data_validade_mandato) return false;
+      const dataValidade = parseISO(admin.data_validade_mandato);
+      return isAfter(dataValidade, in3Months) && isBefore(dataValidade, in6Months);
+    });
+  }, [administradores]);
+
+  // Birthday calculations
+  const aniversariantesDoMes = useMemo(() => {
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    return administradores.filter(admin => {
+      if (!admin.data_aniversario) return false;
+      const aniversario = parseISO(admin.data_aniversario);
+      return aniversario.getMonth() === currentMonth;
+    }).sort((a, b) => {
+      const dayA = parseISO(a.data_aniversario!).getDate();
+      const dayB = parseISO(b.data_aniversario!).getDate();
+      return dayA - dayB;
+    });
+  }, [administradores]);
+
+  const handleOpenMandatosDialog = (title: string, adminsList: Administrador[]) => {
+    setMandatosDialogData({ title, administradores: adminsList });
+    setMandatosDialogOpen(true);
+  };
+
   const getPrioridadeBadge = (prioridade: string) => {
     switch (prioridade) {
       case 'urgente': return <Badge variant="destructive">Urgente</Badge>;
@@ -730,6 +835,64 @@ export default function SucessoCliente() {
                   <div>
                     <p className="text-sm text-muted-foreground">Vencendo em 1 ano</p>
                     <p className="text-2xl font-bold text-blue-600">{contractsExpiring1Year.length}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+
+        {/* Mandatos de Síndicos Section */}
+        <div className="mb-6">
+          <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+            <UserCheck className="w-5 h-5 text-primary" />
+            Mandatos de Síndicos
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Card 
+              className="border-l-4 border-l-red-500 cursor-pointer hover:shadow-md transition-shadow"
+              onClick={() => handleOpenMandatosDialog('Mandatos vencendo em 3 meses', mandatosExpiring3Months)}
+            >
+              <CardContent className="pt-6">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-red-100 rounded-lg">
+                    <AlertTriangle className="w-5 h-5 text-red-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Vencendo em 3 meses</p>
+                    <p className="text-2xl font-bold text-red-600">{mandatosExpiring3Months.length}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card 
+              className="border-l-4 border-l-amber-500 cursor-pointer hover:shadow-md transition-shadow"
+              onClick={() => handleOpenMandatosDialog('Mandatos vencendo em 6 meses', mandatosExpiring6Months)}
+            >
+              <CardContent className="pt-6">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-amber-100 rounded-lg">
+                    <CalendarClock className="w-5 h-5 text-amber-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Vencendo em 6 meses</p>
+                    <p className="text-2xl font-bold text-amber-600">{mandatosExpiring6Months.length}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card 
+              className="border-l-4 border-l-pink-500 cursor-pointer hover:shadow-md transition-shadow"
+              onClick={() => setAniversariantesDialogOpen(true)}
+            >
+              <CardContent className="pt-6">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-pink-100 rounded-lg">
+                    <Cake className="w-5 h-5 text-pink-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Aniversariantes do Mês</p>
+                    <p className="text-2xl font-bold text-pink-600">{aniversariantesDoMes.length}</p>
                   </div>
                 </div>
               </CardContent>
@@ -1842,6 +2005,125 @@ export default function SucessoCliente() {
                 <p className="text-center py-8 text-muted-foreground">Nenhuma pendência encontrada</p>
               )}
             </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Mandatos Dialog */}
+        <Dialog open={mandatosDialogOpen} onOpenChange={setMandatosDialogOpen}>
+          <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <UserCheck className="w-5 h-5 text-primary" />
+                {mandatosDialogData.title}
+              </DialogTitle>
+            </DialogHeader>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Síndico</TableHead>
+                  <TableHead>Tipo</TableHead>
+                  <TableHead>Condomínio</TableHead>
+                  <TableHead>Contato</TableHead>
+                  <TableHead>Vencimento</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {mandatosDialogData.administradores.map((admin) => (
+                  <TableRow key={admin.id}>
+                    <TableCell className="font-medium">{admin.nome}</TableCell>
+                    <TableCell>
+                      <Badge variant="outline">
+                        {admin.tipo === 'sindico_profissional' ? 'Profissional' : 
+                         admin.tipo === 'sindico_organico' ? 'Orgânico' : 'Subsíndico'}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <div>
+                        <p className="font-medium">{admin.customer_portfolio?.razao_social}</p>
+                        <p className="text-xs text-muted-foreground">{admin.customer_portfolio?.contrato}</p>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="text-sm">
+                        {admin.email && <p>{admin.email}</p>}
+                        {admin.telefone && <p className="text-muted-foreground">{admin.telefone}</p>}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="destructive">
+                        {formatDate(admin.data_validade_mandato)}
+                      </Badge>
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {mandatosDialogData.administradores.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                      Nenhum mandato encontrado
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </DialogContent>
+        </Dialog>
+
+        {/* Aniversariantes Dialog */}
+        <Dialog open={aniversariantesDialogOpen} onOpenChange={setAniversariantesDialogOpen}>
+          <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Cake className="w-5 h-5 text-pink-500" />
+                Síndicos Aniversariantes do Mês ({format(new Date(), 'MMMM', { locale: ptBR })})
+              </DialogTitle>
+            </DialogHeader>
+            {aniversariantesDoMes.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <Cake className="w-12 h-12 mx-auto mb-3 opacity-30" />
+                <p>Nenhum aniversariante este mês</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {aniversariantesDoMes.map((admin) => {
+                  const aniversario = parseISO(admin.data_aniversario!);
+                  const day = aniversario.getDate();
+                  const today = new Date().getDate();
+                  const isToday = day === today;
+                  const isPast = day < today;
+
+                  return (
+                    <Card key={admin.id} className={`${isToday ? 'border-pink-500 bg-pink-50' : ''}`}>
+                      <CardContent className="py-4">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-4">
+                            <div className={`w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold ${
+                              isToday ? 'bg-pink-500 text-white' : isPast ? 'bg-muted text-muted-foreground' : 'bg-pink-100 text-pink-600'
+                            }`}>
+                              {day}
+                            </div>
+                            <div>
+                              <p className="font-semibold">{admin.nome}</p>
+                              <p className="text-sm text-muted-foreground">
+                                {admin.customer_portfolio?.razao_social} • {admin.customer_portfolio?.contrato}
+                              </p>
+                              <Badge variant="outline" className="mt-1">
+                                {admin.tipo === 'sindico_profissional' ? 'Profissional' : 
+                                 admin.tipo === 'sindico_organico' ? 'Orgânico' : 'Subsíndico'}
+                              </Badge>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            {admin.telefone && <p className="text-sm">{admin.telefone}</p>}
+                            {admin.email && <p className="text-sm text-muted-foreground">{admin.email}</p>}
+                            {isToday && <Badge className="bg-pink-500 mt-2">🎂 Hoje!</Badge>}
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            )}
           </DialogContent>
         </Dialog>
       </div>

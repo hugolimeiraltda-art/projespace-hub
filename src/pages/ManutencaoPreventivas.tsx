@@ -49,16 +49,10 @@ interface AgendaPreventiva {
 }
 
 const PRACAS = [
-  'São Paulo',
-  'Campinas',
-  'Santos',
-  'Ribeirão Preto',
-  'Sorocaba',
-  'São José dos Campos',
-  'Bauru',
-  'Curitiba',
-  'Belo Horizonte',
-  'Rio de Janeiro',
+  'São Paulo-SP',
+  'Rio de Janeiro-RJ',
+  'Belo Horizonte-MG',
+  'Vitória-ES',
 ];
 
 const FREQUENCIAS = [

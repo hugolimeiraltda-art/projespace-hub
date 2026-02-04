@@ -3,54 +3,53 @@ import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { Layout } from '@/components/Layout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { 
-  ArrowLeft,
-  MessageSquareWarning,
-  Star,
-  ThumbsUp,
-  RefreshCw,
-  ClipboardCheck,
-  Loader2,
-  Building2,
-  Phone,
-  MapPin,
-  Calendar
-} from 'lucide-react';
-import { format, addMonths, parseISO } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { ArrowLeft, MessageSquareWarning, Star, ThumbsUp, ClipboardCheck, Loader2 } from 'lucide-react';
+import { CustomerInfoSection } from '@/components/sucesso-cliente/CustomerInfoSection';
+import { CustomerHistorySection } from '@/components/sucesso-cliente/CustomerHistorySection';
+import { RenovacaoSection } from '@/components/sucesso-cliente/RenovacaoSection';
 
 interface Customer {
   id: string;
   contrato: string;
   razao_social: string;
+  alarme_codigo: string | null;
   filial: string | null;
   unidades: number | null;
+  tipo: string | null;
   data_ativacao: string | null;
   data_termino: string | null;
   endereco: string | null;
   contato_nome: string | null;
   contato_telefone: string | null;
-  tipo: string | null;
   sistema: string | null;
+  noc: string | null;
+  app: string | null;
+  praca: string | null;
+  mensalidade: number | null;
+  taxa_ativacao: number | null;
+  leitores: string | null;
+  quantidade_leitores: number | null;
+  transbordo: boolean | null;
+  gateway: boolean | null;
+  portoes: number | null;
+  portas: number | null;
+  dvr_nvr: number | null;
+  cameras: number | null;
+  zonas_perimetro: number | null;
+  cancelas: number | null;
+  totem_simples: number | null;
+  totem_duplo: number | null;
+  catracas: number | null;
+  faciais_hik: number | null;
+  faciais_avicam: number | null;
+  faciais_outros: number | null;
 }
 
 export default function SucessoClienteDetalhe() {
@@ -61,53 +60,36 @@ export default function SucessoClienteDetalhe() {
   const [customer, setCustomer] = useState<Customer | null>(null);
   const [loading, setLoading] = useState(true);
   
-  // Dialog states
+  // Dialog states for new records
   const [reclamacaoDialogOpen, setReclamacaoDialogOpen] = useState(false);
   const [npsDialogOpen, setNpsDialogOpen] = useState(false);
   const [satisfacaoDialogOpen, setSatisfacaoDialogOpen] = useState(false);
   const [depoimentoDialogOpen, setDepoimentoDialogOpen] = useState(false);
-  const [renovacaoDialogOpen, setRenovacaoDialogOpen] = useState(false);
   
   // Form states
   const [reclamacaoForm, setReclamacaoForm] = useState({ assunto: '', descricao: '', prioridade: 'media' });
-  const [npsForm, setNpsForm] = useState({ nota: '', comentario: '' });
+  const [npsForm, setNpsForm] = useState({ nota: '', comentario: '', ponto_forte: '', ponto_fraco: '' });
   const [satisfacaoForm, setSatisfacaoForm] = useState({
-    tempoImplantacao: '',
-    ambienteOrganizado: '',
-    pendencias: '',
-    comunicacao: '',
-    facilidadeApp: '',
-    funcionalidadesSindico: '',
-    treinamentoAdequado: '',
-    expectativaAtendida: '',
-    notaNps: ''
+    tempoImplantacao: '', ambienteOrganizado: '', pendencias: '', comunicacao: '',
+    facilidadeApp: '', funcionalidadesSindico: '', treinamentoAdequado: '', expectativaAtendida: '', notaNps: ''
   });
-  const [depoimentoForm, setDepoimentoForm] = useState({ texto: '', autor: '', cargo: '' });
-  const [renovacaoForm, setRenovacaoForm] = useState({ observacoes: '', novaData: '' });
+  const [depoimentoForm, setDepoimentoForm] = useState({ texto: '', autor: '', cargo: '', tipo: 'elogio' });
+
+  // Key for forcing history refresh
+  const [historyKey, setHistoryKey] = useState(0);
 
   useEffect(() => {
-    if (id) {
-      fetchCustomer();
-    }
+    if (id) fetchCustomer();
   }, [id]);
 
-  // Open dialog based on URL action parameter
   useEffect(() => {
     const action = searchParams.get('action');
     if (action && customer) {
       switch (action) {
-        case 'reclamacao':
-          setReclamacaoDialogOpen(true);
-          break;
-        case 'nps':
-          setNpsDialogOpen(true);
-          break;
-        case 'depoimento':
-          setDepoimentoDialogOpen(true);
-          break;
-        case 'satisfacao':
-          setSatisfacaoDialogOpen(true);
-          break;
+        case 'reclamacao': setReclamacaoDialogOpen(true); break;
+        case 'nps': setNpsDialogOpen(true); break;
+        case 'depoimento': setDepoimentoDialogOpen(true); break;
+        case 'satisfacao': setSatisfacaoDialogOpen(true); break;
       }
     }
   }, [searchParams, customer]);
@@ -116,7 +98,7 @@ export default function SucessoClienteDetalhe() {
     try {
       const { data, error } = await supabase
         .from('customer_portfolio')
-        .select('id, contrato, razao_social, filial, unidades, data_ativacao, data_termino, endereco, contato_nome, contato_telefone, tipo, sistema')
+        .select('*')
         .eq('id', id)
         .single();
 
@@ -124,73 +106,46 @@ export default function SucessoClienteDetalhe() {
       setCustomer(data);
     } catch (error) {
       console.error('Error fetching customer:', error);
-      toast({
-        title: 'Erro ao carregar cliente',
-        description: 'Não foi possível carregar os dados do cliente.',
-        variant: 'destructive',
-      });
+      toast({ title: 'Erro ao carregar cliente', description: 'Cliente não encontrado.', variant: 'destructive' });
       navigate('/sucesso-cliente');
     } finally {
       setLoading(false);
     }
   };
 
-  const formatDate = (dateString: string | null) => {
-    if (!dateString) return '-';
-    try {
-      return format(parseISO(dateString), 'dd/MM/yyyy', { locale: ptBR });
-    } catch {
-      return '-';
-    }
-  };
-
-  const calculateTermino = () => {
-    if (!customer) return '-';
-    if (customer.data_termino) {
-      return formatDate(customer.data_termino);
-    }
-    if (!customer.data_ativacao) return '-';
-    try {
-      const dataInicio = parseISO(customer.data_ativacao);
-      const dataTermino = addMonths(dataInicio, 36);
-      return format(dataTermino, 'dd/MM/yyyy', { locale: ptBR });
-    } catch {
-      return '-';
-    }
-  };
+  const refreshHistory = () => setHistoryKey((k) => k + 1);
 
   const handleSubmitReclamacao = async () => {
     try {
       const { error } = await supabase.from('customer_chamados').insert({
-        customer_id: id,
-        assunto: reclamacaoForm.assunto,
-        descricao: reclamacaoForm.descricao,
-        prioridade: reclamacaoForm.prioridade,
+        customer_id: id, assunto: reclamacaoForm.assunto,
+        descricao: reclamacaoForm.descricao || null, prioridade: reclamacaoForm.prioridade,
       });
       if (error) throw error;
-      toast({ title: 'Reclamação registrada', description: 'A reclamação foi registrada com sucesso.' });
+      toast({ title: 'Reclamação registrada' });
       setReclamacaoDialogOpen(false);
       setReclamacaoForm({ assunto: '', descricao: '', prioridade: 'media' });
+      refreshHistory();
     } catch (error) {
-      console.error(error);
-      toast({ title: 'Erro', description: 'Não foi possível registrar a reclamação.', variant: 'destructive' });
+      toast({ title: 'Erro', description: 'Não foi possível registrar.', variant: 'destructive' });
     }
   };
 
   const handleSubmitNps = async () => {
     try {
       const { error } = await supabase.from('customer_nps').insert({
-        customer_id: id,
-        nota: parseInt(npsForm.nota),
+        customer_id: id, nota: parseInt(npsForm.nota),
         comentario: npsForm.comentario || null,
+        ponto_forte: npsForm.ponto_forte || null,
+        ponto_fraco: npsForm.ponto_fraco || null,
       });
       if (error) throw error;
-      toast({ title: 'Pesquisa NPS registrada', description: 'A pesquisa de NPS foi registrada com sucesso.' });
+      toast({ title: 'NPS registrado' });
       setNpsDialogOpen(false);
-      setNpsForm({ nota: '', comentario: '' });
+      setNpsForm({ nota: '', comentario: '', ponto_forte: '', ponto_fraco: '' });
+      refreshHistory();
     } catch (error) {
-      console.error(error);
-      toast({ title: 'Erro', description: 'Não foi possível registrar a pesquisa NPS.', variant: 'destructive' });
+      toast({ title: 'Erro', description: 'Não foi possível registrar.', variant: 'destructive' });
     }
   };
 
@@ -209,49 +164,35 @@ export default function SucessoClienteDetalhe() {
         nota_nps: satisfacaoForm.notaNps ? parseInt(satisfacaoForm.notaNps) : null,
       });
       if (error) throw error;
-      toast({ title: 'Pesquisa de Satisfação registrada', description: 'A pesquisa de satisfação foi registrada com sucesso.' });
+      toast({ title: 'Pesquisa registrada' });
       setSatisfacaoDialogOpen(false);
       setSatisfacaoForm({ tempoImplantacao: '', ambienteOrganizado: '', pendencias: '', comunicacao: '', facilidadeApp: '', funcionalidadesSindico: '', treinamentoAdequado: '', expectativaAtendida: '', notaNps: '' });
+      refreshHistory();
     } catch (error) {
-      console.error(error);
-      toast({ title: 'Erro', description: 'Não foi possível registrar a pesquisa.', variant: 'destructive' });
+      toast({ title: 'Erro', description: 'Não foi possível registrar.', variant: 'destructive' });
     }
   };
 
   const handleSubmitDepoimento = async () => {
     try {
       const { error } = await supabase.from('customer_depoimentos').insert({
-        customer_id: id,
-        texto: depoimentoForm.texto,
-        autor: depoimentoForm.autor,
-        cargo: depoimentoForm.cargo || null,
-        tipo: 'elogio',
+        customer_id: id, texto: depoimentoForm.texto,
+        autor: depoimentoForm.autor, cargo: depoimentoForm.cargo || null, tipo: depoimentoForm.tipo,
       });
       if (error) throw error;
-      toast({ title: 'Depoimento registrado', description: 'O depoimento foi registrado com sucesso.' });
+      toast({ title: 'Depoimento registrado' });
       setDepoimentoDialogOpen(false);
-      setDepoimentoForm({ texto: '', autor: '', cargo: '' });
+      setDepoimentoForm({ texto: '', autor: '', cargo: '', tipo: 'elogio' });
+      refreshHistory();
     } catch (error) {
-      console.error(error);
-      toast({ title: 'Erro', description: 'Não foi possível registrar o depoimento.', variant: 'destructive' });
+      toast({ title: 'Erro', description: 'Não foi possível registrar.', variant: 'destructive' });
     }
-  };
-
-  const handleSubmitRenovacao = () => {
-    toast({
-      title: 'Processo de Renovação iniciado',
-      description: 'O processo de renovação foi iniciado com sucesso.',
-    });
-    setRenovacaoDialogOpen(false);
-    setRenovacaoForm({ observacoes: '', novaData: '' });
   };
 
   if (loading) {
     return (
       <Layout>
-        <div className="p-6 flex items-center justify-center">
-          <Loader2 className="w-8 h-8 animate-spin text-primary" />
-        </div>
+        <div className="p-6 flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>
       </Layout>
     );
   }
@@ -259,18 +200,16 @@ export default function SucessoClienteDetalhe() {
   if (!customer) {
     return (
       <Layout>
-        <div className="p-6 text-center">
-          <p className="text-muted-foreground">Cliente não encontrado.</p>
-        </div>
+        <div className="p-6 text-center"><p className="text-muted-foreground">Cliente não encontrado.</p></div>
       </Layout>
     );
   }
 
   return (
     <Layout>
-      <div className="p-6">
+      <div className="p-6 space-y-6">
         {/* Header */}
-        <div className="flex items-center gap-4 mb-6">
+        <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" onClick={() => navigate('/sucesso-cliente')}>
             <ArrowLeft className="w-5 h-5" />
           </Button>
@@ -280,168 +219,72 @@ export default function SucessoClienteDetalhe() {
           </div>
         </div>
 
-        {/* Customer Info Card */}
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Building2 className="w-5 h-5 text-primary" />
-              Informações do Cliente
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="flex items-center gap-2">
-                <MapPin className="w-4 h-4 text-muted-foreground" />
-                <div>
-                  <p className="text-sm text-muted-foreground">Filial</p>
-                  <p className="font-medium">{customer.filial || '-'}</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <Building2 className="w-4 h-4 text-muted-foreground" />
-                <div>
-                  <p className="text-sm text-muted-foreground">Unidades</p>
-                  <p className="font-medium">{customer.unidades || '-'}</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <Calendar className="w-4 h-4 text-muted-foreground" />
-                <div>
-                  <p className="text-sm text-muted-foreground">Término do Contrato</p>
-                  <p className="font-medium">{calculateTermino()}</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <Phone className="w-4 h-4 text-muted-foreground" />
-                <div>
-                  <p className="text-sm text-muted-foreground">Contato</p>
-                  <p className="font-medium">{customer.contato_nome || '-'}</p>
-                </div>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Tipo</p>
-                <p className="font-medium">{customer.tipo || '-'}</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Sistema</p>
-                <p className="font-medium">{customer.sistema || '-'}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        {/* Customer Full Info */}
+        <CustomerInfoSection customer={customer} onUpdate={fetchCustomer} />
 
-        {/* Action Cards */}
-        <h2 className="text-lg font-semibold mb-4">Ações de Sucesso do Cliente</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {/* Reclamação */}
-          <Card 
-            className="cursor-pointer hover:shadow-lg transition-shadow border-l-4 border-l-red-500"
-            onClick={() => setReclamacaoDialogOpen(true)}
-          >
-            <CardHeader>
-              <CardTitle className="text-base flex items-center gap-2">
-                <MessageSquareWarning className="w-5 h-5 text-red-500" />
-                Abrir Reclamação
-              </CardTitle>
-              <CardDescription>
-                Registre uma reclamação ou problema reportado pelo cliente
-              </CardDescription>
-            </CardHeader>
-          </Card>
-
-          {/* NPS */}
-          <Card 
-            className="cursor-pointer hover:shadow-lg transition-shadow border-l-4 border-l-purple-500"
-            onClick={() => setNpsDialogOpen(true)}
-          >
-            <CardHeader>
-              <CardTitle className="text-base flex items-center gap-2">
-                <Star className="w-5 h-5 text-purple-500" />
-                Pesquisa de NPS
-              </CardTitle>
-              <CardDescription>
-                Registre a nota NPS e feedback do cliente
-              </CardDescription>
-            </CardHeader>
-          </Card>
-
-          {/* Satisfação */}
-          <Card 
-            className="cursor-pointer hover:shadow-lg transition-shadow border-l-4 border-l-blue-500"
-            onClick={() => setSatisfacaoDialogOpen(true)}
-          >
-            <CardHeader>
-              <CardTitle className="text-base flex items-center gap-2">
-                <ClipboardCheck className="w-5 h-5 text-blue-500" />
-                Pesquisa de Satisfação
-              </CardTitle>
-              <CardDescription>
-                Registre uma pesquisa completa de satisfação
-              </CardDescription>
-            </CardHeader>
-          </Card>
-
-          {/* Depoimento */}
-          <Card 
-            className="cursor-pointer hover:shadow-lg transition-shadow border-l-4 border-l-green-500"
-            onClick={() => setDepoimentoDialogOpen(true)}
-          >
-            <CardHeader>
-              <CardTitle className="text-base flex items-center gap-2">
-                <ThumbsUp className="w-5 h-5 text-green-500" />
-                Registrar Depoimento
-              </CardTitle>
-              <CardDescription>
-                Registre elogios e depoimentos do síndico ou moradores
-              </CardDescription>
-            </CardHeader>
-          </Card>
-
-          {/* Renovação */}
-          <Card 
-            className="cursor-pointer hover:shadow-lg transition-shadow border-l-4 border-l-amber-500"
-            onClick={() => setRenovacaoDialogOpen(true)}
-          >
-            <CardHeader>
-              <CardTitle className="text-base flex items-center gap-2">
-                <RefreshCw className="w-5 h-5 text-amber-500" />
-                Processo de Renovação
-              </CardTitle>
-              <CardDescription>
-                Inicie o processo de renovação do contrato
-              </CardDescription>
-            </CardHeader>
-          </Card>
+        {/* Quick Actions */}
+        <div>
+          <h2 className="text-lg font-semibold mb-4">Ações Rápidas</h2>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <Card className="cursor-pointer hover:shadow-lg transition-shadow border-l-4 border-l-red-500" onClick={() => setReclamacaoDialogOpen(true)}>
+              <CardHeader className="py-4">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <MessageSquareWarning className="w-4 h-4 text-red-500" /> Nova Reclamação
+                </CardTitle>
+              </CardHeader>
+            </Card>
+            <Card className="cursor-pointer hover:shadow-lg transition-shadow border-l-4 border-l-purple-500" onClick={() => setNpsDialogOpen(true)}>
+              <CardHeader className="py-4">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <Star className="w-4 h-4 text-purple-500" /> Pesquisa NPS
+                </CardTitle>
+              </CardHeader>
+            </Card>
+            <Card className="cursor-pointer hover:shadow-lg transition-shadow border-l-4 border-l-blue-500" onClick={() => setSatisfacaoDialogOpen(true)}>
+              <CardHeader className="py-4">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <ClipboardCheck className="w-4 h-4 text-blue-500" /> Pesquisa Satisfação
+                </CardTitle>
+              </CardHeader>
+            </Card>
+            <Card className="cursor-pointer hover:shadow-lg transition-shadow border-l-4 border-l-green-500" onClick={() => setDepoimentoDialogOpen(true)}>
+              <CardHeader className="py-4">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <ThumbsUp className="w-4 h-4 text-green-500" /> Novo Depoimento
+                </CardTitle>
+              </CardHeader>
+            </Card>
+          </div>
         </div>
 
-        {/* Reclamação Dialog */}
+        {/* History Section */}
+        <CustomerHistorySection key={historyKey} customerId={customer.id} />
+
+        {/* Renovação Section */}
+        <RenovacaoSection
+          customerId={customer.id}
+          dataAtivacao={customer.data_ativacao}
+          dataTermino={customer.data_termino}
+          onUpdate={fetchCustomer}
+        />
+
+        {/* New Reclamação Dialog */}
         <Dialog open={reclamacaoDialogOpen} onOpenChange={setReclamacaoDialogOpen}>
           <DialogContent className="max-w-lg">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
-                <MessageSquareWarning className="w-5 h-5 text-red-500" />
-                Abrir Reclamação
+                <MessageSquareWarning className="w-5 h-5 text-red-500" /> Nova Reclamação
               </DialogTitle>
             </DialogHeader>
             <div className="space-y-4 py-4">
               <div>
-                <Label htmlFor="assunto">Assunto</Label>
-                <Input
-                  id="assunto"
-                  value={reclamacaoForm.assunto}
-                  onChange={(e) => setReclamacaoForm({ ...reclamacaoForm, assunto: e.target.value })}
-                  placeholder="Resumo da reclamação"
-                />
+                <Label>Assunto</Label>
+                <Input value={reclamacaoForm.assunto} onChange={(e) => setReclamacaoForm({ ...reclamacaoForm, assunto: e.target.value })} placeholder="Resumo da reclamação" />
               </div>
               <div>
-                <Label htmlFor="prioridade">Prioridade</Label>
-                <Select 
-                  value={reclamacaoForm.prioridade} 
-                  onValueChange={(v) => setReclamacaoForm({ ...reclamacaoForm, prioridade: v })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
+                <Label>Prioridade</Label>
+                <Select value={reclamacaoForm.prioridade} onValueChange={(v) => setReclamacaoForm({ ...reclamacaoForm, prioridade: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="baixa">Baixa</SelectItem>
                     <SelectItem value="media">Média</SelectItem>
@@ -451,312 +294,187 @@ export default function SucessoClienteDetalhe() {
                 </Select>
               </div>
               <div>
-                <Label htmlFor="descricao">Descrição</Label>
-                <Textarea
-                  id="descricao"
-                  value={reclamacaoForm.descricao}
-                  onChange={(e) => setReclamacaoForm({ ...reclamacaoForm, descricao: e.target.value })}
-                  placeholder="Descreva a reclamação em detalhes"
-                  rows={4}
-                />
+                <Label>Descrição</Label>
+                <Textarea value={reclamacaoForm.descricao} onChange={(e) => setReclamacaoForm({ ...reclamacaoForm, descricao: e.target.value })} rows={4} />
               </div>
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setReclamacaoDialogOpen(false)}>Cancelar</Button>
-              <Button onClick={handleSubmitReclamacao}>Registrar Reclamação</Button>
+              <Button onClick={handleSubmitReclamacao}>Registrar</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
 
-        {/* NPS Dialog */}
+        {/* New NPS Dialog */}
         <Dialog open={npsDialogOpen} onOpenChange={setNpsDialogOpen}>
           <DialogContent className="max-w-lg">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
-                <Star className="w-5 h-5 text-purple-500" />
-                Pesquisa de NPS
+                <Star className="w-5 h-5 text-purple-500" /> Pesquisa de NPS
               </DialogTitle>
             </DialogHeader>
             <div className="space-y-4 py-4">
               <div>
                 <Label>Nota NPS (0-10)</Label>
-                <p className="text-sm text-muted-foreground mb-2">De 0 a 10, qual a probabilidade de recomendar nossos serviços?</p>
-                <div className="flex gap-2 flex-wrap">
+                <div className="flex gap-2 flex-wrap mt-2">
                   {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => (
-                    <Button
-                      key={n}
-                      variant={npsForm.nota === String(n) ? 'default' : 'outline'}
-                      size="sm"
-                      className="w-10 h-10"
-                      onClick={() => setNpsForm({ ...npsForm, nota: String(n) })}
-                    >
+                    <Button key={n} variant={npsForm.nota === String(n) ? 'default' : 'outline'} size="sm" className="w-10 h-10" onClick={() => setNpsForm({ ...npsForm, nota: String(n) })}>
                       {n}
                     </Button>
                   ))}
                 </div>
               </div>
               <div>
-                <Label htmlFor="comentarioNps">Comentário</Label>
-                <Textarea
-                  id="comentarioNps"
-                  value={npsForm.comentario}
-                  onChange={(e) => setNpsForm({ ...npsForm, comentario: e.target.value })}
-                  placeholder="Comentário adicional do cliente"
-                  rows={3}
-                />
+                <Label>Ponto Forte</Label>
+                <Input value={npsForm.ponto_forte} onChange={(e) => setNpsForm({ ...npsForm, ponto_forte: e.target.value })} placeholder="O que o cliente mais gostou" />
+              </div>
+              <div>
+                <Label>Ponto Fraco</Label>
+                <Input value={npsForm.ponto_fraco} onChange={(e) => setNpsForm({ ...npsForm, ponto_fraco: e.target.value })} placeholder="O que pode melhorar" />
+              </div>
+              <div>
+                <Label>Comentário</Label>
+                <Textarea value={npsForm.comentario} onChange={(e) => setNpsForm({ ...npsForm, comentario: e.target.value })} rows={3} />
               </div>
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setNpsDialogOpen(false)}>Cancelar</Button>
-              <Button onClick={handleSubmitNps}>Registrar NPS</Button>
+              <Button onClick={handleSubmitNps}>Registrar</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
 
-        {/* Satisfação Dialog */}
+        {/* New Satisfação Dialog */}
         <Dialog open={satisfacaoDialogOpen} onOpenChange={setSatisfacaoDialogOpen}>
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
-                <ClipboardCheck className="w-5 h-5 text-blue-500" />
-                Pesquisa de Satisfação
+                <ClipboardCheck className="w-5 h-5 text-blue-500" /> Pesquisa de Satisfação
               </DialogTitle>
             </DialogHeader>
-            <div className="space-y-5 py-4">
-              {/* 1. Tempo de implantação */}
-              <div>
-                <Label>Você considera que o tempo total de implantação atendeu às suas expectativas?</Label>
-                <Select 
-                  value={satisfacaoForm.tempoImplantacao} 
-                  onValueChange={(v) => setSatisfacaoForm({ ...satisfacaoForm, tempoImplantacao: v })}
-                >
-                  <SelectTrigger className="mt-2">
-                    <SelectValue placeholder="Selecione" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="sim">Sim</SelectItem>
-                    <SelectItem value="nao">Não</SelectItem>
-                  </SelectContent>
-                </Select>
+            <div className="space-y-4 py-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Tempo de implantação atendeu expectativa?</Label>
+                  <Select value={satisfacaoForm.tempoImplantacao} onValueChange={(v) => setSatisfacaoForm({ ...satisfacaoForm, tempoImplantacao: v })}>
+                    <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="sim">Sim</SelectItem>
+                      <SelectItem value="nao">Não</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Ambiente organizado após instalação?</Label>
+                  <Select value={satisfacaoForm.ambienteOrganizado} onValueChange={(v) => setSatisfacaoForm({ ...satisfacaoForm, ambienteOrganizado: v })}>
+                    <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="sim">Sim</SelectItem>
+                      <SelectItem value="nao">Não</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Treinamento foi adequado?</Label>
+                  <Select value={satisfacaoForm.treinamentoAdequado} onValueChange={(v) => setSatisfacaoForm({ ...satisfacaoForm, treinamentoAdequado: v })}>
+                    <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="sim">Sim</SelectItem>
+                      <SelectItem value="nao">Não</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Expectativa atendida?</Label>
+                  <Select value={satisfacaoForm.expectativaAtendida} onValueChange={(v) => setSatisfacaoForm({ ...satisfacaoForm, expectativaAtendida: v })}>
+                    <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="sim">Sim</SelectItem>
+                      <SelectItem value="nao">Não</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Facilidade do App morador</Label>
+                  <Select value={satisfacaoForm.facilidadeApp} onValueChange={(v) => setSatisfacaoForm({ ...satisfacaoForm, facilidadeApp: v })}>
+                    <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="muito_satisfeito">Muito Satisfeito</SelectItem>
+                      <SelectItem value="satisfeito">Satisfeito</SelectItem>
+                      <SelectItem value="indiferente">Indiferente</SelectItem>
+                      <SelectItem value="insatisfeito">Insatisfeito</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Nota NPS (1-10)</Label>
+                  <Select value={satisfacaoForm.notaNps} onValueChange={(v) => setSatisfacaoForm({ ...satisfacaoForm, notaNps: v })}>
+                    <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                    <SelectContent>
+                      {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => (
+                        <SelectItem key={n} value={String(n)}>{n}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
-
-              {/* 2. Ambiente organizado */}
               <div>
-                <Label>A equipe de instalação deixou o ambiente organizado e em boas condições de conservação após a conclusão do serviço? Fios expostos ou outra avaria?</Label>
-                <Select 
-                  value={satisfacaoForm.ambienteOrganizado} 
-                  onValueChange={(v) => setSatisfacaoForm({ ...satisfacaoForm, ambienteOrganizado: v })}
-                >
-                  <SelectTrigger className="mt-2">
-                    <SelectValue placeholder="Selecione" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="sim">Sim</SelectItem>
-                    <SelectItem value="nao">Não</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Label>Pendências existentes</Label>
+                <Textarea value={satisfacaoForm.pendencias} onChange={(e) => setSatisfacaoForm({ ...satisfacaoForm, pendencias: e.target.value })} rows={2} />
               </div>
-
-              {/* 3. Pendências */}
               <div>
-                <Label htmlFor="pendencias">Ainda existe alguma pendência?</Label>
-                <Textarea
-                  id="pendencias"
-                  value={satisfacaoForm.pendencias}
-                  onChange={(e) => setSatisfacaoForm({ ...satisfacaoForm, pendencias: e.target.value })}
-                  placeholder="Descreva as pendências, se houver"
-                  rows={2}
-                  className="mt-2"
-                />
+                <Label>Comunicação - pontos a melhorar</Label>
+                <Textarea value={satisfacaoForm.comunicacao} onChange={(e) => setSatisfacaoForm({ ...satisfacaoForm, comunicacao: e.target.value })} rows={2} />
               </div>
-
-              {/* 4. Comunicação */}
               <div>
-                <Label htmlFor="comunicacao">Ao longo de todo processo a comunicação foi adequada? Quais pontos da comunicação poderiam ser melhorados?</Label>
-                <Textarea
-                  id="comunicacao"
-                  value={satisfacaoForm.comunicacao}
-                  onChange={(e) => setSatisfacaoForm({ ...satisfacaoForm, comunicacao: e.target.value })}
-                  placeholder="Descreva sobre a comunicação"
-                  rows={2}
-                  className="mt-2"
-                />
-              </div>
-
-              {/* 5. Facilidade do app morador */}
-              <div>
-                <Label>Como você avalia a facilidade de uso do app morador?</Label>
-                <Select 
-                  value={satisfacaoForm.facilidadeApp} 
-                  onValueChange={(v) => setSatisfacaoForm({ ...satisfacaoForm, facilidadeApp: v })}
-                >
-                  <SelectTrigger className="mt-2">
-                    <SelectValue placeholder="Selecione" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="muito_satisfeito">Muito Satisfeito</SelectItem>
-                    <SelectItem value="satisfeito">Satisfeito</SelectItem>
-                    <SelectItem value="indiferente">Indiferente</SelectItem>
-                    <SelectItem value="insatisfeito">Insatisfeito</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* 6. Funcionalidades síndico */}
-              <div>
-                <Label htmlFor="funcionalidadesSindico">No aplicativo de síndico quais as funcionalidades mais úteis e que sente falta?</Label>
-                <Textarea
-                  id="funcionalidadesSindico"
-                  value={satisfacaoForm.funcionalidadesSindico}
-                  onChange={(e) => setSatisfacaoForm({ ...satisfacaoForm, funcionalidadesSindico: e.target.value })}
-                  placeholder="Descreva as funcionalidades"
-                  rows={2}
-                  className="mt-2"
-                />
-              </div>
-
-              {/* 7. Treinamento adequado */}
-              <div>
-                <Label>O treinamento aos usuários moradores, síndico e porteiro foi adequado?</Label>
-                <Select 
-                  value={satisfacaoForm.treinamentoAdequado} 
-                  onValueChange={(v) => setSatisfacaoForm({ ...satisfacaoForm, treinamentoAdequado: v })}
-                >
-                  <SelectTrigger className="mt-2">
-                    <SelectValue placeholder="Selecione" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="sim">Sim</SelectItem>
-                    <SelectItem value="nao">Não</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* 8. Expectativa atendida */}
-              <div>
-                <Label>A solução atendeu o que o condomínio tinha de expectativa?</Label>
-                <Select 
-                  value={satisfacaoForm.expectativaAtendida} 
-                  onValueChange={(v) => setSatisfacaoForm({ ...satisfacaoForm, expectativaAtendida: v })}
-                >
-                  <SelectTrigger className="mt-2">
-                    <SelectValue placeholder="Selecione" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="sim">Sim</SelectItem>
-                    <SelectItem value="nao">Não</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* 9. NPS */}
-              <div>
-                <Label>Em uma escala 1 a 10, quão provável é que você recomende nosso sistema para um amigo ou colega?</Label>
-                <Select 
-                  value={satisfacaoForm.notaNps} 
-                  onValueChange={(v) => setSatisfacaoForm({ ...satisfacaoForm, notaNps: v })}
-                >
-                  <SelectTrigger className="mt-2">
-                    <SelectValue placeholder="Selecione a nota" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => (
-                      <SelectItem key={n} value={String(n)}>{n}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Label>Funcionalidades do síndico - úteis/faltantes</Label>
+                <Textarea value={satisfacaoForm.funcionalidadesSindico} onChange={(e) => setSatisfacaoForm({ ...satisfacaoForm, funcionalidadesSindico: e.target.value })} rows={2} />
               </div>
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setSatisfacaoDialogOpen(false)}>Cancelar</Button>
-              <Button onClick={handleSubmitSatisfacao}>Registrar Pesquisa</Button>
+              <Button onClick={handleSubmitSatisfacao}>Registrar</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
 
-        {/* Depoimento Dialog */}
+        {/* New Depoimento Dialog */}
         <Dialog open={depoimentoDialogOpen} onOpenChange={setDepoimentoDialogOpen}>
           <DialogContent className="max-w-lg">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
-                <ThumbsUp className="w-5 h-5 text-green-500" />
-                Registrar Depoimento
+                <ThumbsUp className="w-5 h-5 text-green-500" /> Novo Depoimento
               </DialogTitle>
             </DialogHeader>
             <div className="space-y-4 py-4">
-              <div>
-                <Label htmlFor="autor">Nome do Autor</Label>
-                <Input
-                  id="autor"
-                  value={depoimentoForm.autor}
-                  onChange={(e) => setDepoimentoForm({ ...depoimentoForm, autor: e.target.value })}
-                  placeholder="Nome do síndico ou morador"
-                />
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Nome do Autor</Label>
+                  <Input value={depoimentoForm.autor} onChange={(e) => setDepoimentoForm({ ...depoimentoForm, autor: e.target.value })} placeholder="Nome" />
+                </div>
+                <div>
+                  <Label>Cargo/Função</Label>
+                  <Input value={depoimentoForm.cargo} onChange={(e) => setDepoimentoForm({ ...depoimentoForm, cargo: e.target.value })} placeholder="Ex: Síndico" />
+                </div>
               </div>
               <div>
-                <Label htmlFor="cargo">Cargo/Função</Label>
-                <Input
-                  id="cargo"
-                  value={depoimentoForm.cargo}
-                  onChange={(e) => setDepoimentoForm({ ...depoimentoForm, cargo: e.target.value })}
-                  placeholder="Ex: Síndico, Morador, Conselheiro"
-                />
+                <Label>Tipo</Label>
+                <Select value={depoimentoForm.tipo} onValueChange={(v) => setDepoimentoForm({ ...depoimentoForm, tipo: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="elogio">Elogio</SelectItem>
+                    <SelectItem value="sugestao">Sugestão</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <div>
-                <Label htmlFor="textoDepoimento">Depoimento</Label>
-                <Textarea
-                  id="textoDepoimento"
-                  value={depoimentoForm.texto}
-                  onChange={(e) => setDepoimentoForm({ ...depoimentoForm, texto: e.target.value })}
-                  placeholder="Texto do depoimento ou elogio"
-                  rows={4}
-                />
+                <Label>Depoimento</Label>
+                <Textarea value={depoimentoForm.texto} onChange={(e) => setDepoimentoForm({ ...depoimentoForm, texto: e.target.value })} rows={4} />
               </div>
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setDepoimentoDialogOpen(false)}>Cancelar</Button>
-              <Button onClick={handleSubmitDepoimento}>Registrar Depoimento</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-
-        {/* Renovação Dialog */}
-        <Dialog open={renovacaoDialogOpen} onOpenChange={setRenovacaoDialogOpen}>
-          <DialogContent className="max-w-lg">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <RefreshCw className="w-5 h-5 text-amber-500" />
-                Processo de Renovação
-              </DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4 py-4">
-              <div className="p-3 bg-muted rounded-lg">
-                <p className="text-sm text-muted-foreground">Contrato atual termina em:</p>
-                <p className="font-semibold">{calculateTermino()}</p>
-              </div>
-              <div>
-                <Label htmlFor="novaData">Nova Data de Término</Label>
-                <Input
-                  id="novaData"
-                  type="date"
-                  value={renovacaoForm.novaData}
-                  onChange={(e) => setRenovacaoForm({ ...renovacaoForm, novaData: e.target.value })}
-                />
-              </div>
-              <div>
-                <Label htmlFor="obsRenovacao">Observações</Label>
-                <Textarea
-                  id="obsRenovacao"
-                  value={renovacaoForm.observacoes}
-                  onChange={(e) => setRenovacaoForm({ ...renovacaoForm, observacoes: e.target.value })}
-                  placeholder="Observações sobre a renovação"
-                  rows={3}
-                />
-              </div>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setRenovacaoDialogOpen(false)}>Cancelar</Button>
-              <Button onClick={handleSubmitRenovacao}>Iniciar Renovação</Button>
+              <Button onClick={handleSubmitDepoimento}>Registrar</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>

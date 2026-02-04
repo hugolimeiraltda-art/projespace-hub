@@ -154,7 +154,7 @@ function AppRoutes() {
       {/* Manutenção routes */}
       <Route 
         path="/manutencao" 
-        element={<Navigate to="/manutencao/preventivas" replace />} 
+        element={<ProtectedRoute><Manutencao /></ProtectedRoute>} 
       />
       <Route 
         path="/manutencao/preventivas" 

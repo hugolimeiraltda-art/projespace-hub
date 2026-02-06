@@ -14,12 +14,13 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { useManutencaoExport } from '@/hooks/useManutencaoExport';
-import { Plus, AlertTriangle, Clock, CheckCircle, Wrench, Search, Eye, FileText, Download, Timer, CalendarClock, FileSpreadsheet, MessageSquare, Send, Trash2 } from 'lucide-react';
+import { Plus, AlertTriangle, Clock, CheckCircle, Wrench, Search, Eye, FileText, Download, Timer, CalendarClock, FileSpreadsheet, MessageSquare, Send, Trash2, Pencil, List } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { format, differenceInDays, addDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { PendenciasFullScreenTable } from '@/components/PendenciasFullScreenTable';
 
 interface Customer {
   id: string;
@@ -80,6 +81,17 @@ const STATUS_OPTIONS = [
   { value: 'CANCELADO', label: 'Cancelado', color: 'bg-gray-500' },
 ];
 
+const SETOR_OPTIONS = [
+  'Compras',
+  'Fiscal',
+  'Almoxarifado',
+  'Faturamento',
+  'Cadastro',
+  'Contas a Receber',
+  'Implantação',
+  'Cliente',
+];
+
 export default function ManutencaoPendencias() {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -99,6 +111,18 @@ export default function ManutencaoPendencias() {
   const [filterSetor, setFilterSetor] = useState<string>('all');
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [pendenciaToDelete, setPendenciaToDelete] = useState<Pendencia | null>(null);
+  const [fullScreenOpen, setFullScreenOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
+  const [pendenciaToEdit, setPendenciaToEdit] = useState<Pendencia | null>(null);
+  const [editFormData, setEditFormData] = useState({
+    numero_os: '',
+    numero_ticket: '',
+    contrato: '',
+    razao_social: '',
+    setor: '',
+    descricao: '',
+  });
 
   // Form state
   const [formData, setFormData] = useState({
@@ -302,6 +326,90 @@ export default function ManutencaoPendencias() {
     setDeleteDialogOpen(true);
   };
 
+  const openEditDialog = (pendencia: Pendencia) => {
+    setPendenciaToEdit(pendencia);
+    setEditFormData({
+      numero_os: pendencia.numero_os,
+      numero_ticket: pendencia.numero_ticket || '',
+      contrato: pendencia.contrato,
+      razao_social: pendencia.razao_social,
+      setor: pendencia.setor,
+      descricao: pendencia.descricao || '',
+    });
+    setEditDialogOpen(true);
+  };
+
+  const openDetailsDialog = (pendencia: Pendencia) => {
+    setSelectedPendencia(pendencia);
+    setDetailsDialogOpen(true);
+  };
+
+  const handleEditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!pendenciaToEdit) return;
+
+    try {
+      const { error } = await supabase
+        .from('manutencao_pendencias')
+        .update({
+          numero_os: editFormData.numero_os,
+          numero_ticket: editFormData.numero_ticket || null,
+          contrato: editFormData.contrato,
+          razao_social: editFormData.razao_social,
+          setor: editFormData.setor,
+          descricao: editFormData.descricao || null,
+        })
+        .eq('id', pendenciaToEdit.id);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Sucesso',
+        description: 'Pendência atualizada com sucesso',
+      });
+      setEditDialogOpen(false);
+      setPendenciaToEdit(null);
+      fetchData();
+    } catch (error) {
+      console.error('Error updating pendencia:', error);
+      toast({
+        title: 'Erro',
+        description: 'Erro ao atualizar pendência',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleSetorChange = async (id: string, newSetor: string) => {
+    try {
+      const { error } = await supabase
+        .from('manutencao_pendencias')
+        .update({ setor: newSetor })
+        .eq('id', id);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Sucesso',
+        description: 'Setor atualizado',
+      });
+      fetchData();
+    } catch (error) {
+      console.error('Error updating setor:', error);
+      toast({
+        title: 'Erro',
+        description: 'Erro ao atualizar setor',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleViewCustomer = (customerId: string | null) => {
+    if (customerId) {
+      window.open(`/sucesso-cliente/${customerId}`, '_blank');
+    }
+  };
+
   const openComentarios = async (pendencia: Pendencia) => {
     setSelectedPendencia(pendencia);
     setComentariosDialogOpen(true);
@@ -488,6 +596,14 @@ export default function ManutencaoPendencias() {
             </p>
           </div>
           <div className="flex items-center gap-2">
+            <Button 
+              variant="outline" 
+              className="flex items-center gap-2"
+              onClick={() => setFullScreenOpen(true)}
+            >
+              <List className="h-4 w-4" />
+              Exibir Tudo
+            </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" className="flex items-center gap-2">
@@ -791,7 +907,27 @@ export default function ManutencaoPendencias() {
                         </TableCell>
                         <TableCell>{pendencia.contrato}</TableCell>
                         <TableCell>{getTipoLabel(pendencia.tipo)}</TableCell>
-                        <TableCell>{pendencia.setor}</TableCell>
+                        <TableCell>
+                          {pendencia.status !== 'CONCLUIDO' && pendencia.status !== 'CANCELADO' ? (
+                            <Select
+                              value={pendencia.setor}
+                              onValueChange={(value) => handleSetorChange(pendencia.id, value)}
+                            >
+                              <SelectTrigger className="w-[140px] h-8">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {SETOR_OPTIONS.map((setor) => (
+                                  <SelectItem key={setor} value={setor}>
+                                    {setor}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          ) : (
+                            pendencia.setor
+                          )}
+                        </TableCell>
                         <TableCell>{getStatusBadge(pendencia.status)}</TableCell>
                         <TableCell>
                           <div className="flex flex-col gap-1">
@@ -805,22 +941,37 @@ export default function ManutencaoPendencias() {
                           {format(new Date(pendencia.data_abertura), 'dd/MM/yyyy', { locale: ptBR })}
                         </TableCell>
                         <TableCell>
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-1 flex-wrap">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => openDetailsDialog(pendencia)}
+                              title="Ver Detalhes"
+                            >
+                              <Eye className="h-3 w-3" />
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => openEditDialog(pendencia)}
+                              title="Editar"
+                            >
+                              <Pencil className="h-3 w-3" />
+                            </Button>
                             <Button
                               variant="outline"
                               size="sm"
                               onClick={() => openComentarios(pendencia)}
-                              className="flex items-center gap-1"
+                              title="Comentários"
                             >
                               <MessageSquare className="h-3 w-3" />
-                              Comentários
                             </Button>
                             {pendencia.status !== 'CONCLUIDO' && pendencia.status !== 'CANCELADO' && (
                               <Select
                                 value={pendencia.status}
                                 onValueChange={(value) => handleStatusChange(pendencia.id, value)}
                               >
-                                <SelectTrigger className="w-[130px] h-8">
+                                <SelectTrigger className="w-[120px] h-8">
                                   <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -838,6 +989,7 @@ export default function ManutencaoPendencias() {
                                 size="sm"
                                 onClick={() => openDeleteDialog(pendencia)}
                                 className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                                title="Excluir"
                               >
                                 <Trash2 className="h-3 w-3" />
                               </Button>
@@ -940,6 +1092,222 @@ export default function ManutencaoPendencias() {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+
+        {/* Edit Dialog */}
+        <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Pencil className="h-5 w-5" />
+                Editar Pendência - OS {pendenciaToEdit?.numero_os}
+              </DialogTitle>
+            </DialogHeader>
+            <form onSubmit={handleEditSubmit} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="edit_numero_os">Nº OS *</Label>
+                  <Input
+                    id="edit_numero_os"
+                    value={editFormData.numero_os}
+                    onChange={(e) => setEditFormData(prev => ({ ...prev, numero_os: e.target.value }))}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit_numero_ticket">Nº Ticket</Label>
+                  <Input
+                    id="edit_numero_ticket"
+                    value={editFormData.numero_ticket}
+                    onChange={(e) => setEditFormData(prev => ({ ...prev, numero_ticket: e.target.value }))}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="edit_contrato">Contrato *</Label>
+                  <Input
+                    id="edit_contrato"
+                    value={editFormData.contrato}
+                    onChange={(e) => setEditFormData(prev => ({ ...prev, contrato: e.target.value }))}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit_razao_social">Razão Social *</Label>
+                  <Input
+                    id="edit_razao_social"
+                    value={editFormData.razao_social}
+                    onChange={(e) => setEditFormData(prev => ({ ...prev, razao_social: e.target.value }))}
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Setor *</Label>
+                <Select 
+                  value={editFormData.setor} 
+                  onValueChange={(value) => setEditFormData(prev => ({ ...prev, setor: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione o setor" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {SETOR_OPTIONS.map((setor) => (
+                      <SelectItem key={setor} value={setor}>
+                        {setor}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="edit_descricao">Descrição</Label>
+                <Textarea
+                  id="edit_descricao"
+                  value={editFormData.descricao}
+                  onChange={(e) => setEditFormData(prev => ({ ...prev, descricao: e.target.value }))}
+                  rows={4}
+                />
+              </div>
+
+              <div className="flex justify-end gap-2">
+                <Button type="button" variant="outline" onClick={() => setEditDialogOpen(false)}>
+                  Cancelar
+                </Button>
+                <Button type="submit">Salvar Alterações</Button>
+              </div>
+            </form>
+          </DialogContent>
+        </Dialog>
+
+        {/* Details Dialog */}
+        <Dialog open={detailsDialogOpen} onOpenChange={setDetailsDialogOpen}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Eye className="h-5 w-5" />
+                Detalhes da Pendência - OS {selectedPendencia?.numero_os}
+              </DialogTitle>
+            </DialogHeader>
+            {selectedPendencia && (
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <Label className="text-muted-foreground text-xs">Nº OS</Label>
+                    <p className="font-medium">{selectedPendencia.numero_os}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-muted-foreground text-xs">Nº Ticket</Label>
+                    <p className="font-medium">{selectedPendencia.numero_ticket || '-'}</p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <Label className="text-muted-foreground text-xs">Cliente</Label>
+                    <p className="font-medium">{selectedPendencia.razao_social}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-muted-foreground text-xs">Contrato</Label>
+                    <p className="font-medium">{selectedPendencia.contrato}</p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <Label className="text-muted-foreground text-xs">Tipo</Label>
+                    <p className="font-medium">{getTipoLabel(selectedPendencia.tipo)}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-muted-foreground text-xs">Setor</Label>
+                    <p className="font-medium">{selectedPendencia.setor}</p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <Label className="text-muted-foreground text-xs">Status</Label>
+                    <div>{getStatusBadge(selectedPendencia.status)}</div>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-muted-foreground text-xs">SLA</Label>
+                    <p className="font-medium">{selectedPendencia.sla_dias} dias</p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <Label className="text-muted-foreground text-xs">Data de Abertura</Label>
+                    <p className="font-medium">
+                      {format(new Date(selectedPendencia.data_abertura), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                    </p>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-muted-foreground text-xs">Prazo</Label>
+                    <p className="font-medium">
+                      {format(new Date(selectedPendencia.data_prazo), 'dd/MM/yyyy', { locale: ptBR })}
+                    </p>
+                    {getPrazoBadge(selectedPendencia)}
+                  </div>
+                </div>
+
+                {selectedPendencia.data_conclusao && (
+                  <div className="space-y-1">
+                    <Label className="text-muted-foreground text-xs">Data de Conclusão</Label>
+                    <p className="font-medium">
+                      {format(new Date(selectedPendencia.data_conclusao), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                    </p>
+                  </div>
+                )}
+
+                {selectedPendencia.descricao && (
+                  <div className="space-y-1">
+                    <Label className="text-muted-foreground text-xs">Descrição</Label>
+                    <p className="text-sm bg-muted p-3 rounded-lg">{selectedPendencia.descricao}</p>
+                  </div>
+                )}
+
+                <div className="space-y-1">
+                  <Label className="text-muted-foreground text-xs">Criado por</Label>
+                  <p className="font-medium">{selectedPendencia.created_by_name || 'Não informado'}</p>
+                </div>
+
+                <div className="flex justify-end gap-2 pt-4">
+                  <Button variant="outline" onClick={() => setDetailsDialogOpen(false)}>
+                    Fechar
+                  </Button>
+                  <Button onClick={() => {
+                    setDetailsDialogOpen(false);
+                    openEditDialog(selectedPendencia);
+                  }}>
+                    <Pencil className="h-4 w-4 mr-2" />
+                    Editar
+                  </Button>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
+
+        {/* Full Screen Table */}
+        <PendenciasFullScreenTable
+          pendencias={filteredPendencias}
+          isOpen={fullScreenOpen}
+          onClose={() => setFullScreenOpen(false)}
+          onViewCustomer={handleViewCustomer}
+          onStatusChange={handleStatusChange}
+          onSetorChange={handleSetorChange}
+          onEditPendencia={openEditDialog}
+          onViewDetails={openDetailsDialog}
+          onDeletePendencia={user?.role === 'admin' ? openDeleteDialog : undefined}
+          getTipoLabel={getTipoLabel}
+          statusOptions={STATUS_OPTIONS}
+          setorOptions={SETOR_OPTIONS}
+          userRole={user?.role}
+        />
       </div>
     </Layout>
   );

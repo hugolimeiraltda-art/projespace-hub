@@ -5,7 +5,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { X, ArrowUp, ArrowDown, ArrowUpDown, Filter, Eye, List, Trash2 } from 'lucide-react';
+import { X, ArrowUp, ArrowDown, ArrowUpDown, Filter, Eye, List, Trash2, Pencil } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { differenceInDays } from 'date-fns';
@@ -49,10 +49,25 @@ interface PendenciasFullScreenTableProps {
   onViewCustomer: (customerId: string | null) => void;
   onStatusChange: (id: string, newStatus: string) => void;
   onDeletePendencia?: (pendencia: Pendencia) => void;
+  onSetorChange?: (id: string, newSetor: string) => void;
+  onEditPendencia?: (pendencia: Pendencia) => void;
+  onViewDetails?: (pendencia: Pendencia) => void;
   getTipoLabel: (tipo: string) => string;
   statusOptions: { value: string; label: string; color: string }[];
+  setorOptions?: string[];
   userRole?: string;
 }
+
+const DEFAULT_SETOR_OPTIONS = [
+  'Compras',
+  'Fiscal',
+  'Almoxarifado',
+  'Faturamento',
+  'Cadastro',
+  'Contas a Receber',
+  'Implantação',
+  'Cliente',
+];
 
 export function PendenciasFullScreenTable({
   pendencias,
@@ -61,8 +76,12 @@ export function PendenciasFullScreenTable({
   onViewCustomer,
   onStatusChange,
   onDeletePendencia,
+  onSetorChange,
+  onEditPendencia,
+  onViewDetails,
   getTipoLabel,
   statusOptions,
+  setorOptions = DEFAULT_SETOR_OPTIONS,
   userRole,
 }: PendenciasFullScreenTableProps) {
   const [columnFilters, setColumnFilters] = useState<ColumnFilter[]>([]);
@@ -415,7 +434,27 @@ export function PendenciasFullScreenTable({
                   </TableCell>
                   <TableCell>{pendencia.contrato}</TableCell>
                   <TableCell>{getTipoLabel(pendencia.tipo)}</TableCell>
-                  <TableCell>{pendencia.setor}</TableCell>
+                  <TableCell>
+                    {pendencia.status !== 'CONCLUIDO' && pendencia.status !== 'CANCELADO' && onSetorChange ? (
+                      <Select
+                        value={pendencia.setor}
+                        onValueChange={(value) => onSetorChange(pendencia.id, value)}
+                      >
+                        <SelectTrigger className="w-[140px] h-8">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {setorOptions.map((setor) => (
+                            <SelectItem key={setor} value={setor}>
+                              {setor}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      pendencia.setor
+                    )}
+                  </TableCell>
                   <TableCell>{getStatusBadge(pendencia.status)}</TableCell>
                   <TableCell>
                     <div className="flex flex-col gap-1">
@@ -429,22 +468,33 @@ export function PendenciasFullScreenTable({
                     {format(new Date(pendencia.data_abertura), 'dd/MM/yyyy', { locale: ptBR })}
                   </TableCell>
                   <TableCell>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => onViewCustomer(pendencia.customer_id)}
-                        className="flex items-center gap-1"
-                      >
-                        <Eye className="h-3 w-3" />
-                        Detalhes
-                      </Button>
+                    <div className="flex items-center gap-1 flex-wrap">
+                      {onViewDetails && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => onViewDetails(pendencia)}
+                          title="Ver Detalhes"
+                        >
+                          <Eye className="h-3 w-3" />
+                        </Button>
+                      )}
+                      {onEditPendencia && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => onEditPendencia(pendencia)}
+                          title="Editar"
+                        >
+                          <Pencil className="h-3 w-3" />
+                        </Button>
+                      )}
                       {pendencia.status !== 'CONCLUIDO' && pendencia.status !== 'CANCELADO' && (
                         <Select
                           value={pendencia.status}
                           onValueChange={(value) => onStatusChange(pendencia.id, value)}
                         >
-                          <SelectTrigger className="w-[130px] h-8">
+                          <SelectTrigger className="w-[120px] h-8">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
@@ -462,6 +512,7 @@ export function PendenciasFullScreenTable({
                           size="sm"
                           onClick={() => onDeletePendencia(pendencia)}
                           className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                          title="Excluir"
                         >
                           <Trash2 className="h-3 w-3" />
                         </Button>

@@ -123,6 +123,9 @@ export default function ManutencaoPendencias() {
     setor: '',
     descricao: '',
   });
+  const [editComentarios, setEditComentarios] = useState<Comentario[]>([]);
+  const [novoEditComentario, setNovoEditComentario] = useState('');
+  const [loadingEditComentarios, setLoadingEditComentarios] = useState(false);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -326,7 +329,7 @@ export default function ManutencaoPendencias() {
     setDeleteDialogOpen(true);
   };
 
-  const openEditDialog = (pendencia: Pendencia) => {
+  const openEditDialog = async (pendencia: Pendencia) => {
     setPendenciaToEdit(pendencia);
     setEditFormData({
       numero_os: pendencia.numero_os,
@@ -337,6 +340,64 @@ export default function ManutencaoPendencias() {
       descricao: pendencia.descricao || '',
     });
     setEditDialogOpen(true);
+    setLoadingEditComentarios(true);
+    setNovoEditComentario('');
+    
+    try {
+      const { data, error } = await supabase
+        .from('manutencao_pendencias_comentarios')
+        .select('*')
+        .eq('pendencia_id', pendencia.id)
+        .order('created_at', { ascending: true });
+
+      if (error) throw error;
+      setEditComentarios(data || []);
+    } catch (error) {
+      console.error('Error fetching comentarios:', error);
+      setEditComentarios([]);
+    } finally {
+      setLoadingEditComentarios(false);
+    }
+  };
+
+  const addEditComentario = async () => {
+    if (!novoEditComentario.trim() || !pendenciaToEdit) return;
+
+    try {
+      const { error } = await supabase
+        .from('manutencao_pendencias_comentarios')
+        .insert({
+          pendencia_id: pendenciaToEdit.id,
+          comentario: novoEditComentario,
+          created_by: user?.id,
+          created_by_name: user?.nome,
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: 'Sucesso',
+        description: 'Comentário adicionado',
+      });
+
+      setNovoEditComentario('');
+      
+      // Refresh comentarios
+      const { data } = await supabase
+        .from('manutencao_pendencias_comentarios')
+        .select('*')
+        .eq('pendencia_id', pendenciaToEdit.id)
+        .order('created_at', { ascending: true });
+
+      setEditComentarios(data || []);
+    } catch (error) {
+      console.error('Error adding comentario:', error);
+      toast({
+        title: 'Erro',
+        description: 'Erro ao adicionar comentário',
+        variant: 'destructive',
+      });
+    }
   };
 
   const openDetailsDialog = (pendencia: Pendencia) => {
@@ -1171,11 +1232,59 @@ export default function ManutencaoPendencias() {
                   id="edit_descricao"
                   value={editFormData.descricao}
                   onChange={(e) => setEditFormData(prev => ({ ...prev, descricao: e.target.value }))}
-                  rows={4}
+                  rows={3}
                 />
               </div>
 
-              <div className="flex justify-end gap-2">
+              <Separator />
+
+              {/* Comentários Section */}
+              <div className="space-y-3">
+                <Label className="flex items-center gap-2">
+                  <MessageSquare className="h-4 w-4" />
+                  Comentários ({editComentarios.length})
+                </Label>
+                
+                <ScrollArea className="h-[150px] border rounded-lg p-3">
+                  {loadingEditComentarios ? (
+                    <div className="flex items-center justify-center h-full text-muted-foreground">
+                      Carregando...
+                    </div>
+                  ) : editComentarios.length === 0 ? (
+                    <div className="flex items-center justify-center h-full text-muted-foreground text-sm">
+                      Nenhum comentário ainda
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {editComentarios.map((comentario) => (
+                        <div key={comentario.id} className="bg-muted p-2 rounded-lg">
+                          <div className="flex justify-between items-start">
+                            <span className="text-xs font-medium">{comentario.created_by_name}</span>
+                            <span className="text-xs text-muted-foreground">
+                              {format(new Date(comentario.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                            </span>
+                          </div>
+                          <p className="text-sm mt-1">{comentario.comentario}</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </ScrollArea>
+
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="Digite seu comentário..."
+                    value={novoEditComentario}
+                    onChange={(e) => setNovoEditComentario(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addEditComentario())}
+                  />
+                  <Button type="button" size="sm" onClick={addEditComentario}>
+                    <Send className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2">
                 <Button type="button" variant="outline" onClick={() => setEditDialogOpen(false)}>
                   Cancelar
                 </Button>

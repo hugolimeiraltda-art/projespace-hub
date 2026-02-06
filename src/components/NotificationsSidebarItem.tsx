@@ -35,10 +35,16 @@ export function NotificationsSidebarItem() {
   const fetchNotifications = async () => {
     if (!user) return;
 
-    const { data, error } = await supabase
+    // Admins see all notifications, others see only their own
+    let query = supabase
       .from('project_notifications')
-      .select('*')
-      .or(`for_user_id.eq.${user.id},for_role.eq.${user.role}`)
+      .select('*');
+    
+    if (user.role !== 'admin') {
+      query = query.or(`for_user_id.eq.${user.id},for_role.eq.${user.role}`);
+    }
+    
+    const { data, error } = await query
       .order('created_at', { ascending: false })
       .limit(20);
 

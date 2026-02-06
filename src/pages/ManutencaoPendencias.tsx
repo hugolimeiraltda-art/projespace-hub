@@ -528,7 +528,9 @@ export default function ManutencaoPendencias() {
   });
 
   const getTipoLabel = (tipo: string) => {
-    return TODOS_TIPOS.find(t => t.value === tipo)?.label || tipo;
+    if (tipo.startsWith('CLIENTE_')) return 'Pendência de Cliente';
+    if (tipo.startsWith('DEPT_')) return 'Pendência de Departamento';
+    return tipo;
   };
 
   const getStatusBadge = (status: string) => {

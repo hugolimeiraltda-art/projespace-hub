@@ -1924,6 +1924,7 @@ export type Database = {
         | "MENSAL"
         | "BIMESTRAL"
         | "TRIMESTRAL"
+        | "QUADRIMESTRAL"
         | "SEMESTRAL"
         | "ANUAL"
       sale_status: "NAO_INICIADO" | "EM_ANDAMENTO" | "CONCLUIDO"
@@ -2133,6 +2134,7 @@ export const Constants = {
         "MENSAL",
         "BIMESTRAL",
         "TRIMESTRAL",
+        "QUADRIMESTRAL",
         "SEMESTRAL",
         "ANUAL",
       ],

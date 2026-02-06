@@ -42,7 +42,7 @@ interface AgendaPreventiva {
   customer_id: string;
   contrato: string;
   razao_social: string;
-  frequencia: 'SEMANAL' | 'QUINZENAL' | 'MENSAL' | 'BIMESTRAL' | 'TRIMESTRAL' | 'SEMESTRAL' | 'ANUAL';
+  frequencia: 'SEMANAL' | 'QUINZENAL' | 'MENSAL' | 'BIMESTRAL' | 'TRIMESTRAL' | 'QUADRIMESTRAL' | 'SEMESTRAL' | 'ANUAL';
   tecnico_responsavel: string | null;
   proxima_execucao: string;
   ultima_execucao: string | null;
@@ -60,6 +60,7 @@ const FREQUENCIA_LABELS: Record<string, string> = {
   MENSAL: 'Mensal',
   BIMESTRAL: 'Bimestral',
   TRIMESTRAL: 'Trimestral',
+  QUADRIMESTRAL: 'Quadrimestral',
   SEMESTRAL: 'Semestral',
   ANUAL: 'Anual',
 };

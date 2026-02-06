@@ -61,6 +61,7 @@ const FREQUENCIAS = [
   { value: 'MENSAL', label: 'Mensal' },
   { value: 'BIMESTRAL', label: 'Bimestral' },
   { value: 'TRIMESTRAL', label: 'Trimestral' },
+  { value: 'QUADRIMESTRAL', label: 'Quadrimestral' },
   { value: 'SEMESTRAL', label: 'Semestral' },
   { value: 'ANUAL', label: 'Anual' },
 ];
@@ -191,7 +192,7 @@ export default function ManutencaoPreventivas() {
           .update({
             contrato: formData.contrato,
             razao_social: formData.razao_social,
-            frequencia: formData.frequencia as "SEMANAL" | "QUINZENAL" | "MENSAL" | "BIMESTRAL" | "TRIMESTRAL" | "SEMESTRAL" | "ANUAL",
+            frequencia: formData.frequencia as "SEMANAL" | "QUINZENAL" | "MENSAL" | "BIMESTRAL" | "TRIMESTRAL" | "QUADRIMESTRAL" | "SEMESTRAL" | "ANUAL",
             proxima_execucao: formData.proxima_execucao,
             praca: formData.praca || null,
             supervisor_responsavel_id: formData.supervisor_responsavel_id || null,
@@ -216,7 +217,7 @@ export default function ManutencaoPreventivas() {
             contrato: formData.contrato,
             razao_social: formData.razao_social,
             descricao: 'Manutenção Preventiva',
-            frequencia: formData.frequencia as "SEMANAL" | "QUINZENAL" | "MENSAL" | "BIMESTRAL" | "TRIMESTRAL" | "SEMESTRAL" | "ANUAL",
+            frequencia: formData.frequencia as "SEMANAL" | "QUINZENAL" | "MENSAL" | "BIMESTRAL" | "TRIMESTRAL" | "QUADRIMESTRAL" | "SEMESTRAL" | "ANUAL",
             proxima_execucao: formData.proxima_execucao,
             praca: formData.praca || null,
             supervisor_responsavel_id: formData.supervisor_responsavel_id || null,

@@ -181,25 +181,35 @@ export default function ManutencaoPendencias() {
       : addDays(dataAbertura, 30);
 
     try {
-      const { error } = await supabase
-        .from('manutencao_pendencias')
-        .insert({
-          numero_os: formData.numero_os,
-          customer_id: formData.customer_id || null,
-          contrato: formData.contrato,
-          razao_social: formData.razao_social,
-          numero_ticket: formData.numero_ticket || null,
-          tipo: formData.tipo as "CLIENTE_OBRA" | "CLIENTE_AGENDA" | "CLIENTE_LIMPEZA_VEGETACAO" | "CLIENTE_CONTRATACAO_SERVICOS" | "DEPT_COMPRAS" | "DEPT_CADASTRO" | "DEPT_ALMOXARIFADO" | "DEPT_FATURAMENTO" | "DEPT_CONTAS_RECEBER" | "DEPT_FISCAL" | "DEPT_IMPLANTACAO",
-          setor: tipoInfo.setor,
-          descricao: formData.descricao || null,
-          sla_dias: tipoInfo.sla,
-          data_abertura: dataAbertura.toISOString(),
-          data_prazo: dataPrazo.toISOString(),
-          created_by: user?.id,
-          created_by_name: user?.nome,
-        });
+      const insertData = {
+        numero_os: formData.numero_os,
+        customer_id: formData.customer_id || null,
+        contrato: formData.contrato,
+        razao_social: formData.razao_social,
+        numero_ticket: formData.numero_ticket || null,
+        tipo: formData.tipo as "CLIENTE_OBRA" | "CLIENTE_AGENDA" | "CLIENTE_LIMPEZA_VEGETACAO" | "CLIENTE_CONTRATACAO_SERVICOS" | "DEPT_COMPRAS" | "DEPT_CADASTRO" | "DEPT_ALMOXARIFADO" | "DEPT_FATURAMENTO" | "DEPT_CONTAS_RECEBER" | "DEPT_FISCAL" | "DEPT_IMPLANTACAO",
+        setor: tipoInfo.setor,
+        descricao: formData.descricao || null,
+        sla_dias: tipoInfo.sla,
+        data_abertura: dataAbertura.toISOString(),
+        data_prazo: dataPrazo.toISOString(),
+        created_by: user?.id,
+        created_by_name: user?.nome,
+      };
 
-      if (error) throw error;
+      console.log('Inserting pendencia:', insertData);
+
+      const { data, error } = await supabase
+        .from('manutencao_pendencias')
+        .insert(insertData)
+        .select();
+
+      console.log('Insert result:', { data, error });
+
+      if (error) {
+        console.error('Supabase error:', error);
+        throw error;
+      }
 
       toast({
         title: 'Sucesso',
@@ -209,11 +219,14 @@ export default function ManutencaoPendencias() {
       setDialogOpen(false);
       resetForm();
       fetchData();
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error creating pendencia:', error);
+      const errorMessage = error instanceof Error ? error.message : 
+        (typeof error === 'object' && error !== null && 'message' in error) ? 
+        String((error as { message: unknown }).message) : 'Erro ao registrar pendência';
       toast({
         title: 'Erro',
-        description: 'Erro ao registrar pendência',
+        description: errorMessage,
         variant: 'destructive',
       });
     }

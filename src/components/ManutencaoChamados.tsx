@@ -58,7 +58,7 @@ interface AgendaPreventiva {
   razao_social: string;
   descricao: string;
   equipamentos: string | null;
-  frequencia: 'SEMANAL' | 'QUINZENAL' | 'MENSAL' | 'BIMESTRAL' | 'TRIMESTRAL' | 'SEMESTRAL' | 'ANUAL';
+  frequencia: 'SEMANAL' | 'QUINZENAL' | 'MENSAL' | 'BIMESTRAL' | 'TRIMESTRAL' | 'QUADRIMESTRAL' | 'SEMESTRAL' | 'ANUAL';
   tecnico_responsavel: string | null;
   proxima_execucao: string;
   ultima_execucao: string | null;
@@ -86,6 +86,7 @@ const FREQUENCIA_LABELS: Record<string, string> = {
   MENSAL: 'Mensal',
   BIMESTRAL: 'Bimestral',
   TRIMESTRAL: 'Trimestral',
+  QUADRIMESTRAL: 'Quadrimestral',
   SEMESTRAL: 'Semestral',
   ANUAL: 'Anual',
 };
@@ -129,7 +130,7 @@ export function ManutencaoChamados({ customers }: ManutencaoChamadosProps) {
     razao_social: '',
     descricao: '',
     equipamentos: '',
-    frequencia: '' as 'SEMANAL' | 'QUINZENAL' | 'MENSAL' | 'BIMESTRAL' | 'TRIMESTRAL' | 'SEMESTRAL' | 'ANUAL' | '',
+    frequencia: '' as 'SEMANAL' | 'QUINZENAL' | 'MENSAL' | 'BIMESTRAL' | 'TRIMESTRAL' | 'QUADRIMESTRAL' | 'SEMESTRAL' | 'ANUAL' | '',
     tecnico_responsavel: '',
     proxima_execucao: '',
   });

@@ -5,7 +5,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { X, ArrowUp, ArrowDown, ArrowUpDown, Filter, Eye, List } from 'lucide-react';
+import { X, ArrowUp, ArrowDown, ArrowUpDown, Filter, Eye, List, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { differenceInDays } from 'date-fns';
@@ -48,8 +48,10 @@ interface PendenciasFullScreenTableProps {
   onClose: () => void;
   onViewCustomer: (customerId: string | null) => void;
   onStatusChange: (id: string, newStatus: string) => void;
+  onDeletePendencia?: (pendencia: Pendencia) => void;
   getTipoLabel: (tipo: string) => string;
   statusOptions: { value: string; label: string; color: string }[];
+  userRole?: string;
 }
 
 export function PendenciasFullScreenTable({
@@ -58,8 +60,10 @@ export function PendenciasFullScreenTable({
   onClose,
   onViewCustomer,
   onStatusChange,
+  onDeletePendencia,
   getTipoLabel,
   statusOptions,
+  userRole,
 }: PendenciasFullScreenTableProps) {
   const [columnFilters, setColumnFilters] = useState<ColumnFilter[]>([]);
   const [sortConfig, setSortConfig] = useState<SortConfig>({ column: '', direction: null });
@@ -451,6 +455,16 @@ export function PendenciasFullScreenTable({
                             ))}
                           </SelectContent>
                         </Select>
+                      )}
+                      {userRole === 'admin' && onDeletePendencia && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => onDeletePendencia(pendencia)}
+                          className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
                       )}
                     </div>
                   </TableCell>

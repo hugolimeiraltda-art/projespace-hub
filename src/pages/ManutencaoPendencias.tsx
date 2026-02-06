@@ -14,7 +14,8 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { useManutencaoExport } from '@/hooks/useManutencaoExport';
-import { Plus, AlertTriangle, Clock, CheckCircle, Wrench, Search, Eye, FileText, Download, Timer, CalendarClock, FileSpreadsheet, MessageSquare, Send } from 'lucide-react';
+import { Plus, AlertTriangle, Clock, CheckCircle, Wrench, Search, Eye, FileText, Download, Timer, CalendarClock, FileSpreadsheet, MessageSquare, Send, Trash2 } from 'lucide-react';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { format, differenceInDays, addDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -96,6 +97,8 @@ export default function ManutencaoPendencias() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [filterSetor, setFilterSetor] = useState<string>('all');
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [pendenciaToDelete, setPendenciaToDelete] = useState<Pendencia | null>(null);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -243,6 +246,47 @@ export default function ManutencaoPendencias() {
         variant: 'destructive',
       });
     }
+  };
+
+  const handleDeletePendencia = async () => {
+    if (!pendenciaToDelete) return;
+
+    try {
+      // First delete related comments
+      await supabase
+        .from('manutencao_pendencias_comentarios')
+        .delete()
+        .eq('pendencia_id', pendenciaToDelete.id);
+
+      // Then delete the pendencia
+      const { error } = await supabase
+        .from('manutencao_pendencias')
+        .delete()
+        .eq('id', pendenciaToDelete.id);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Sucesso',
+        description: 'Pendência excluída com sucesso',
+      });
+      
+      setDeleteDialogOpen(false);
+      setPendenciaToDelete(null);
+      fetchData();
+    } catch (error) {
+      console.error('Error deleting pendencia:', error);
+      toast({
+        title: 'Erro',
+        description: 'Erro ao excluir pendência',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const openDeleteDialog = (pendencia: Pendencia) => {
+    setPendenciaToDelete(pendencia);
+    setDeleteDialogOpen(true);
   };
 
   const openComentarios = async (pendencia: Pendencia) => {
@@ -775,6 +819,16 @@ export default function ManutencaoPendencias() {
                                 </SelectContent>
                               </Select>
                             )}
+                            {user?.role === 'admin' && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => openDeleteDialog(pendencia)}
+                                className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </Button>
+                            )}
                           </div>
                         </TableCell>
                       </TableRow>
@@ -851,6 +905,28 @@ export default function ManutencaoPendencias() {
             </div>
           </DialogContent>
         </Dialog>
+
+        {/* Delete Confirmation Dialog */}
+        <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Excluir Pendência</AlertDialogTitle>
+              <AlertDialogDescription>
+                Tem certeza que deseja excluir a pendência <strong>OS {pendenciaToDelete?.numero_os}</strong> do cliente <strong>{pendenciaToDelete?.razao_social}</strong>? 
+                Esta ação não pode ser desfeita e todos os comentários associados também serão excluídos.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+              <AlertDialogAction 
+                onClick={handleDeletePendencia}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                Excluir
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </Layout>
   );

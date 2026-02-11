@@ -280,7 +280,7 @@ export function SectionFileUpload({ projectId, secao, disabled }: SectionFileUpl
           <Upload className="h-4 w-4" />
           Anexos desta seção
         </h4>
-        {!disabled && projectId && (
+        {!disabled && (
           <div>
             <input
               ref={fileInputRef}
@@ -295,7 +295,7 @@ export function SectionFileUpload({ projectId, secao, disabled }: SectionFileUpl
               variant="outline"
               size="sm"
               onClick={() => fileInputRef.current?.click()}
-              disabled={isUploading || isCompressing}
+              disabled={isUploading || isCompressing || !projectId}
             >
               {isUploading || isCompressing ? (
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />

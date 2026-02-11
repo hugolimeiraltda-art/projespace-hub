@@ -85,6 +85,7 @@ export default function StartupProjetos() {
           .from('projects')
           .select('id, numero_projeto, cliente_condominio_nome, cliente_cidade, cliente_estado, vendedor_nome, created_at, updated_at, implantacao_status, implantacao_started_at, implantacao_completed_at, prazo_entrega_projeto')
           .eq('sale_status', 'CONCLUIDO')
+          .neq('implantacao_status', 'CONCLUIDO_IMPLANTACAO')
           .order('updated_at', { ascending: false }),
         supabase
           .from('customer_portfolio')
@@ -220,7 +221,7 @@ export default function StartupProjetos() {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
           <Card 
             className={cn(
               "cursor-pointer transition-all hover:shadow-md",
@@ -275,23 +276,6 @@ export default function StartupProjetos() {
             </CardContent>
           </Card>
 
-          <Card 
-            className={cn(
-              "cursor-pointer transition-all hover:shadow-md",
-              statusFilter === 'CONCLUIDO_IMPLANTACAO' && "ring-2 ring-green-500"
-            )}
-            onClick={() => setStatusFilter('CONCLUIDO_IMPLANTACAO')}
-          >
-            <CardContent className="pt-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">Concluídos</p>
-                  <p className="text-2xl font-bold text-green-600">{statusCounts.CONCLUIDO_IMPLANTACAO}</p>
-                </div>
-                <CheckCircle2 className="w-8 h-8 text-green-500" />
-              </div>
-            </CardContent>
-          </Card>
         </div>
 
         {/* Projetos em Andamento Table */}
@@ -381,7 +365,7 @@ export default function StartupProjetos() {
               <SelectItem value="TODOS">Todos os status</SelectItem>
               <SelectItem value="A_EXECUTAR">A Executar</SelectItem>
               <SelectItem value="EM_EXECUCAO">Em Execução</SelectItem>
-              <SelectItem value="CONCLUIDO_IMPLANTACAO">Concluído</SelectItem>
+              
             </SelectContent>
           </Select>
         </div>
@@ -483,17 +467,6 @@ export default function StartupProjetos() {
                           >
                             <CheckCircle2 className="w-4 h-4 mr-1" />
                             Concluir
-                          </Button>
-                        )}
-                        {project.implantacao_status === 'CONCLUIDO_IMPLANTACAO' && user?.role === 'admin' && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="border-amber-300 text-amber-700 hover:bg-amber-50"
-                            onClick={() => handleStatusChange(project.id, 'EM_EXECUCAO')}
-                          >
-                            <RotateCcw className="w-4 h-4 mr-1" />
-                            Reabrir
                           </Button>
                         )}
                         

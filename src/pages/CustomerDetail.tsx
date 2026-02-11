@@ -16,7 +16,7 @@ import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { ArrowLeft, Save, Loader2, Upload, Trash2, FileText, Image, Video, File, Calendar } from 'lucide-react';
+import { ArrowLeft, Save, Loader2, Upload, Trash2, FileText, Image, Video, File, Calendar, Eye, Download } from 'lucide-react';
 import { format, addMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { AdministradoresCondominio } from '@/components/AdministradoresCondominio';
@@ -52,6 +52,9 @@ interface Customer {
   totem_simples: number;
   totem_duplo: number;
   catracas: number;
+  faciais_hik: number;
+  faciais_avicam: number;
+  faciais_outros: number;
   created_at: string;
 }
 
@@ -106,6 +109,9 @@ export default function CustomerDetail() {
     totem_simples: '0',
     totem_duplo: '0',
     catracas: '0',
+    faciais_hik: '0',
+    faciais_avicam: '0',
+    faciais_outros: '0',
   });
 
   const canEdit = user?.role === 'admin' || user?.role === 'implantacao';
@@ -157,6 +163,9 @@ export default function CustomerDetail() {
         totem_simples: data.totem_simples?.toString() || '0',
         totem_duplo: data.totem_duplo?.toString() || '0',
         catracas: data.catracas?.toString() || '0',
+        faciais_hik: data.faciais_hik?.toString() || '0',
+        faciais_avicam: data.faciais_avicam?.toString() || '0',
+        faciais_outros: data.faciais_outros?.toString() || '0',
       });
     } catch (error) {
       console.error('Error fetching customer:', error);
@@ -221,6 +230,9 @@ export default function CustomerDetail() {
         totem_simples: parseInt(form.totem_simples) || 0,
         totem_duplo: parseInt(form.totem_duplo) || 0,
         catracas: parseInt(form.catracas) || 0,
+        faciais_hik: parseInt(form.faciais_hik) || 0,
+        faciais_avicam: parseInt(form.faciais_avicam) || 0,
+        faciais_outros: parseInt(form.faciais_outros) || 0,
       };
 
       const { error } = await supabase
@@ -650,6 +662,23 @@ export default function CustomerDetail() {
                     <Input type="number" value={form.catracas} onChange={(e) => setForm({ ...form, catracas: e.target.value })} disabled={!canEdit} />
                   </div>
                 </div>
+                <div className="mt-4">
+                  <h4 className="text-sm font-medium mb-2">Faciais por Marca</h4>
+                  <div className="grid grid-cols-3 gap-4">
+                    <div>
+                      <Label>Hik (Hikvision)</Label>
+                      <Input type="number" value={form.faciais_hik} onChange={(e) => setForm({ ...form, faciais_hik: e.target.value })} disabled={!canEdit} />
+                    </div>
+                    <div>
+                      <Label>Avicam</Label>
+                      <Input type="number" value={form.faciais_avicam} onChange={(e) => setForm({ ...form, faciais_avicam: e.target.value })} disabled={!canEdit} />
+                    </div>
+                    <div>
+                      <Label>Outros</Label>
+                      <Input type="number" value={form.faciais_outros} onChange={(e) => setForm({ ...form, faciais_outros: e.target.value })} disabled={!canEdit} />
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </CardContent>
@@ -689,10 +718,7 @@ export default function CustomerDetail() {
                     key={doc.id}
                     className="flex items-center justify-between p-3 rounded-lg border bg-muted/30 hover:bg-muted/50 transition-colors"
                   >
-                    <button
-                      onClick={() => handleOpenDocument(doc)}
-                      className="flex items-center gap-3 flex-1 min-w-0 text-left hover:underline"
-                    >
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
                       {getFileIcon(doc.tipo_arquivo)}
                       <div className="flex-1 min-w-0">
                         <p className="font-medium truncate">{doc.nome_arquivo}</p>
@@ -700,17 +726,46 @@ export default function CustomerDetail() {
                           {formatFileSize(doc.tamanho)} • {format(new Date(doc.created_at), 'dd/MM/yyyy HH:mm', { locale: ptBR })}
                         </p>
                       </div>
-                    </button>
-                    {canEdit && (
+                    </div>
+                    <div className="flex items-center gap-1 shrink-0">
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="text-destructive hover:text-destructive shrink-0"
-                        onClick={() => handleDeleteDocument(doc)}
+                        title="Visualizar"
+                        onClick={() => handleOpenDocument(doc)}
                       >
-                        <Trash2 className="w-4 h-4" />
+                        <Eye className="w-4 h-4" />
                       </Button>
-                    )}
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        title="Download"
+                        onClick={async () => {
+                          const url = await getSignedUrl(doc.arquivo_url);
+                          if (url) {
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = doc.nome_arquivo;
+                            a.target = '_blank';
+                            a.click();
+                          } else {
+                            toast({ title: 'Erro', description: 'Não foi possível gerar o link.', variant: 'destructive' });
+                          }
+                        }}
+                      >
+                        <Download className="w-4 h-4" />
+                      </Button>
+                      {canEdit && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="text-destructive hover:text-destructive"
+                          onClick={() => handleDeleteDocument(doc)}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>

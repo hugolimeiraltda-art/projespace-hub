@@ -110,22 +110,37 @@ export default function Dashboard() {
 
           if (projectsData && projectsData.length > 0) {
             const projectIds = projectsData.map(p => p.id);
+            const projectNames = projectsData.map(p => p.cliente_condominio_nome);
 
-            // Fetch customer_portfolio data for these projects (mensalidade only)
-            const { data: portfolioData } = await supabase
+            // Fetch customer_portfolio data - by project_id or by razao_social fallback
+            const { data: portfolioByProject } = await supabase
               .from('customer_portfolio')
-              .select('project_id, mensalidade')
+              .select('project_id, mensalidade, razao_social')
               .in('project_id', projectIds);
 
-            const portfolioMap = new Map<string, { mensalidade: number | null }>();
-            portfolioData?.forEach(p => {
-              if (p.project_id) portfolioMap.set(p.project_id, { mensalidade: p.mensalidade });
+            const { data: portfolioByName } = await supabase
+              .from('customer_portfolio')
+              .select('razao_social, mensalidade')
+              .in('razao_social', projectNames);
+
+            // Build map: first by project_id, then fallback by name
+            const mensalidadeMap = new Map<string, number | null>();
+            
+            // Map by razao_social first (fallback)
+            const nameToMensalidade = new Map<string, number | null>();
+            portfolioByName?.forEach(p => {
+              if (p.razao_social) nameToMensalidade.set(p.razao_social, p.mensalidade);
+            });
+
+            // Map by project_id (priority)
+            portfolioByProject?.forEach(p => {
+              if (p.project_id) mensalidadeMap.set(p.project_id, p.mensalidade);
             });
 
             const enrichedProjects: ImplantacaoProject[] = projectsData.map(p => ({
               ...p,
               prazo_entrega_projeto: p.prazo_entrega_projeto || null,
-              mensalidade: portfolioMap.get(p.id)?.mensalidade || null,
+              mensalidade: mensalidadeMap.get(p.id) ?? nameToMensalidade.get(p.cliente_condominio_nome) ?? null,
             }));
 
             setImplantacaoProjects(enrichedProjects);

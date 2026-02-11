@@ -100,7 +100,7 @@ export default function Dashboard() {
       // Projetos menu: projetos, admin, gerente_comercial, administrativo + vendedor (own projects)
       canSeeProjects: ['admin', 'vendedor', 'projetos', 'gerente_comercial', 'administrativo'].includes(role),
       // Implantação menu: implantacao, admin, administrativo, sucesso_cliente, supervisor_operacoes
-      canSeeImplantacao: ['admin', 'implantacao', 'administrativo', 'sucesso_cliente', 'supervisor_operacoes'].includes(role),
+      canSeeImplantacao: ['admin', 'implantacao', 'administrativo', 'sucesso_cliente', 'supervisor_operacoes', 'vendedor', 'gerente_comercial'].includes(role),
       // Carteira de Clientes: projetos, admin, implantacao, administrativo, sucesso_cliente, supervisor_operacoes
       canSeeCarteira: ['admin', 'projetos', 'implantacao', 'administrativo', 'sucesso_cliente', 'supervisor_operacoes'].includes(role),
       // Sucesso do Cliente: projetos, admin, implantacao, administrativo, sucesso_cliente

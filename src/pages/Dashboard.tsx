@@ -35,8 +35,7 @@ interface ImplantacaoProject {
   cliente_condominio_nome: string;
   implantacao_status: 'A_EXECUTAR' | 'EM_EXECUCAO' | 'CONCLUIDO_IMPLANTACAO' | null;
   implantacao_started_at: string | null;
-  // From customer_portfolio
-  data_ativacao: string | null;
+  prazo_entrega_projeto: string | null;
   mensalidade: number | null;
 }
 
@@ -100,7 +99,7 @@ export default function Dashboard() {
         try {
           let implantacaoQuery = supabase
             .from('projects')
-            .select('id, numero_projeto, cliente_condominio_nome, implantacao_status, implantacao_started_at')
+            .select('id, numero_projeto, cliente_condominio_nome, implantacao_status, implantacao_started_at, prazo_entrega_projeto')
             .eq('sale_status', 'CONCLUIDO');
 
           if (user.role === 'vendedor') {
@@ -112,20 +111,20 @@ export default function Dashboard() {
           if (projectsData && projectsData.length > 0) {
             const projectIds = projectsData.map(p => p.id);
 
-            // Fetch customer_portfolio data for these projects
+            // Fetch customer_portfolio data for these projects (mensalidade only)
             const { data: portfolioData } = await supabase
               .from('customer_portfolio')
-              .select('project_id, data_ativacao, mensalidade')
+              .select('project_id, mensalidade')
               .in('project_id', projectIds);
 
-            const portfolioMap = new Map<string, { data_ativacao: string | null; mensalidade: number | null }>();
+            const portfolioMap = new Map<string, { mensalidade: number | null }>();
             portfolioData?.forEach(p => {
-              if (p.project_id) portfolioMap.set(p.project_id, { data_ativacao: p.data_ativacao, mensalidade: p.mensalidade });
+              if (p.project_id) portfolioMap.set(p.project_id, { mensalidade: p.mensalidade });
             });
 
             const enrichedProjects: ImplantacaoProject[] = projectsData.map(p => ({
               ...p,
-              data_ativacao: portfolioMap.get(p.id)?.data_ativacao || null,
+              prazo_entrega_projeto: p.prazo_entrega_projeto || null,
               mensalidade: portfolioMap.get(p.id)?.mensalidade || null,
             }));
 
@@ -464,8 +463,8 @@ export default function Dashboard() {
                         <div className="flex items-center gap-1">
                           <Calendar className="w-3.5 h-3.5" />
                           <span>
-                            Ativação: {project.data_ativacao 
-                              ? format(parseISO(project.data_ativacao), "dd/MM/yyyy", { locale: ptBR })
+                            Ativação: {project.prazo_entrega_projeto 
+                              ? format(parseISO(project.prazo_entrega_projeto), "dd/MM/yyyy", { locale: ptBR })
                               : 'Não definida'}
                           </span>
                         </div>

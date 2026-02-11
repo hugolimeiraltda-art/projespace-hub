@@ -1506,6 +1506,50 @@ export type Database = {
         }
         Relationships: []
       }
+      sale_form_attachments: {
+        Row: {
+          arquivo_url: string
+          created_at: string
+          created_by: string | null
+          id: string
+          nome_arquivo: string
+          project_id: string
+          secao: string
+          tamanho: number | null
+          tipo_arquivo: string | null
+        }
+        Insert: {
+          arquivo_url: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          nome_arquivo: string
+          project_id: string
+          secao: string
+          tamanho?: number | null
+          tipo_arquivo?: string | null
+        }
+        Update: {
+          arquivo_url?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          nome_arquivo?: string
+          project_id?: string
+          secao?: string
+          tamanho?: number | null
+          tipo_arquivo?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sale_form_attachments_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sale_forms: {
         Row: {
           acesso_local_central_portaria: string | null

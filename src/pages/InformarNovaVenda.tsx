@@ -35,6 +35,7 @@ import {
   CheckCircle2,
   Plus,
 } from 'lucide-react';
+import { SectionFileUpload } from '@/components/SectionFileUpload';
 import { 
   SaleCompletedForm as SaleFormType, 
   AlarmeTipo, 
@@ -510,6 +511,8 @@ export default function InformarNovaVenda() {
                 )}
               </div>
             </div>
+
+            <SectionFileUpload projectId={projectId} secao="identificacao" disabled={isLocked} />
           </div>
         );
 
@@ -566,6 +569,8 @@ export default function InformarNovaVenda() {
                 placeholder="Observações adicionais..."
               />
             </div>
+
+            <SectionFileUpload projectId={projectId} secao="infra" disabled={isLocked} />
           </div>
         );
 
@@ -599,10 +604,10 @@ export default function InformarNovaVenda() {
                 placeholder="Descreva o local da central de interfonia..."
               />
             </div>
+
+            <SectionFileUpload projectId={projectId} secao="telefonia" disabled={isLocked} />
           </div>
         );
-
-      case 'portas':
         return (
           <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -648,6 +653,8 @@ export default function InformarNovaVenda() {
                 placeholder="Observações adicionais sobre portas..."
               />
             </div>
+
+            <SectionFileUpload projectId={projectId} secao="portas" disabled={isLocked} />
           </div>
         );
 
@@ -704,6 +711,8 @@ export default function InformarNovaVenda() {
                 </SelectContent>
               </Select>
             </div>
+
+            <SectionFileUpload projectId={projectId} secao="portoes" disabled={isLocked} />
           </div>
         );
 
@@ -764,6 +773,8 @@ export default function InformarNovaVenda() {
               />
               <Label htmlFor="acessos_tem_camera_int_ext">Acessos têm câmera interna/externa</Label>
             </div>
+
+            <SectionFileUpload projectId={projectId} secao="cftv-aproveitado" disabled={isLocked} />
           </div>
         );
 
@@ -813,6 +824,8 @@ export default function InformarNovaVenda() {
                 disabled={isLocked}
               />
             </div>
+
+            <SectionFileUpload projectId={projectId} secao="cftv-novo" disabled={isLocked} />
           </div>
         );
 
@@ -942,6 +955,8 @@ export default function InformarNovaVenda() {
                 </div>
               </div>
             )}
+
+            <SectionFileUpload projectId={projectId} secao="alarme" disabled={isLocked} />
           </div>
         );
 
@@ -1096,6 +1111,8 @@ export default function InformarNovaVenda() {
                 </CardContent>
               )}
             </Card>
+
+            <SectionFileUpload projectId={projectId} secao="controle-acesso" disabled={isLocked} />
           </div>
         );
 
@@ -1120,6 +1137,8 @@ export default function InformarNovaVenda() {
                 className="min-h-[200px]"
               />
             </div>
+
+            <SectionFileUpload projectId={projectId} secao="cameras-novas" disabled={isLocked} />
           </div>
         );
 

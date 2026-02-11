@@ -93,7 +93,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             setUser(userProfile);
             setIsLoading(false);
           }, 0);
-        } else if (event === 'SIGNED_OUT') {
+        } else if (event === 'SIGNED_OUT' || event === 'INITIAL_SESSION') {
           setUser(null);
           setIsLoading(false);
         }

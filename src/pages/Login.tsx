@@ -93,7 +93,7 @@ export default function Login() {
             </form>
 
             {/* Demo credentials */}
-            <div className="mt-6 p-4 bg-secondary rounded-lg">
+            <div className="mt-6 p-4 bg-muted rounded-lg border">
               <p className="text-xs font-medium text-secondary-foreground mb-2">Informações de acesso:</p>
               <div className="space-y-1 text-xs text-muted-foreground">
                 <p><span className="font-medium">Senha inicial:</span> 123456</p>

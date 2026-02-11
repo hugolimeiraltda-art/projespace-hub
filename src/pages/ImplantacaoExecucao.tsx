@@ -796,6 +796,23 @@ export default function ImplantacaoExecucao() {
                           <Button
                             size="sm"
                             onClick={async () => {
+                              // Validate required fields
+                              const missingFields: string[] = [];
+                              if (!contratoInfo.contrato?.trim()) missingFields.push('Contrato');
+                              if (!contratoInfo.alarme_codigo?.trim()) missingFields.push('Código de Alarme');
+                              if (!contratoInfo.mensalidade?.trim()) missingFields.push('Mensalidade');
+                              if (!contratoInfo.prazo_contrato) missingFields.push('Prazo do Contrato');
+                              if (!contratoInfo.taxa_instalacao?.trim()) missingFields.push('Taxa de Instalação');
+
+                              if (missingFields.length > 0) {
+                                toast({
+                                  title: 'Campos obrigatórios',
+                                  description: `Preencha: ${missingFields.join(', ')}`,
+                                  variant: 'destructive',
+                                });
+                                return;
+                              }
+
                               try {
                                 setIsSaving(true);
                                 // Save to customer_portfolio if linked, or store in project
@@ -840,7 +857,8 @@ export default function ImplantacaoExecucao() {
                             value={contratoInfo.contrato}
                             onChange={(e) => setContratoInfo({ ...contratoInfo, contrato: e.target.value })}
                             placeholder="Ex: SP001"
-                            className="mt-1"
+                            className={cn("mt-1", !contratoInfo.contrato?.trim() && "border-destructive")}
+                            required
                           />
                         ) : (
                           <p className="text-sm mt-1 font-medium">{contratoInfo.contrato || '-'}</p>
@@ -854,7 +872,8 @@ export default function ImplantacaoExecucao() {
                             value={contratoInfo.alarme_codigo}
                             onChange={(e) => setContratoInfo({ ...contratoInfo, alarme_codigo: e.target.value })}
                             placeholder="Ex: 12345"
-                            className="mt-1"
+                            className={cn("mt-1", !contratoInfo.alarme_codigo?.trim() && "border-destructive")}
+                            required
                           />
                         ) : (
                           <p className="text-sm mt-1 font-medium">{contratoInfo.alarme_codigo || '-'}</p>
@@ -868,7 +887,8 @@ export default function ImplantacaoExecucao() {
                             value={contratoInfo.mensalidade}
                             onChange={(e) => setContratoInfo({ ...contratoInfo, mensalidade: e.target.value })}
                             placeholder="Ex: 5.000,00"
-                            className="mt-1"
+                            className={cn("mt-1", !contratoInfo.mensalidade?.trim() && "border-destructive")}
+                            required
                           />
                         ) : (
                           <p className="text-sm mt-1 font-medium">{contratoInfo.mensalidade ? `R$ ${contratoInfo.mensalidade}` : '-'}</p>
@@ -881,7 +901,7 @@ export default function ImplantacaoExecucao() {
                             value={contratoInfo.prazo_contrato}
                             onValueChange={(value) => setContratoInfo({ ...contratoInfo, prazo_contrato: value })}
                           >
-                            <SelectTrigger className="mt-1">
+                            <SelectTrigger className={cn("mt-1", !contratoInfo.prazo_contrato && "border-destructive")}>
                               <SelectValue placeholder="Selecione" />
                             </SelectTrigger>
                             <SelectContent>
@@ -904,7 +924,8 @@ export default function ImplantacaoExecucao() {
                             value={contratoInfo.taxa_instalacao}
                             onChange={(e) => setContratoInfo({ ...contratoInfo, taxa_instalacao: e.target.value })}
                             placeholder="Ex: 1.500,00"
-                            className="mt-1"
+                            className={cn("mt-1", !contratoInfo.taxa_instalacao?.trim() && "border-destructive")}
+                            required
                           />
                         ) : (
                           <p className="text-sm mt-1 font-medium">{contratoInfo.taxa_instalacao ? `R$ ${contratoInfo.taxa_instalacao}` : '-'}</p>

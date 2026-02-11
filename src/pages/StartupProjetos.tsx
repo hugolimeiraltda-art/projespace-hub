@@ -41,6 +41,7 @@ interface StartupProject {
   implantacao_status: ImplantacaoStatus | null;
   implantacao_started_at: string | null;
   implantacao_completed_at: string | null;
+  prazo_entrega_projeto: string | null;
 }
 
 const IMPLANTACAO_STATUS_LABELS: Record<ImplantacaoStatus, string> = {
@@ -70,6 +71,7 @@ export default function StartupProjetos() {
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<ImplantacaoStatus | 'TODOS'>('TODOS');
+  const [portfolioMap, setPortfolioMap] = useState<Record<string, { mensalidade: number | null; taxa_ativacao: number | null }>>({});
 
   useEffect(() => {
     fetchProjects();
@@ -78,14 +80,20 @@ export default function StartupProjetos() {
   const fetchProjects = async () => {
     try {
       setIsLoading(true);
-      const { data, error } = await supabase
-        .from('projects')
-        .select('id, numero_projeto, cliente_condominio_nome, cliente_cidade, cliente_estado, vendedor_nome, created_at, updated_at, implantacao_status, implantacao_started_at, implantacao_completed_at')
-        .eq('sale_status', 'CONCLUIDO')
-        .order('updated_at', { ascending: false });
+      const [projectsRes, portfolioRes] = await Promise.all([
+        supabase
+          .from('projects')
+          .select('id, numero_projeto, cliente_condominio_nome, cliente_cidade, cliente_estado, vendedor_nome, created_at, updated_at, implantacao_status, implantacao_started_at, implantacao_completed_at, prazo_entrega_projeto')
+          .eq('sale_status', 'CONCLUIDO')
+          .order('updated_at', { ascending: false }),
+        supabase
+          .from('customer_portfolio')
+          .select('project_id, mensalidade, taxa_ativacao')
+          .not('project_id', 'is', null),
+      ]);
 
-      if (error) {
-        console.error('Error fetching projects:', error);
+      if (projectsRes.error) {
+        console.error('Error fetching projects:', projectsRes.error);
         toast({
           title: 'Erro',
           description: 'Não foi possível carregar os projetos.',
@@ -94,7 +102,16 @@ export default function StartupProjetos() {
         return;
       }
 
-      setProjects(data || []);
+      // Build portfolio map
+      const pMap: Record<string, { mensalidade: number | null; taxa_ativacao: number | null }> = {};
+      portfolioRes.data?.forEach((p) => {
+        if (p.project_id) {
+          pMap[p.project_id] = { mensalidade: p.mensalidade ? Number(p.mensalidade) : null, taxa_ativacao: p.taxa_ativacao ? Number(p.taxa_ativacao) : null };
+        }
+      });
+      setPortfolioMap(pMap);
+
+      setProjects(projectsRes.data || []);
     } catch (error) {
       console.error('Error:', error);
     } finally {
@@ -276,6 +293,69 @@ export default function StartupProjetos() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Projetos em Andamento Table */}
+        {(() => {
+          const emAndamento = projects.filter(p => p.implantacao_status === 'EM_EXECUCAO');
+          if (emAndamento.length === 0) return null;
+          return (
+            <Card className="mb-6">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <PlayCircle className="w-5 h-5 text-blue-500" />
+                  Projetos em Andamento
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-0">
+                <div className="relative w-full overflow-auto">
+                  <table className="w-full caption-bottom text-sm">
+                    <thead className="[&_tr]:border-b">
+                      <tr className="border-b">
+                        <th className="h-10 px-4 text-left align-middle font-medium text-muted-foreground">Projeto</th>
+                        <th className="h-10 px-4 text-left align-middle font-medium text-muted-foreground">Condomínio</th>
+                        <th className="h-10 px-4 text-left align-middle font-medium text-muted-foreground">Data Início</th>
+                        <th className="h-10 px-4 text-left align-middle font-medium text-muted-foreground">Data Entrega</th>
+                        <th className="h-10 px-4 text-right align-middle font-medium text-muted-foreground">Mensalidade</th>
+                        <th className="h-10 px-4 text-right align-middle font-medium text-muted-foreground">Taxa Ativação</th>
+                      </tr>
+                    </thead>
+                    <tbody className="[&_tr:last-child]:border-0">
+                      {emAndamento.map((project) => {
+                        const portfolio = portfolioMap[project.id];
+                        return (
+                          <tr key={project.id} className="border-b transition-colors hover:bg-muted/50 cursor-pointer" onClick={() => navigate(`/startup-projetos/${project.id}/execucao`)}>
+                            <td className="p-4 align-middle font-medium">#{project.numero_projeto}</td>
+                            <td className="p-4 align-middle">{project.cliente_condominio_nome}</td>
+                            <td className="p-4 align-middle">
+                              {project.implantacao_started_at
+                                ? format(parseISO(project.implantacao_started_at), 'dd/MM/yyyy', { locale: ptBR })
+                                : '—'}
+                            </td>
+                            <td className="p-4 align-middle">
+                              {project.prazo_entrega_projeto
+                                ? format(parseISO(project.prazo_entrega_projeto), 'dd/MM/yyyy', { locale: ptBR })
+                                : '—'}
+                            </td>
+                            <td className="p-4 align-middle text-right">
+                              {portfolio?.mensalidade != null
+                                ? `R$ ${portfolio.mensalidade.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
+                                : '—'}
+                            </td>
+                            <td className="p-4 align-middle text-right">
+                              {portfolio?.taxa_ativacao != null
+                                ? `R$ ${portfolio.taxa_ativacao.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
+                                : '—'}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })()}
 
         {/* Search and Filter */}
         <div className="mb-6 flex flex-col sm:flex-row gap-4">

@@ -87,13 +87,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setSession(session);
         
         if (session?.user) {
-          // Use setTimeout to avoid potential deadlock
+          // Don't clear existing user during token refresh to avoid flicker
           setTimeout(async () => {
             const userProfile = await fetchUserProfile(session.user.id);
             setUser(userProfile);
             setIsLoading(false);
           }, 0);
-        } else {
+        } else if (event === 'SIGNED_OUT') {
           setUser(null);
           setIsLoading(false);
         }

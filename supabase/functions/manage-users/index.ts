@@ -266,9 +266,13 @@ const handler = async (req: Request): Promise<Response> => {
 
         if (resetError) {
           console.error("Error resetting password:", resetError);
+          let errorMsg = resetError.message;
+          if (resetError.message?.includes('weak_password') || resetError.message?.includes('should contain') || (resetError as any).code === 'weak_password') {
+            errorMsg = 'Senha muito fraca. Use letras maiúsculas, minúsculas, números e caracteres especiais (!@#$%^&*).';
+          }
           return new Response(
-            JSON.stringify({ error: resetError.message }),
-            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+            JSON.stringify({ error: errorMsg }),
+            { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
           );
         }
 

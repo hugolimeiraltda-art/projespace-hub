@@ -26,7 +26,10 @@ import {
   Save,
   ArrowRight,
   X,
-  Loader2
+  Loader2,
+  Video,
+  Image,
+  FileText as FileTextIcon
 } from 'lucide-react';
 import {
   TapForm,
@@ -81,11 +84,16 @@ export default function NewProject() {
   const [infoAdicionais, setInfoAdicionais] = useState('');
 
   // Attachments
-  const [croquiFile, setCroquiFile] = useState<{ nome: string; file: File } | null>(null);
+  const [croquiFiles, setCroquiFiles] = useState<{ nome: string; file: File }[]>([]);
   const [fotos, setFotos] = useState<{ nome: string; file: File }[]>([]);
   const [observacoesFotos, setObservacoesFotos] = useState('');
+  const [isCompressing, setIsCompressing] = useState(false);
 
-  const hasCroquiAttachment = !!croquiFile;
+  const MAX_FILES = 5;
+  const MAX_VIDEO_SIZE = 50 * 1024 * 1024; // 50MB
+  const ACCEPTED_FILE_TYPES = 'image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx';
+
+  const hasCroquiAttachment = croquiFiles.length > 0;
 
   const canProceed = 
     condominioNome.trim() &&
@@ -101,17 +109,97 @@ export default function NewProject() {
     );
   };
 
-  const handleAddFotos = (files: FileList) => {
-    const newFotos = Array.from(files).map(file => ({ nome: file.name, file }));
-    setFotos(prev => [...prev, ...newFotos]);
-    toast({
-      title: 'Fotos adicionadas',
-      description: `${newFotos.length} foto(s) adicionada(s) com sucesso.`,
+  const compressVideoFile = async (file: File): Promise<File> => {
+    return new Promise((resolve, reject) => {
+      const video = document.createElement('video');
+      video.preload = 'auto';
+      video.muted = true;
+      const url = URL.createObjectURL(file);
+      video.src = url;
+      video.onloadedmetadata = () => {
+        const maxHeight = 720;
+        const scale = video.videoHeight > maxHeight ? maxHeight / video.videoHeight : 1;
+        const width = Math.round(video.videoWidth * scale / 2) * 2;
+        const height = Math.round(video.videoHeight * scale / 2) * 2;
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d')!;
+        const mimeType = MediaRecorder.isTypeSupported('video/webm;codecs=vp9')
+          ? 'video/webm;codecs=vp9'
+          : 'video/webm';
+        const stream = canvas.captureStream(24);
+        const recorder = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: 1_000_000 });
+        const chunks: Blob[] = [];
+        recorder.ondataavailable = (e) => { if (e.data.size > 0) chunks.push(e.data); };
+        recorder.onstop = () => {
+          URL.revokeObjectURL(url);
+          const blob = new Blob(chunks, { type: mimeType });
+          const compressed = new File([blob], file.name.replace(/\.[^.]+$/, '.webm'), { type: mimeType });
+          resolve(compressed);
+        };
+        recorder.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Erro ao comprimir vídeo')); };
+        recorder.start();
+        video.play();
+        const draw = () => {
+          if (video.ended || video.paused) { recorder.stop(); return; }
+          ctx.drawImage(video, 0, 0, width, height);
+          requestAnimationFrame(draw);
+        };
+        draw();
+        video.onended = () => recorder.stop();
+      };
+      video.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Erro ao carregar vídeo')); };
     });
   };
 
-  const removeFoto = (index: number) => {
-    setFotos(prev => prev.filter((_, i) => i !== index));
+  const processFile = async (file: File): Promise<{ nome: string; file: File }> => {
+    if (file.type.startsWith('video/') && file.size > MAX_VIDEO_SIZE) {
+      setIsCompressing(true);
+      toast({ title: 'Comprimindo vídeo...', description: `${file.name} será reduzido automaticamente.` });
+      try {
+        const compressed = await compressVideoFile(file);
+        toast({ title: 'Vídeo comprimido!', description: `${file.name} reduzido de ${(file.size / 1024 / 1024).toFixed(1)}MB para ${(compressed.size / 1024 / 1024).toFixed(1)}MB` });
+        return { nome: compressed.name, file: compressed };
+      } finally {
+        setIsCompressing(false);
+      }
+    }
+    return { nome: file.name, file };
+  };
+
+  const handleAddFiles = async (files: FileList, target: 'croqui' | 'fotos') => {
+    const setter = target === 'croqui' ? setCroquiFiles : setFotos;
+    const current = target === 'croqui' ? croquiFiles : fotos;
+    const remaining = MAX_FILES - current.length;
+    
+    if (remaining <= 0) {
+      toast({ title: 'Limite atingido', description: `Máximo de ${MAX_FILES} arquivos permitido.`, variant: 'destructive' });
+      return;
+    }
+
+    const selected = Array.from(files).slice(0, remaining);
+    if (selected.length < files.length) {
+      toast({ title: 'Atenção', description: `Apenas ${remaining} arquivo(s) adicionado(s). Limite de ${MAX_FILES}.`, variant: 'destructive' });
+    }
+
+    const processed: { nome: string; file: File }[] = [];
+    for (const f of selected) {
+      processed.push(await processFile(f));
+    }
+    setter(prev => [...prev, ...processed]);
+    toast({ title: 'Arquivos adicionados', description: `${processed.length} arquivo(s) adicionado(s) com sucesso.` });
+  };
+
+  const removeFile = (index: number, target: 'croqui' | 'fotos') => {
+    const setter = target === 'croqui' ? setCroquiFiles : setFotos;
+    setter(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const getFileIcon = (file: File) => {
+    if (file.type.startsWith('image/')) return Image;
+    if (file.type.startsWith('video/')) return Video;
+    return FileTextIcon;
   };
 
   const generateEmail = () => {
@@ -133,8 +221,8 @@ CFTV - ${cftvDvr || 'Não informado'}
 CFTV Elevador - ${cftvElevadorLabel}
 
 Documentos anexo:
-- Croqui: ${hasCroquiAttachment ? 'Sim' : 'Não'}
-- Fotos: ${fotos.length > 0 ? `${fotos.length} foto(s)` : 'Não'}
+- Croqui: ${croquiFiles.length > 0 ? `${croquiFiles.length} arquivo(s)` : 'Não'}
+- Fotos: ${fotos.length > 0 ? `${fotos.length} arquivo(s)` : 'Não'}
 
 Observações das fotos:
 ${observacoesFotos || 'Não informado'}
@@ -200,14 +288,14 @@ ${observacoesGerais || 'Não informado'}`;
         throw new Error('Failed to create project');
       }
 
-      // Upload croqui
-      if (croquiFile) {
-        const uploadResult = await uploadFile(croquiFile.file, projectId, 'croqui');
+      // Upload croqui files
+      for (const cf of croquiFiles) {
+        const uploadResult = await uploadFile(cf.file, projectId, 'croqui');
         if (uploadResult) {
           await addAttachment(projectId, {
             tipo: 'CROQUI',
             arquivo_url: uploadResult.url,
-            nome_arquivo: croquiFile.nome,
+            nome_arquivo: cf.nome,
           });
         }
       }
@@ -487,120 +575,141 @@ ${observacoesGerais || 'Não informado'}`;
             </CardHeader>
             <CardContent className="space-y-6">
               {/* Croqui - Obrigatório */}
+               {/* Croqui - Obrigatório - Até 5 arquivos */}
               <div className="space-y-3">
-                <Label className="text-base font-medium">Croqui das Câmeras Novas *</Label>
-                <div 
-                  className={cn(
-                    "border-2 border-dashed rounded-lg p-6 text-center transition-colors cursor-pointer",
-                    hasCroquiAttachment 
-                      ? "border-success bg-success/5" 
-                      : "border-border hover:border-primary hover:bg-accent"
-                  )}
-                  onClick={() => document.getElementById('croqui-upload')?.click()}
-                >
-                  <input
-                    id="croqui-upload"
-                    type="file"
-                    accept="image/*,.pdf"
-                    className="hidden"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file) {
-                        setCroquiFile({ nome: file.name, file });
-                        toast({
-                          title: 'Croqui anexado',
-                          description: `${file.name} foi adicionado com sucesso.`,
-                        });
-                      }
-                      e.target.value = '';
-                    }}
-                  />
-                  {hasCroquiAttachment ? (
-                    <div className="flex flex-col items-center gap-2">
-                      <Check className="w-10 h-10 text-success" />
-                      <p className="font-medium text-success">Croqui anexado</p>
-                      <p className="text-sm text-muted-foreground">{croquiFile?.nome}</p>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        className="mt-2"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setCroquiFile(null);
-                        }}
-                      >
-                        Remover e enviar outro
-                      </Button>
-                    </div>
-                  ) : (
+                <Label className="text-base font-medium">Croqui das Câmeras Novas * <span className="text-sm font-normal text-muted-foreground">({croquiFiles.length}/{MAX_FILES})</span></Label>
+                {croquiFiles.length < MAX_FILES && (
+                  <div 
+                    className={cn(
+                      "border-2 border-dashed rounded-lg p-6 text-center transition-colors cursor-pointer",
+                      isCompressing ? "opacity-50 pointer-events-none" : "",
+                      hasCroquiAttachment 
+                        ? "border-success bg-success/5 hover:bg-success/10" 
+                        : "border-border hover:border-primary hover:bg-accent"
+                    )}
+                    onClick={() => document.getElementById('croqui-upload')?.click()}
+                  >
+                    <input
+                      id="croqui-upload"
+                      type="file"
+                      accept={ACCEPTED_FILE_TYPES}
+                      multiple
+                      className="hidden"
+                      onChange={(e) => {
+                        if (e.target.files && e.target.files.length > 0) {
+                          handleAddFiles(e.target.files, 'croqui');
+                        }
+                        e.target.value = '';
+                      }}
+                    />
                     <div className="flex flex-col items-center gap-2">
                       <div className="p-3 bg-secondary rounded-full">
-                        <Upload className="w-6 h-6 text-muted-foreground" />
+                        {isCompressing ? <Loader2 className="w-6 h-6 text-muted-foreground animate-spin" /> : <Upload className="w-6 h-6 text-muted-foreground" />}
                       </div>
-                      <p className="font-medium text-foreground">Clique para enviar o croqui</p>
+                      <p className="font-medium text-foreground">{isCompressing ? 'Comprimindo vídeo...' : 'Clique para enviar arquivos'}</p>
                       <p className="text-sm text-muted-foreground">
-                        Imagem (JPG, PNG) ou PDF • Máx. 10MB
+                        PDF, Word, Excel, Imagens e Vídeos • Máx. {MAX_FILES} arquivos • Vídeos comprimidos automaticamente
                       </p>
                     </div>
-                  )}
-                </div>
+                  </div>
+                )}
+
+                {croquiFiles.length > 0 && (
+                  <div className="space-y-2 mt-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {croquiFiles.map((item, index) => {
+                        const Icon = getFileIcon(item.file);
+                        const isImage = item.file.type.startsWith('image/');
+                        return (
+                          <div key={index} className="relative group flex items-center gap-3 p-3 border rounded-lg bg-card">
+                            {isImage ? (
+                              <div className="w-12 h-12 rounded overflow-hidden flex-shrink-0">
+                                <img src={URL.createObjectURL(item.file)} alt={item.nome} className="object-cover w-full h-full" />
+                              </div>
+                            ) : (
+                              <div className="w-12 h-12 rounded bg-secondary flex items-center justify-center flex-shrink-0">
+                                <Icon className="w-6 h-6 text-muted-foreground" />
+                              </div>
+                            )}
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium truncate">{item.nome}</p>
+                              <p className="text-xs text-muted-foreground">{(item.file.size / 1024 / 1024).toFixed(1)} MB</p>
+                            </div>
+                            <button type="button" onClick={() => removeFile(index, 'croqui')} className="p-1 text-destructive hover:bg-destructive/10 rounded">
+                              <X className="w-4 h-4" />
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
 
-              {/* Fotos */}
+              {/* Fotos do Local - Até 5 arquivos */}
               <div className="space-y-3">
-                <Label className="text-base font-medium">Fotos do Local</Label>
-                <div 
-                  className="border-2 border-dashed rounded-lg p-6 text-center transition-colors cursor-pointer border-border hover:border-primary hover:bg-accent"
-                  onClick={() => document.getElementById('fotos-upload')?.click()}
-                >
-                  <input
-                    id="fotos-upload"
-                    type="file"
-                    accept="image/*"
-                    multiple
-                    className="hidden"
-                    onChange={(e) => {
-                      if (e.target.files && e.target.files.length > 0) {
-                        handleAddFotos(e.target.files);
-                      }
-                      e.target.value = '';
-                    }}
-                  />
-                  <div className="flex flex-col items-center gap-2">
-                    <div className="p-3 bg-secondary rounded-full">
-                      <Camera className="w-6 h-6 text-muted-foreground" />
+                <Label className="text-base font-medium">Fotos do Local <span className="text-sm font-normal text-muted-foreground">({fotos.length}/{MAX_FILES})</span></Label>
+                {fotos.length < MAX_FILES && (
+                  <div 
+                    className={cn(
+                      "border-2 border-dashed rounded-lg p-6 text-center transition-colors cursor-pointer border-border hover:border-primary hover:bg-accent",
+                      isCompressing ? "opacity-50 pointer-events-none" : ""
+                    )}
+                    onClick={() => document.getElementById('fotos-upload')?.click()}
+                  >
+                    <input
+                      id="fotos-upload"
+                      type="file"
+                      accept={ACCEPTED_FILE_TYPES}
+                      multiple
+                      className="hidden"
+                      onChange={(e) => {
+                        if (e.target.files && e.target.files.length > 0) {
+                          handleAddFiles(e.target.files, 'fotos');
+                        }
+                        e.target.value = '';
+                      }}
+                    />
+                    <div className="flex flex-col items-center gap-2">
+                      <div className="p-3 bg-secondary rounded-full">
+                        {isCompressing ? <Loader2 className="w-6 h-6 text-muted-foreground animate-spin" /> : <Camera className="w-6 h-6 text-muted-foreground" />}
+                      </div>
+                      <p className="font-medium text-foreground">{isCompressing ? 'Comprimindo vídeo...' : 'Clique para adicionar arquivos'}</p>
+                      <p className="text-sm text-muted-foreground">
+                        PDF, Word, Excel, Imagens e Vídeos • Máx. {MAX_FILES} arquivos • Vídeos comprimidos automaticamente
+                      </p>
                     </div>
-                    <p className="font-medium text-foreground">Clique para adicionar fotos</p>
-                    <p className="text-sm text-muted-foreground">
-                      Adicione quantas fotos quiser • Imagens (JPG, PNG)
-                    </p>
                   </div>
-                </div>
+                )}
 
                 {fotos.length > 0 && (
                   <div className="space-y-2 mt-4">
-                    <p className="text-sm font-medium text-muted-foreground">{fotos.length} foto(s) adicionada(s)</p>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
-                      {fotos.map((foto, index) => (
-                        <div key={index} className="relative group">
-                          <div className="aspect-square bg-secondary rounded-lg flex items-center justify-center overflow-hidden">
-                            <img 
-                              src={URL.createObjectURL(foto.file)} 
-                              alt={foto.nome} 
-                              className="object-cover w-full h-full"
-                            />
+                    <p className="text-sm font-medium text-muted-foreground">{fotos.length} arquivo(s) adicionado(s)</p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {fotos.map((foto, index) => {
+                        const Icon = getFileIcon(foto.file);
+                        const isImage = foto.file.type.startsWith('image/');
+                        return (
+                          <div key={index} className="relative group flex items-center gap-3 p-3 border rounded-lg bg-card">
+                            {isImage ? (
+                              <div className="w-12 h-12 rounded overflow-hidden flex-shrink-0">
+                                <img src={URL.createObjectURL(foto.file)} alt={foto.nome} className="object-cover w-full h-full" />
+                              </div>
+                            ) : (
+                              <div className="w-12 h-12 rounded bg-secondary flex items-center justify-center flex-shrink-0">
+                                <Icon className="w-6 h-6 text-muted-foreground" />
+                              </div>
+                            )}
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium truncate">{foto.nome}</p>
+                              <p className="text-xs text-muted-foreground">{(foto.file.size / 1024 / 1024).toFixed(1)} MB</p>
+                            </div>
+                            <button type="button" onClick={() => removeFile(index, 'fotos')} className="p-1 text-destructive hover:bg-destructive/10 rounded">
+                              <X className="w-4 h-4" />
+                            </button>
                           </div>
-                          <button
-                            type="button"
-                            onClick={() => removeFoto(index)}
-                            className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                          >
-                            <X className="w-3 h-3" />
-                          </button>
-                          <p className="text-xs text-muted-foreground truncate mt-1">{foto.nome}</p>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </div>
                 )}

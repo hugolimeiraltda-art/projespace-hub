@@ -199,6 +199,36 @@ export default function ImplantacaoExecucao() {
         ...etapasData,
         operacao_assistida_interacoes: parsedInteracoes
       } as ImplantacaoEtapas);
+
+      // Fetch customer_portfolio data for contract info
+      const { data: portfolioData } = await supabase
+        .from('customer_portfolio')
+        .select('contrato, alarme_codigo, mensalidade, taxa_ativacao, data_termino')
+        .eq('project_id', id)
+        .maybeSingle();
+
+      if (portfolioData) {
+        // Calculate prazo from data_ativacao/data_termino or leave empty
+        let prazoValue = '';
+        if (portfolioData.data_termino) {
+          // Try to infer prazo from data_termino
+          const termino = new Date(portfolioData.data_termino);
+          const now = new Date();
+          const monthsDiff = Math.round((termino.getTime() - now.getTime()) / (1000 * 60 * 60 * 24 * 30));
+          if (monthsDiff >= 54) prazoValue = '60';
+          else if (monthsDiff >= 42) prazoValue = '48';
+          else if (monthsDiff >= 30) prazoValue = '36';
+          else if (monthsDiff >= 18) prazoValue = '24';
+          else prazoValue = '12';
+        }
+        setContratoInfo({
+          contrato: portfolioData.contrato || '',
+          alarme_codigo: portfolioData.alarme_codigo || '',
+          mensalidade: portfolioData.mensalidade ? String(portfolioData.mensalidade) : '',
+          prazo_contrato: prazoValue,
+          taxa_instalacao: portfolioData.taxa_ativacao ? String(portfolioData.taxa_ativacao) : '',
+        });
+      }
     } catch (error) {
       console.error('Error fetching data:', error);
       toast({
@@ -815,7 +845,49 @@ export default function ImplantacaoExecucao() {
 
                               try {
                                 setIsSaving(true);
-                                // Save to customer_portfolio if linked, or store in project
+                                
+                                // Calculate data_termino from prazo_contrato
+                                const prazoMeses = parseInt(contratoInfo.prazo_contrato) || 12;
+                                const dataTermino = new Date();
+                                dataTermino.setMonth(dataTermino.getMonth() + prazoMeses);
+                                
+                                const portfolioPayload = {
+                                  contrato: contratoInfo.contrato.trim(),
+                                  alarme_codigo: contratoInfo.alarme_codigo.trim(),
+                                  mensalidade: parseFloat(contratoInfo.mensalidade.replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
+                                  taxa_ativacao: parseFloat(contratoInfo.taxa_instalacao.replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
+                                  data_termino: dataTermino.toISOString().split('T')[0],
+                                };
+
+                                // Check if customer_portfolio exists for this project
+                                const { data: existing } = await supabase
+                                  .from('customer_portfolio')
+                                  .select('id')
+                                  .eq('project_id', id)
+                                  .maybeSingle();
+
+                                if (existing) {
+                                  const { error: updateError } = await supabase
+                                    .from('customer_portfolio')
+                                    .update(portfolioPayload)
+                                    .eq('id', existing.id);
+                                  if (updateError) throw updateError;
+                                } else {
+                                  // Create new customer_portfolio entry
+                                  const { error: insertError } = await supabase
+                                    .from('customer_portfolio')
+                                    .insert({
+                                      ...portfolioPayload,
+                                      project_id: id,
+                                      razao_social: project?.cliente_condominio_nome || '',
+                                      endereco: project?.cliente_cidade && project?.cliente_estado 
+                                        ? `${project.cliente_cidade}, ${project.cliente_estado}` 
+                                        : null,
+                                      status_implantacao: 'EM_IMPLANTACAO',
+                                    });
+                                  if (insertError) throw insertError;
+                                }
+
                                 toast({
                                   title: 'Salvo',
                                   description: 'Informações do contrato atualizadas.',

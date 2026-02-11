@@ -259,10 +259,19 @@ export default function GestaoUsuarios() {
   const handleResetPassword = async () => {
     if (!passwordUserId || !newPassword) return;
 
-    if (newPassword.length < 6) {
+    if (newPassword.length < 8) {
       toast({
         title: 'Erro',
-        description: 'A senha deve ter pelo menos 6 caracteres',
+        description: 'A senha deve ter pelo menos 8 caracteres',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (!/[a-z]/.test(newPassword) || !/[A-Z]/.test(newPassword) || !/[0-9]/.test(newPassword) || !/[!@#$%^&*()_+\-=\[\]{}|;:,.<>?]/.test(newPassword)) {
+      toast({
+        title: 'Erro',
+        description: 'A senha deve conter letras maiúsculas, minúsculas, números e caracteres especiais (!@#$%^&*)',
         variant: 'destructive',
       });
       return;
@@ -630,7 +639,7 @@ export default function GestaoUsuarios() {
                   type="password"
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
-                  placeholder="Mínimo 6 caracteres"
+                  placeholder="Mín. 8 chars, maiúsc., minúsc., número, especial"
                 />
               </div>
               <DialogFooter>

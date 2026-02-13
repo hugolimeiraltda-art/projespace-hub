@@ -1201,6 +1201,83 @@ export type Database = {
           },
         ]
       }
+      orcamento_mensagens: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          role: string
+          sessao_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          role: string
+          sessao_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          role?: string
+          sessao_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orcamento_mensagens_sessao_id_fkey"
+            columns: ["sessao_id"]
+            isOneToOne: false
+            referencedRelation: "orcamento_sessoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orcamento_sessoes: {
+        Row: {
+          created_at: string
+          created_by: string
+          created_by_name: string | null
+          email_cliente: string | null
+          id: string
+          nome_cliente: string
+          proposta_gerada: string | null
+          proposta_gerada_at: string | null
+          status: string
+          telefone_cliente: string | null
+          token: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          created_by_name?: string | null
+          email_cliente?: string | null
+          id?: string
+          nome_cliente: string
+          proposta_gerada?: string | null
+          proposta_gerada_at?: string | null
+          status?: string
+          telefone_cliente?: string | null
+          token?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          created_by_name?: string | null
+          email_cliente?: string | null
+          id?: string
+          nome_cliente?: string
+          proposta_gerada?: string | null
+          proposta_gerada_at?: string | null
+          status?: string
+          telefone_cliente?: string | null
+          token?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string

@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { SaleFormSummary } from '@/components/SaleFormSummary';
+import { SaleCompletedForm, PORTARIA_VIRTUAL_LABELS, CFTV_ELEVADOR_LABELS, MODALIDADE_PORTARIA_LABELS, PortariaVirtualApp, CFTVElevador, ModalidadePortaria } from '@/types/project';
 import { Layout } from '@/components/Layout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -38,6 +40,7 @@ import {
   Star,
   Paperclip,
   ExternalLink,
+  BookOpen,
 } from 'lucide-react';
 import { format, parseISO, addDays, differenceInDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -137,6 +140,8 @@ export default function ImplantacaoExecucao() {
 
   const [project, setProject] = useState<Project | null>(null);
   const [etapas, setEtapas] = useState<ImplantacaoEtapas | null>(null);
+  const [tapForm, setTapForm] = useState<Record<string, unknown> | null>(null);
+  const [saleForm, setSaleForm] = useState<SaleCompletedForm | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [expandedEtapas, setExpandedEtapas] = useState<number[]>([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
@@ -231,6 +236,24 @@ export default function ImplantacaoExecucao() {
           taxa_instalacao: portfolioData.taxa_ativacao ? String(portfolioData.taxa_ativacao) : '',
         });
       }
+
+      // Fetch TAP form
+      const { data: tapData } = await supabase
+        .from('tap_forms')
+        .select('*')
+        .eq('project_id', id)
+        .maybeSingle();
+      
+      if (tapData) setTapForm(tapData);
+
+      // Fetch Sale form
+      const { data: saleData } = await supabase
+        .from('sale_forms')
+        .select('*')
+        .eq('project_id', id)
+        .maybeSingle();
+      
+      if (saleData) setSaleForm(saleData as unknown as SaleCompletedForm);
     } catch (error) {
       console.error('Error fetching data:', error);
       toast({
@@ -758,7 +781,101 @@ export default function ImplantacaoExecucao() {
           </CardContent>
         </Card>
 
-        {/* Progress overview */}
+        {/* TAP + Project Summary */}
+        {(tapForm || saleForm) && (
+          <Collapsible className="mb-6">
+            <Card>
+              <CollapsibleTrigger asChild>
+                <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <BookOpen className="w-5 h-5 text-primary" />
+                    Resumo do Projeto (TAP + Venda)
+                    <ChevronDown className="w-4 h-4 ml-auto text-muted-foreground" />
+                  </CardTitle>
+                </CardHeader>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <CardContent className="space-y-6 pt-0">
+                  {/* TAP Summary */}
+                  {tapForm && (
+                    <div>
+                      <h3 className="text-sm font-semibold uppercase tracking-wide mb-3">Resumo do TAP</h3>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                        {tapForm.portaria_virtual_atendimento_app && (
+                          <div className="bg-muted/50 rounded-lg p-3">
+                            <p className="text-xs text-muted-foreground mb-0.5">Portaria Virtual</p>
+                            <p className="text-sm font-medium">{PORTARIA_VIRTUAL_LABELS[tapForm.portaria_virtual_atendimento_app as PortariaVirtualApp] || String(tapForm.portaria_virtual_atendimento_app)}</p>
+                          </div>
+                        )}
+                        {tapForm.modalidade_portaria && (
+                          <div className="bg-muted/50 rounded-lg p-3">
+                            <p className="text-xs text-muted-foreground mb-0.5">Modalidade</p>
+                            <p className="text-sm font-medium">{MODALIDADE_PORTARIA_LABELS[tapForm.modalidade_portaria as ModalidadePortaria] || String(tapForm.modalidade_portaria)}</p>
+                          </div>
+                        )}
+                        {tapForm.numero_blocos != null && (
+                          <div className="bg-muted/50 rounded-lg p-3">
+                            <p className="text-xs text-muted-foreground mb-0.5">Nº Blocos</p>
+                            <p className="text-sm font-medium">{String(tapForm.numero_blocos)}</p>
+                          </div>
+                        )}
+                        {tapForm.numero_unidades != null && (
+                          <div className="bg-muted/50 rounded-lg p-3">
+                            <p className="text-xs text-muted-foreground mb-0.5">Nº Unidades</p>
+                            <p className="text-sm font-medium">{String(tapForm.numero_unidades)}</p>
+                          </div>
+                        )}
+                        {tapForm.interfonia != null && (
+                          <div className="bg-muted/50 rounded-lg p-3">
+                            <p className="text-xs text-muted-foreground mb-0.5">Interfonia</p>
+                            <p className="text-sm font-medium">{tapForm.interfonia ? 'Sim' : 'Não'}</p>
+                          </div>
+                        )}
+                        {tapForm.cftv_elevador_possui && (
+                          <div className="bg-muted/50 rounded-lg p-3">
+                            <p className="text-xs text-muted-foreground mb-0.5">CFTV Elevador</p>
+                            <p className="text-sm font-medium">{CFTV_ELEVADOR_LABELS[tapForm.cftv_elevador_possui as CFTVElevador] || String(tapForm.cftv_elevador_possui)}</p>
+                          </div>
+                        )}
+                      </div>
+                      {/* Text descriptions */}
+                      {[
+                        { key: 'controle_acessos_pedestre_descricao', label: 'Controle Pedestre' },
+                        { key: 'controle_acessos_veiculo_descricao', label: 'Controle Veículo' },
+                        { key: 'alarme_descricao', label: 'Alarme' },
+                        { key: 'cftv_dvr_descricao', label: 'CFTV/DVR' },
+                        { key: 'info_adicionais', label: 'Informações Adicionais' },
+                      ].map(({ key, label }) => {
+                        const val = tapForm[key];
+                        if (!val) return null;
+                        return (
+                          <div key={key} className="mt-3 bg-muted/50 rounded-lg p-3">
+                            <p className="text-xs text-muted-foreground mb-0.5">{label}</p>
+                            <p className="text-sm">{String(val)}</p>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {/* Sale Form Summary */}
+                  {saleForm && (
+                    <SaleFormSummary
+                      saleForm={saleForm}
+                      projectInfo={project ? {
+                        nome: project.cliente_condominio_nome,
+                        cidade: project.cliente_cidade || '',
+                        estado: project.cliente_estado || '',
+                        vendedor: project.vendedor_nome,
+                      } : undefined}
+                    />
+                  )}
+                </CardContent>
+              </CollapsibleContent>
+            </Card>
+          </Collapsible>
+        )}
+
         <Card className="mb-6">
           <CardContent className="pt-4">
             <div className="flex items-center justify-between mb-4">

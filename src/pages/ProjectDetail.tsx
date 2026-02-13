@@ -579,19 +579,54 @@ export default function ProjectDetail() {
     });
   };
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
-    if (files) {
-      Array.from(files).forEach(file => {
-        addAttachment(project.id, {
-          tipo: 'OUTROS',
-          arquivo_url: URL.createObjectURL(file),
-          nome_arquivo: file.name,
-        });
-      });
+    if (!files || files.length === 0) return;
+    
+    let successCount = 0;
+    for (const file of Array.from(files)) {
+      try {
+        // Upload to storage
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${project.id}/attachments/${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+        
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('project-attachments')
+          .upload(fileName, file, { cacheControl: '3600', upsert: false });
+
+        if (uploadError) {
+          console.error('Error uploading file:', uploadError);
+          continue;
+        }
+
+        // Get signed URL since bucket is private
+        const { data: signedUrlData } = await supabase.storage
+          .from('project-attachments')
+          .createSignedUrl(uploadData.path, 60 * 60 * 24 * 365);
+
+        if (signedUrlData) {
+          await addAttachment(project.id, {
+            tipo: 'OUTROS',
+            arquivo_url: signedUrlData.signedUrl,
+            nome_arquivo: file.name,
+          });
+          successCount++;
+        }
+      } catch (err) {
+        console.error('Error uploading file:', err);
+      }
+    }
+    
+    if (successCount > 0) {
       toast({
         title: 'Arquivos anexados',
-        description: `${files.length} arquivo(s) adicionado(s).`,
+        description: `${successCount} arquivo(s) adicionado(s).`,
+      });
+    } else {
+      toast({
+        title: 'Erro',
+        description: 'Não foi possível anexar os arquivos.',
+        variant: 'destructive',
       });
     }
     e.target.value = '';

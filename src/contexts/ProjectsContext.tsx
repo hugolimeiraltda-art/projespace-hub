@@ -570,6 +570,65 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
         return false;
       }
 
+      // Create notifications for comment (skip internal comments for non-projetos users)
+      if (!comment.is_internal) {
+        const project = projects.find(p => p.id === projectId);
+        if (project) {
+          const notificationTitle = 'Novo Comentário no Projeto';
+          const notificationMessage = `${comment.user_name} comentou no projeto "${project.cliente_condominio_nome}": ${comment.content.substring(0, 100)}${comment.content.length > 100 ? '...' : ''}`;
+
+          const notifications: Array<{
+            project_id: string;
+            type: string;
+            title: string;
+            message: string;
+            read: boolean;
+            for_user_id?: string;
+            for_role?: string;
+          }> = [];
+
+          // Notify vendedor (project owner) if commenter is not the vendedor
+          if (comment.user_id !== project.created_by_user_id) {
+            notifications.push({
+              project_id: projectId,
+              type: 'COMMENT_ADDED',
+              title: notificationTitle,
+              message: notificationMessage,
+              read: false,
+              for_user_id: project.created_by_user_id,
+            });
+          }
+
+          // Notify projetos role if commenter is not projetos
+          if (user?.role !== 'projetos') {
+            notifications.push({
+              project_id: projectId,
+              type: 'COMMENT_ADDED',
+              title: notificationTitle,
+              message: notificationMessage,
+              read: false,
+              for_role: 'projetos',
+            });
+          }
+
+          // Notify admin role
+          if (user?.role !== 'admin') {
+            notifications.push({
+              project_id: projectId,
+              type: 'COMMENT_ADDED',
+              title: notificationTitle,
+              message: notificationMessage,
+              read: false,
+              for_role: 'admin',
+            });
+          }
+
+          if (notifications.length > 0) {
+            await supabase.from('project_notifications').insert(notifications);
+          }
+        }
+      }
+
       await fetchProjects();
       return true;
     } catch (error) {
@@ -650,8 +709,8 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
         console.error('Error adding status history:', historyError);
       }
 
-      // Create notification for the vendedor (project owner) when status changes
-      if (project && project.created_by_user_id !== userId) {
+      // Create notifications for status changes - notify vendedor AND projetos
+      if (project) {
         const statusLabels: Record<ProjectStatus, string> = {
           'RASCUNHO': 'Rascunho',
           'ENVIADO': 'Enviado',
@@ -678,9 +737,19 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
           notificationMessage = `O projeto "${project.cliente_condominio_nome}" está sendo analisado pela equipe de projetos.`;
         }
 
-        await supabase
-          .from('project_notifications')
-          .insert({
+        const notifications: Array<{
+          project_id: string;
+          type: string;
+          title: string;
+          message: string;
+          read: boolean;
+          for_user_id?: string;
+          for_role?: string;
+        }> = [];
+
+        // Notify vendedor (project owner) if the change was not made by them
+        if (project.created_by_user_id !== userId) {
+          notifications.push({
             project_id: projectId,
             type: 'STATUS_CHANGED',
             title: notificationTitle,
@@ -688,6 +757,35 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
             read: false,
             for_user_id: project.created_by_user_id,
           });
+        }
+
+        // Notify projetos role if the change was not made by projetos
+        if (user?.role !== 'projetos') {
+          notifications.push({
+            project_id: projectId,
+            type: 'STATUS_CHANGED',
+            title: notificationTitle,
+            message: notificationMessage,
+            read: false,
+            for_role: 'projetos',
+          });
+        }
+
+        // Notify admin role if the change was not made by admin
+        if (user?.role !== 'admin') {
+          notifications.push({
+            project_id: projectId,
+            type: 'STATUS_CHANGED',
+            title: notificationTitle,
+            message: notificationMessage,
+            read: false,
+            for_role: 'admin',
+          });
+        }
+
+        if (notifications.length > 0) {
+          await supabase.from('project_notifications').insert(notifications);
+        }
       }
 
       await fetchProjects();

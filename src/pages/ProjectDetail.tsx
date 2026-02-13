@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { SaleFormSummary } from '@/components/SaleFormSummary';
 import jsPDF from 'jspdf';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -827,6 +828,19 @@ export default function ProjectDetail() {
                   </Alert>
                 </CardContent>
               </Card>
+            )}
+
+            {/* Sale Form Summary */}
+            {project.sale_form && (
+              <SaleFormSummary 
+                saleForm={project.sale_form}
+                projectInfo={{
+                  nome: project.cliente_condominio_nome,
+                  cidade: project.cliente_cidade || '',
+                  estado: project.cliente_estado || '',
+                  vendedor: project.vendedor_nome,
+                }}
+              />
             )}
 
             {/* Attachments */}

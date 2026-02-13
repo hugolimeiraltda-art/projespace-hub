@@ -476,6 +476,19 @@ export default function StartupProjetos() {
                           onClick={(e) => {
                             e.preventDefault();
                             e.stopPropagation();
+                            navigate(`/projetos/${project.id}/formulario-venda`);
+                          }}
+                        >
+                          <Eye className="w-4 h-4 mr-2" />
+                          Formulário
+                        </Button>
+
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
                             navigate(`/projetos/${project.id}`);
                           }}
                         >

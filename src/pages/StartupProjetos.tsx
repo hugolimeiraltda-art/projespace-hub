@@ -23,6 +23,7 @@ import {
   Calendar,
   Eye,
   RotateCcw,
+  Sparkles,
 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -462,11 +463,15 @@ export default function StartupProjetos() {
                           <Button
                             variant="outline"
                             size="sm"
-                            className="border-green-300 text-green-700 hover:bg-green-50"
-                            onClick={() => handleStatusChange(project.id, 'CONCLUIDO_IMPLANTACAO')}
+                            className="border-purple-300 text-purple-700 hover:bg-purple-50"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              navigate(`/projetos/${project.id}?tab=resumo`);
+                            }}
                           >
-                            <CheckCircle2 className="w-4 h-4 mr-1" />
-                            Concluir
+                            <Sparkles className="w-4 h-4 mr-1" />
+                            Resumo com IA
                           </Button>
                         )}
                         

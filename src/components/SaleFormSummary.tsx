@@ -1,10 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Sparkles, Loader2, ClipboardList, Copy } from 'lucide-react';
+import { Sparkles, Loader2, ClipboardList, Copy, FileText } from 'lucide-react';
 import {
   SaleCompletedForm,
   ALARME_TIPO_LABELS,
@@ -25,6 +25,8 @@ interface SaleFormSummaryProps {
   tapForm?: Record<string, unknown> | null;
   comments?: Array<{ user_name: string; content: string; created_at: string; is_internal: boolean }>;
   attachments?: Array<{ nome_arquivo: string; tipo: string }>;
+  projectId?: string;
+  summaryType?: 'projeto' | 'implantacao';
 }
 
 // Field label mapping for display
@@ -147,10 +149,30 @@ function formatValue(key: string, value: unknown): string {
   return String(value);
 }
 
-export function SaleFormSummary({ saleForm, projectInfo, tapForm, comments, attachments }: SaleFormSummaryProps) {
+export function SaleFormSummary({ saleForm, projectInfo, tapForm, comments, attachments, projectId, summaryType = 'projeto' }: SaleFormSummaryProps) {
   const { toast } = useToast();
   const [aiSummary, setAiSummary] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [showReport, setShowReport] = useState(false);
+  const [summaryId, setSummaryId] = useState<string | null>(null);
+
+  // Load existing summary on mount
+  useEffect(() => {
+    if (!projectId) return;
+    const loadSummary = async () => {
+      const { data } = await supabase
+        .from('project_ai_summaries')
+        .select('id, resumo_gerado')
+        .eq('project_id', projectId)
+        .eq('tipo', summaryType)
+        .maybeSingle();
+      if (data) {
+        setAiSummary(data.resumo_gerado);
+        setSummaryId(data.id);
+      }
+    };
+    loadSummary();
+  }, [projectId, summaryType]);
 
   const handleGenerateSummary = async () => {
     setIsGenerating(true);
@@ -222,8 +244,28 @@ export function SaleFormSummary({ saleForm, projectInfo, tapForm, comments, atta
         return;
       }
 
-      setAiSummary(data.summary);
-      toast({ title: 'Resumo gerado!', description: 'O resumo do escopo foi gerado com sucesso.' });
+      const summary = data.summary;
+      setAiSummary(summary);
+      setShowReport(true);
+
+      // Persist to database
+      if (projectId) {
+        if (summaryId) {
+          await supabase
+            .from('project_ai_summaries')
+            .update({ resumo_gerado: summary })
+            .eq('id', summaryId);
+        } else {
+          const { data: inserted } = await supabase
+            .from('project_ai_summaries')
+            .insert({ project_id: projectId, tipo: summaryType, resumo_gerado: summary })
+            .select('id')
+            .single();
+          if (inserted) setSummaryId(inserted.id);
+        }
+      }
+
+      toast({ title: 'Resumo gerado!', description: 'O resumo do escopo foi gerado e salvo com sucesso.' });
     } catch (err) {
       console.error('Error generating summary:', err);
       toast({ title: 'Erro', description: 'Não foi possível gerar o resumo. Tente novamente.', variant: 'destructive' });
@@ -258,16 +300,28 @@ export function SaleFormSummary({ saleForm, projectInfo, tapForm, comments, atta
             Resumo do Escopo (IA)
           </CardTitle>
           <div className="flex items-center gap-2">
-            {aiSummary && (
-              <Button variant="outline" size="sm" onClick={handleCopySummary}>
-                <Copy className="w-4 h-4 mr-1" />
-                Copiar
+            {aiSummary && !showReport && (
+              <Button variant="outline" size="sm" onClick={() => setShowReport(true)}>
+                <FileText className="w-4 h-4 mr-1" />
+                Ver Relatório IA
               </Button>
+            )}
+            {aiSummary && showReport && (
+              <>
+                <Button variant="outline" size="sm" onClick={handleCopySummary}>
+                  <Copy className="w-4 h-4 mr-1" />
+                  Copiar
+                </Button>
+                <Button variant="ghost" size="sm" onClick={() => setShowReport(false)}>
+                  Ocultar
+                </Button>
+              </>
             )}
             <Button
               onClick={handleGenerateSummary}
               disabled={isGenerating}
               size="sm"
+              variant={aiSummary ? 'outline' : 'default'}
             >
               {isGenerating ? (
                 <>
@@ -277,17 +331,21 @@ export function SaleFormSummary({ saleForm, projectInfo, tapForm, comments, atta
               ) : (
                 <>
                   <Sparkles className="w-4 h-4 mr-1" />
-                  {aiSummary ? 'Regerar Resumo' : 'Gerar Resumo'}
+                  {aiSummary ? 'Regerar' : 'Gerar Resumo'}
                 </>
               )}
             </Button>
           </div>
         </CardHeader>
         <CardContent>
-          {aiSummary ? (
+          {aiSummary && showReport ? (
             <div className="prose prose-sm max-w-none dark:prose-invert">
               <ReactMarkdown>{aiSummary}</ReactMarkdown>
             </div>
+          ) : aiSummary && !showReport ? (
+            <p className="text-muted-foreground text-center py-4">
+              ✅ Relatório de IA disponível. Clique em "Ver Relatório IA" para visualizar.
+            </p>
           ) : (
             <p className="text-muted-foreground text-center py-6">
               Clique em "Gerar Resumo" para que a IA analise os dados do formulário e gere uma descrição do escopo do projeto.

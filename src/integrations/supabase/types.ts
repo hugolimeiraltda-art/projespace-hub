@@ -1240,6 +1240,80 @@ export type Database = {
         }
         Relationships: []
       }
+      project_ai_summaries: {
+        Row: {
+          created_at: string
+          eng_feedback_at: string | null
+          eng_feedback_by: string | null
+          eng_feedback_by_name: string | null
+          eng_nota_precisao: number | null
+          eng_pontos_ajuste: string | null
+          eng_resumo_adequado: boolean | null
+          id: string
+          impl_divergencias: string | null
+          impl_feedback_at: string | null
+          impl_feedback_by: string | null
+          impl_feedback_by_name: string | null
+          impl_nota_precisao: number | null
+          impl_projeto_bateu_realidade: boolean | null
+          impl_sugestoes_melhoria: string | null
+          project_id: string
+          resumo_gerado: string
+          tipo: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          eng_feedback_at?: string | null
+          eng_feedback_by?: string | null
+          eng_feedback_by_name?: string | null
+          eng_nota_precisao?: number | null
+          eng_pontos_ajuste?: string | null
+          eng_resumo_adequado?: boolean | null
+          id?: string
+          impl_divergencias?: string | null
+          impl_feedback_at?: string | null
+          impl_feedback_by?: string | null
+          impl_feedback_by_name?: string | null
+          impl_nota_precisao?: number | null
+          impl_projeto_bateu_realidade?: boolean | null
+          impl_sugestoes_melhoria?: string | null
+          project_id: string
+          resumo_gerado: string
+          tipo?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          eng_feedback_at?: string | null
+          eng_feedback_by?: string | null
+          eng_feedback_by_name?: string | null
+          eng_nota_precisao?: number | null
+          eng_pontos_ajuste?: string | null
+          eng_resumo_adequado?: boolean | null
+          id?: string
+          impl_divergencias?: string | null
+          impl_feedback_at?: string | null
+          impl_feedback_by?: string | null
+          impl_feedback_by_name?: string | null
+          impl_nota_precisao?: number | null
+          impl_projeto_bateu_realidade?: boolean | null
+          impl_sugestoes_melhoria?: string | null
+          project_id?: string
+          resumo_gerado?: string
+          tipo?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_ai_summaries_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       project_attachments: {
         Row: {
           arquivo_url: string

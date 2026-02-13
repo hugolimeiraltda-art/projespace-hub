@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { SaleFormSummary } from '@/components/SaleFormSummary';
+import { AIFeedbackDialog } from '@/components/AIFeedbackDialog';
 import { SaleCompletedForm, PORTARIA_VIRTUAL_LABELS, CFTV_ELEVADOR_LABELS, MODALIDADE_PORTARIA_LABELS, PortariaVirtualApp, CFTVElevador, ModalidadePortaria } from '@/types/project';
 import { Layout } from '@/components/Layout';
 import { Button } from '@/components/ui/button';
@@ -154,6 +155,7 @@ export default function ImplantacaoExecucao() {
   const [selectedNota, setSelectedNota] = useState<number | null>(null);
   const [contratoInfo, setContratoInfo] = useState<ContratoInfo>({ contrato: '', alarme_codigo: '', mensalidade: '', prazo_contrato: '', taxa_instalacao: '' });
   const [editingContrato, setEditingContrato] = useState(false);
+  const [showAIFeedbackDialog, setShowAIFeedbackDialog] = useState(false);
 
   const canEditDates = user?.role === 'admin' || user?.role === 'administrativo' || user?.role === 'implantacao';
 
@@ -898,6 +900,8 @@ export default function ImplantacaoExecucao() {
                       tapForm={tapForm}
                       comments={projectComments}
                       attachments={projectAttachments}
+                      projectId={id}
+                      summaryType="projeto"
                     />
                   )}
                 </CardContent>
@@ -1581,13 +1585,23 @@ export default function ImplantacaoExecucao() {
                   </div>
 
                   <div className="px-4">
-                    <SubItem 
-                      label="Marcar implantação como concluída" 
-                      checked={etapas.concluido} 
-                      field="concluido"
-                      dateField="concluido_at"
-                      date={etapas.concluido_at}
-                    />
+                    {etapas.concluido ? (
+                      <SubItem 
+                        label="Marcar implantação como concluída" 
+                        checked={etapas.concluido} 
+                        field="concluido"
+                        dateField="concluido_at"
+                        date={etapas.concluido_at}
+                      />
+                    ) : (
+                      <Button
+                        onClick={() => setShowAIFeedbackDialog(true)}
+                        className="w-full"
+                        variant="default"
+                      >
+                        Concluir Implantação (com avaliação)
+                      </Button>
+                    )}
                   </div>
                 </CardContent>
               </CollapsibleContent>
@@ -1709,6 +1723,21 @@ export default function ImplantacaoExecucao() {
           </Card>
         </div>
       </div>
+
+      {/* AI Feedback Dialog for Implantação completion */}
+      {user && id && (
+        <AIFeedbackDialog
+          open={showAIFeedbackDialog}
+          onOpenChange={setShowAIFeedbackDialog}
+          projectId={id}
+          userId={user.id}
+          userName={user.nome}
+          type="implantacao"
+          onSubmitted={() => {
+            updateEtapa('concluido', true, 'concluido_at');
+          }}
+        />
+      )}
     </Layout>
   );
 }

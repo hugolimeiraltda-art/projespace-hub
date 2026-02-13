@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { SaleFormSummary } from '@/components/SaleFormSummary';
+import { AIFeedbackDialog } from '@/components/AIFeedbackDialog';
 import jsPDF from 'jspdf';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -64,6 +65,7 @@ export default function ProjectDetail() {
   const [retornarReason, setRetornarReason] = useState('');
   const [isSendingEmail, setIsSendingEmail] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [showAIFeedbackDialog, setShowAIFeedbackDialog] = useState(false);
 
   // Watch for project changes in the context
   useEffect(() => {
@@ -561,6 +563,12 @@ export default function ProjectDetail() {
 
   const handleMarkCompleted = () => {
     if (!user) return;
+    // Show AI feedback dialog before completing
+    setShowAIFeedbackDialog(true);
+  };
+
+  const handleCompleteAfterFeedback = () => {
+    if (!user) return;
     markProjectCompleted(project.id, user.id, user.nome);
     toast({
       title: 'Projeto concluído!',
@@ -851,6 +859,8 @@ export default function ProjectDetail() {
                   nome_arquivo: a.nome_arquivo,
                   tipo: a.tipo,
                 }))}
+                projectId={project.id}
+                summaryType="projeto"
               />
             )}
 
@@ -1280,6 +1290,19 @@ export default function ProjectDetail() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* AI Feedback Dialog */}
+      {user && (
+        <AIFeedbackDialog
+          open={showAIFeedbackDialog}
+          onOpenChange={setShowAIFeedbackDialog}
+          projectId={project.id}
+          userId={user.id}
+          userName={user.nome}
+          type="engineering"
+          onSubmitted={handleCompleteAfterFeedback}
+        />
+      )}
     </Layout>
   );
 }

@@ -17,6 +17,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { getChangedFields, isFieldChanged } from '@/lib/changeTracking';
 import { cn } from '@/lib/utils';
+import { isBlobUrl, useAttachmentUrl } from '@/hooks/useAttachmentUrl';
 import {
   ArrowLeft,
   Building,
@@ -48,6 +49,7 @@ export default function ProjectDetail() {
   const navigate = useNavigate();
   const { toast } = useToast();
 
+  const { openAttachment } = useAttachmentUrl();
   const [project, setProject] = useState<ReturnType<typeof getProject>>(undefined);
   const [isLoading, setIsLoading] = useState(true);
   const [newComment, setNewComment] = useState('');
@@ -857,21 +859,37 @@ export default function ProjectDetail() {
                   <p className="text-muted-foreground text-center py-4">Nenhum anexo</p>
                 ) : (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {project.attachments.filter(a => !['PLANTA_CROQUI_DEVOLUCAO', 'LISTA_EQUIPAMENTOS', 'LISTA_ATIVIDADES'].includes(a.tipo)).map(att => (
-                      <a 
-                        key={att.id} 
-                        href={att.arquivo_url} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-3 p-3 bg-secondary rounded-lg hover:bg-secondary/80 transition-colors cursor-pointer"
-                      >
-                        <FileText className="w-5 h-5 text-muted-foreground" />
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium truncate">{att.nome_arquivo}</p>
-                          <p className="text-xs text-muted-foreground">{ATTACHMENT_TYPE_LABELS[att.tipo]}</p>
-                        </div>
-                      </a>
-                    ))}
+                    {project.attachments.filter(a => !['PLANTA_CROQUI_DEVOLUCAO', 'LISTA_EQUIPAMENTOS', 'LISTA_ATIVIDADES'].includes(a.tipo)).map(att => {
+                      const broken = isBlobUrl(att.arquivo_url);
+                      return (
+                        <a 
+                          key={att.id} 
+                          href={broken ? undefined : att.arquivo_url}
+                          onClick={(e) => openAttachment(att.arquivo_url, e)}
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className={cn(
+                            "flex items-center gap-3 p-3 rounded-lg transition-colors",
+                            broken 
+                              ? "bg-destructive/10 border border-destructive/30 cursor-not-allowed opacity-60" 
+                              : "bg-secondary hover:bg-secondary/80 cursor-pointer"
+                          )}
+                          title={broken ? "Arquivo indisponível — foi salvo de forma temporária e não pode mais ser acessado. É necessário re-enviar." : undefined}
+                        >
+                          {broken ? (
+                            <AlertTriangle className="w-5 h-5 text-destructive shrink-0" />
+                          ) : (
+                            <FileText className="w-5 h-5 text-muted-foreground shrink-0" />
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium truncate">{att.nome_arquivo}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {broken ? 'Arquivo indisponível — reenvie' : ATTACHMENT_TYPE_LABELS[att.tipo]}
+                            </p>
+                          </div>
+                        </a>
+                      );
+                    })}
                   </div>
                 )}
               </CardContent>

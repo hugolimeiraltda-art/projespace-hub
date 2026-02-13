@@ -46,7 +46,7 @@ import { ptBR } from 'date-fns/locale';
 export default function ProjectDetail() {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
-  const { getProject, updateStatus, updateEngineeringStatus, addComment, markProjectCompleted, addAttachment, updateProject, deleteProject, projects } = useProjects();
+  const { getProject, updateStatus, updateEngineeringStatus, addComment, markProjectCompleted, addAttachment, removeAttachment, updateProject, deleteProject, projects } = useProjects();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -915,6 +915,8 @@ export default function ProjectDetail() {
               canChangeStatus={canChangeStatus}
               user={user}
               addAttachment={addAttachment}
+              removeAttachment={removeAttachment}
+              addComment={addComment}
               updateProject={updateProject}
             />
 

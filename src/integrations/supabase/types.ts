@@ -1201,6 +1201,78 @@ export type Database = {
           },
         ]
       }
+      orcamento_kit_itens: {
+        Row: {
+          created_at: string
+          id: string
+          kit_id: string
+          produto_id: string
+          quantidade: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          kit_id: string
+          produto_id: string
+          quantidade?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          kit_id?: string
+          produto_id?: string
+          quantidade?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orcamento_kit_itens_kit_id_fkey"
+            columns: ["kit_id"]
+            isOneToOne: false
+            referencedRelation: "orcamento_kits"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orcamento_kit_itens_produto_id_fkey"
+            columns: ["produto_id"]
+            isOneToOne: false
+            referencedRelation: "orcamento_produtos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orcamento_kits: {
+        Row: {
+          ativo: boolean
+          categoria: string
+          created_at: string
+          descricao: string | null
+          id: string
+          nome: string
+          preco_kit: number
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          categoria: string
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          nome: string
+          preco_kit?: number
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          categoria?: string
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          nome?: string
+          preco_kit?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       orcamento_mensagens: {
         Row: {
           content: string
@@ -1233,6 +1305,93 @@ export type Database = {
           },
         ]
       }
+      orcamento_midias: {
+        Row: {
+          arquivo_url: string
+          created_at: string
+          descricao: string | null
+          id: string
+          mensagem_id: string | null
+          nome_arquivo: string
+          sessao_id: string
+          tamanho: number | null
+          tipo: string
+        }
+        Insert: {
+          arquivo_url: string
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          mensagem_id?: string | null
+          nome_arquivo: string
+          sessao_id: string
+          tamanho?: number | null
+          tipo: string
+        }
+        Update: {
+          arquivo_url?: string
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          mensagem_id?: string | null
+          nome_arquivo?: string
+          sessao_id?: string
+          tamanho?: number | null
+          tipo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orcamento_midias_mensagem_id_fkey"
+            columns: ["mensagem_id"]
+            isOneToOne: false
+            referencedRelation: "orcamento_mensagens"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orcamento_midias_sessao_id_fkey"
+            columns: ["sessao_id"]
+            isOneToOne: false
+            referencedRelation: "orcamento_sessoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orcamento_produtos: {
+        Row: {
+          ativo: boolean
+          categoria: string
+          created_at: string
+          descricao: string | null
+          id: string
+          nome: string
+          preco_unitario: number
+          unidade: string
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          categoria: string
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          nome: string
+          preco_unitario?: number
+          unidade?: string
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          categoria?: string
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          nome?: string
+          preco_unitario?: number
+          unidade?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       orcamento_sessoes: {
         Row: {
           created_at: string
@@ -1247,6 +1406,8 @@ export type Database = {
           telefone_cliente: string | null
           token: string
           updated_at: string
+          vendedor_id: string | null
+          vendedor_nome: string | null
         }
         Insert: {
           created_at?: string
@@ -1261,6 +1422,8 @@ export type Database = {
           telefone_cliente?: string | null
           token?: string
           updated_at?: string
+          vendedor_id?: string | null
+          vendedor_nome?: string | null
         }
         Update: {
           created_at?: string
@@ -1275,6 +1438,8 @@ export type Database = {
           telefone_cliente?: string | null
           token?: string
           updated_at?: string
+          vendedor_id?: string | null
+          vendedor_nome?: string | null
         }
         Relationships: []
       }

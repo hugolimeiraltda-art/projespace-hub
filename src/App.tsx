@@ -38,6 +38,7 @@ import ManutencaoChamados from "./pages/ManutencaoChamados";
 import ManutencaoPendencias from "./pages/ManutencaoPendencias";
 import Orcamentos from "./pages/Orcamentos";
 import OrcamentoChat from "./pages/OrcamentoChat";
+import OrcamentoProdutos from "./pages/OrcamentoProdutos";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -200,8 +201,16 @@ function AppRoutes() {
         element={<ProtectedRoute><Orcamentos /></ProtectedRoute>} 
       />
       <Route 
+        path="/orcamentos/produtos" 
+        element={<ProtectedRoute><OrcamentoProdutos /></ProtectedRoute>} 
+      />
+      <Route 
         path="/orcamento/:token" 
-        element={<OrcamentoChat />} 
+        element={<ProtectedRoute><OrcamentoChat /></ProtectedRoute>} 
+      />
+      <Route 
+        path="/orcamento-visita" 
+        element={<ProtectedRoute><OrcamentoChat /></ProtectedRoute>} 
       />
       <Route path="*" element={<NotFound />} />
     </Routes>

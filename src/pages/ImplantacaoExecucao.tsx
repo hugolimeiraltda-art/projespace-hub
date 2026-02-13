@@ -36,6 +36,8 @@ import {
   Building,
   Pencil,
   Star,
+  Paperclip,
+  ExternalLink,
 } from 'lucide-react';
 import { format, parseISO, addDays, differenceInDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -588,6 +590,24 @@ export default function ImplantacaoExecucao() {
               <p className="text-muted-foreground">
                 {project.cliente_cidade}, {project.cliente_estado} • Vendedor: {project.vendedor_nome}
               </p>
+            </div>
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate(`/projetos/${id}/form2`)}
+              >
+                <FileText className="w-4 h-4 mr-1" />
+                Formulário
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate(`/projetos/${id}`, { state: { scrollToAttachments: true } })}
+              >
+                <Paperclip className="w-4 h-4 mr-1" />
+                Anexos
+              </Button>
             </div>
           </div>
         </div>

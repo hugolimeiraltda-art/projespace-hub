@@ -15,7 +15,7 @@ import {
 import ReactMarkdown from 'react-markdown';
 
 interface SaleFormSummaryProps {
-  saleForm: SaleCompletedForm;
+  saleForm?: SaleCompletedForm | null;
   projectInfo?: {
     nome: string;
     cidade: string;
@@ -179,11 +179,13 @@ export function SaleFormSummary({ saleForm, projectInfo, tapForm, comments, atta
     try {
       // Build a clean object with only filled fields for AI
       const cleanData: Record<string, unknown> = {};
-      for (const [key, value] of Object.entries(saleForm)) {
-        if (EXCLUDED_FIELDS.includes(key)) continue;
-        if (value === null || value === undefined || value === '' || value === 0 || value === false) continue;
-        const label = FIELD_LABELS[key] || key;
-        cleanData[label] = formatValue(key, value);
+      if (saleForm) {
+        for (const [key, value] of Object.entries(saleForm)) {
+          if (EXCLUDED_FIELDS.includes(key)) continue;
+          if (value === null || value === undefined || value === '' || value === 0 || value === false) continue;
+          const label = FIELD_LABELS[key] || key;
+          cleanData[label] = formatValue(key, value);
+        }
       }
 
       // Prepare TAP data with only filled fields
@@ -368,13 +370,13 @@ export function SaleFormSummary({ saleForm, projectInfo, tapForm, comments, atta
   };
 
   // Filter sections to only show those with at least one filled field
-  const filledSections = SECTIONS.map(section => {
+  const filledSections = saleForm ? SECTIONS.map(section => {
     const filledFields = section.fields.filter(field => {
       const value = (saleForm as unknown as Record<string, unknown>)[field];
       return value !== null && value !== undefined && value !== '' && value !== 0;
     });
     return { ...section, filledFields };
-  }).filter(section => section.filledFields.length > 0);
+  }).filter(section => section.filledFields.length > 0) : [];
 
   return (
     <div className="space-y-6">
@@ -440,40 +442,42 @@ export function SaleFormSummary({ saleForm, projectInfo, tapForm, comments, atta
         </CardContent>
       </Card>
 
-      {/* Filled Fields Summary */}
-      <Card className="shadow-card">
-        <CardHeader>
-          <CardTitle className="text-lg flex items-center gap-2">
-            <ClipboardList className="w-5 h-5" />
-            Dados do Formulário de Venda
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {filledSections.length === 0 ? (
-            <p className="text-muted-foreground text-center py-4">Nenhum campo preenchido no formulário.</p>
-          ) : (
-            filledSections.map((section, idx) => (
-              <div key={section.title}>
-                {idx > 0 && <Separator className="mb-4" />}
-                <h3 className="text-sm font-semibold text-foreground mb-3 uppercase tracking-wide">{section.title}</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                  {section.filledFields.map(field => {
-                    const value = (saleForm as unknown as Record<string, unknown>)[field];
-                    const formatted = formatValue(field, value);
-                    if (!formatted) return null;
-                    return (
-                      <div key={field} className="bg-muted/50 rounded-lg p-3">
-                        <p className="text-xs text-muted-foreground mb-0.5">{FIELD_LABELS[field] || field}</p>
-                        <p className="text-sm font-medium text-foreground">{formatted}</p>
-                      </div>
-                    );
-                  })}
+      {/* Filled Fields Summary - only show if saleForm exists */}
+      {saleForm && (
+        <Card className="shadow-card">
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <ClipboardList className="w-5 h-5" />
+              Dados do Formulário de Venda
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {filledSections.length === 0 ? (
+              <p className="text-muted-foreground text-center py-4">Nenhum campo preenchido no formulário.</p>
+            ) : (
+              filledSections.map((section, idx) => (
+                <div key={section.title}>
+                  {idx > 0 && <Separator className="mb-4" />}
+                  <h3 className="text-sm font-semibold text-foreground mb-3 uppercase tracking-wide">{section.title}</h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {section.filledFields.map(field => {
+                      const value = (saleForm as unknown as Record<string, unknown>)[field];
+                      const formatted = formatValue(field, value);
+                      if (!formatted) return null;
+                      return (
+                        <div key={field} className="bg-muted/50 rounded-lg p-3">
+                          <p className="text-xs text-muted-foreground mb-0.5">{FIELD_LABELS[field] || field}</p>
+                          <p className="text-sm font-medium text-foreground">{formatted}</p>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
-            ))
-          )}
-        </CardContent>
-      </Card>
+              ))
+            )}
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

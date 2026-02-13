@@ -459,21 +459,6 @@ export default function StartupProjetos() {
                             Continuar
                           </Button>
                         )}
-                        {project.implantacao_status === 'EM_EXECUCAO' && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="border-purple-300 text-purple-700 hover:bg-purple-50"
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              navigate(`/projetos/${project.id}?tab=resumo`);
-                            }}
-                          >
-                            <Sparkles className="w-4 h-4 mr-1" />
-                            Resumo com IA
-                          </Button>
-                        )}
                         
                         <Button
                           variant="outline"

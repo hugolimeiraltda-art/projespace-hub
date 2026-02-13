@@ -858,6 +858,7 @@ export default function ProjectDetail() {
                 attachments={project.attachments?.map(a => ({
                   nome_arquivo: a.nome_arquivo,
                   tipo: a.tipo,
+                  arquivo_url: a.arquivo_url,
                 }))}
                 projectId={project.id}
                 summaryType="projeto"

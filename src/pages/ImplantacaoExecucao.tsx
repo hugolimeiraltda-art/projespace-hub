@@ -144,7 +144,7 @@ export default function ImplantacaoExecucao() {
   const [tapForm, setTapForm] = useState<Record<string, unknown> | null>(null);
   const [saleForm, setSaleForm] = useState<SaleCompletedForm | null>(null);
   const [projectComments, setProjectComments] = useState<Array<{ user_name: string; content: string; created_at: string; is_internal: boolean }>>([]);
-  const [projectAttachments, setProjectAttachments] = useState<Array<{ nome_arquivo: string; tipo: string }>>([]);
+  const [projectAttachments, setProjectAttachments] = useState<Array<{ nome_arquivo: string; tipo: string; arquivo_url?: string }>>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [expandedEtapas, setExpandedEtapas] = useState<number[]>([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
@@ -277,7 +277,7 @@ export default function ImplantacaoExecucao() {
 
       const { data: attachmentsData } = await supabase
         .from('project_attachments')
-        .select('nome_arquivo, tipo')
+        .select('nome_arquivo, tipo, arquivo_url')
         .eq('project_id', id);
 
       if (attachmentsData) {

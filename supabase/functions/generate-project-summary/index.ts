@@ -1,9 +1,50 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.89.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
+
+/**
+ * Downloads a file from a URL and returns it as base64 with its mime type.
+ */
+async function downloadAsBase64(url: string): Promise<{ base64: string; mimeType: string } | null> {
+  try {
+    const resp = await fetch(url);
+    if (!resp.ok) return null;
+    const contentType = resp.headers.get("content-type") || "application/octet-stream";
+    const buffer = await resp.arrayBuffer();
+    const bytes = new Uint8Array(buffer);
+    // Manual base64 encoding for Deno compatibility
+    let binary = "";
+    for (let i = 0; i < bytes.length; i++) {
+      binary += String.fromCharCode(bytes[i]);
+    }
+    const base64 = btoa(binary);
+    return { base64, mimeType: contentType.split(";")[0].trim() };
+  } catch (e) {
+    console.error("Failed to download file:", e);
+    return null;
+  }
+}
+
+/**
+ * Extracts text from a PDF using basic text extraction.
+ * Since we can't use heavy PDF parsing libraries in edge functions,
+ * we'll pass the PDF as an image to Gemini for OCR/analysis.
+ */
+function isPdf(mimeType: string): boolean {
+  return mimeType === "application/pdf";
+}
+
+function isImage(mimeType: string): boolean {
+  return mimeType.startsWith("image/");
+}
+
+function isVideo(mimeType: string): boolean {
+  return mimeType.startsWith("video/");
+}
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -11,12 +52,12 @@ serve(async (req) => {
   }
 
   try {
-    const { saleFormData, projectInfo, tapFormData, comments, attachments } = await req.json();
+    const { saleFormData, projectInfo, tapFormData, comments, attachments, attachmentSignedUrls } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
     const systemPrompt = `Você é um especialista em projetos de portaria digital e segurança condominial. 
-Seu papel é analisar TODOS os dados disponíveis de um projeto — incluindo TAP (Termo de Abertura de Projeto), formulário de venda, comentários da equipe e lista de anexos — e gerar um resumo completo e profissional do escopo do projeto.
+Seu papel é analisar TODOS os dados disponíveis de um projeto — incluindo TAP (Termo de Abertura de Projeto), formulário de venda, comentários da equipe, lista de anexos, e IMAGENS/FOTOS fornecidas — e gerar um resumo completo e profissional do escopo do projeto.
 
 Regras:
 - Escreva em português brasileiro formal
@@ -26,33 +67,89 @@ Regras:
 - Use números e quantidades sempre que disponíveis
 - Destaque pontos de atenção quando houver
 - Analise os comentários da equipe para extrair informações relevantes, decisões tomadas ou pendências
-- Mencione os anexos disponíveis quando relevantes (ex: fotos de equipamentos, croquis, plantas)
+- Analise as IMAGENS fornecidas (fotos do condomínio, equipamentos, croquis, plantas) e descreva o que você observa nelas, incluindo estado dos equipamentos, layout, infraestrutura visível, etc.
+- Se houver PDFs analisados, extraia e inclua as informações relevantes, especialmente tabelas de lista de equipamentos
+- Mencione os anexos disponíveis quando relevantes
 - Termine com um breve resumo geral do porte do projeto
 - NÃO invente dados que não foram fornecidos`;
 
-    let userPrompt = `Gere um resumo executivo completo deste projeto de portaria digital:\n\n`;
+    // Build multimodal content parts
+    const contentParts: Array<{ type: string; text?: string; image_url?: { url: string } }> = [];
+
+    let userPromptText = `Gere um resumo executivo completo deste projeto de portaria digital:\n\n`;
 
     if (projectInfo) {
-      userPrompt += `**Informações do Projeto:**\n- Condomínio: ${projectInfo.nome}\n- Cidade: ${projectInfo.cidade}, ${projectInfo.estado}\n- Vendedor: ${projectInfo.vendedor}\n\n`;
+      userPromptText += `**Informações do Projeto:**\n- Condomínio: ${projectInfo.nome}\n- Cidade: ${projectInfo.cidade}, ${projectInfo.estado}\n- Vendedor: ${projectInfo.vendedor}\n\n`;
     }
 
     if (tapFormData && Object.keys(tapFormData).length > 0) {
-      userPrompt += `**Dados do TAP (Termo de Abertura de Projeto):**\n${JSON.stringify(tapFormData, null, 2)}\n\n`;
+      userPromptText += `**Dados do TAP (Termo de Abertura de Projeto):**\n${JSON.stringify(tapFormData, null, 2)}\n\n`;
     }
 
     if (saleFormData && Object.keys(saleFormData).length > 0) {
-      userPrompt += `**Dados do Formulário de Venda:**\n${JSON.stringify(saleFormData, null, 2)}\n\n`;
+      userPromptText += `**Dados do Formulário de Venda:**\n${JSON.stringify(saleFormData, null, 2)}\n\n`;
     }
 
     if (comments && comments.length > 0) {
-      userPrompt += `**Comentários da Equipe (histórico de discussão do projeto):**\n${comments.join('\n')}\n\n`;
+      userPromptText += `**Comentários da Equipe (histórico de discussão do projeto):**\n${comments.join('\n')}\n\n`;
     }
 
     if (attachments && attachments.length > 0) {
-      userPrompt += `**Anexos disponíveis no projeto:**\n${attachments.join('\n')}\n\n`;
+      userPromptText += `**Anexos disponíveis no projeto:**\n${attachments.join('\n')}\n\n`;
     }
 
-    userPrompt += `Gere o resumo do escopo do projeto baseado em TODOS esses dados.`;
+    userPromptText += `Gere o resumo do escopo do projeto baseado em TODOS esses dados.`;
+
+    // Add the text part first
+    contentParts.push({ type: "text", text: userPromptText });
+
+    // Process attachment files (images, PDFs)
+    if (attachmentSignedUrls && Array.isArray(attachmentSignedUrls)) {
+      let imageCount = 0;
+      const MAX_IMAGES = 15; // Limit to avoid payload too large
+
+      for (const att of attachmentSignedUrls) {
+        if (imageCount >= MAX_IMAGES) break;
+
+        try {
+          const fileData = await downloadAsBase64(att.url);
+          if (!fileData) continue;
+
+          if (isImage(fileData.mimeType)) {
+            // Add image directly to multimodal content
+            contentParts.push({
+              type: "text",
+              text: `\n📷 Foto do projeto: "${att.nome}" (${att.tipo}):`
+            });
+            contentParts.push({
+              type: "image_url",
+              image_url: { url: `data:${fileData.mimeType};base64,${fileData.base64}` }
+            });
+            imageCount++;
+          } else if (isPdf(fileData.mimeType)) {
+            // For PDFs, send as a document to Gemini for analysis
+            // Gemini can read PDFs when sent as base64 images with application/pdf mime
+            contentParts.push({
+              type: "text",
+              text: `\n📄 Documento PDF do projeto: "${att.nome}" (${att.tipo}). Analise o conteúdo abaixo, especialmente tabelas de lista de equipamentos:`
+            });
+            contentParts.push({
+              type: "image_url",
+              image_url: { url: `data:application/pdf;base64,${fileData.base64}` }
+            });
+            imageCount++;
+          } else if (isVideo(fileData.mimeType)) {
+            // For videos, just mention them (too large for multimodal)
+            contentParts.push({
+              type: "text",
+              text: `\n🎥 Vídeo disponível: "${att.nome}" (${att.tipo}) - Vídeo não pode ser analisado diretamente, mas o nome e contexto sugerem conteúdo relevante.`
+            });
+          }
+        } catch (e) {
+          console.error(`Failed to process attachment ${att.nome}:`, e);
+        }
+      }
+    }
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -64,7 +161,7 @@ Regras:
         model: "google/gemini-3-flash-preview",
         messages: [
           { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt },
+          { role: "user", content: contentParts },
         ],
       }),
     });

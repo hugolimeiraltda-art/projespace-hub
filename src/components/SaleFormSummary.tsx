@@ -24,7 +24,7 @@ interface SaleFormSummaryProps {
   };
   tapForm?: Record<string, unknown> | null;
   comments?: Array<{ user_name: string; content: string; created_at: string; is_internal: boolean }>;
-  attachments?: Array<{ nome_arquivo: string; tipo: string }>;
+  attachments?: Array<{ nome_arquivo: string; tipo: string; arquivo_url?: string }>;
   projectId?: string;
   summaryType?: 'projeto' | 'implantacao';
 }
@@ -228,6 +228,91 @@ export function SaleFormSummary({ saleForm, projectInfo, tapForm, comments, atta
       // Prepare attachment list
       const attachmentList = attachments?.map(a => `${a.nome_arquivo} (${a.tipo})`) || [];
 
+      // Generate signed URLs for attachments that have arquivo_url (for multimodal AI analysis)
+      const attachmentSignedUrls: Array<{ url: string; nome: string; tipo: string }> = [];
+      if (attachments) {
+        for (const att of attachments) {
+          if (!att.arquivo_url) continue;
+          // Skip blob/data URLs
+          if (att.arquivo_url.startsWith('blob:') || att.arquivo_url.startsWith('data:')) continue;
+          
+          // Extract storage path from signed URL or direct path
+          let storagePath: string | null = null;
+          if (att.arquivo_url.includes('/storage/v1/object/sign/')) {
+            const match = att.arquivo_url.match(/\/storage\/v1\/object\/sign\/([^?]+)/);
+            if (match) {
+              const fullPath = decodeURIComponent(match[1]);
+              const parts = fullPath.split('/');
+              storagePath = parts.slice(1).join('/');
+            }
+          } else if (att.arquivo_url.includes('/storage/v1/object/public/')) {
+            const match = att.arquivo_url.match(/\/storage\/v1\/object\/public\/([^?]+)/);
+            if (match) {
+              const fullPath = decodeURIComponent(match[1]);
+              const parts = fullPath.split('/');
+              storagePath = parts.slice(1).join('/');
+            }
+          }
+
+          if (storagePath) {
+            const { data: signedData } = await supabase.storage
+              .from('project-attachments')
+              .createSignedUrl(storagePath, 600); // 10 min validity
+            if (signedData?.signedUrl) {
+              attachmentSignedUrls.push({
+                url: signedData.signedUrl,
+                nome: att.nome_arquivo,
+                tipo: att.tipo,
+              });
+            }
+          }
+        }
+      }
+
+      // Also fetch sale_form_attachments for this project
+      if (projectId) {
+        const { data: saleAttachments } = await supabase
+          .from('sale_form_attachments')
+          .select('nome_arquivo, secao, arquivo_url')
+          .eq('project_id', projectId);
+        
+        if (saleAttachments) {
+          for (const sa of saleAttachments) {
+            if (!sa.arquivo_url || sa.arquivo_url.startsWith('blob:') || sa.arquivo_url.startsWith('data:')) continue;
+            
+            let saPath: string | null = null;
+            if (sa.arquivo_url.includes('/storage/v1/object/sign/')) {
+              const match = sa.arquivo_url.match(/\/storage\/v1\/object\/sign\/([^?]+)/);
+              if (match) {
+                const fullPath = decodeURIComponent(match[1]);
+                const parts = fullPath.split('/');
+                saPath = parts.slice(1).join('/');
+              }
+            } else if (sa.arquivo_url.includes('/storage/v1/object/public/')) {
+              const match = sa.arquivo_url.match(/\/storage\/v1\/object\/public\/([^?]+)/);
+              if (match) {
+                const fullPath = decodeURIComponent(match[1]);
+                const parts = fullPath.split('/');
+                saPath = parts.slice(1).join('/');
+              }
+            }
+
+            if (saPath) {
+              const { data: signedData } = await supabase.storage
+                .from('project-attachments')
+                .createSignedUrl(saPath, 600);
+              if (signedData?.signedUrl) {
+                attachmentSignedUrls.push({
+                  url: signedData.signedUrl,
+                  nome: sa.nome_arquivo,
+                  tipo: sa.secao,
+                });
+              }
+            }
+          }
+        }
+      }
+
       const { data, error } = await supabase.functions.invoke('generate-project-summary', {
         body: {
           saleFormData: cleanData,
@@ -235,6 +320,7 @@ export function SaleFormSummary({ saleForm, projectInfo, tapForm, comments, atta
           tapFormData: cleanTapData,
           comments: publicComments.length > 0 ? publicComments : undefined,
           attachments: attachmentList.length > 0 ? attachmentList : undefined,
+          attachmentSignedUrls: attachmentSignedUrls.length > 0 ? attachmentSignedUrls : undefined,
         },
       });
 

@@ -11,12 +11,12 @@ serve(async (req) => {
   }
 
   try {
-    const { saleFormData, projectInfo } = await req.json();
+    const { saleFormData, projectInfo, tapFormData, comments, attachments } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
     const systemPrompt = `Você é um especialista em projetos de portaria digital e segurança condominial. 
-Seu papel é analisar os dados técnicos de um formulário de venda e gerar um resumo claro e profissional do escopo do projeto.
+Seu papel é analisar TODOS os dados disponíveis de um projeto — incluindo TAP (Termo de Abertura de Projeto), formulário de venda, comentários da equipe e lista de anexos — e gerar um resumo completo e profissional do escopo do projeto.
 
 Regras:
 - Escreva em português brasileiro formal
@@ -25,20 +25,34 @@ Regras:
 - Mencione apenas os itens que foram preenchidos/informados
 - Use números e quantidades sempre que disponíveis
 - Destaque pontos de atenção quando houver
+- Analise os comentários da equipe para extrair informações relevantes, decisões tomadas ou pendências
+- Mencione os anexos disponíveis quando relevantes (ex: fotos de equipamentos, croquis, plantas)
 - Termine com um breve resumo geral do porte do projeto
 - NÃO invente dados que não foram fornecidos`;
 
-    const userPrompt = `Gere um resumo executivo do escopo deste projeto de portaria digital:
+    let userPrompt = `Gere um resumo executivo completo deste projeto de portaria digital:\n\n`;
 
-**Informações do Projeto:**
-${projectInfo ? `- Condomínio: ${projectInfo.nome}
-- Cidade: ${projectInfo.cidade}, ${projectInfo.estado}
-- Vendedor: ${projectInfo.vendedor}` : ''}
+    if (projectInfo) {
+      userPrompt += `**Informações do Projeto:**\n- Condomínio: ${projectInfo.nome}\n- Cidade: ${projectInfo.cidade}, ${projectInfo.estado}\n- Vendedor: ${projectInfo.vendedor}\n\n`;
+    }
 
-**Dados do Formulário de Venda:**
-${JSON.stringify(saleFormData, null, 2)}
+    if (tapFormData && Object.keys(tapFormData).length > 0) {
+      userPrompt += `**Dados do TAP (Termo de Abertura de Projeto):**\n${JSON.stringify(tapFormData, null, 2)}\n\n`;
+    }
 
-Gere o resumo do escopo do projeto baseado nesses dados.`;
+    if (saleFormData && Object.keys(saleFormData).length > 0) {
+      userPrompt += `**Dados do Formulário de Venda:**\n${JSON.stringify(saleFormData, null, 2)}\n\n`;
+    }
+
+    if (comments && comments.length > 0) {
+      userPrompt += `**Comentários da Equipe (histórico de discussão do projeto):**\n${comments.join('\n')}\n\n`;
+    }
+
+    if (attachments && attachments.length > 0) {
+      userPrompt += `**Anexos disponíveis no projeto:**\n${attachments.join('\n')}\n\n`;
+    }
+
+    userPrompt += `Gere o resumo do escopo do projeto baseado em TODOS esses dados.`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",

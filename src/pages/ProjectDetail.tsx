@@ -840,6 +840,17 @@ export default function ProjectDetail() {
                   estado: project.cliente_estado || '',
                   vendedor: project.vendedor_nome,
                 }}
+                tapForm={project.tap_form ? (project.tap_form as unknown as Record<string, unknown>) : null}
+                comments={project.comments?.map(c => ({
+                  user_name: c.user_name,
+                  content: c.content,
+                  created_at: c.created_at,
+                  is_internal: c.is_internal,
+                }))}
+                attachments={project.attachments?.map(a => ({
+                  nome_arquivo: a.nome_arquivo,
+                  tipo: a.tipo,
+                }))}
               />
             )}
 

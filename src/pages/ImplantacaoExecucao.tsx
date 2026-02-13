@@ -142,6 +142,8 @@ export default function ImplantacaoExecucao() {
   const [etapas, setEtapas] = useState<ImplantacaoEtapas | null>(null);
   const [tapForm, setTapForm] = useState<Record<string, unknown> | null>(null);
   const [saleForm, setSaleForm] = useState<SaleCompletedForm | null>(null);
+  const [projectComments, setProjectComments] = useState<Array<{ user_name: string; content: string; created_at: string; is_internal: boolean }>>([]);
+  const [projectAttachments, setProjectAttachments] = useState<Array<{ nome_arquivo: string; tipo: string }>>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [expandedEtapas, setExpandedEtapas] = useState<number[]>([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
@@ -254,6 +256,31 @@ export default function ImplantacaoExecucao() {
         .maybeSingle();
       
       if (saleData) setSaleForm(saleData as unknown as SaleCompletedForm);
+
+      // Fetch comments and attachments for AI summary
+      const { data: commentsData } = await supabase
+        .from('project_comments')
+        .select('user_name, texto, created_at, is_internal')
+        .eq('project_id', id)
+        .order('created_at', { ascending: true });
+
+      if (commentsData) {
+        setProjectComments(commentsData.map(c => ({
+          user_name: c.user_name,
+          content: c.texto,
+          created_at: c.created_at,
+          is_internal: c.is_internal,
+        })));
+      }
+
+      const { data: attachmentsData } = await supabase
+        .from('project_attachments')
+        .select('nome_arquivo, tipo')
+        .eq('project_id', id);
+
+      if (attachmentsData) {
+        setProjectAttachments(attachmentsData);
+      }
     } catch (error) {
       console.error('Error fetching data:', error);
       toast({
@@ -868,6 +895,9 @@ export default function ImplantacaoExecucao() {
                         estado: project.cliente_estado || '',
                         vendedor: project.vendedor_nome,
                       } : undefined}
+                      tapForm={tapForm}
+                      comments={projectComments}
+                      attachments={projectAttachments}
                     />
                   )}
                 </CardContent>

@@ -5,8 +5,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { FileText, Upload, Save, Package, ClipboardList, FileCheck } from 'lucide-react';
+import { FileText, Upload, Save, Package, ClipboardList, FileCheck, AlertTriangle } from 'lucide-react';
 import { ProjectWithDetails, ATTACHMENT_TYPE_LABELS, AttachmentType, Project, TapForm, Attachment } from '@/types/project';
+import { isBlobUrl, useAttachmentUrl } from '@/hooks/useAttachmentUrl';
+import { cn } from '@/lib/utils';
 
 interface EngineeringDeliverablesProps {
   project: ProjectWithDetails;
@@ -32,6 +34,7 @@ export function EngineeringDeliverables({
   updateProject 
 }: EngineeringDeliverablesProps) {
   const { toast } = useToast();
+  const { openAttachment } = useAttachmentUrl();
   const [laudo, setLaudo] = useState(project.laudo_projeto || '');
   const [isSaving, setIsSaving] = useState(false);
 
@@ -172,21 +175,37 @@ export function EngineeringDeliverables({
                 {label}
               </Label>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {files.map(att => (
-                  <a
-                    key={att.id}
-                    href={att.arquivo_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-3 p-3 bg-primary/5 rounded-lg border border-primary/20 hover:bg-primary/10 transition-colors"
-                  >
-                    <FileText className="w-5 h-5 text-primary" />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">{att.nome_arquivo}</p>
-                      <p className="text-xs text-muted-foreground">{ATTACHMENT_TYPE_LABELS[att.tipo]}</p>
-                    </div>
-                  </a>
-                ))}
+                {files.map(att => {
+                  const broken = isBlobUrl(att.arquivo_url);
+                  return (
+                    <a
+                      key={att.id}
+                      href={broken ? undefined : att.arquivo_url}
+                      onClick={(e) => openAttachment(att.arquivo_url, e)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={cn(
+                        "flex items-center gap-3 p-3 rounded-lg border transition-colors",
+                        broken
+                          ? "bg-destructive/10 border-destructive/30 cursor-not-allowed opacity-60"
+                          : "bg-primary/5 border-primary/20 hover:bg-primary/10"
+                      )}
+                      title={broken ? "Arquivo indisponível — reenvie" : undefined}
+                    >
+                      {broken ? (
+                        <AlertTriangle className="w-5 h-5 text-destructive" />
+                      ) : (
+                        <FileText className="w-5 h-5 text-primary" />
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">{att.nome_arquivo}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {broken ? 'Arquivo indisponível — reenvie' : ATTACHMENT_TYPE_LABELS[att.tipo]}
+                        </p>
+                      </div>
+                    </a>
+                  );
+                })}
               </div>
             </div>
           );

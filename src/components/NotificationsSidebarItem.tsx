@@ -93,6 +93,8 @@ export function NotificationsSidebarItem() {
     switch (type) {
       case 'PROJECT_RESUBMITTED':
         return <RefreshCw className="w-4 h-4 text-primary" />;
+      case 'COMMENT_ADDED':
+        return <Bell className="w-4 h-4 text-primary" />;
       default:
         return <FileText className="w-4 h-4 text-primary" />;
     }

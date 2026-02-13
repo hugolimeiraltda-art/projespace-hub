@@ -42,12 +42,14 @@ import {
   Paperclip,
   ExternalLink,
   BookOpen,
+  Package,
 } from 'lucide-react';
 import { format, parseISO, addDays, differenceInDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Progress } from '@/components/ui/progress';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import jsPDF from 'jspdf';
+import { EquipmentListDialog } from '@/components/EquipmentListDialog';
 
 interface ImplantacaoEtapas {
   id: string;
@@ -156,6 +158,7 @@ export default function ImplantacaoExecucao() {
   const [contratoInfo, setContratoInfo] = useState<ContratoInfo>({ contrato: '', alarme_codigo: '', mensalidade: '', prazo_contrato: '', taxa_instalacao: '' });
   const [editingContrato, setEditingContrato] = useState(false);
   const [showAIFeedbackDialog, setShowAIFeedbackDialog] = useState(false);
+  const [showEquipmentList, setShowEquipmentList] = useState(false);
 
   const canEditDates = user?.role === 'admin' || user?.role === 'administrativo' || user?.role === 'implantacao';
 
@@ -659,6 +662,14 @@ export default function ImplantacaoExecucao() {
               >
                 <Paperclip className="w-4 h-4 mr-1" />
                 Anexos
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowEquipmentList(true)}
+              >
+                <Package className="w-4 h-4 mr-1" />
+                Equipamentos
               </Button>
               <Button
                 variant="outline"
@@ -1736,6 +1747,15 @@ export default function ImplantacaoExecucao() {
           onSubmitted={() => {
             updateEtapa('concluido', true, 'concluido_at');
           }}
+        />
+      )}
+
+      {project && (
+        <EquipmentListDialog
+          open={showEquipmentList}
+          onOpenChange={setShowEquipmentList}
+          projectId={project.id}
+          projectName={project.cliente_condominio_nome}
         />
       )}
     </Layout>

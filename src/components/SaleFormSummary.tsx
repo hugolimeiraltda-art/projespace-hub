@@ -13,6 +13,7 @@ import {
   MetodoAcionamentoPortoes,
 } from '@/types/project';
 import ReactMarkdown from 'react-markdown';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface SaleFormSummaryProps {
   saleForm?: SaleCompletedForm | null;
@@ -151,10 +152,15 @@ function formatValue(key: string, value: unknown): string {
 
 export function SaleFormSummary({ saleForm, projectInfo, tapForm, comments, attachments, projectId, summaryType = 'projeto' }: SaleFormSummaryProps) {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [aiSummary, setAiSummary] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [showReport, setShowReport] = useState(false);
   const [summaryId, setSummaryId] = useState<string | null>(null);
+
+  const userRole = user?.role;
+  const canGenerate = userRole === 'admin' || userRole === 'projetos';
+  const canRegenerate = userRole === 'admin';
 
   // Load existing summary on mount
   useEffect(() => {
@@ -405,24 +411,47 @@ export function SaleFormSummary({ saleForm, projectInfo, tapForm, comments, atta
                 </Button>
               </>
             )}
-            <Button
-              onClick={handleGenerateSummary}
-              disabled={isGenerating}
-              size="sm"
-              variant={aiSummary ? 'outline' : 'default'}
-            >
-              {isGenerating ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-1 animate-spin" />
-                  Gerando...
-                </>
-              ) : (
-                <>
-                  <Sparkles className="w-4 h-4 mr-1" />
-                  {aiSummary ? 'Regerar' : 'Gerar Resumo'}
-                </>
-              )}
-            </Button>
+            {/* Show "Gerar Resumo" only for admin/projetos when no summary exists */}
+            {!aiSummary && canGenerate && (
+              <Button
+                onClick={handleGenerateSummary}
+                disabled={isGenerating}
+                size="sm"
+              >
+                {isGenerating ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                    Gerando...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-4 h-4 mr-1" />
+                    Gerar Resumo
+                  </>
+                )}
+              </Button>
+            )}
+            {/* Show "Regerar" only for admin when summary already exists */}
+            {aiSummary && canRegenerate && (
+              <Button
+                onClick={handleGenerateSummary}
+                disabled={isGenerating}
+                size="sm"
+                variant="outline"
+              >
+                {isGenerating ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                    Regerando...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-4 h-4 mr-1" />
+                    Regerar
+                  </>
+                )}
+              </Button>
+            )}
           </div>
         </CardHeader>
         <CardContent>

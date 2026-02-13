@@ -22,6 +22,9 @@ interface SaleFormSummaryProps {
     estado: string;
     vendedor: string;
   };
+  tapForm?: Record<string, unknown> | null;
+  comments?: Array<{ user_name: string; content: string; created_at: string; is_internal: boolean }>;
+  attachments?: Array<{ nome_arquivo: string; tipo: string }>;
 }
 
 // Field label mapping for display
@@ -144,7 +147,7 @@ function formatValue(key: string, value: unknown): string {
   return String(value);
 }
 
-export function SaleFormSummary({ saleForm, projectInfo }: SaleFormSummaryProps) {
+export function SaleFormSummary({ saleForm, projectInfo, tapForm, comments, attachments }: SaleFormSummaryProps) {
   const { toast } = useToast();
   const [aiSummary, setAiSummary] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -161,8 +164,56 @@ export function SaleFormSummary({ saleForm, projectInfo }: SaleFormSummaryProps)
         cleanData[label] = formatValue(key, value);
       }
 
+      // Prepare TAP data with only filled fields
+      let cleanTapData: Record<string, unknown> | undefined;
+      if (tapForm) {
+        cleanTapData = {};
+        const TAP_LABELS: Record<string, string> = {
+          solicitacao_origem: 'Origem da Solicitação',
+          email_origem_texto: 'Texto Email Origem',
+          modalidade_portaria: 'Modalidade de Portaria',
+          portaria_virtual_atendimento_app: 'Portaria Virtual App',
+          numero_blocos: 'Nº de Blocos',
+          numero_unidades: 'Nº de Unidades',
+          interfonia: 'Interfonia',
+          interfonia_descricao: 'Descrição Interfonia',
+          controle_acessos_pedestre_descricao: 'Controle Acesso Pedestre',
+          controle_acessos_veiculo_descricao: 'Controle Acesso Veículo',
+          alarme_descricao: 'Alarme',
+          cftv_dvr_descricao: 'CFTV/DVR',
+          cftv_elevador_possui: 'CFTV Elevador',
+          observacao_nao_assumir_cameras: 'Obs. Não Assumir Câmeras',
+          marcacao_croqui_confirmada: 'Croqui Confirmado',
+          marcacao_croqui_itens: 'Itens do Croqui',
+          info_custo: 'Info Custo',
+          info_cronograma: 'Info Cronograma',
+          info_adicionais: 'Informações Adicionais',
+        };
+        for (const [key, value] of Object.entries(tapForm)) {
+          if (['id', 'project_id'].includes(key)) continue;
+          if (value === null || value === undefined || value === '' || value === 0 || value === false) continue;
+          const label = TAP_LABELS[key] || key;
+          cleanTapData[label] = typeof value === 'boolean' ? (value ? 'Sim' : 'Não') : value;
+        }
+        if (Object.keys(cleanTapData).length === 0) cleanTapData = undefined;
+      }
+
+      // Prepare comments (exclude internal ones)
+      const publicComments = comments
+        ?.filter(c => !c.is_internal)
+        ?.map(c => `[${c.user_name}]: ${c.content}`) || [];
+
+      // Prepare attachment list
+      const attachmentList = attachments?.map(a => `${a.nome_arquivo} (${a.tipo})`) || [];
+
       const { data, error } = await supabase.functions.invoke('generate-project-summary', {
-        body: { saleFormData: cleanData, projectInfo },
+        body: {
+          saleFormData: cleanData,
+          projectInfo,
+          tapFormData: cleanTapData,
+          comments: publicComments.length > 0 ? publicComments : undefined,
+          attachments: attachmentList.length > 0 ? attachmentList : undefined,
+        },
       });
 
       if (error) throw error;

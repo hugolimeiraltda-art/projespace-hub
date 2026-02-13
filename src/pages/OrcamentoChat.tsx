@@ -3,19 +3,23 @@ import { useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
-import { Send, FileText, Loader2, Bot, User } from 'lucide-react';
+import { Send, FileText, Loader2, Bot, User, Paperclip, Image, Video, Mic } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import emiveLogo from '@/assets/emive-logo.png';
 import jsPDF from 'jspdf';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
+import { Layout } from '@/components/Layout';
 
-type Msg = { role: 'user' | 'assistant'; content: string };
+type Msg = { role: 'user' | 'assistant'; content: string; midias?: MidiaRef[] };
+type MidiaRef = { url: string; tipo: string; nome: string };
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/orcamento-chat`;
 
 export default function OrcamentoChat() {
   const { token } = useParams<{ token: string }>();
+  const { user } = useAuth();
   const { toast } = useToast();
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState('');
@@ -23,55 +27,57 @@ export default function OrcamentoChat() {
   const [proposta, setProposta] = useState<string | null>(null);
   const [gerandoProposta, setGerandoProposta] = useState(false);
   const [sessionValid, setSessionValid] = useState<boolean | null>(null);
+  const [sessaoId, setSessaoId] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Auto-scroll
   useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-    }
+    if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
   }, [messages]);
 
-  // Start conversation
+  // Resolve session from URL params or query string
   useEffect(() => {
-    if (!token) return;
-    sendMessage('Olá', true);
+    const params = new URLSearchParams(window.location.search);
+    const sid = params.get('sessao');
+    if (sid) {
+      setSessaoId(sid);
+      sendMessage('Olá, estou no local para a visita técnica.', true, sid);
+    } else if (token) {
+      sendMessage('Olá', true, undefined, token);
+    }
   }, [token]);
 
-  const sendMessage = async (text: string, isInitial = false) => {
+  const sendMessage = async (text: string, isInitial = false, sid?: string, tkn?: string) => {
     if (!text.trim() || isLoading) return;
 
     const userMsg: Msg = { role: 'user', content: text };
     const newMessages = isInitial ? [] : [...messages, userMsg];
-    
-    if (!isInitial) {
-      setMessages(prev => [...prev, userMsg]);
-    }
+
+    if (!isInitial) setMessages(prev => [...prev, userMsg]);
     setInput('');
     setIsLoading(true);
 
     try {
+      const body: any = {
+        messages: isInitial
+          ? [{ role: 'user', content: text }]
+          : newMessages.map(m => ({ role: m.role, content: m.content })),
+      };
+      if (sid || sessaoId) body.sessao_id = sid || sessaoId;
+      if (tkn || token) body.token = tkn || token;
+
       const resp = await fetch(CHAT_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
         },
-        body: JSON.stringify({
-          token,
-          messages: isInitial
-            ? [{ role: 'user', content: 'Olá, gostaria de conhecer os serviços de portaria digital.' }]
-            : newMessages,
-        }),
+        body: JSON.stringify(body),
       });
 
-      if (resp.status === 404) {
-        setSessionValid(false);
-        setIsLoading(false);
-        return;
-      }
-
+      if (resp.status === 404) { setSessionValid(false); setIsLoading(false); return; }
       if (resp.status === 429 || resp.status === 402) {
         const err = await resp.json();
         toast({ title: 'Erro', description: err.error, variant: 'destructive' });
@@ -103,7 +109,6 @@ export default function OrcamentoChat() {
         const { done, value } = await reader.read();
         if (done) break;
         textBuffer += decoder.decode(value, { stream: true });
-
         let newlineIndex: number;
         while ((newlineIndex = textBuffer.indexOf('\n')) !== -1) {
           let line = textBuffer.slice(0, newlineIndex);
@@ -124,7 +129,6 @@ export default function OrcamentoChat() {
         }
       }
 
-      // Final flush
       if (textBuffer.trim()) {
         for (let raw of textBuffer.split('\n')) {
           if (!raw) continue;
@@ -148,16 +152,59 @@ export default function OrcamentoChat() {
     inputRef.current?.focus();
   };
 
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0 || !sessaoId) return;
+
+    setUploading(true);
+    const uploadedMidias: MidiaRef[] = [];
+
+    for (const file of Array.from(files)) {
+      const ext = file.name.split('.').pop();
+      const path = `${sessaoId}/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+
+      const { error } = await supabase.storage.from('orcamento-midias').upload(path, file);
+      if (error) {
+        toast({ title: `Erro ao enviar ${file.name}`, variant: 'destructive' });
+        continue;
+      }
+
+      const tipo = file.type.startsWith('image') ? 'foto' : file.type.startsWith('video') ? 'video' : file.type.startsWith('audio') ? 'audio' : 'outro';
+
+      await supabase.from('orcamento_midias').insert({
+        sessao_id: sessaoId,
+        tipo,
+        arquivo_url: path,
+        nome_arquivo: file.name,
+        tamanho: file.size,
+      });
+
+      uploadedMidias.push({ url: path, tipo, nome: file.name });
+    }
+
+    if (uploadedMidias.length > 0) {
+      const mediaDesc = uploadedMidias.map(m => `[${m.tipo}: ${m.nome}]`).join(', ');
+      sendMessage(`Enviei ${uploadedMidias.length} arquivo(s): ${mediaDesc}`);
+    }
+
+    setUploading(false);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
   const gerarProposta = async () => {
     setGerandoProposta(true);
     try {
+      const body: any = { messages, action: 'gerar_proposta' };
+      if (sessaoId) body.sessao_id = sessaoId;
+      if (token) body.token = token;
+
       const resp = await fetch(CHAT_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
         },
-        body: JSON.stringify({ token, messages, action: 'gerar_proposta' }),
+        body: JSON.stringify(body),
       });
 
       if (!resp.ok) {
@@ -182,42 +229,37 @@ export default function OrcamentoChat() {
     const pageWidth = doc.internal.pageSize.getWidth();
     const margin = 20;
     const maxWidth = pageWidth - margin * 2;
-
     doc.setFontSize(18);
     doc.text('Proposta Comercial - Emive', margin, 25);
     doc.setFontSize(10);
     doc.text(`Gerado em ${new Date().toLocaleDateString('pt-BR')}`, margin, 33);
-
     doc.setFontSize(11);
     const lines = doc.splitTextToSize(proposta.replace(/[#*`]/g, ''), maxWidth);
     let y = 45;
     for (const line of lines) {
-      if (y > 280) {
-        doc.addPage();
-        y = 20;
-      }
+      if (y > 280) { doc.addPage(); y = 20; }
       doc.text(line, margin, y);
       y += 6;
     }
-
     doc.save('proposta-emive.pdf');
   };
 
   if (sessionValid === false) {
-    return (
+    const content = (
       <div className="min-h-screen flex items-center justify-center bg-background p-4">
         <Card className="max-w-md w-full">
           <CardContent className="py-12 text-center space-y-4">
-            <h2 className="text-xl font-semibold text-foreground">Link inválido ou expirado</h2>
-            <p className="text-muted-foreground">Este link de orçamento não é mais válido. Entre em contato com a Emive para um novo link.</p>
+            <h2 className="text-xl font-semibold text-foreground">Sessão inválida ou expirada</h2>
+            <p className="text-muted-foreground">Esta sessão de orçamento não é mais válida.</p>
           </CardContent>
         </Card>
       </div>
     );
+    return user ? <Layout>{content}</Layout> : content;
   }
 
   if (proposta) {
-    return (
+    const propostaContent = (
       <div className="min-h-screen bg-background">
         <header className="border-b bg-card px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -238,17 +280,18 @@ export default function OrcamentoChat() {
         </div>
       </div>
     );
+    return user ? <Layout>{propostaContent}</Layout> : propostaContent;
   }
 
-  return (
-    <div className="min-h-screen bg-background flex flex-col">
+  const chatContent = (
+    <div className={`${user ? '' : 'min-h-screen'} bg-background flex flex-col h-full`}>
       {/* Header */}
       <header className="border-b bg-card px-6 py-4 flex items-center justify-between shrink-0">
         <div className="flex items-center gap-3">
           <img src={emiveLogo} alt="Emive" className="h-8" />
           <div>
-            <h1 className="text-lg font-semibold text-foreground">Orçamento Emive</h1>
-            <p className="text-xs text-muted-foreground">Converse com nossa IA para receber uma proposta personalizada</p>
+            <h1 className="text-lg font-semibold text-foreground">Visita Técnica - Orçamento</h1>
+            <p className="text-xs text-muted-foreground">IA guiando a coleta de dados para proposta</p>
           </div>
         </div>
         {messages.length >= 6 && (
@@ -268,9 +311,7 @@ export default function OrcamentoChat() {
               </div>
             )}
             <div className={`max-w-[80%] rounded-2xl px-4 py-3 ${
-              msg.role === 'user'
-                ? 'bg-primary text-primary-foreground'
-                : 'bg-muted text-foreground'
+              msg.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted text-foreground'
             }`}>
               {msg.role === 'assistant' ? (
                 <div className="prose prose-sm max-w-none dark:prose-invert [&_p]:m-0">
@@ -305,6 +346,29 @@ export default function OrcamentoChat() {
           className="max-w-3xl mx-auto flex gap-2"
           onSubmit={e => { e.preventDefault(); sendMessage(input); }}
         >
+          {/* File upload */}
+          {sessaoId && (
+            <>
+              <input
+                ref={fileInputRef}
+                type="file"
+                multiple
+                accept="image/*,video/*,audio/*"
+                className="hidden"
+                onChange={handleFileUpload}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isLoading || uploading}
+                title="Enviar foto, vídeo ou áudio"
+              >
+                {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Paperclip className="h-4 w-4" />}
+              </Button>
+            </>
+          )}
           <Input
             ref={inputRef}
             value={input}
@@ -320,4 +384,6 @@ export default function OrcamentoChat() {
       </div>
     </div>
   );
+
+  return user ? <Layout><div className="h-[calc(100vh-0px)] flex flex-col">{chatContent}</div></Layout> : chatContent;
 }

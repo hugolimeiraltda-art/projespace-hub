@@ -4,7 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { NotificationsSidebarItem } from '@/components/NotificationsSidebarItem';
 import { cn } from '@/lib/utils';
-import { LayoutDashboard, FolderPlus, List, Settings, LogOut, User, ClipboardList, Users, Briefcase, ShoppingCart, Package, Heart, Wrench, ChevronDown, ChevronRight, AlertTriangle, Calendar, Bot } from 'lucide-react';
+import { LayoutDashboard, FolderPlus, List, Settings, LogOut, User, ClipboardList, Users, Briefcase, ShoppingCart, Package, Heart, Wrench, ChevronDown, ChevronRight, AlertTriangle, Calendar, Bot, Boxes } from 'lucide-react';
 import emiveLogo from '@/assets/emive-logo.png';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
@@ -115,12 +115,23 @@ export function Layout({ children }: LayoutProps) {
       icon: Heart,
       roles: ['projetos', 'admin', 'implantacao', 'administrativo', 'sucesso_cliente']
     },
-    // 10. Orçamentos por IA
+    // 10. Orçamentos por IA (admin com submenus, vendedores veem sessões próprias)
     {
       path: '/orcamentos',
       label: 'Orçamentos IA',
       icon: Bot,
-      roles: ['admin']
+      roles: ['admin'],
+      subItems: [
+        { path: '/orcamentos', label: 'Sessões', icon: Bot },
+        { path: '/orcamentos/produtos', label: 'Produtos e Kits', icon: Boxes },
+      ]
+    },
+    // Vendedores acessam suas sessões de visita
+    {
+      path: '/orcamentos',
+      label: 'Visitas Técnicas',
+      icon: Bot,
+      roles: ['vendedor', 'gerente_comercial', 'supervisor_operacoes']
     },
     // 11. Configurações (inclui Gestão de Usuários)
     {

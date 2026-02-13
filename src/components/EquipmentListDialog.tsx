@@ -20,9 +20,10 @@ interface EquipmentListDialogProps {
   onOpenChange: (open: boolean) => void;
   projectId: string;
   projectName: string;
+  engineeringStatus?: string | null;
 }
 
-export function EquipmentListDialog({ open, onOpenChange, projectId, projectName }: EquipmentListDialogProps) {
+export function EquipmentListDialog({ open, onOpenChange, projectId, projectName, engineeringStatus }: EquipmentListDialogProps) {
   const { toast } = useToast();
   const [equipments, setEquipments] = useState<EquipmentItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -44,7 +45,12 @@ export function EquipmentListDialog({ open, onOpenChange, projectId, projectName
       if (attError) throw attError;
 
       if (!attachments || attachments.length === 0) {
-        setError('Nenhum arquivo de "Lista de Equipamentos" encontrado na Devolução da Engenharia.');
+        const passouPeloProjetista = engineeringStatus && engineeringStatus !== 'AGUARDANDO';
+        if (!passouPeloProjetista) {
+          setError('Este projeto não passou pela etapa de Engenharia/Projetista, por isso não possui a lista de equipamentos. A lista é gerada quando o projetista faz a devolução do projeto com os documentos técnicos.');
+        } else {
+          setError('Nenhum arquivo de "Lista de Equipamentos" foi encontrado na Devolução da Engenharia. Verifique se o projetista anexou o documento corretamente.');
+        }
         setHasLoaded(true);
         setIsLoading(false);
         return;

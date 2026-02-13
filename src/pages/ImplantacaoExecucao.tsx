@@ -125,6 +125,7 @@ interface Project {
   created_at: string;
   prazo_entrega_projeto: string | null;
   implantacao_started_at: string | null;
+  engineering_status: string | null;
 }
 
 interface ContratoInfo {
@@ -175,7 +176,7 @@ export default function ImplantacaoExecucao() {
       // Fetch project
       const { data: projectData, error: projectError } = await supabase
         .from('projects')
-        .select('id, numero_projeto, cliente_condominio_nome, cliente_cidade, cliente_estado, vendedor_nome, created_at, prazo_entrega_projeto, implantacao_started_at')
+        .select('id, numero_projeto, cliente_condominio_nome, cliente_cidade, cliente_estado, vendedor_nome, created_at, prazo_entrega_projeto, implantacao_started_at, engineering_status')
         .eq('id', id)
         .single();
 
@@ -1756,6 +1757,7 @@ export default function ImplantacaoExecucao() {
           onOpenChange={setShowEquipmentList}
           projectId={project.id}
           projectName={project.cliente_condominio_nome}
+          engineeringStatus={project.engineering_status}
         />
       )}
     </Layout>

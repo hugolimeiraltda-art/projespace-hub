@@ -650,7 +650,7 @@ export default function ImplantacaoExecucao() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => navigate(`/projetos/${id}/form2`)}
+                onClick={() => navigate(`/projetos/${id}/formulario-venda`)}
               >
                 <FileText className="w-4 h-4 mr-1" />
                 Formulário

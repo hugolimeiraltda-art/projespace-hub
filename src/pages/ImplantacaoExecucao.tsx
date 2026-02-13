@@ -591,7 +591,7 @@ export default function ImplantacaoExecucao() {
                 {project.cliente_cidade}, {project.cliente_estado} • Vendedor: {project.vendedor_nome}
               </p>
             </div>
-            <div className="flex items-center gap-2 flex-shrink-0">
+            <div className="flex items-center gap-2 flex-shrink-0 flex-wrap justify-end">
               <Button
                 variant="outline"
                 size="sm"
@@ -603,10 +603,18 @@ export default function ImplantacaoExecucao() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => navigate(`/projetos/${id}`, { state: { scrollToAttachments: true } })}
+                onClick={() => navigate(`/projetos/${id}`)}
               >
                 <Paperclip className="w-4 h-4 mr-1" />
                 Anexos
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate(`/projetos/${id}`)}
+              >
+                <ExternalLink className="w-4 h-4 mr-1" />
+                Detalhes do Projeto
               </Button>
             </div>
           </div>

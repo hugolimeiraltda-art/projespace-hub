@@ -378,6 +378,20 @@ export function CarteiraClientesTable({ customers }: CarteiraClientesTableProps)
               ))
             )}
           </TableBody>
+          {filteredAndSortedCustomers.length > 0 && (
+            <tfoot>
+              <TableRow className="bg-muted/50 font-semibold border-t-2">
+                <TableCell colSpan={9} className="text-right">
+                  Total Mensalidades
+                </TableCell>
+                <TableCell className="text-right">
+                  R$ {filteredAndSortedCustomers
+                    .reduce((sum, c) => sum + (c.mensalidade || 0), 0)
+                    .toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                </TableCell>
+              </TableRow>
+            </tfoot>
+          )}
         </Table>
       </div>
 

@@ -378,20 +378,31 @@ export function CarteiraClientesTable({ customers }: CarteiraClientesTableProps)
               ))
             )}
           </TableBody>
-          {filteredAndSortedCustomers.length > 0 && (
-            <tfoot>
-              <TableRow className="bg-muted/50 font-semibold border-t-2">
-                <TableCell colSpan={9} className="text-right">
-                  Total Mensalidades
-                </TableCell>
-                <TableCell className="text-right">
-                  R$ {filteredAndSortedCustomers
-                    .reduce((sum, c) => sum + (c.mensalidade || 0), 0)
-                    .toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                </TableCell>
-              </TableRow>
-            </tfoot>
-          )}
+          {filteredAndSortedCustomers.length > 0 && (() => {
+            const total = filteredAndSortedCustomers.reduce((sum, c) => sum + (c.mensalidade || 0), 0);
+            const comMensalidade = filteredAndSortedCustomers.filter(c => c.mensalidade && c.mensalidade > 0);
+            const ticketMedio = comMensalidade.length > 0 ? total / comMensalidade.length : 0;
+            return (
+              <tfoot>
+                <TableRow className="bg-muted/50 font-semibold border-t-2">
+                  <TableCell colSpan={9} className="text-right">
+                    Total Mensalidades
+                  </TableCell>
+                  <TableCell className="text-right">
+                    R$ {total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                  </TableCell>
+                </TableRow>
+                <TableRow className="bg-muted/30 font-semibold">
+                  <TableCell colSpan={9} className="text-right">
+                    Ticket Médio ({comMensalidade.length} clientes)
+                  </TableCell>
+                  <TableCell className="text-right">
+                    R$ {ticketMedio.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                  </TableCell>
+                </TableRow>
+              </tfoot>
+            );
+          })()}
         </Table>
       </div>
 

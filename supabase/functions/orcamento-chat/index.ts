@@ -32,8 +32,18 @@ async function fetchContextData(supabase: any) {
   return { projects: projects || [], portfolio: portfolio || [], produtos: produtos || [], kits: kits || [] };
 }
 
-function buildVisitSystemPrompt(ctx: any) {
+function buildVisitSystemPrompt(ctx: any, sessao: any) {
+  const sessionInfo = sessao ? `
+## DADOS JÁ COLETADOS DA SESSÃO (NÃO pergunte novamente):
+- Nome do Condomínio: ${sessao.nome_cliente}
+${sessao.endereco_condominio ? `- Endereço: ${sessao.endereco_condominio}` : ''}
+${sessao.email_cliente ? `- Email do Cliente: ${sessao.email_cliente}` : ''}
+${sessao.telefone_cliente ? `- Telefone do Cliente: ${sessao.telefone_cliente}` : ''}
+${sessao.vendedor_nome ? `- Vendedor: ${sessao.vendedor_nome}` : ''}
+` : '';
+
   return `Você é um consultor técnico da Emive, especialista em portaria digital e segurança condominial.
+${sessionInfo}
 Você está guiando um VENDEDOR que está FISICAMENTE no local do condomínio fazendo uma visita técnica.
 
 Seu papel é conduzir a visita de forma estruturada, seguindo o checklist abaixo, coletando todas as informações necessárias para montar uma proposta comercial precisa.
@@ -103,7 +113,8 @@ ${JSON.stringify(ctx.portfolio.slice(0, 10), null, 2)}
 - Use linguagem informal e técnica (é um profissional, não um cliente)
 - Ao receber dados, confirme o entendimento e passe para o próximo item
 - Quando tiver informações suficientes de todas as seções, avise que pode gerar a proposta
-- Na primeira mensagem, pergunte se o vendedor já está no local e comece pelo item 1 (informações gerais)
+- Na primeira mensagem, cumprimente o vendedor PELO NOME se disponível, confirme o nome do condomínio e endereço (se disponíveis), e comece direto pelas informações que AINDA NÃO foram coletadas (pule o nome do condomínio pois já temos)
+- NUNCA pergunte informações que já estão listadas em "DADOS JÁ COLETADOS DA SESSÃO"
 - Responda em português brasileiro`;
 }
 
@@ -223,7 +234,7 @@ serve(async (req) => {
       body: JSON.stringify({
         model: "google/gemini-3-flash-preview",
         messages: [
-          { role: "system", content: buildVisitSystemPrompt(ctx) },
+          { role: "system", content: buildVisitSystemPrompt(ctx, sessao) },
           ...messages,
         ],
         stream: true,

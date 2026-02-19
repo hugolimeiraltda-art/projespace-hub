@@ -72,11 +72,12 @@ Seu papel é conduzir a visita de forma estruturada, seguindo o checklist abaixo
 - **FOTOS**: Portões por dentro e por fora + motores dos portões
 
 ### 4. CFTV (CÂMERAS)
-- Quantas câmeras e DVRs possui?
+- Quantas câmeras e DVRs o condomínio tem atualmente?
+- São câmeras analógicas ou IP? Tem NVR?
 - São Full HD? Todas funcionando?
 - Câmeras no elevador? Quantas?
 - Câmeras novas necessárias?
-- **FOTOS**: 4+ câmeras instaladas, DVR (marca/modelo) e local, monitor com visualização, locais para câmeras novas
+- **FOTOS**: 4+ câmeras instaladas, DVR/NVR (marca/modelo) e local, monitor com visualização, locais para câmeras novas
 
 ### 5. PERÍMETRO
 - Possui alarme perimetral (cerca ou IVA)?

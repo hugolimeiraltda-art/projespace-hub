@@ -2176,6 +2176,48 @@ export type Database = {
         }
         Relationships: []
       }
+      vendedor_acesso_tokens: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          created_by: string
+          created_by_name: string | null
+          expira_em: string | null
+          id: string
+          token: string
+          ultimo_acesso: string | null
+          updated_at: string
+          vendedor_id: string
+          vendedor_nome: string
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          created_by: string
+          created_by_name?: string | null
+          expira_em?: string | null
+          id?: string
+          token?: string
+          ultimo_acesso?: string | null
+          updated_at?: string
+          vendedor_id: string
+          vendedor_nome: string
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          created_by?: string
+          created_by_name?: string | null
+          expira_em?: string | null
+          id?: string
+          token?: string
+          ultimo_acesso?: string | null
+          updated_at?: string
+          vendedor_id?: string
+          vendedor_nome?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       profiles_summary: {

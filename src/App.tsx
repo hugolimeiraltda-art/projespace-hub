@@ -39,6 +39,8 @@ import ManutencaoPendencias from "./pages/ManutencaoPendencias";
 import Orcamentos from "./pages/Orcamentos";
 import OrcamentoChat from "./pages/OrcamentoChat";
 import OrcamentoProdutos from "./pages/OrcamentoProdutos";
+import VendedorHome from "./pages/VendedorHome";
+import VendedorChat from "./pages/VendedorChat";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -212,6 +214,9 @@ function AppRoutes() {
         path="/orcamento-visita" 
         element={<ProtectedRoute><OrcamentoChat /></ProtectedRoute>} 
       />
+      {/* Vendor app - public routes (token-based auth) */}
+      <Route path="/vendedor/:token" element={<VendedorHome />} />
+      <Route path="/vendedor/:token/chat/:sessaoId" element={<VendedorChat />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );

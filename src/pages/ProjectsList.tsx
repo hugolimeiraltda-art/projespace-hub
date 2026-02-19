@@ -185,8 +185,12 @@ export default function ProjectsList() {
     }).sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
   }, [baseProjects, search, statusFilter, cidadeFilter]);
 
-  // Chamados (projects that are not drafts)
-  const chamados = useMemo(() => projects.filter(p => p.status !== 'RASCUNHO'), [projects]);
+  // Chamados (only active projects - exclude drafts, cancelled, and completed)
+  const chamados = useMemo(() => projects.filter(p => 
+    p.status !== 'RASCUNHO' && 
+    p.status !== 'CANCELADO' && 
+    p.engineering_status !== 'CONCLUIDO'
+  ), [projects]);
 
   const filteredChamados = useMemo(() => {
     return chamados.filter(p => {

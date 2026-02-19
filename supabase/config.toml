@@ -23,3 +23,9 @@ verify_jwt = false
 
 [functions.orcamento-chat]
 verify_jwt = false
+
+[functions.generate-visit-pdf]
+verify_jwt = false
+
+[functions.send-visit-report]
+verify_jwt = false

@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { BarChart3, Clock, FileText, CheckCircle2, Users, CalendarDays, ExternalLink, ChevronDown, ChevronUp, X } from 'lucide-react';
+import { BarChart3, Clock, FileText, CheckCircle2, Users, CalendarDays, ExternalLink, ChevronDown, ChevronUp, X, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import { format, subDays, differenceInDays, parseISO, startOfMonth, endOfMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -56,6 +56,41 @@ export function ProjetosRelatorios() {
   const [activeCard, setActiveCard] = useState<CardType>(null);
   const [expandedProjetista, setExpandedProjetista] = useState<string | null>(null);
   const [expandedVendedor, setExpandedVendedor] = useState<string | null>(null);
+
+  // Sorting for projetista table
+  type ProjetistaSortField = 'nome' | 'chamadosRecebidos' | 'projetosAbertos' | 'projetosConcluidos' | 'tempoMedioConclusao';
+  const [projetistaSortField, setProjetistaSortField] = useState<ProjetistaSortField>('nome');
+  const [projetistaSortDir, setProjetistaSortDir] = useState<'asc' | 'desc'>('asc');
+
+  // Sorting for vendedor table
+  type VendedorSortField = 'nome' | 'projetosAbertos' | 'projetosAprovados' | 'vendasConcluidas';
+  const [vendedorSortField, setVendedorSortField] = useState<VendedorSortField>('nome');
+  const [vendedorSortDir, setVendedorSortDir] = useState<'asc' | 'desc'>('asc');
+
+  const handleProjetistaSort = (field: ProjetistaSortField) => {
+    if (projetistaSortField === field) {
+      setProjetistaSortDir(d => d === 'asc' ? 'desc' : 'asc');
+    } else {
+      setProjetistaSortField(field);
+      setProjetistaSortDir('asc');
+    }
+  };
+
+  const handleVendedorSort = (field: VendedorSortField) => {
+    if (vendedorSortField === field) {
+      setVendedorSortDir(d => d === 'asc' ? 'desc' : 'asc');
+    } else {
+      setVendedorSortField(field);
+      setVendedorSortDir('asc');
+    }
+  };
+
+  const SortHeaderIcon = ({ active, dir }: { active: boolean; dir: 'asc' | 'desc' }) => {
+    if (!active) return <ArrowUpDown className="w-3.5 h-3.5 ml-1 text-muted-foreground/40" />;
+    return dir === 'asc'
+      ? <ArrowUp className="w-3.5 h-3.5 ml-1 text-primary" />
+      : <ArrowDown className="w-3.5 h-3.5 ml-1 text-primary" />;
+  };
 
   useEffect(() => {
     fetchData();
@@ -148,6 +183,17 @@ export function ProjetosRelatorios() {
     });
   }, [projetistas, chamadosRecebidosProjects, filteredProjects, concluidosProjects]);
 
+  const sortedStats = useMemo(() => {
+    return [...stats].sort((a, b) => {
+      const f = projetistaSortField;
+      let valA: string | number = f === 'nome' ? a.nome.toLowerCase() : (a[f] ?? -1);
+      let valB: string | number = f === 'nome' ? b.nome.toLowerCase() : (b[f] ?? -1);
+      if (valA < valB) return projetistaSortDir === 'asc' ? -1 : 1;
+      if (valA > valB) return projetistaSortDir === 'asc' ? 1 : -1;
+      return 0;
+    });
+  }, [stats, projetistaSortField, projetistaSortDir]);
+
   const globalStats = useMemo(() => {
     const allTimes = concluidosProjects
       .filter(p => p.engineering_received_at && p.engineering_completed_at)
@@ -187,6 +233,17 @@ export function ProjetosRelatorios() {
       return { id: vendedor.id, nome: vendedor.nome, projetosAbertos, projetosAprovados, vendasConcluidas };
     }).filter(v => v.projetosAbertos > 0 || v.projetosAprovados > 0 || v.vendasConcluidas > 0);
   }, [vendedores, projects, filteredProjects, dateRange]);
+
+  const sortedVendedorStats = useMemo(() => {
+    return [...vendedorStats].sort((a, b) => {
+      const f = vendedorSortField;
+      let valA: string | number = f === 'nome' ? a.nome.toLowerCase() : a[f];
+      let valB: string | number = f === 'nome' ? b.nome.toLowerCase() : b[f];
+      if (valA < valB) return vendedorSortDir === 'asc' ? -1 : 1;
+      if (valA > valB) return vendedorSortDir === 'asc' ? 1 : -1;
+      return 0;
+    });
+  }, [vendedorStats, vendedorSortField, vendedorSortDir]);
 
   // Get projects for expanded vendedor
   const getVendedorProjectsList = (vendedorId: string) => {
@@ -382,15 +439,25 @@ export function ProjetosRelatorios() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Projetista</TableHead>
-                  <TableHead className="text-center">Chamados Recebidos</TableHead>
-                  <TableHead className="text-center">Projetos Abertos</TableHead>
-                  <TableHead className="text-center">Concluídos</TableHead>
-                  <TableHead className="text-center">Tempo Médio (dias)</TableHead>
+                  <TableHead className="cursor-pointer select-none" onClick={() => handleProjetistaSort('nome')}>
+                    <div className="flex items-center">Projetista<SortHeaderIcon active={projetistaSortField === 'nome'} dir={projetistaSortDir} /></div>
+                  </TableHead>
+                  <TableHead className="text-center cursor-pointer select-none" onClick={() => handleProjetistaSort('chamadosRecebidos')}>
+                    <div className="flex items-center justify-center">Chamados Recebidos<SortHeaderIcon active={projetistaSortField === 'chamadosRecebidos'} dir={projetistaSortDir} /></div>
+                  </TableHead>
+                  <TableHead className="text-center cursor-pointer select-none" onClick={() => handleProjetistaSort('projetosAbertos')}>
+                    <div className="flex items-center justify-center">Projetos Abertos<SortHeaderIcon active={projetistaSortField === 'projetosAbertos'} dir={projetistaSortDir} /></div>
+                  </TableHead>
+                  <TableHead className="text-center cursor-pointer select-none" onClick={() => handleProjetistaSort('projetosConcluidos')}>
+                    <div className="flex items-center justify-center">Concluídos<SortHeaderIcon active={projetistaSortField === 'projetosConcluidos'} dir={projetistaSortDir} /></div>
+                  </TableHead>
+                  <TableHead className="text-center cursor-pointer select-none" onClick={() => handleProjetistaSort('tempoMedioConclusao')}>
+                    <div className="flex items-center justify-center">Tempo Médio (dias)<SortHeaderIcon active={projetistaSortField === 'tempoMedioConclusao'} dir={projetistaSortDir} /></div>
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {stats.map((s) => (
+                {sortedStats.map((s) => (
                   <>
                     <TableRow
                       key={s.id}
@@ -453,14 +520,22 @@ export function ProjetosRelatorios() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Vendedor</TableHead>
-                  <TableHead className="text-center">Projetos Abertos</TableHead>
-                  <TableHead className="text-center">Projetos Aprovados</TableHead>
-                  <TableHead className="text-center">Vendas Concluídas</TableHead>
+                  <TableHead className="cursor-pointer select-none" onClick={() => handleVendedorSort('nome')}>
+                    <div className="flex items-center">Vendedor<SortHeaderIcon active={vendedorSortField === 'nome'} dir={vendedorSortDir} /></div>
+                  </TableHead>
+                  <TableHead className="text-center cursor-pointer select-none" onClick={() => handleVendedorSort('projetosAbertos')}>
+                    <div className="flex items-center justify-center">Projetos Abertos<SortHeaderIcon active={vendedorSortField === 'projetosAbertos'} dir={vendedorSortDir} /></div>
+                  </TableHead>
+                  <TableHead className="text-center cursor-pointer select-none" onClick={() => handleVendedorSort('projetosAprovados')}>
+                    <div className="flex items-center justify-center">Projetos Aprovados<SortHeaderIcon active={vendedorSortField === 'projetosAprovados'} dir={vendedorSortDir} /></div>
+                  </TableHead>
+                  <TableHead className="text-center cursor-pointer select-none" onClick={() => handleVendedorSort('vendasConcluidas')}>
+                    <div className="flex items-center justify-center">Vendas Concluídas<SortHeaderIcon active={vendedorSortField === 'vendasConcluidas'} dir={vendedorSortDir} /></div>
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {vendedorStats.map((v) => (
+                {sortedVendedorStats.map((v) => (
                   <>
                     <TableRow
                       key={v.id}

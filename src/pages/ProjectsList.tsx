@@ -413,19 +413,19 @@ export default function ProjectsList() {
 
         {/* Tabs for Projetos and Chamados */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="mb-6">
-            <TabsTrigger value="projetos" className="flex items-center gap-2">
+          <TabsList className="mb-6 h-12 p-1 bg-muted/60 rounded-xl gap-1">
+            <TabsTrigger value="projetos" className="flex items-center gap-2 px-6 py-2.5 text-sm font-medium rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:text-primary transition-all">
               <FileText className="w-4 h-4" />
               Projetos
             </TabsTrigger>
             {canSeeChamados && (
-              <TabsTrigger value="chamados" className="flex items-center gap-2">
+              <TabsTrigger value="chamados" className="flex items-center gap-2 px-6 py-2.5 text-sm font-medium rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:text-primary transition-all">
                 <ClipboardList className="w-4 h-4" />
                 Chamados
               </TabsTrigger>
             )}
             {canSeeRelatorios && (
-              <TabsTrigger value="relatorios" className="flex items-center gap-2">
+              <TabsTrigger value="relatorios" className="flex items-center gap-2 px-6 py-2.5 text-sm font-medium rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:text-primary transition-all">
                 <BarChart3 className="w-4 h-4" />
                 Relatórios
               </TabsTrigger>

@@ -43,9 +43,46 @@ export default function OrcamentoChat() {
     const sid = params.get('sessao');
     if (sid) {
       setSessaoId(sid);
-      sendMessage('Olá, estou no local para a visita técnica.', true, sid);
+      // Load existing messages first
+      (async () => {
+        const { data: existingMsgs } = await supabase
+          .from('orcamento_mensagens')
+          .select('role, content')
+          .eq('sessao_id', sid)
+          .order('created_at', { ascending: true });
+
+        if (existingMsgs && existingMsgs.length > 0) {
+          setMessages(existingMsgs.map(m => ({ role: m.role as 'user' | 'assistant', content: m.content })));
+          setSessionValid(true);
+        } else {
+          sendMessage('Olá, estou no local para a visita técnica.', true, sid);
+        }
+      })();
     } else if (token) {
-      sendMessage('Olá', true, undefined, token);
+      // Token-based: load history too
+      (async () => {
+        const { data: sessaoData } = await supabase
+          .from('orcamento_sessoes')
+          .select('id')
+          .eq('token', token)
+          .eq('status', 'ativo')
+          .single();
+
+        if (sessaoData) {
+          const { data: existingMsgs } = await supabase
+            .from('orcamento_mensagens')
+            .select('role, content')
+            .eq('sessao_id', sessaoData.id)
+            .order('created_at', { ascending: true });
+
+          if (existingMsgs && existingMsgs.length > 0) {
+            setMessages(existingMsgs.map(m => ({ role: m.role as 'user' | 'assistant', content: m.content })));
+            setSessionValid(true);
+            return;
+          }
+        }
+        sendMessage('Olá', true, undefined, token);
+      })();
     }
   }, [token]);
 

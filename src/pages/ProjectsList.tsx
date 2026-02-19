@@ -452,6 +452,7 @@ export default function ProjectsList() {
             )}
 
             {/* Filters */}
+            <h2 className="text-lg font-semibold text-foreground">Todos os projetos</h2>
             <Card className="shadow-card">
               <CardContent className="pt-6">
                 <div className="flex flex-wrap gap-4">

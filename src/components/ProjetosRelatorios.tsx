@@ -8,7 +8,9 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { BarChart3, Clock, FileText, CheckCircle2, Users, CalendarDays, ExternalLink, ChevronDown, ChevronUp, X, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Checkbox } from '@/components/ui/checkbox';
+import { BarChart3, Clock, FileText, CheckCircle2, Users, CalendarDays, ExternalLink, ChevronDown, ChevronUp, X, ArrowUpDown, ArrowUp, ArrowDown, Filter } from 'lucide-react';
 import { format, subDays, differenceInDays, parseISO, startOfMonth, endOfMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -67,6 +69,12 @@ export function ProjetosRelatorios() {
   const [vendedorSortField, setVendedorSortField] = useState<VendedorSortField>('nome');
   const [vendedorSortDir, setVendedorSortDir] = useState<'asc' | 'desc'>('asc');
 
+  // Column filters for projetista table
+  const [filterProjetistaNome, setFilterProjetistaNome] = useState<string[]>([]);
+
+  // Column filters for vendedor table
+  const [filterVendedorNome, setFilterVendedorNome] = useState<string[]>([]);
+
   const handleProjetistaSort = (field: ProjetistaSortField) => {
     if (projetistaSortField === field) {
       setProjetistaSortDir(d => d === 'asc' ? 'desc' : 'asc');
@@ -90,6 +98,60 @@ export function ProjetosRelatorios() {
     return dir === 'asc'
       ? <ArrowUp className="w-3.5 h-3.5 ml-1 text-primary" />
       : <ArrowDown className="w-3.5 h-3.5 ml-1 text-primary" />;
+  };
+
+  const FilterColumnHeader = ({ 
+    label, field, sortField, sortDir, onSort, uniqueValues, selectedValues, onSelectedChange, align = 'left'
+  }: { 
+    label: string; field: string; sortField: string; sortDir: 'asc' | 'desc'; onSort: () => void; 
+    uniqueValues: string[]; selectedValues: string[]; onSelectedChange: (v: string[]) => void; align?: 'left' | 'center';
+  }) => {
+    const hasFilter = selectedValues.length > 0;
+    return (
+      <Popover>
+        <PopoverTrigger asChild>
+          <div className={`flex items-center gap-1 cursor-pointer select-none ${align === 'center' ? 'justify-center' : ''}`}>
+            {label}
+            <SortHeaderIcon active={sortField === field} dir={sortDir} />
+            {hasFilter && <Badge variant="default" className="ml-1 h-4 min-w-4 px-1 text-[10px]">{selectedValues.length}</Badge>}
+          </div>
+        </PopoverTrigger>
+        <PopoverContent className="w-56 p-2" align="start">
+          <div className="space-y-2">
+            <div className="flex gap-1">
+              <Button size="sm" variant={sortField === field && sortDir === 'asc' ? 'default' : 'outline'} className="flex-1 text-xs h-7" onClick={onSort}>
+                A→Z
+              </Button>
+              <Button size="sm" variant={sortField === field && sortDir === 'desc' ? 'default' : 'outline'} className="flex-1 text-xs h-7" onClick={onSort}>
+                Z→A
+              </Button>
+            </div>
+            <div className="border-t pt-2">
+              <p className="text-xs font-medium text-muted-foreground mb-1">Filtrar por valor</p>
+              <div className="max-h-40 overflow-y-auto space-y-1">
+                {uniqueValues.map(val => (
+                  <label key={val} className="flex items-center gap-2 text-sm py-0.5 px-1 rounded hover:bg-muted cursor-pointer">
+                    <Checkbox
+                      checked={selectedValues.includes(val)}
+                      onCheckedChange={(checked) => {
+                        if (checked) onSelectedChange([...selectedValues, val]);
+                        else onSelectedChange(selectedValues.filter(v => v !== val));
+                      }}
+                    />
+                    <span className="truncate">{val}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+            {hasFilter && (
+              <Button size="sm" variant="ghost" className="w-full text-xs h-7" onClick={() => onSelectedChange([])}>
+                <X className="w-3 h-3 mr-1" /> Limpar filtro
+              </Button>
+            )}
+          </div>
+        </PopoverContent>
+      </Popover>
+    );
   };
 
   useEffect(() => {
@@ -184,7 +246,11 @@ export function ProjetosRelatorios() {
   }, [projetistas, chamadosRecebidosProjects, filteredProjects, concluidosProjects]);
 
   const sortedStats = useMemo(() => {
-    return [...stats].sort((a, b) => {
+    let filtered = [...stats];
+    if (filterProjetistaNome.length > 0) {
+      filtered = filtered.filter(s => filterProjetistaNome.includes(s.nome));
+    }
+    return filtered.sort((a, b) => {
       const f = projetistaSortField;
       let valA: string | number = f === 'nome' ? a.nome.toLowerCase() : (a[f] ?? -1);
       let valB: string | number = f === 'nome' ? b.nome.toLowerCase() : (b[f] ?? -1);
@@ -192,7 +258,7 @@ export function ProjetosRelatorios() {
       if (valA > valB) return projetistaSortDir === 'asc' ? 1 : -1;
       return 0;
     });
-  }, [stats, projetistaSortField, projetistaSortDir]);
+  }, [stats, projetistaSortField, projetistaSortDir, filterProjetistaNome]);
 
   const globalStats = useMemo(() => {
     const allTimes = concluidosProjects
@@ -235,7 +301,11 @@ export function ProjetosRelatorios() {
   }, [vendedores, projects, filteredProjects, dateRange]);
 
   const sortedVendedorStats = useMemo(() => {
-    return [...vendedorStats].sort((a, b) => {
+    let filtered = [...vendedorStats];
+    if (filterVendedorNome.length > 0) {
+      filtered = filtered.filter(v => filterVendedorNome.includes(v.nome));
+    }
+    return filtered.sort((a, b) => {
       const f = vendedorSortField;
       let valA: string | number = f === 'nome' ? a.nome.toLowerCase() : a[f];
       let valB: string | number = f === 'nome' ? b.nome.toLowerCase() : b[f];
@@ -243,7 +313,11 @@ export function ProjetosRelatorios() {
       if (valA > valB) return vendedorSortDir === 'asc' ? 1 : -1;
       return 0;
     });
-  }, [vendedorStats, vendedorSortField, vendedorSortDir]);
+  }, [vendedorStats, vendedorSortField, vendedorSortDir, filterVendedorNome]);
+
+  // Unique values for filters
+  const uniqueProjetistaNomes = useMemo(() => stats.map(s => s.nome).sort(), [stats]);
+  const uniqueVendedorNomes = useMemo(() => vendedorStats.map(v => v.nome).sort(), [vendedorStats]);
 
   // Get projects for expanded vendedor
   const getVendedorProjectsList = (vendedorId: string) => {
@@ -439,8 +513,12 @@ export function ProjetosRelatorios() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="cursor-pointer select-none" onClick={() => handleProjetistaSort('nome')}>
-                    <div className="flex items-center">Projetista<SortHeaderIcon active={projetistaSortField === 'nome'} dir={projetistaSortDir} /></div>
+                  <TableHead>
+                    <FilterColumnHeader
+                      label="Projetista" field="nome" sortField={projetistaSortField} sortDir={projetistaSortDir}
+                      onSort={() => handleProjetistaSort('nome')} uniqueValues={uniqueProjetistaNomes}
+                      selectedValues={filterProjetistaNome} onSelectedChange={setFilterProjetistaNome}
+                    />
                   </TableHead>
                   <TableHead className="text-center cursor-pointer select-none" onClick={() => handleProjetistaSort('chamadosRecebidos')}>
                     <div className="flex items-center justify-center">Chamados Recebidos<SortHeaderIcon active={projetistaSortField === 'chamadosRecebidos'} dir={projetistaSortDir} /></div>
@@ -520,8 +598,12 @@ export function ProjetosRelatorios() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="cursor-pointer select-none" onClick={() => handleVendedorSort('nome')}>
-                    <div className="flex items-center">Vendedor<SortHeaderIcon active={vendedorSortField === 'nome'} dir={vendedorSortDir} /></div>
+                  <TableHead>
+                    <FilterColumnHeader
+                      label="Vendedor" field="nome" sortField={vendedorSortField} sortDir={vendedorSortDir}
+                      onSort={() => handleVendedorSort('nome')} uniqueValues={uniqueVendedorNomes}
+                      selectedValues={filterVendedorNome} onSelectedChange={setFilterVendedorNome}
+                    />
                   </TableHead>
                   <TableHead className="text-center cursor-pointer select-none" onClick={() => handleVendedorSort('projetosAbertos')}>
                     <div className="flex items-center justify-center">Projetos Abertos<SortHeaderIcon active={vendedorSortField === 'projetosAbertos'} dir={vendedorSortDir} /></div>

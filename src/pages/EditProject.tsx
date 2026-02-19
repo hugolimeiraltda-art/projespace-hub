@@ -64,6 +64,8 @@ export default function EditProject() {
   const [portariaVirtual, setPortariaVirtual] = useState<PortariaVirtualApp>('NAO');
   const [numeroBlocos, setNumeroBlocos] = useState(1);
   const [interfonia, setInterfonia] = useState(false);
+  const [interfoniaTipo, setInterfoniaTipo] = useState('');
+  const [interfoniaAlternativa, setInterfoniaAlternativa] = useState('');
   const [controlePedestre, setControlePedestre] = useState('');
   const [controleVeiculo, setControleVeiculo] = useState('');
   const [alarme, setAlarme] = useState('');
@@ -97,6 +99,8 @@ export default function EditProject() {
         setPortariaVirtual(tap.portaria_virtual_atendimento_app || 'NAO');
         setNumeroBlocos(tap.numero_blocos || 1);
         setInterfonia(tap.interfonia || false);
+        setInterfoniaTipo(tap.interfonia_tipo || '');
+        setInterfoniaAlternativa(tap.interfonia_alternativa || '');
         setControlePedestre(tap.controle_acessos_pedestre_descricao || '');
         setControleVeiculo(tap.controle_acessos_veiculo_descricao || '');
         setAlarme(tap.alarme_descricao || '');
@@ -178,6 +182,8 @@ ${infoAdicionais || 'Não informado'}`;
         portaria_virtual_atendimento_app: portariaVirtual,
         numero_blocos: numeroBlocos,
         interfonia,
+        interfonia_tipo: interfoniaTipo || undefined,
+        interfonia_alternativa: interfoniaAlternativa || undefined,
         controle_acessos_pedestre_descricao: controlePedestre || undefined,
         controle_acessos_veiculo_descricao: controleVeiculo || undefined,
         alarme_descricao: alarme || undefined,
@@ -403,13 +409,57 @@ ${infoAdicionais || 'Não informado'}`;
                   />
                 </div>
 
-                <div className="flex items-center justify-between p-4 bg-secondary rounded-lg">
-                  <Label htmlFor="interfonia" className="cursor-pointer">Interfonia</Label>
-                  <Switch
-                    id="interfonia"
-                    checked={interfonia}
-                    onCheckedChange={setInterfonia}
-                  />
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3">
+                    <Label className="text-sm text-muted-foreground">Vai assumir interfonia existente?</Label>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-muted-foreground">Não</span>
+                      <Switch
+                        id="interfonia"
+                        checked={interfonia}
+                        onCheckedChange={(checked) => {
+                          setInterfonia(checked);
+                          if (checked) {
+                            setInterfoniaAlternativa('');
+                          } else {
+                            setInterfoniaTipo('');
+                          }
+                        }}
+                      />
+                      <span className="text-sm text-muted-foreground">Sim</span>
+                    </div>
+                  </div>
+
+                  {interfonia && (
+                    <div className="space-y-2">
+                      <Label className="text-sm">Tipo de Interfonia</Label>
+                      <Select value={interfoniaTipo} onValueChange={setInterfoniaTipo}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione o tipo" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="HIBRIDA">Híbrida</SelectItem>
+                          <SelectItem value="ANALOGICA">Analógica</SelectItem>
+                          <SelectItem value="DIGITAL">Digital</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+
+                  {!interfonia && (
+                    <div className="space-y-2">
+                      <Label className="text-sm">Alternativa</Label>
+                      <Select value={interfoniaAlternativa} onValueChange={setInterfoniaAlternativa}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="VENDER_NOVA">Vai vender interfonia nova</SelectItem>
+                          <SelectItem value="NENHUMA">Não terá interfonia</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
                 </div>
               </div>
 

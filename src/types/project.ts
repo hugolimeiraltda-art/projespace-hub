@@ -132,6 +132,8 @@ export interface TapForm {
   numero_unidades?: number;
   interfonia: boolean;
   interfonia_descricao?: string;
+  interfonia_tipo?: string;
+  interfonia_alternativa?: string;
   controle_acessos_pedestre_descricao?: string;
   controle_acessos_veiculo_descricao?: string;
   alarme_descricao?: string;
@@ -236,6 +238,7 @@ export interface SaleCompletedForm {
   // Generated content
   checklist_implantacao?: Record<string, boolean>;
   resumo_tecnico_noc?: string;
+  modificacoes_projeto_final?: string;
 }
 
 export interface Attachment {

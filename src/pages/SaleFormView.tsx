@@ -30,6 +30,9 @@ import {
   METODO_ACIONAMENTO_LABELS,
   AlarmeTipo,
   MetodoAcionamentoPortoes,
+  CFTV_ELEVADOR_LABELS,
+  CFTVElevador,
+  ATTACHMENT_TYPE_LABELS,
 } from '@/types/project';
 
 interface SaleFormData {
@@ -87,6 +90,7 @@ interface SaleFormData {
   totem_qtd_simples: number | null;
   totem_qtd_duplo: number | null;
   obs_gerais: string | null;
+  modificacoes_projeto_final: string | null;
 }
 
 interface ProjectInfo {
@@ -97,6 +101,27 @@ interface ProjectInfo {
   vendedor_nome: string;
   created_at: string;
   status: string;
+}
+
+interface TapFormData {
+  numero_blocos: number | null;
+  interfonia: boolean | null;
+  interfonia_tipo: string | null;
+  interfonia_alternativa: string | null;
+  interfonia_descricao: string | null;
+  controle_acessos_pedestre_descricao: string | null;
+  controle_acessos_veiculo_descricao: string | null;
+  alarme_descricao: string | null;
+  cftv_dvr_descricao: string | null;
+  cftv_elevador_possui: string | null;
+  modalidade_portaria: string | null;
+}
+
+interface AttachmentData {
+  id: string;
+  tipo: string;
+  nome_arquivo: string;
+  arquivo_url: string;
 }
 
 function DataItem({ label, value, icon }: { label: string; value: string | number | null | undefined; icon?: React.ReactNode }) {
@@ -161,19 +186,25 @@ export default function SaleFormView() {
   const { toast } = useToast();
   const [form, setForm] = useState<SaleFormData | null>(null);
   const [project, setProject] = useState<ProjectInfo | null>(null);
+  const [tapForm, setTapForm] = useState<TapFormData | null>(null);
+  const [attachments, setAttachments] = useState<AttachmentData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     if (!id) return;
     const fetchData = async () => {
       try {
-        const [{ data: projectData }, { data: formData }] = await Promise.all([
+        const [{ data: projectData }, { data: formData }, { data: tapData }, { data: attachData }] = await Promise.all([
           supabase.from('projects').select('numero_projeto, cliente_condominio_nome, cliente_cidade, cliente_estado, vendedor_nome, created_at, status').eq('id', id).single(),
           supabase.from('sale_forms').select('*').eq('project_id', id).maybeSingle(),
+          supabase.from('tap_forms').select('*').eq('project_id', id).maybeSingle(),
+          supabase.from('project_attachments').select('id, tipo, nome_arquivo, arquivo_url').eq('project_id', id),
         ]);
 
         if (projectData) setProject(projectData);
         if (formData) setForm(formData as unknown as SaleFormData);
+        if (tapData) setTapForm(tapData as unknown as TapFormData);
+        if (attachData) setAttachments(attachData);
       } catch (err) {
         console.error(err);
         toast({ title: 'Erro', description: 'Não foi possível carregar os dados.', variant: 'destructive' });

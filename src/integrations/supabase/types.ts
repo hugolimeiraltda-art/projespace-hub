@@ -1901,6 +1901,7 @@ export type Database = {
           local_central_interfonia_descricao: string | null
           marca_modelo_dvr_aproveitado: string | null
           metodo_acionamento_portoes: string | null
+          modificacoes_projeto_final: string | null
           nome_condominio: string | null
           obs_central_portaria_qdg: string | null
           obs_gerais: string | null
@@ -1963,6 +1964,7 @@ export type Database = {
           local_central_interfonia_descricao?: string | null
           marca_modelo_dvr_aproveitado?: string | null
           metodo_acionamento_portoes?: string | null
+          modificacoes_projeto_final?: string | null
           nome_condominio?: string | null
           obs_central_portaria_qdg?: string | null
           obs_gerais?: string | null
@@ -2025,6 +2027,7 @@ export type Database = {
           local_central_interfonia_descricao?: string | null
           marca_modelo_dvr_aproveitado?: string | null
           metodo_acionamento_portoes?: string | null
+          modificacoes_projeto_final?: string | null
           nome_condominio?: string | null
           obs_central_portaria_qdg?: string | null
           obs_gerais?: string | null
@@ -2076,7 +2079,9 @@ export type Database = {
           info_cronograma: string | null
           info_custo: string | null
           interfonia: boolean | null
+          interfonia_alternativa: string | null
           interfonia_descricao: string | null
+          interfonia_tipo: string | null
           marcacao_croqui_confirmada: boolean | null
           marcacao_croqui_itens: string[] | null
           modalidade_portaria: string | null
@@ -2099,7 +2104,9 @@ export type Database = {
           info_cronograma?: string | null
           info_custo?: string | null
           interfonia?: boolean | null
+          interfonia_alternativa?: string | null
           interfonia_descricao?: string | null
+          interfonia_tipo?: string | null
           marcacao_croqui_confirmada?: boolean | null
           marcacao_croqui_itens?: string[] | null
           modalidade_portaria?: string | null
@@ -2122,7 +2129,9 @@ export type Database = {
           info_cronograma?: string | null
           info_custo?: string | null
           interfonia?: boolean | null
+          interfonia_alternativa?: string | null
           interfonia_descricao?: string | null
+          interfonia_tipo?: string | null
           marcacao_croqui_confirmada?: boolean | null
           marcacao_croqui_itens?: string[] | null
           modalidade_portaria?: string | null

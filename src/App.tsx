@@ -214,9 +214,12 @@ function AppRoutes() {
         path="/orcamento-visita" 
         element={<ProtectedRoute><OrcamentoChat /></ProtectedRoute>} 
       />
-      {/* Vendor app - public routes (token-based auth) */}
-      <Route path="/vendedor/:token" element={<VendedorHome />} />
-      <Route path="/vendedor/:token/chat/:sessaoId" element={<VendedorChat />} />
+      {/* Vendor app - authenticated routes */}
+      <Route path="/orcar" element={<ProtectedRoute><VendedorHome /></ProtectedRoute>} />
+      <Route path="/orcar/chat/:sessaoId" element={<ProtectedRoute><VendedorChat /></ProtectedRoute>} />
+      {/* Legacy vendor routes - redirect */}
+      <Route path="/vendedor/:token" element={<Navigate to="/orcar" replace />} />
+      <Route path="/vendedor/:token/chat/:sessaoId" element={<Navigate to="/orcar" replace />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );

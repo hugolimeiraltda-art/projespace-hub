@@ -18,10 +18,7 @@ export function VendedorLayout({ children, vendedorNome, onLogout }: VendedorLay
       <header className="border-b bg-card px-4 py-3 flex items-center justify-between shrink-0">
         <div 
           className="flex items-center gap-3 cursor-pointer" 
-          onClick={() => {
-            const token = localStorage.getItem('vendedor_token');
-            if (token) navigate(`/vendedor/${token}`);
-          }}
+          onClick={() => navigate('/orcar')}
         >
           <img src={emiveLogo} alt="Emive" className="h-8" />
           <div>

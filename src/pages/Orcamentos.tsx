@@ -63,12 +63,19 @@ export default function Orcamentos() {
     if (!isAdmin) {
       query = query.eq('vendedor_id', user!.id);
     }
-    const [{ data: sessoesData }, { data: profilesData }] = await Promise.all([
+    const [{ data: sessoesData }, { data: rolesData }] = await Promise.all([
       query,
-      isAdmin ? supabase.from('profiles').select('id, nome') : Promise.resolve({ data: [] }),
+      isAdmin
+        ? supabase.from('user_roles').select('user_id, role').in('role', ['vendedor', 'admin', 'gerente_comercial'])
+        : Promise.resolve({ data: [] }),
     ]);
     if (sessoesData) setSessoes(sessoesData as Sessao[]);
-    if (profilesData) setVendedores(profilesData as Vendedor[]);
+
+    if (isAdmin && rolesData && rolesData.length > 0) {
+      const userIds = rolesData.map((r: any) => r.user_id);
+      const { data: profilesData } = await supabase.from('profiles').select('id, nome').in('id', userIds);
+      if (profilesData) setVendedores(profilesData as Vendedor[]);
+    }
     setIsLoading(false);
   };
 
@@ -76,10 +83,11 @@ export default function Orcamentos() {
 
   const handleCreate = async () => {
     if (!newNome.trim()) { toast({ title: 'Informe o nome do cliente', variant: 'destructive' }); return; }
-    if (!newVendedorId) { toast({ title: 'Selecione o vendedor', variant: 'destructive' }); return; }
+    const vendedorId = isAdmin ? newVendedorId : user!.id;
+    const vendedorNome = isAdmin ? vendedores.find(v => v.id === newVendedorId)?.nome || null : user!.nome;
+    if (isAdmin && !newVendedorId) { toast({ title: 'Selecione o vendedor', variant: 'destructive' }); return; }
     setCreating(true);
 
-    const vendedor = vendedores.find(v => v.id === newVendedorId);
     const { error } = await supabase.from('orcamento_sessoes').insert({
       nome_cliente: newNome.trim(),
       email_cliente: newEmail.trim() || null,
@@ -87,8 +95,8 @@ export default function Orcamentos() {
       endereco_condominio: newEndereco.trim() || null,
       created_by: user!.id,
       created_by_name: user!.nome,
-      vendedor_id: newVendedorId,
-      vendedor_nome: vendedor?.nome || null,
+      vendedor_id: vendedorId,
+      vendedor_nome: vendedorNome,
     });
 
     if (error) {
@@ -132,8 +140,7 @@ export default function Orcamentos() {
             <h1 className="text-2xl font-bold text-foreground">{isAdmin ? 'Orçamentos por IA' : 'Minhas Visitas Técnicas'}</h1>
             <p className="text-muted-foreground">{isAdmin ? 'Gerencie visitas técnicas guiadas por IA' : 'Sessões de visita técnica atribuídas a você'}</p>
           </div>
-          {isAdmin && (
-            <Dialog open={showNew} onOpenChange={setShowNew}>
+          <Dialog open={showNew} onOpenChange={setShowNew}>
               <DialogTrigger asChild>
                 <Button><Plus className="mr-2 h-4 w-4" />Nova Sessão</Button>
               </DialogTrigger>
@@ -148,15 +155,17 @@ export default function Orcamentos() {
                     <Label>Endereço do Condomínio</Label>
                     <Input value={newEndereco} onChange={e => setNewEndereco(e.target.value)} placeholder="Rua, número, bairro, cidade - UF" />
                   </div>
-                  <div>
-                    <Label>Vendedor Responsável *</Label>
-                    <Select value={newVendedorId} onValueChange={setNewVendedorId}>
-                      <SelectTrigger><SelectValue placeholder="Selecione o vendedor" /></SelectTrigger>
-                      <SelectContent>
-                        {vendedores.map(v => <SelectItem key={v.id} value={v.id}>{v.nome}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
-                  </div>
+                  {isAdmin && (
+                    <div>
+                      <Label>Vendedor Responsável *</Label>
+                      <Select value={newVendedorId} onValueChange={setNewVendedorId}>
+                        <SelectTrigger><SelectValue placeholder="Selecione o vendedor" /></SelectTrigger>
+                        <SelectContent>
+                          {vendedores.map(v => <SelectItem key={v.id} value={v.id}>{v.nome}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
                   <div>
                     <Label>Email do Cliente</Label>
                     <Input value={newEmail} onChange={e => setNewEmail(e.target.value)} placeholder="email@exemplo.com" type="email" />
@@ -171,7 +180,6 @@ export default function Orcamentos() {
                 </div>
               </DialogContent>
             </Dialog>
-          )}
         </div>
 
         {isLoading ? (

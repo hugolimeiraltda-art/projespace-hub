@@ -11,8 +11,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Checkbox } from '@/components/ui/checkbox';
 import { BarChart3, Clock, FileText, CheckCircle2, Users, CalendarDays, ExternalLink, ChevronDown, ChevronUp, X, ArrowUpDown, ArrowUp, ArrowDown, Filter } from 'lucide-react';
-import { format, subDays, differenceInDays, parseISO, startOfMonth, endOfMonth } from 'date-fns';
+import { format, subDays, differenceInDays, parseISO, startOfMonth, endOfMonth, eachDayOfInterval, isWeekend } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+
+function countBusinessDays(start: Date, end: Date): number {
+  if (start > end) return 0;
+  return eachDayOfInterval({ start, end }).filter(d => !isWeekend(d)).length;
+}
 
 interface ProjectRow {
   id: string;
@@ -39,6 +44,7 @@ interface ProjetistaStats {
   projetosAbertos: number;
   projetosConcluidos: number;
   tempoMedioConclusao: number | null;
+  mediaPorDiaUtil: number | null;
   conclusaoList: number[];
 }
 
@@ -60,7 +66,7 @@ export function ProjetosRelatorios() {
   const [expandedVendedor, setExpandedVendedor] = useState<string | null>(null);
 
   // Sorting for projetista table
-  type ProjetistaSortField = 'nome' | 'chamadosRecebidos' | 'projetosAbertos' | 'projetosConcluidos' | 'tempoMedioConclusao';
+  type ProjetistaSortField = 'nome' | 'chamadosRecebidos' | 'projetosAbertos' | 'projetosConcluidos' | 'tempoMedioConclusao' | 'mediaPorDiaUtil';
   const [projetistaSortField, setProjetistaSortField] = useState<ProjetistaSortField>('nome');
   const [projetistaSortDir, setProjetistaSortDir] = useState<'asc' | 'desc'>('asc');
 
@@ -241,9 +247,14 @@ export function ProjetosRelatorios() {
         ? Math.round(conclusaoList.reduce((a, b) => a + b, 0) / conclusaoList.length)
         : null;
 
-      return { id: projetista.id, nome: projetista.nome, chamadosRecebidos, projetosAbertos, projetosConcluidos, tempoMedioConclusao, conclusaoList };
+      const diasUteis = countBusinessDays(dateRange.start, dateRange.end);
+      const mediaPorDiaUtil = diasUteis > 0 && projetosConcluidos > 0
+        ? Math.round((projetosConcluidos / diasUteis) * 100) / 100
+        : null;
+
+      return { id: projetista.id, nome: projetista.nome, chamadosRecebidos, projetosAbertos, projetosConcluidos, tempoMedioConclusao, mediaPorDiaUtil, conclusaoList };
     });
-  }, [projetistas, chamadosRecebidosProjects, filteredProjects, concluidosProjects]);
+  }, [projetistas, chamadosRecebidosProjects, filteredProjects, concluidosProjects, dateRange]);
 
   const sortedStats = useMemo(() => {
     let filtered = [...stats];
@@ -532,6 +543,9 @@ export function ProjetosRelatorios() {
                   <TableHead className="text-center cursor-pointer select-none" onClick={() => handleProjetistaSort('tempoMedioConclusao')}>
                     <div className="flex items-center justify-center">Tempo Médio (dias)<SortHeaderIcon active={projetistaSortField === 'tempoMedioConclusao'} dir={projetistaSortDir} /></div>
                   </TableHead>
+                  <TableHead className="text-center cursor-pointer select-none" onClick={() => handleProjetistaSort('mediaPorDiaUtil')}>
+                    <div className="flex items-center justify-center">Média/Dia Útil<SortHeaderIcon active={projetistaSortField === 'mediaPorDiaUtil'} dir={projetistaSortDir} /></div>
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -566,10 +580,17 @@ export function ProjetosRelatorios() {
                           <span className="text-muted-foreground">—</span>
                         )}
                       </TableCell>
+                      <TableCell className="text-center">
+                        {s.mediaPorDiaUtil !== null ? (
+                          <Badge variant="outline" className="font-mono">{s.mediaPorDiaUtil.toFixed(2)}</Badge>
+                        ) : (
+                          <span className="text-muted-foreground">—</span>
+                        )}
+                      </TableCell>
                     </TableRow>
                     {expandedProjetista === s.id && (
                       <TableRow key={`${s.id}-detail`}>
-                        <TableCell colSpan={5} className="bg-muted/30 p-4">
+                        <TableCell colSpan={6} className="bg-muted/30 p-4">
                           <p className="text-sm font-medium text-muted-foreground mb-2">Projetos no período:</p>
                           <ProjectList projectList={filteredProjects} />
                         </TableCell>

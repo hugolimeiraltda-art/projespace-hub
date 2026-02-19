@@ -11,6 +11,7 @@ import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { useAttachmentUrl } from '@/hooks/useAttachmentUrl';
 import {
   ArrowLeft,
+  ArrowRight,
   Building,
   Gauge,
   Phone,
@@ -111,6 +112,7 @@ interface ProjectInfo {
   vendedor_nome: string;
   created_at: string;
   status: string;
+  sale_status: string | null;
 }
 
 interface TapFormData {
@@ -216,7 +218,7 @@ export default function SaleFormView() {
     const fetchData = async () => {
       try {
         const [{ data: projectData }, { data: formData }, { data: tapData }, { data: attachData }, { data: saleAttachData }] = await Promise.all([
-          supabase.from('projects').select('numero_projeto, cliente_condominio_nome, cliente_cidade, cliente_estado, vendedor_nome, created_at, status').eq('id', id).single(),
+          supabase.from('projects').select('numero_projeto, cliente_condominio_nome, cliente_cidade, cliente_estado, vendedor_nome, created_at, status, sale_status').eq('id', id).single(),
           supabase.from('sale_forms').select('*').eq('project_id', id).maybeSingle(),
           supabase.from('tap_forms').select('*').eq('project_id', id).maybeSingle(),
           supabase.from('project_attachments').select('id, tipo, nome_arquivo, arquivo_url').eq('project_id', id),
@@ -249,28 +251,33 @@ export default function SaleFormView() {
     );
   }
 
-  if (!project || !form) {
+  // No project at all
+  if (!project) {
     return (
       <Layout>
         <div className="p-8 text-center">
-          <p className="text-muted-foreground">Formulário de venda não encontrado para este projeto.</p>
+          <p className="text-muted-foreground">Projeto não encontrado.</p>
           <Button className="mt-4" onClick={() => navigate(-1)}>Voltar</Button>
         </div>
       </Layout>
     );
   }
 
-  const internetLabel = form.internet_exclusiva === 'SIM' ? 'Sim' : form.internet_exclusiva === 'NAO' ? 'Não' : form.internet_exclusiva === 'A_CONTRATAR' ? 'A Contratar' : form.internet_exclusiva;
-  const alarmeLabel = form.alarme_tipo ? ALARME_TIPO_LABELS[form.alarme_tipo as AlarmeTipo] || form.alarme_tipo : null;
-  const acionamentoLabel = form.metodo_acionamento_portoes ? METODO_ACIONAMENTO_LABELS[form.metodo_acionamento_portoes as MetodoAcionamentoPortoes] || form.metodo_acionamento_portoes : null;
+  // No sale form yet — show TAP/engineering recap with CTA to fill the form
+  const hasSaleForm = !!form;
+  const saleNotStarted = !hasSaleForm || project.sale_status === 'NAO_INICIADO';
 
-  const totalPortoes = (form.qtd_portoes_deslizantes || 0) + (form.qtd_portoes_pivotantes || 0) + (form.qtd_portoes_basculantes || 0);
-  const totalPortas = (form.qtd_portas_pedestre || 0) + (form.qtd_portas_bloco || 0) + (form.qtd_saida_autenticada || 0);
-  const totalCamerasNovas = form.cftv_novo_qtd_total_cameras || 0;
-  const totalCamerasAproveitadas = form.qtd_cameras_aproveitadas || 0;
-  const totalCancelas = (form.cancela_qtd_sentido_unico || 0) + (form.cancela_qtd_duplo_sentido || 0);
-  const totalCatracas = (form.catraca_qtd_sentido_unico || 0) + (form.catraca_qtd_duplo_sentido || 0);
-  const totalTotens = (form.totem_qtd_simples || 0) + (form.totem_qtd_duplo || 0);
+  const internetLabel = form?.internet_exclusiva === 'SIM' ? 'Sim' : form?.internet_exclusiva === 'NAO' ? 'Não' : form?.internet_exclusiva === 'A_CONTRATAR' ? 'A Contratar' : form?.internet_exclusiva;
+  const alarmeLabel = form?.alarme_tipo ? ALARME_TIPO_LABELS[form.alarme_tipo as AlarmeTipo] || form.alarme_tipo : null;
+  const acionamentoLabel = form?.metodo_acionamento_portoes ? METODO_ACIONAMENTO_LABELS[form.metodo_acionamento_portoes as MetodoAcionamentoPortoes] || form.metodo_acionamento_portoes : null;
+
+  const totalPortoes = (form?.qtd_portoes_deslizantes || 0) + (form?.qtd_portoes_pivotantes || 0) + (form?.qtd_portoes_basculantes || 0);
+  const totalPortas = (form?.qtd_portas_pedestre || 0) + (form?.qtd_portas_bloco || 0) + (form?.qtd_saida_autenticada || 0);
+  const totalCamerasNovas = form?.cftv_novo_qtd_total_cameras || 0;
+  const totalCamerasAproveitadas = form?.qtd_cameras_aproveitadas || 0;
+  const totalCancelas = (form?.cancela_qtd_sentido_unico || 0) + (form?.cancela_qtd_duplo_sentido || 0);
+  const totalCatracas = (form?.catraca_qtd_sentido_unico || 0) + (form?.catraca_qtd_duplo_sentido || 0);
+  const totalTotens = (form?.totem_qtd_simples || 0) + (form?.totem_qtd_duplo || 0);
 
   return (
     <Layout>
@@ -290,16 +297,16 @@ export default function SaleFormView() {
                 Projeto #{project.numero_projeto}
               </Badge>
               <Badge variant="secondary" className="text-xs">
-                {form.produto || 'Portaria Digital'}
+                {form?.produto || 'Portaria Digital'}
               </Badge>
-              {form.filial && (
+              {form?.filial && (
                 <Badge variant="outline" className="text-xs">
                   Filial {form.filial}
                 </Badge>
               )}
             </div>
             <h1 className="text-3xl font-bold text-foreground mb-2">
-              {form.nome_condominio || project.cliente_condominio_nome}
+              {form?.nome_condominio || project.cliente_condominio_nome}
             </h1>
             <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
               {(project.cliente_cidade || project.cliente_estado) && (
@@ -310,36 +317,65 @@ export default function SaleFormView() {
               )}
               <span className="flex items-center gap-1">
                 <Users className="w-3.5 h-3.5" />
-                Vendedor: {form.vendedor_nome || project.vendedor_nome}
+                Vendedor: {form?.vendedor_nome || project.vendedor_nome}
               </span>
             </div>
 
-            {/* Quick Stats */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6">
-              <StatCard label="Apartamentos" value={form.qtd_apartamentos} unit="unidades" />
-              <StatCard label="Blocos" value={form.qtd_blocos} unit="torres" />
-              <StatCard label="Câmeras" value={totalCamerasNovas + totalCamerasAproveitadas || null} unit="total" />
-              <StatCard label="Acessos" value={totalPortas + totalPortoes || null} unit="portas + portões" />
-            </div>
+            {/* Quick Stats - only show when sale form exists */}
+            {hasSaleForm && (
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6">
+                <StatCard label="Apartamentos" value={form?.qtd_apartamentos} unit="unidades" />
+                <StatCard label="Blocos" value={form?.qtd_blocos} unit="torres" />
+                <StatCard label="Câmeras" value={totalCamerasNovas + totalCamerasAproveitadas || null} unit="total" />
+                <StatCard label="Acessos" value={totalPortas + totalPortoes || null} unit="portas + portões" />
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Context Banner */}
-        <div className="flex items-start gap-3 p-4 mb-6 rounded-xl bg-accent/50 border border-accent-foreground/10">
-          <Info className="w-5 h-5 text-accent-foreground mt-0.5 shrink-0" />
-          <div>
-            <p className="text-sm font-medium text-foreground">Sobre este formulário</p>
-            <p className="text-xs text-muted-foreground mt-1">
-              Este documento reúne todas as informações técnicas levantadas pelo vendedor durante a visita ao condomínio. 
-              Os dados aqui descritos orientam a equipe de engenharia na elaboração do projeto e a equipe de implantação na execução, 
-              garantindo que todos os equipamentos, infraestrutura e configurações estejam alinhados com a realidade do local.
-            </p>
+        {/* CTA to fill sale form when not yet started */}
+        {saleNotStarted && (
+          <div className="flex items-start gap-4 p-6 mb-6 rounded-xl bg-primary/5 border border-primary/20">
+            <div className="p-3 rounded-xl bg-primary/10 text-primary shrink-0">
+              <ClipboardList className="w-6 h-6" />
+            </div>
+            <div className="flex-1">
+              <p className="text-base font-semibold text-foreground">Revise as informações do projeto antes de preencher o formulário de venda</p>
+              <p className="text-sm text-muted-foreground mt-1">
+                Abaixo você encontra o resumo da TAP, os documentos da engenharia e os anexos do projeto. 
+                Após revisar, clique no botão para preencher o formulário de Venda Concluída.
+              </p>
+              <Button 
+                className="mt-4" 
+                onClick={() => navigate(`/projetos/${id}/form2`)}
+              >
+                <ArrowRight className="w-4 h-4 mr-2" />
+                Preencher Formulário de Venda
+              </Button>
+            </div>
           </div>
-        </div>
+        )}
+
+        {/* Context Banner - only when form exists */}
+        {hasSaleForm && (
+          <div className="flex items-start gap-3 p-4 mb-6 rounded-xl bg-accent/50 border border-accent-foreground/10">
+            <Info className="w-5 h-5 text-accent-foreground mt-0.5 shrink-0" />
+            <div>
+              <p className="text-sm font-medium text-foreground">Sobre este formulário</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Este documento reúne todas as informações técnicas levantadas pelo vendedor durante a visita ao condomínio. 
+                Os dados aqui descritos orientam a equipe de engenharia na elaboração do projeto e a equipe de implantação na execução, 
+                garantindo que todos os equipamentos, infraestrutura e configurações estejam alinhados com a realidade do local.
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Sections */}
         <div className="space-y-6">
-          {/* Infraestrutura */}
+          {/* Sale Form Sections - only when form exists */}
+          {form && (
+            <>
           <SectionCard
             title="Infraestrutura & Central de Portaria"
             description="Informações sobre o local onde será instalada a central de portaria digital, cabeamento e conectividade."
@@ -543,6 +579,9 @@ export default function SaleFormView() {
             </Card>
           )}
 
+          </>
+          )}
+
           {/* Resumo da TAP */}
           {tapForm && (
             <SectionCard
@@ -690,9 +729,22 @@ export default function SaleFormView() {
             );
           })()}
 
+          {/* Bottom CTA when sale not started */}
+          {saleNotStarted && (
+            <div className="text-center py-6">
+              <Button 
+                size="lg"
+                onClick={() => navigate(`/projetos/${id}/form2`)}
+              >
+                <ArrowRight className="w-4 h-4 mr-2" />
+                Preencher Formulário de Venda
+              </Button>
+            </div>
+          )}
+
           {/* Footer context */}
           <div className="text-center py-6 text-xs text-muted-foreground">
-            <p>Formulário de Venda Concluída — {form.nome_condominio || project.cliente_condominio_nome}</p>
+            <p>Formulário de Venda Concluída — {form?.nome_condominio || project.cliente_condominio_nome}</p>
             <p className="mt-1">Projeto #{project.numero_projeto} • Gerado pelo sistema EMIVE</p>
           </div>
         </div>

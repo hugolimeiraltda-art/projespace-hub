@@ -713,7 +713,11 @@ export default function ProjectDetail() {
             {canViewSaleForm && (
               <Button 
                 variant="outline"
-                onClick={() => navigate(`/projetos/${project.id}/form2`)}
+                onClick={() => navigate(
+                  project.sale_status === 'CONCLUIDO' 
+                    ? `/projetos/${project.id}/formulario-venda` 
+                    : `/projetos/${project.id}/formulario-venda`
+                )}
               >
                 <FileText className="w-4 h-4 mr-2" />
                 {project.sale_status === 'CONCLUIDO' ? 'Visualizar Forms' : 'Informar Venda Concluída'}

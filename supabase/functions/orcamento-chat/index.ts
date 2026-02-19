@@ -59,9 +59,11 @@ Seu papel é conduzir a visita de forma estruturada, seguindo o checklist abaixo
 - **FOTOS**: Fachada do condomínio
 
 ### 2. ACESSO DE PEDESTRES
-- Quantas portas de pedestre rua?
-- Quantas portas de pedestre bloco?
-- **FOTOS**: Por dentro e por fora de cada porta
+- Quantas portas de pedestre para a rua iremos CONTROLAR? (use "controlar" ao invés de "existem")
+- Alguma dessas portas possui ECLUSA? (eclusa = após a porta externa existe outra porta interna, formando um compartimento intermediário de segurança)
+- Se sim, quantas eclusas?
+- Quantas portas de pedestre nos blocos iremos controlar?
+- **FOTOS**: Por dentro e por fora de cada porta (e das eclusas, se houver)
 
 ### 3. ACESSO DE VEÍCULOS
 - Quantos portões de veículos?

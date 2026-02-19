@@ -378,6 +378,9 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
           portaria_virtual_atendimento_app: tapForm.portaria_virtual_atendimento_app || null,
           numero_blocos: tapForm.numero_blocos || null,
           interfonia: tapForm.interfonia || false,
+          interfonia_descricao: tapForm.interfonia_descricao || null,
+          interfonia_tipo: tapForm.interfonia_tipo || null,
+          interfonia_alternativa: tapForm.interfonia_alternativa || null,
           controle_acessos_pedestre_descricao: tapForm.controle_acessos_pedestre_descricao || null,
           controle_acessos_veiculo_descricao: tapForm.controle_acessos_veiculo_descricao || null,
           alarme_descricao: tapForm.alarme_descricao || null,
@@ -463,6 +466,9 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
         if (tapFormUpdate.portaria_virtual_atendimento_app !== undefined) tapUpdateData.portaria_virtual_atendimento_app = tapFormUpdate.portaria_virtual_atendimento_app;
         if (tapFormUpdate.numero_blocos !== undefined) tapUpdateData.numero_blocos = tapFormUpdate.numero_blocos;
         if (tapFormUpdate.interfonia !== undefined) tapUpdateData.interfonia = tapFormUpdate.interfonia;
+        if (tapFormUpdate.interfonia_descricao !== undefined) tapUpdateData.interfonia_descricao = tapFormUpdate.interfonia_descricao;
+        if (tapFormUpdate.interfonia_tipo !== undefined) tapUpdateData.interfonia_tipo = tapFormUpdate.interfonia_tipo;
+        if (tapFormUpdate.interfonia_alternativa !== undefined) tapUpdateData.interfonia_alternativa = tapFormUpdate.interfonia_alternativa;
         if (tapFormUpdate.controle_acessos_pedestre_descricao !== undefined) tapUpdateData.controle_acessos_pedestre_descricao = tapFormUpdate.controle_acessos_pedestre_descricao;
         if (tapFormUpdate.controle_acessos_veiculo_descricao !== undefined) tapUpdateData.controle_acessos_veiculo_descricao = tapFormUpdate.controle_acessos_veiculo_descricao;
         if (tapFormUpdate.alarme_descricao !== undefined) tapUpdateData.alarme_descricao = tapFormUpdate.alarme_descricao;

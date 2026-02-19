@@ -162,7 +162,7 @@ export default function SaleCompletedForm() {
         title: 'Venda Concluída enviada!',
         description: 'O formulário foi enviado e bloqueado para edição.',
       });
-      navigate(`/projetos/${project.id}`);
+      navigate(`/projetos/${project.id}/formulario-venda`);
     } else {
       toast({
         title: 'Erro ao enviar',
@@ -1112,6 +1112,30 @@ export default function SaleCompletedForm() {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Modificações do Projeto */}
+            {!isReadOnly && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <AlertTriangle className="w-5 h-5 text-status-pending" />
+                    Modificações do Projeto
+                  </CardTitle>
+                  <CardDescription>
+                    Houve alguma modificação entre o projeto repassado pela engenharia e o projeto fechado com o cliente?
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Textarea
+                    value={formData.modificacoes_projeto_final || ''}
+                    onChange={(e) => updateField('modificacoes_projeto_final', e.target.value)}
+                    placeholder="Descreva as modificações realizadas, se houver. Caso não tenha havido alterações, escreva 'Nenhuma modificação'."
+                    rows={4}
+                    disabled={isDisabled}
+                  />
+                </CardContent>
+              </Card>
+            )}
 
             {!isLocked && (
               <Alert className={allChecked ? "bg-status-approved-bg border-status-approved/30" : "bg-status-pending-bg border-status-pending/30"}>

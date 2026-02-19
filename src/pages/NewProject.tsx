@@ -66,14 +66,16 @@ export default function NewProject() {
   const [estado, setEstado] = useState('');
   const [endereco, setEndereco] = useState('');
   const [prazoEntrega, setPrazoEntrega] = useState('');
-  const [prazoUrgente, setPrazoUrgente] = useState(false);
-  const [prazoUrgenteJustificativa, setPrazoUrgenteJustificativa] = useState('');
+  // Removed: prazoUrgente, prazoUrgenteJustificativa (Urgência field removed)
   const [observacoesGerais, setObservacoesGerais] = useState('');
 
   // Form state - TAP
   const [modalidadePortaria, setModalidadePortaria] = useState<ModalidadePortaria>('VIRTUAL');
   const [numeroBlocos, setNumeroBlocos] = useState(1);
   const [numeroUnidades, setNumeroUnidades] = useState<number | ''>('');
+  const [interfonia, setInterfonia] = useState(false);
+  const [interfoniaTipo, setInterfoniaTipo] = useState('');
+  const [interfoniaAlternativa, setInterfoniaAlternativa] = useState('');
   const [interfoniaDescricao, setInterfoniaDescricao] = useState('');
   const [controlePedestre, setControlePedestre] = useState('');
   const [controleVeiculo, setControleVeiculo] = useState('');
@@ -316,8 +318,10 @@ ${observacoesGerais || 'Não informado'}`;
           portaria_virtual_atendimento_app: 'NAO' as PortariaVirtualApp,
           numero_blocos: numeroBlocos,
           numero_unidades: numeroUnidades || undefined,
-          interfonia: !!interfoniaDescricao,
+          interfonia,
           interfonia_descricao: interfoniaDescricao || undefined,
+          interfonia_tipo: interfoniaTipo || undefined,
+          interfonia_alternativa: interfoniaAlternativa || undefined,
           controle_acessos_pedestre_descricao: controlePedestre || undefined,
           controle_acessos_veiculo_descricao: controleVeiculo || undefined,
           alarme_descricao: alarme || undefined,
@@ -455,29 +459,7 @@ ${observacoesGerais || 'Não informado'}`;
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <Label>Urgência</Label>
-                  <div className="flex items-center gap-3 h-10">
-                    <span className="text-sm text-muted-foreground">Não</span>
-                    <Switch
-                      checked={prazoUrgente}
-                      onCheckedChange={(checked) => {
-                        setPrazoUrgente(checked);
-                        if (!checked) setPrazoUrgenteJustificativa('');
-                      }}
-                    />
-                    <span className="text-sm text-muted-foreground">Sim</span>
-                  </div>
-                  {prazoUrgente && (
-                    <Textarea
-                      value={prazoUrgenteJustificativa}
-                      onChange={(e) => setPrazoUrgenteJustificativa(e.target.value)}
-                      placeholder="Justifique o motivo da urgência..."
-                      rows={2}
-                      className="mt-2"
-                    />
-                  )}
-                </div>
+                {/* Urgência removed */}
               </div>
             </CardContent>
           </Card>
@@ -532,14 +514,67 @@ ${observacoesGerais || 'Não informado'}`;
 
               <div className="space-y-4">
                 <h3 className="font-medium text-foreground text-sm">Interfonia</h3>
-                <div className="space-y-2">
-                  <Textarea
-                    id="interfonia"
-                    value={interfoniaDescricao}
-                    onChange={(e) => setInterfoniaDescricao(e.target.value)}
-                    placeholder="Descreva o sistema de interfonia do condomínio..."
-                    rows={2}
-                  />
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3">
+                    <Label className="text-sm text-muted-foreground">Vai assumir interfonia existente?</Label>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-muted-foreground">Não</span>
+                      <Switch
+                        checked={interfonia}
+                        onCheckedChange={(checked) => {
+                          setInterfonia(checked);
+                          if (checked) {
+                            setInterfoniaAlternativa('');
+                          } else {
+                            setInterfoniaTipo('');
+                          }
+                        }}
+                      />
+                      <span className="text-sm text-muted-foreground">Sim</span>
+                    </div>
+                  </div>
+
+                  {interfonia && (
+                    <div className="space-y-2">
+                      <Label className="text-sm">Tipo de Interfonia</Label>
+                      <Select value={interfoniaTipo} onValueChange={setInterfoniaTipo}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione o tipo" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="HIBRIDA">Híbrida</SelectItem>
+                          <SelectItem value="ANALOGICA">Analógica</SelectItem>
+                          <SelectItem value="DIGITAL">Digital</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+
+                  {!interfonia && (
+                    <div className="space-y-2">
+                      <Label className="text-sm">Alternativa</Label>
+                      <Select value={interfoniaAlternativa} onValueChange={setInterfoniaAlternativa}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="VENDER_NOVA">Vai vender interfonia nova</SelectItem>
+                          <SelectItem value="NENHUMA">Não terá interfonia</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+
+                  <div className="space-y-2">
+                    <Label className="text-sm">Observações sobre interfonia</Label>
+                    <Textarea
+                      id="interfonia"
+                      value={interfoniaDescricao}
+                      onChange={(e) => setInterfoniaDescricao(e.target.value)}
+                      placeholder="Detalhes adicionais sobre a interfonia..."
+                      rows={2}
+                    />
+                  </div>
                 </div>
               </div>
 

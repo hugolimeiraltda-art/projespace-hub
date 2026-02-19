@@ -47,7 +47,7 @@ export default function MeusChamados() {
   }
 
   // Get all projects that have been submitted (not drafts)
-  const chamados = projects.filter(p => p.status !== 'RASCUNHO');
+  const chamados = projects.filter(p => p.status !== 'RASCUNHO' && p.engineering_status !== 'CONCLUIDO');
 
   const filteredChamados = chamados.filter(p => {
     const matchesSearch = 

@@ -32,8 +32,10 @@ import {
   ArrowRight,
   ClipboardList,
   ChevronDown,
-  Hash
+  Hash,
+  BarChart3
 } from 'lucide-react';
+import { ProjetosRelatorios } from '@/components/ProjetosRelatorios';
 import { ProjectStatus, STATUS_LABELS, ENGINEERING_STATUS_LABELS, EngineeringStatus } from '@/types/project';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -293,6 +295,12 @@ export default function ProjectsList() {
               <TabsTrigger value="chamados" className="flex items-center gap-2">
                 <ClipboardList className="w-4 h-4" />
                 Chamados
+              </TabsTrigger>
+            )}
+            {canSeeChamados && (
+              <TabsTrigger value="relatorios" className="flex items-center gap-2">
+                <BarChart3 className="w-4 h-4" />
+                Relatórios
               </TabsTrigger>
             )}
           </TabsList>
@@ -796,6 +804,12 @@ export default function ProjectsList() {
                   ))
                 )}
               </div>
+            </TabsContent>
+          )}
+
+          {canSeeChamados && (
+            <TabsContent value="relatorios">
+              <ProjetosRelatorios />
             </TabsContent>
           )}
         </Tabs>

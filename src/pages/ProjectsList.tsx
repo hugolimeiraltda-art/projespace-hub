@@ -86,6 +86,7 @@ export default function ProjectsList() {
 
   // Check if user can see Chamados tab (only projetos and admin)
   const canSeeChamados = ['admin', 'projetos'].includes(user?.role || '');
+  const canSeeRelatorios = user?.role === 'admin';
 
   // Fetch projects in implantação
   useEffect(() => {
@@ -297,7 +298,7 @@ export default function ProjectsList() {
                 Chamados
               </TabsTrigger>
             )}
-            {canSeeChamados && (
+            {canSeeRelatorios && (
               <TabsTrigger value="relatorios" className="flex items-center gap-2">
                 <BarChart3 className="w-4 h-4" />
                 Relatórios
@@ -807,7 +808,7 @@ export default function ProjectsList() {
             </TabsContent>
           )}
 
-          {canSeeChamados && (
+          {canSeeRelatorios && (
             <TabsContent value="relatorios">
               <ProjetosRelatorios />
             </TabsContent>

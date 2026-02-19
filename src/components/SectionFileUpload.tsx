@@ -22,6 +22,8 @@ interface UploadedFile {
 }
 
 const MAX_VIDEO_SIZE = 50 * 1024 * 1024; // 50MB
+const MAX_IMAGE_WIDTH = 1920;
+const MAX_IMAGE_QUALITY = 0.7;
 const ACCEPTED_TYPES = 'image/*,video/*,.pdf,.doc,.docx';
 
 function formatFileSize(bytes: number): string {
@@ -157,6 +159,36 @@ export function SectionFileUpload({ projectId, secao, disabled }: SectionFileUpl
     loadFiles();
   }, [projectId, secao]);
 
+  const compressImage = async (file: File): Promise<File> => {
+    return new Promise((resolve, reject) => {
+      const img = new window.Image();
+      const url = URL.createObjectURL(file);
+      img.onload = () => {
+        URL.revokeObjectURL(url);
+        let { width, height } = img;
+        if (width > MAX_IMAGE_WIDTH) {
+          height = Math.round(height * (MAX_IMAGE_WIDTH / width));
+          width = MAX_IMAGE_WIDTH;
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d')!;
+        ctx.drawImage(img, 0, 0, width, height);
+        canvas.toBlob(
+          (blob) => {
+            if (!blob) { reject(new Error('Erro ao comprimir imagem')); return; }
+            resolve(new File([blob], file.name.replace(/\.[^.]+$/, '.webp'), { type: 'image/webp' }));
+          },
+          'image/webp',
+          MAX_IMAGE_QUALITY
+        );
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Erro ao carregar imagem')); };
+      img.src = url;
+    });
+  };
+
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFiles = e.target.files;
     if (!selectedFiles || selectedFiles.length === 0 || !projectId) return;
@@ -167,6 +199,19 @@ export function SectionFileUpload({ projectId, secao, disabled }: SectionFileUpl
     for (let i = 0; i < selectedFiles.length; i++) {
       let file = selectedFiles[i];
       const isVideo = file.type.startsWith('video/');
+      const isImage = file.type.startsWith('image/');
+
+      // Compress images
+      if (isImage) {
+        try {
+          const compressed = await compressImage(file);
+          if (compressed.size < file.size) {
+            file = compressed;
+          }
+        } catch {
+          // Use original if compression fails
+        }
+      }
 
       // Check video size limit
       if (isVideo && file.size > MAX_VIDEO_SIZE) {
@@ -370,7 +415,7 @@ export function SectionFileUpload({ projectId, secao, disabled }: SectionFileUpl
       )}
 
       <p className="text-xs text-muted-foreground mt-2">
-        Aceita: fotos, vídeos (até 50MB), PDF e Word. Vídeos grandes serão comprimidos automaticamente.
+        Aceita: fotos, vídeos (até 50MB), PDF e Word. Fotos e vídeos grandes serão comprimidos automaticamente.
       </p>
     </div>
   );

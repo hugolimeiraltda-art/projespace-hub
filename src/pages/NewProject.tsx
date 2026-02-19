@@ -89,8 +89,10 @@ export default function NewProject() {
   const [observacoesFotos, setObservacoesFotos] = useState('');
   const [isCompressing, setIsCompressing] = useState(false);
 
-  const MAX_FILES = 5;
+  const MAX_FILES = 15;
   const MAX_VIDEO_SIZE = 50 * 1024 * 1024; // 50MB
+  const MAX_IMAGE_WIDTH = 1920;
+  const MAX_IMAGE_QUALITY = 0.7;
   const ACCEPTED_FILE_TYPES = 'image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx';
 
   const hasCroquiAttachment = croquiFiles.length > 0;
@@ -153,7 +155,51 @@ export default function NewProject() {
     });
   };
 
+  const compressImage = async (file: File): Promise<File> => {
+    return new Promise((resolve, reject) => {
+      const img = new window.Image();
+      const url = URL.createObjectURL(file);
+      img.onload = () => {
+        URL.revokeObjectURL(url);
+        let { width, height } = img;
+        if (width > MAX_IMAGE_WIDTH) {
+          height = Math.round(height * (MAX_IMAGE_WIDTH / width));
+          width = MAX_IMAGE_WIDTH;
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d')!;
+        ctx.drawImage(img, 0, 0, width, height);
+        canvas.toBlob(
+          (blob) => {
+            if (!blob) { reject(new Error('Erro ao comprimir imagem')); return; }
+            const compressed = new File([blob], file.name.replace(/\.[^.]+$/, '.webp'), { type: 'image/webp' });
+            resolve(compressed);
+          },
+          'image/webp',
+          MAX_IMAGE_QUALITY
+        );
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Erro ao carregar imagem')); };
+      img.src = url;
+    });
+  };
+
   const processFile = async (file: File): Promise<{ nome: string; file: File }> => {
+    // Compress images
+    if (file.type.startsWith('image/')) {
+      try {
+        const compressed = await compressImage(file);
+        if (compressed.size < file.size) {
+          return { nome: compressed.name, file: compressed };
+        }
+      } catch {
+        // If compression fails, use original
+      }
+      return { nome: file.name, file };
+    }
+    // Compress large videos
     if (file.type.startsWith('video/') && file.size > MAX_VIDEO_SIZE) {
       setIsCompressing(true);
       toast({ title: 'Comprimindo vídeo...', description: `${file.name} será reduzido automaticamente.` });
@@ -608,7 +654,7 @@ ${observacoesGerais || 'Não informado'}`;
                       </div>
                       <p className="font-medium text-foreground">{isCompressing ? 'Comprimindo vídeo...' : 'Clique para enviar arquivos'}</p>
                       <p className="text-sm text-muted-foreground">
-                        PDF, Word, Excel, Imagens e Vídeos • Máx. {MAX_FILES} arquivos • Vídeos comprimidos automaticamente
+                      PDF, Word, Excel, Imagens e Vídeos • Máx. {MAX_FILES} arquivos • Fotos e vídeos comprimidos automaticamente
                       </p>
                     </div>
                   </div>
@@ -676,7 +722,7 @@ ${observacoesGerais || 'Não informado'}`;
                       </div>
                       <p className="font-medium text-foreground">{isCompressing ? 'Comprimindo vídeo...' : 'Clique para adicionar arquivos'}</p>
                       <p className="text-sm text-muted-foreground">
-                        PDF, Word, Excel, Imagens e Vídeos • Máx. {MAX_FILES} arquivos • Vídeos comprimidos automaticamente
+                        PDF, Word, Excel, Imagens e Vídeos • Máx. {MAX_FILES} arquivos • Fotos e vídeos comprimidos automaticamente
                       </p>
                     </div>
                   </div>

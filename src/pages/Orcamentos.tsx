@@ -62,7 +62,9 @@ export default function Orcamentos() {
   const [copiedLink, setCopiedLink] = useState(false);
   const [generatingToken, setGeneratingToken] = useState(false);
   const [accessTokens, setAccessTokens] = useState<any[]>([]);
-
+  const [viewReport, setViewReport] = useState<string | null>(null);
+  const [reportHtml, setReportHtml] = useState('');
+  const [loadingReport, setLoadingReport] = useState(false);
   const fetchData = async () => {
     const isAdmin = user?.role === 'admin';
     let query = supabase.from('orcamento_sessoes').select('*').order('created_at', { ascending: false });
@@ -173,6 +175,25 @@ export default function Orcamentos() {
     toast({ title: 'Sessão excluída' });
   };
 
+  const handleViewReport = async (sessaoId: string) => {
+    setLoadingReport(true);
+    setViewReport(sessaoId);
+    try {
+      const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-visit-pdf`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` },
+        body: JSON.stringify({ sessao_id: sessaoId }),
+      });
+      if (resp.ok) {
+        const data = await resp.json();
+        setReportHtml(data.html);
+      }
+    } catch {
+      toast({ title: 'Erro ao carregar relatório', variant: 'destructive' });
+    }
+    setLoadingReport(false);
+  };
+
   const statusLabel = (s: string) => {
     switch (s) {
       case 'ativo': return { label: 'Ativo', variant: 'default' as const };
@@ -278,6 +299,11 @@ export default function Orcamentos() {
                           <Eye className="mr-1 h-3 w-3" />Ver Proposta
                         </Button>
                       )}
+                      {(s.status === 'escopo_validado' || s.status === 'relatorio_enviado') && (
+                        <Button size="sm" variant="outline" onClick={() => handleViewReport(s.id)}>
+                          <FileText className="mr-1 h-3 w-3" />Ver Relatório
+                        </Button>
+                      )}
                       <Button size="sm" variant="ghost" className="text-destructive" onClick={() => setDeleteId(s.id)}>
                         <Trash2 className="mr-1 h-3 w-3" />Excluir
                       </Button>
@@ -296,6 +322,22 @@ export default function Orcamentos() {
           <div className="prose prose-sm max-w-none dark:prose-invert">
             <ReactMarkdown>{viewProposta?.proposta_gerada || ''}</ReactMarkdown>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Report viewer dialog */}
+      <Dialog open={!!viewReport} onOpenChange={() => { setViewReport(null); setReportHtml(''); }}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader><DialogTitle>Relatório da Visita</DialogTitle></DialogHeader>
+          {loadingReport ? (
+            <div className="flex justify-center py-12">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+            </div>
+          ) : reportHtml ? (
+            <div dangerouslySetInnerHTML={{ __html: reportHtml }} />
+          ) : (
+            <p className="text-muted-foreground text-center py-8">Erro ao carregar relatório.</p>
+          )}
         </DialogContent>
       </Dialog>
 

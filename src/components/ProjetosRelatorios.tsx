@@ -77,14 +77,17 @@ export function ProjetosRelatorios() {
   };
 
   const dateRange = useMemo(() => {
-    if (periodo === 'custom' && dataInicio && dataFim) {
-      return { start: new Date(dataInicio), end: new Date(dataFim + 'T23:59:59') };
-    }
     const now = new Date();
-    const days = parseInt(periodo);
+    if (periodo === 'custom') {
+      if (dataInicio && dataFim) {
+        return { start: new Date(dataInicio), end: new Date(dataFim + 'T23:59:59') };
+      }
+      return { start: subDays(now, 30), end: now };
+    }
     if (periodo === 'mes_atual') {
       return { start: startOfMonth(now), end: endOfMonth(now) };
     }
+    const days = parseInt(periodo) || 30;
     return { start: subDays(now, days), end: now };
   }, [periodo, dataInicio, dataFim]);
 

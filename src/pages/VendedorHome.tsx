@@ -118,15 +118,15 @@ export default function VendedorHome() {
       <div className="flex-1 p-4 sm:p-6 max-w-3xl mx-auto w-full space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-xl font-bold text-foreground">Minhas Visitas</h2>
+            <h2 className="text-xl font-bold text-foreground">Meus Orçamentos</h2>
             <p className="text-sm text-muted-foreground">Últimos 30 dias</p>
           </div>
           <Dialog open={showNew} onOpenChange={setShowNew}>
             <DialogTrigger asChild>
-              <Button size="lg"><Plus className="mr-2 h-5 w-5" />Nova Visita</Button>
+              <Button size="lg"><Plus className="mr-2 h-5 w-5" />Novo Orçamento</Button>
             </DialogTrigger>
             <DialogContent>
-              <DialogHeader><DialogTitle>Nova Visita Técnica</DialogTitle></DialogHeader>
+              <DialogHeader><DialogTitle>Novo Orçamento</DialogTitle></DialogHeader>
               <div className="space-y-4">
                 <div>
                   <Label>Nome do Condomínio *</Label>
@@ -144,8 +144,8 @@ export default function VendedorHome() {
                   <Label>Telefone do Cliente</Label>
                   <Input value={newTelefone} onChange={e => setNewTelefone(e.target.value)} placeholder="(11) 99999-9999" />
                 </div>
-                <Button onClick={handleCreate} disabled={creating} className="w-full" size="lg">
-                  {creating ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Criando...</> : 'Iniciar Visita'}
+                 <Button onClick={handleCreate} disabled={creating} className="w-full" size="lg">
+                  {creating ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Criando...</> : 'Iniciar Orçamento'}
                 </Button>
               </div>
             </DialogContent>
@@ -157,8 +157,8 @@ export default function VendedorHome() {
             <CardContent className="py-16 text-center space-y-4">
               <MessageSquare className="h-12 w-12 text-muted-foreground/50 mx-auto" />
               <div>
-                <h3 className="font-semibold text-foreground">Nenhuma visita recente</h3>
-                <p className="text-sm text-muted-foreground">Clique em "Nova Visita" para iniciar uma visita técnica guiada por IA.</p>
+                <h3 className="font-semibold text-foreground">Nenhum orçamento recente</h3>
+                <p className="text-sm text-muted-foreground">Clique em "Novo Orçamento" para iniciar um orçamento guiado por IA.</p>
               </div>
             </CardContent>
           </Card>

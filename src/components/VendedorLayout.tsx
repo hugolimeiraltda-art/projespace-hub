@@ -22,7 +22,7 @@ export function VendedorLayout({ children, vendedorNome, onLogout }: VendedorLay
         >
           <img src={emiveLogo} alt="Emive" className="h-8" />
           <div>
-            <h1 className="text-base font-semibold text-foreground">Visita Técnica</h1>
+            <h1 className="text-base font-semibold text-foreground">Orçamento</h1>
             <p className="text-xs text-muted-foreground">Emive Portaria Digital</p>
           </div>
         </div>

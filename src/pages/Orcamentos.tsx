@@ -177,6 +177,8 @@ export default function Orcamentos() {
     switch (s) {
       case 'ativo': return { label: 'Ativo', variant: 'default' as const };
       case 'proposta_gerada': return { label: 'Proposta Gerada', variant: 'secondary' as const };
+      case 'escopo_validado': return { label: 'Escopo Validado', variant: 'outline' as const };
+      case 'relatorio_enviado': return { label: 'Relatório Enviado', variant: 'outline' as const };
       default: return { label: s, variant: 'outline' as const };
     }
   };

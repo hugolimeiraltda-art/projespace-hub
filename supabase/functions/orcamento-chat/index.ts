@@ -97,16 +97,13 @@ Seu papel é conduzir a visita de forma estruturada, seguindo o checklist abaixo
 ## CATÁLOGO DE PRODUTOS E KITS (use para dimensionar e precificar):
 
 **Produtos:**
-${JSON.stringify(ctx.produtos, null, 2)}
+${JSON.stringify(ctx.produtos.map((p: any) => ({ nome: p.nome, categoria: p.categoria, preco: p.preco_unitario, unidade: p.unidade })), null, 2)}
 
 **Kits:**
-${JSON.stringify(ctx.kits, null, 2)}
+${JSON.stringify(ctx.kits.map((k: any) => ({ nome: k.nome, categoria: k.categoria, preco: k.preco_kit, itens: (k.orcamento_kit_itens || []).map((i: any) => ({ produto: i.orcamento_produtos?.nome, qtd: i.quantidade })) })), null, 2)}
 
-## REFERÊNCIAS DE PROJETOS REAIS:
-${JSON.stringify(ctx.projects.slice(0, 5), null, 2)}
-
-## REFERÊNCIAS DE PREÇOS DA CARTEIRA:
-${JSON.stringify(ctx.portfolio.slice(0, 10), null, 2)}
+## REFERÊNCIAS DE PREÇOS DA CARTEIRA (resumo):
+${JSON.stringify(ctx.portfolio.slice(0, 8).map((c: any) => ({ razao: c.razao_social, unidades: c.unidades, mensalidade: c.mensalidade, taxa: c.taxa_ativacao, cameras: c.cameras, portoes: c.portoes, portas: c.portas })), null, 2)}
 
 ## REGRAS:
 - **NUNCA use "existem" ou "possui" ao perguntar sobre quantidades. SEMPRE use "iremos controlar" (ex: "quantas portas iremos controlar?" e não "quantas portas existem?")**

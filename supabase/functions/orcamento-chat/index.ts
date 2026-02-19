@@ -231,17 +231,19 @@ serve(async (req) => {
       }
     }
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
+    const requestBody = JSON.stringify({
+        model: "openai/gpt-5-mini",
         messages: [
           { role: "system", content: buildVisitSystemPrompt(ctx, sessao) },
           ...messages,
         ],
         stream: true,
-      }),
+      });
+    console.log("Request body size:", requestBody.length, "chars");
+    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
+      body: requestBody,
     });
 
     if (!response.ok) {

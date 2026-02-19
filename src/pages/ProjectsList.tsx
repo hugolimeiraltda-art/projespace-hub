@@ -74,6 +74,17 @@ export default function ProjectsList() {
     (searchParams.get('status') as ProjectStatus) || 'ALL'
   );
   const [cidadeFilter, setCidadeFilter] = useState('');
+
+  // Projetos tab sorting
+  type ProjetosSortField = 'updated_at' | 'cliente_condominio_nome' | 'vendedor_nome' | 'cliente_cidade' | 'prazo_entrega_projeto' | 'status';
+  const [projetosSortField, setProjetosSortField] = useState<ProjetosSortField>('updated_at');
+  const [projetosSortDir, setProjetosSortDir] = useState<'asc' | 'desc'>('desc');
+
+  // Projetos tab column filters
+  const [projFilterCliente, setProjFilterCliente] = useState<string[]>([]);
+  const [projFilterVendedor, setProjFilterVendedor] = useState<string[]>([]);
+  const [projFilterCidade, setProjFilterCidade] = useState<string[]>([]);
+  const [projFilterStatus, setProjFilterStatus] = useState<string[]>([]);
   const [implantacaoProjects, setImplantacaoProjects] = useState<ImplantacaoProject[]>([]);
   const [implantacaoEtapas, setImplantacaoEtapas] = useState<Record<string, number>>({});
   const [activeTab, setActiveTab] = useState<string>(searchParams.get('tab') || 'projetos');
@@ -188,19 +199,64 @@ export default function ProjectsList() {
         if (!matchesSearch) return false;
       }
 
-      // Status filter
+      // Status filter (dropdown)
       if (statusFilter !== 'ALL' && project.status !== statusFilter) {
         return false;
       }
 
-      // City filter
+      // City filter (dropdown)
       if (cidadeFilter && project.cliente_cidade !== cidadeFilter) {
         return false;
       }
 
+      // Column filters
+      if (projFilterCliente.length > 0 && !projFilterCliente.includes(project.cliente_condominio_nome)) return false;
+      if (projFilterVendedor.length > 0 && !projFilterVendedor.includes(project.vendedor_nome)) return false;
+      if (projFilterCidade.length > 0 && !projFilterCidade.includes(project.cliente_cidade || '')) return false;
+      if (projFilterStatus.length > 0 && !projFilterStatus.includes(project.status)) return false;
+
       return true;
-    }).sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
-  }, [baseProjects, search, statusFilter, cidadeFilter]);
+    }).sort((a, b) => {
+      let valA: string | number = '';
+      let valB: string | number = '';
+
+      if (projetosSortField === 'updated_at') {
+        valA = new Date(a.updated_at).getTime();
+        valB = new Date(b.updated_at).getTime();
+      } else if (projetosSortField === 'prazo_entrega_projeto') {
+        valA = a.prazo_entrega_projeto ? new Date(a.prazo_entrega_projeto).getTime() : 0;
+        valB = b.prazo_entrega_projeto ? new Date(b.prazo_entrega_projeto).getTime() : 0;
+      } else if (projetosSortField === 'status') {
+        valA = STATUS_LABELS[a.status] || a.status;
+        valB = STATUS_LABELS[b.status] || b.status;
+      } else {
+        valA = ((a as any)[projetosSortField] || '').toLowerCase();
+        valB = ((b as any)[projetosSortField] || '').toLowerCase();
+      }
+
+      if (valA < valB) return projetosSortDir === 'asc' ? -1 : 1;
+      if (valA > valB) return projetosSortDir === 'asc' ? 1 : -1;
+      return 0;
+    });
+  }, [baseProjects, search, statusFilter, cidadeFilter, projFilterCliente, projFilterVendedor, projFilterCidade, projFilterStatus, projetosSortField, projetosSortDir]);
+
+  // Unique values for column filters
+  const uniqueProjClientes = useMemo(() => [...new Set(baseProjects.map(p => p.cliente_condominio_nome))].sort(), [baseProjects]);
+  const uniqueProjVendedores = useMemo(() => [...new Set(baseProjects.map(p => p.vendedor_nome))].sort(), [baseProjects]);
+  const uniqueProjCidades = useMemo(() => [...new Set(baseProjects.map(p => p.cliente_cidade).filter(Boolean))].sort(), [baseProjects]);
+  const uniqueProjStatuses = useMemo(() => [...new Set(baseProjects.map(p => p.status))].sort(), [baseProjects]);
+
+  const projHasColumnFilters = projFilterCliente.length > 0 || projFilterVendedor.length > 0 || projFilterCidade.length > 0 || projFilterStatus.length > 0;
+  const clearProjColumnFilters = () => { setProjFilterCliente([]); setProjFilterVendedor([]); setProjFilterCidade([]); setProjFilterStatus([]); };
+
+  const handleProjetosSort = (field: ProjetosSortField) => {
+    if (projetosSortField === field) {
+      setProjetosSortDir(d => d === 'asc' ? 'desc' : 'asc');
+    } else {
+      setProjetosSortField(field);
+      setProjetosSortDir('asc');
+    }
+  };
 
   // Chamados (only active projects - exclude drafts, cancelled, and completed)
   const chamados = useMemo(() => projects.filter(p => 
@@ -323,10 +379,11 @@ export default function ProjectsList() {
     setSearch('');
     setStatusFilter('ALL');
     setCidadeFilter('');
+    clearProjColumnFilters();
     setSearchParams({});
   };
 
-  const hasFilters = search || statusFilter !== 'ALL' || cidadeFilter;
+  const hasFilters = search || statusFilter !== 'ALL' || cidadeFilter || projHasColumnFilters;
 
   const availableStatuses = Object.entries(STATUS_LABELS).filter(([k]) => k !== 'RASCUNHO');
   const availableEngineeringStatuses = Object.entries(ENGINEERING_STATUS_LABELS);
@@ -452,10 +509,18 @@ export default function ProjectsList() {
             )}
 
             {/* Filters */}
-            <h2 className="text-lg font-semibold text-foreground">Todos os projetos</h2>
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-foreground">Todos os projetos</h2>
+              {projHasColumnFilters && (
+                <Button variant="ghost" size="sm" onClick={clearProjColumnFilters}>
+                  <X className="w-4 h-4 mr-1" />
+                  Limpar filtros de coluna
+                </Button>
+              )}
+            </div>
             <Card className="shadow-card">
               <CardContent className="pt-6">
-                <div className="flex flex-wrap gap-4">
+                <div className="flex flex-wrap gap-4 mb-4">
                   {/* Search */}
                   <div className="flex-1 min-w-[250px]">
                     <div className="relative">
@@ -469,40 +534,143 @@ export default function ProjectsList() {
                     </div>
                   </div>
 
-                  {/* Status */}
-                  <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as ProjectStatus | 'ALL')}>
-                    <SelectTrigger className="w-[180px]">
-                      <Filter className="w-4 h-4 mr-2" />
-                      <SelectValue placeholder="Status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="ALL">Todos os status</SelectItem>
-                      {Object.entries(STATUS_LABELS).map(([value, label]) => (
-                        <SelectItem key={value} value={value}>{label}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-
-                  {/* City */}
-                  <Select value={cidadeFilter || "ALL"} onValueChange={(v) => setCidadeFilter(v === "ALL" ? "" : v)}>
-                    <SelectTrigger className="w-[180px]">
-                      <MapPin className="w-4 h-4 mr-2" />
-                      <SelectValue placeholder="Cidade" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="ALL">Todas as cidades</SelectItem>
-                      {cities.filter(city => city && city.trim() !== '').map(city => (
-                        <SelectItem key={city} value={city}>{city}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-
                   {hasFilters && (
                     <Button variant="ghost" size="sm" onClick={clearFilters}>
                       <X className="w-4 h-4 mr-1" />
-                      Limpar
+                      Limpar tudo
                     </Button>
                   )}
+                </div>
+
+                {/* Sort & Filter Column Controls */}
+                <div className="flex flex-wrap gap-2">
+                  {/* Cliente */}
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" size="sm" className="h-8 gap-1">
+                        <Building className="w-3.5 h-3.5" />
+                        Cliente
+                        {projFilterCliente.length > 0 && <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">{projFilterCliente.length}</Badge>}
+                        {projetosSortField === 'cliente_condominio_nome' ? (projetosSortDir === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />) : <ArrowUpDown className="w-3 h-3 opacity-40" />}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-64 p-3" align="start">
+                      <div className="space-y-2">
+                        <div className="flex gap-1">
+                          <Button size="sm" variant={projetosSortField === 'cliente_condominio_nome' && projetosSortDir === 'asc' ? 'default' : 'outline'} className="flex-1 h-7 text-xs" onClick={() => { setProjetosSortField('cliente_condominio_nome'); setProjetosSortDir('asc'); }}>A→Z</Button>
+                          <Button size="sm" variant={projetosSortField === 'cliente_condominio_nome' && projetosSortDir === 'desc' ? 'default' : 'outline'} className="flex-1 h-7 text-xs" onClick={() => { setProjetosSortField('cliente_condominio_nome'); setProjetosSortDir('desc'); }}>Z→A</Button>
+                        </div>
+                        <div className="max-h-40 overflow-y-auto space-y-1">
+                          {uniqueProjClientes.map(val => (
+                            <label key={val} className="flex items-center gap-2 text-sm py-0.5 px-1 rounded hover:bg-muted cursor-pointer">
+                              <Checkbox checked={projFilterCliente.includes(val)} onCheckedChange={(c) => c ? setProjFilterCliente(p => [...p, val]) : setProjFilterCliente(p => p.filter(v => v !== val))} />
+                              <span className="truncate">{val}</span>
+                            </label>
+                          ))}
+                        </div>
+                        {projFilterCliente.length > 0 && <Button size="sm" variant="ghost" className="w-full text-xs h-7" onClick={() => setProjFilterCliente([])}><X className="w-3 h-3 mr-1" />Limpar</Button>}
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+
+                  {/* Vendedor */}
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" size="sm" className="h-8 gap-1">
+                        <User className="w-3.5 h-3.5" />
+                        Vendedor
+                        {projFilterVendedor.length > 0 && <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">{projFilterVendedor.length}</Badge>}
+                        {projetosSortField === 'vendedor_nome' ? (projetosSortDir === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />) : <ArrowUpDown className="w-3 h-3 opacity-40" />}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-56 p-3" align="start">
+                      <div className="space-y-2">
+                        <div className="flex gap-1">
+                          <Button size="sm" variant={projetosSortField === 'vendedor_nome' && projetosSortDir === 'asc' ? 'default' : 'outline'} className="flex-1 h-7 text-xs" onClick={() => { setProjetosSortField('vendedor_nome'); setProjetosSortDir('asc'); }}>A→Z</Button>
+                          <Button size="sm" variant={projetosSortField === 'vendedor_nome' && projetosSortDir === 'desc' ? 'default' : 'outline'} className="flex-1 h-7 text-xs" onClick={() => { setProjetosSortField('vendedor_nome'); setProjetosSortDir('desc'); }}>Z→A</Button>
+                        </div>
+                        <div className="max-h-40 overflow-y-auto space-y-1">
+                          {uniqueProjVendedores.map(val => (
+                            <label key={val} className="flex items-center gap-2 text-sm py-0.5 px-1 rounded hover:bg-muted cursor-pointer">
+                              <Checkbox checked={projFilterVendedor.includes(val)} onCheckedChange={(c) => c ? setProjFilterVendedor(p => [...p, val]) : setProjFilterVendedor(p => p.filter(v => v !== val))} />
+                              <span className="truncate">{val}</span>
+                            </label>
+                          ))}
+                        </div>
+                        {projFilterVendedor.length > 0 && <Button size="sm" variant="ghost" className="w-full text-xs h-7" onClick={() => setProjFilterVendedor([])}><X className="w-3 h-3 mr-1" />Limpar</Button>}
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+
+                  {/* Cidade */}
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" size="sm" className="h-8 gap-1">
+                        <MapPin className="w-3.5 h-3.5" />
+                        Cidade
+                        {projFilterCidade.length > 0 && <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">{projFilterCidade.length}</Badge>}
+                        {projetosSortField === 'cliente_cidade' ? (projetosSortDir === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />) : <ArrowUpDown className="w-3 h-3 opacity-40" />}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-56 p-3" align="start">
+                      <div className="space-y-2">
+                        <div className="flex gap-1">
+                          <Button size="sm" variant={projetosSortField === 'cliente_cidade' && projetosSortDir === 'asc' ? 'default' : 'outline'} className="flex-1 h-7 text-xs" onClick={() => { setProjetosSortField('cliente_cidade'); setProjetosSortDir('asc'); }}>A→Z</Button>
+                          <Button size="sm" variant={projetosSortField === 'cliente_cidade' && projetosSortDir === 'desc' ? 'default' : 'outline'} className="flex-1 h-7 text-xs" onClick={() => { setProjetosSortField('cliente_cidade'); setProjetosSortDir('desc'); }}>Z→A</Button>
+                        </div>
+                        <div className="max-h-40 overflow-y-auto space-y-1">
+                          {uniqueProjCidades.map(val => (
+                            <label key={val} className="flex items-center gap-2 text-sm py-0.5 px-1 rounded hover:bg-muted cursor-pointer">
+                              <Checkbox checked={projFilterCidade.includes(val)} onCheckedChange={(c) => c ? setProjFilterCidade(p => [...p, val]) : setProjFilterCidade(p => p.filter(v => v !== val))} />
+                              <span className="truncate">{val}</span>
+                            </label>
+                          ))}
+                        </div>
+                        {projFilterCidade.length > 0 && <Button size="sm" variant="ghost" className="w-full text-xs h-7" onClick={() => setProjFilterCidade([])}><X className="w-3 h-3 mr-1" />Limpar</Button>}
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+
+                  {/* Prazo */}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 gap-1"
+                    onClick={() => handleProjetosSort('prazo_entrega_projeto')}
+                  >
+                    <Calendar className="w-3.5 h-3.5" />
+                    Prazo
+                    {projetosSortField === 'prazo_entrega_projeto' ? (projetosSortDir === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />) : <ArrowUpDown className="w-3 h-3 opacity-40" />}
+                  </Button>
+
+                  {/* Status */}
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" size="sm" className="h-8 gap-1">
+                        <Filter className="w-3.5 h-3.5" />
+                        Status
+                        {projFilterStatus.length > 0 && <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">{projFilterStatus.length}</Badge>}
+                        {projetosSortField === 'status' ? (projetosSortDir === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />) : <ArrowUpDown className="w-3 h-3 opacity-40" />}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-56 p-3" align="start">
+                      <div className="space-y-2">
+                        <div className="flex gap-1">
+                          <Button size="sm" variant={projetosSortField === 'status' && projetosSortDir === 'asc' ? 'default' : 'outline'} className="flex-1 h-7 text-xs" onClick={() => { setProjetosSortField('status'); setProjetosSortDir('asc'); }}>A→Z</Button>
+                          <Button size="sm" variant={projetosSortField === 'status' && projetosSortDir === 'desc' ? 'default' : 'outline'} className="flex-1 h-7 text-xs" onClick={() => { setProjetosSortField('status'); setProjetosSortDir('desc'); }}>Z→A</Button>
+                        </div>
+                        <div className="max-h-40 overflow-y-auto space-y-1">
+                          {uniqueProjStatuses.map(val => (
+                            <label key={val} className="flex items-center gap-2 text-sm py-0.5 px-1 rounded hover:bg-muted cursor-pointer">
+                              <Checkbox checked={projFilterStatus.includes(val)} onCheckedChange={(c) => c ? setProjFilterStatus(p => [...p, val]) : setProjFilterStatus(p => p.filter(v => v !== val))} />
+                              <span className="truncate">{STATUS_LABELS[val as ProjectStatus] || val}</span>
+                            </label>
+                          ))}
+                        </div>
+                        {projFilterStatus.length > 0 && <Button size="sm" variant="ghost" className="w-full text-xs h-7" onClick={() => setProjFilterStatus([])}><X className="w-3 h-3 mr-1" />Limpar</Button>}
+                      </div>
+                    </PopoverContent>
+                  </Popover>
                 </div>
               </CardContent>
             </Card>

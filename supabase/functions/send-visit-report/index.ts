@@ -53,7 +53,7 @@ serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: "Emive <noreply@emive.com.br>",
+        from: "Emive <onboarding@resend.dev>",
         to: [targetEmail],
         subject: `Relatório de Visita Técnica - ${sessao.nome_cliente}`,
         html: html_content,

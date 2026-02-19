@@ -7,6 +7,8 @@ import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
+import { useAttachmentUrl } from '@/hooks/useAttachmentUrl';
 import {
   ArrowLeft,
   Building,
@@ -24,6 +26,11 @@ import {
   Eye,
   MonitorSpeaker,
   Printer,
+  FileText,
+  ClipboardList,
+  AlertTriangle,
+  Image as ImageIcon,
+  Paperclip,
 } from 'lucide-react';
 import {
   ALARME_TIPO_LABELS,
@@ -33,6 +40,9 @@ import {
   CFTV_ELEVADOR_LABELS,
   CFTVElevador,
   ATTACHMENT_TYPE_LABELS,
+  MODALIDADE_PORTARIA_LABELS,
+  ModalidadePortaria,
+  AttachmentType,
 } from '@/types/project';
 
 interface SaleFormData {
@@ -105,6 +115,7 @@ interface ProjectInfo {
 
 interface TapFormData {
   numero_blocos: number | null;
+  numero_unidades: number | null;
   interfonia: boolean | null;
   interfonia_tipo: string | null;
   interfonia_alternativa: string | null;
@@ -115,6 +126,14 @@ interface TapFormData {
   cftv_dvr_descricao: string | null;
   cftv_elevador_possui: string | null;
   modalidade_portaria: string | null;
+  portaria_virtual_atendimento_app: string | null;
+  solicitacao_origem: string | null;
+  observacao_nao_assumir_cameras: boolean | null;
+  marcacao_croqui_confirmada: boolean | null;
+  marcacao_croqui_itens: string[] | null;
+  info_custo: string | null;
+  info_cronograma: string | null;
+  info_adicionais: string | null;
 }
 
 interface AttachmentData {
@@ -188,23 +207,27 @@ export default function SaleFormView() {
   const [project, setProject] = useState<ProjectInfo | null>(null);
   const [tapForm, setTapForm] = useState<TapFormData | null>(null);
   const [attachments, setAttachments] = useState<AttachmentData[]>([]);
+  const [saleAttachments, setSaleAttachments] = useState<AttachmentData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const { openAttachment } = useAttachmentUrl();
 
   useEffect(() => {
     if (!id) return;
     const fetchData = async () => {
       try {
-        const [{ data: projectData }, { data: formData }, { data: tapData }, { data: attachData }] = await Promise.all([
+        const [{ data: projectData }, { data: formData }, { data: tapData }, { data: attachData }, { data: saleAttachData }] = await Promise.all([
           supabase.from('projects').select('numero_projeto, cliente_condominio_nome, cliente_cidade, cliente_estado, vendedor_nome, created_at, status').eq('id', id).single(),
           supabase.from('sale_forms').select('*').eq('project_id', id).maybeSingle(),
           supabase.from('tap_forms').select('*').eq('project_id', id).maybeSingle(),
           supabase.from('project_attachments').select('id, tipo, nome_arquivo, arquivo_url').eq('project_id', id),
+          supabase.from('sale_form_attachments').select('id, secao, nome_arquivo, arquivo_url').eq('project_id', id),
         ]);
 
         if (projectData) setProject(projectData);
         if (formData) setForm(formData as unknown as SaleFormData);
         if (tapData) setTapForm(tapData as unknown as TapFormData);
         if (attachData) setAttachments(attachData);
+        if (saleAttachData) setSaleAttachments(saleAttachData.map(a => ({ id: a.id, tipo: a.secao, nome_arquivo: a.nome_arquivo, arquivo_url: a.arquivo_url })));
       } catch (err) {
         console.error(err);
         toast({ title: 'Erro', description: 'Não foi possível carregar os dados.', variant: 'destructive' });
@@ -499,6 +522,173 @@ export default function SaleFormView() {
               </CardContent>
             </Card>
           )}
+
+          {/* Modificações do Projeto Final */}
+          {form.modificacoes_projeto_final && (
+            <Card className="shadow-card border-destructive/30">
+              <CardContent className="pt-6">
+                <div className="flex items-start gap-3">
+                  <div className="p-2 rounded-lg bg-destructive/10 text-destructive shrink-0">
+                    <AlertTriangle className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-foreground mb-2">Modificações em Relação ao Projeto</h3>
+                    <p className="text-xs text-muted-foreground mb-2">Divergências identificadas pelo vendedor entre o projeto de engenharia e a realidade encontrada no local.</p>
+                    <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">
+                      {form.modificacoes_projeto_final}
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Resumo da TAP */}
+          {tapForm && (
+            <SectionCard
+              title="Resumo da TAP (Abertura do Projeto)"
+              description="Informações técnicas coletadas durante a abertura do projeto pelo vendedor."
+              icon={<ClipboardList className="w-5 h-5" />}
+            >
+              <DataItem label="Modalidade de Portaria" value={tapForm.modalidade_portaria ? (MODALIDADE_PORTARIA_LABELS[tapForm.modalidade_portaria as ModalidadePortaria] || tapForm.modalidade_portaria) : null} />
+              <DataItem label="Nº de Blocos" value={tapForm.numero_blocos} />
+              <DataItem label="Nº de Unidades" value={tapForm.numero_unidades} />
+              <DataItem label="Interfonia" value={tapForm.interfonia ? 'Sim' : tapForm.interfonia === false ? 'Não' : null} />
+              {tapForm.interfonia && tapForm.interfonia_tipo && (
+                <DataItem label="Tipo de Interfonia" value={tapForm.interfonia_tipo === 'HIBRIDA' ? 'Híbrida' : tapForm.interfonia_tipo === 'ANALOGICA' ? 'Analógica' : tapForm.interfonia_tipo === 'DIGITAL' ? 'Digital' : tapForm.interfonia_tipo} />
+              )}
+              {tapForm.interfonia === false && tapForm.interfonia_alternativa && (
+                <DataItem label="Alternativa Interfonia" value={tapForm.interfonia_alternativa === 'VENDER_NOVA' ? 'Vai vender interfonia nova' : tapForm.interfonia_alternativa === 'NENHUMA' ? 'Nenhuma' : tapForm.interfonia_alternativa} />
+              )}
+              <DataItem label="Controle Acessos Pedestre" value={tapForm.controle_acessos_pedestre_descricao} />
+              <DataItem label="Controle Acessos Veículo" value={tapForm.controle_acessos_veiculo_descricao} />
+              <DataItem label="Alarme" value={tapForm.alarme_descricao} />
+              <DataItem label="CFTV/DVR" value={tapForm.cftv_dvr_descricao} />
+              <DataItem label="CFTV Elevador" value={tapForm.cftv_elevador_possui ? (CFTV_ELEVADOR_LABELS[tapForm.cftv_elevador_possui as CFTVElevador] || tapForm.cftv_elevador_possui) : null} />
+              {tapForm.observacao_nao_assumir_cameras && (
+                <DataItem label="Não assumir câmeras" value="Sim" icon={<AlertTriangle className="w-4 h-4" />} />
+              )}
+              {tapForm.info_custo && (
+                <div className="md:col-span-2 mt-2 p-3 rounded-lg bg-muted/30 border">
+                  <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium mb-1">Informações de Custo</p>
+                  <p className="text-sm text-foreground whitespace-pre-wrap">{tapForm.info_custo}</p>
+                </div>
+              )}
+              {tapForm.info_cronograma && (
+                <div className="md:col-span-2 mt-2 p-3 rounded-lg bg-muted/30 border">
+                  <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium mb-1">Informações de Cronograma</p>
+                  <p className="text-sm text-foreground whitespace-pre-wrap">{tapForm.info_cronograma}</p>
+                </div>
+              )}
+              {tapForm.info_adicionais && (
+                <div className="md:col-span-2 mt-2 p-3 rounded-lg bg-muted/30 border">
+                  <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium mb-1">Informações Adicionais</p>
+                  <p className="text-sm text-foreground whitespace-pre-wrap">{tapForm.info_adicionais}</p>
+                </div>
+              )}
+            </SectionCard>
+          )}
+
+          {/* Devolução da Engenharia - Attachments */}
+          {(() => {
+            const engineeringTypes = ['PLANTA_CROQUI_DEVOLUCAO', 'LISTA_EQUIPAMENTOS', 'LISTA_ATIVIDADES'];
+            const engAttachments = attachments.filter(a => engineeringTypes.includes(a.tipo));
+            if (engAttachments.length === 0) return null;
+            return (
+              <SectionCard
+                title="Devolução da Engenharia"
+                description="Documentos técnicos gerados pela equipe de projetos: plantas, listas de equipamentos e atividades."
+                icon={<FileText className="w-5 h-5" />}
+              >
+                <div className="md:col-span-2 space-y-2">
+                  {engAttachments.map(att => (
+                    <button
+                      key={att.id}
+                      onClick={(e) => openAttachment(att.arquivo_url, e)}
+                      className="flex items-center gap-3 w-full text-left p-3 rounded-lg border hover:bg-muted/50 transition-colors"
+                    >
+                      <FileText className="w-4 h-4 text-primary shrink-0" />
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-foreground truncate">{att.nome_arquivo}</p>
+                        <p className="text-xs text-muted-foreground">{ATTACHMENT_TYPE_LABELS[att.tipo as AttachmentType] || att.tipo}</p>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </SectionCard>
+            );
+          })()}
+
+          {/* Fotos Agrupadas */}
+          {(() => {
+            const allPhotoAttachments = [
+              ...attachments.filter(a => !['PLANTA_CROQUI_DEVOLUCAO', 'LISTA_EQUIPAMENTOS', 'LISTA_ATIVIDADES', 'PLANTA_BAIXA', 'OUTROS'].includes(a.tipo)),
+              ...saleAttachments,
+            ];
+            
+            const grouped = allPhotoAttachments.reduce<Record<string, AttachmentData[]>>((acc, att) => {
+              const key = att.tipo;
+              if (!acc[key]) acc[key] = [];
+              acc[key].push(att);
+              return acc;
+            }, {});
+
+            const entries = Object.entries(grouped);
+            if (entries.length === 0) return null;
+
+            const isImage = (name: string) => /\.(jpg|jpeg|png|gif|webp|bmp|svg)$/i.test(name);
+
+            return (
+              <Card className="shadow-card overflow-hidden">
+                <div className="bg-primary/5 border-b px-6 py-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-primary/10 text-primary">
+                      <ImageIcon className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-foreground">Anexos & Fotos</h3>
+                      <p className="text-xs text-muted-foreground">Registros fotográficos e documentos anexados, agrupados por seção.</p>
+                    </div>
+                  </div>
+                </div>
+                <CardContent className="pt-4 pb-6 space-y-6">
+                  {entries.map(([tipo, items]) => (
+                    <div key={tipo}>
+                      <p className="text-xs font-semibold text-primary uppercase tracking-wider mb-3">
+                        {ATTACHMENT_TYPE_LABELS[tipo as AttachmentType] || tipo.replace(/_/g, ' ')}
+                      </p>
+                      <ScrollArea className="w-full whitespace-nowrap">
+                        <div className="flex gap-3 pb-2">
+                          {items.map(att => (
+                            <button
+                              key={att.id}
+                              onClick={(e) => openAttachment(att.arquivo_url, e)}
+                              className="shrink-0 rounded-lg border overflow-hidden hover:ring-2 hover:ring-primary/40 transition-all"
+                            >
+                              {isImage(att.nome_arquivo) ? (
+                                <img
+                                  src={att.arquivo_url}
+                                  alt={att.nome_arquivo}
+                                  className="w-32 h-32 object-cover"
+                                  loading="lazy"
+                                />
+                              ) : (
+                                <div className="w-32 h-32 flex flex-col items-center justify-center bg-muted/30 p-2">
+                                  <Paperclip className="w-6 h-6 text-muted-foreground mb-2" />
+                                  <p className="text-[10px] text-muted-foreground text-center whitespace-normal line-clamp-2">{att.nome_arquivo}</p>
+                                </div>
+                              )}
+                            </button>
+                          ))}
+                        </div>
+                        <ScrollBar orientation="horizontal" />
+                      </ScrollArea>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+            );
+          })()}
 
           {/* Footer context */}
           <div className="text-center py-6 text-xs text-muted-foreground">

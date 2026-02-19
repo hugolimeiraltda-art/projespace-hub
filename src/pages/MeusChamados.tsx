@@ -47,7 +47,11 @@ export default function MeusChamados() {
   }
 
   // Get all projects that have been submitted (not drafts)
-  const chamados = projects.filter(p => p.status !== 'RASCUNHO' && p.engineering_status !== 'CONCLUIDO');
+  const chamados = projects.filter(p => 
+    p.status !== 'RASCUNHO' && 
+    p.status !== 'CANCELADO' && 
+    p.engineering_status !== 'CONCLUIDO'
+  );
 
   const filteredChamados = chamados.filter(p => {
     const matchesSearch = 
@@ -205,7 +209,7 @@ export default function MeusChamados() {
         </Card>
 
         {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
           <Card className="shadow-card">
             <CardContent className="pt-4">
               <div className="text-2xl font-bold text-foreground">{chamados.length}</div>
@@ -226,14 +230,6 @@ export default function MeusChamados() {
                 {chamados.filter(p => p.engineering_status === 'EM_PRODUCAO').length}
               </div>
               <div className="text-sm text-muted-foreground">Em Produção</div>
-            </CardContent>
-          </Card>
-          <Card className="shadow-card">
-            <CardContent className="pt-4">
-              <div className="text-2xl font-bold text-status-approved">
-                {chamados.filter(p => p.engineering_status === 'CONCLUIDO').length}
-              </div>
-              <div className="text-sm text-muted-foreground">Concluídos</div>
             </CardContent>
           </Card>
         </div>

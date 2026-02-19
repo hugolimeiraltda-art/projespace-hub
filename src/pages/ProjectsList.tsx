@@ -33,7 +33,10 @@ import {
   ClipboardList,
   ChevronDown,
   Hash,
-  BarChart3
+  BarChart3,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown
 } from 'lucide-react';
 import { ProjetosRelatorios } from '@/components/ProjetosRelatorios';
 import { ProjectStatus, STATUS_LABELS, ENGINEERING_STATUS_LABELS, EngineeringStatus } from '@/types/project';
@@ -79,6 +82,11 @@ export default function ProjectsList() {
   const [chamadosSearch, setChamadosSearch] = useState('');
   const [selectedStatuses, setSelectedStatuses] = useState<ProjectStatus[]>([]);
   const [selectedEngineeringStatuses, setSelectedEngineeringStatuses] = useState<EngineeringStatus[]>([]);
+  
+  // Chamados sorting
+  type SortField = 'created_at' | 'prazo_entrega_projeto' | 'cliente_condominio_nome' | 'vendedor_nome' | 'cliente_cidade' | 'cliente_estado';
+  const [sortField, setSortField] = useState<SortField>('created_at');
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
 
   const baseProjects = user?.role === 'vendedor' 
     ? getProjectsByUser(user.id) 
@@ -196,7 +204,7 @@ export default function ProjectsList() {
   ), [projects]);
 
   const filteredChamados = useMemo(() => {
-    return chamados.filter(p => {
+    const filtered = chamados.filter(p => {
       const matchesSearch = 
         p.cliente_condominio_nome.toLowerCase().includes(chamadosSearch.toLowerCase()) ||
         p.vendedor_nome.toLowerCase().includes(chamadosSearch.toLowerCase()) ||
@@ -208,7 +216,27 @@ export default function ProjectsList() {
 
       return matchesSearch && matchesStatus && matchesEngineering;
     });
-  }, [chamados, chamadosSearch, selectedStatuses, selectedEngineeringStatuses]);
+
+    return filtered.sort((a, b) => {
+      let valA: string | number = '';
+      let valB: string | number = '';
+      
+      if (sortField === 'created_at') {
+        valA = new Date(a.created_at).getTime();
+        valB = new Date(b.created_at).getTime();
+      } else if (sortField === 'prazo_entrega_projeto') {
+        valA = a.prazo_entrega_projeto ? new Date(a.prazo_entrega_projeto).getTime() : 0;
+        valB = b.prazo_entrega_projeto ? new Date(b.prazo_entrega_projeto).getTime() : 0;
+      } else {
+        valA = (a[sortField] || '').toLowerCase();
+        valB = (b[sortField] || '').toLowerCase();
+      }
+
+      if (valA < valB) return sortDir === 'asc' ? -1 : 1;
+      if (valA > valB) return sortDir === 'asc' ? 1 : -1;
+      return 0;
+    });
+  }, [chamados, chamadosSearch, selectedStatuses, selectedEngineeringStatuses, sortField, sortDir]);
 
   // Chamados stats
   const chamadosStats = {
@@ -232,6 +260,22 @@ export default function ProjectsList() {
         ? prev.filter(s => s !== status)
         : [...prev, status]
     );
+  };
+
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortDir(prev => prev === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDir('asc');
+    }
+  };
+
+  const SortIcon = ({ field }: { field: SortField }) => {
+    if (sortField !== field) return <ArrowUpDown className="w-3.5 h-3.5 text-muted-foreground/50" />;
+    return sortDir === 'asc' 
+      ? <ArrowUp className="w-3.5 h-3.5 text-primary" /> 
+      : <ArrowDown className="w-3.5 h-3.5 text-primary" />;
   };
 
   const getEngineeringStatusBadge = (status?: string) => {
@@ -732,6 +776,30 @@ export default function ProjectsList() {
                   </div>
                 </CardContent>
               </Card>
+
+              {/* Sort Buttons */}
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-sm text-muted-foreground mr-1">Ordenar por:</span>
+                {([
+                  ['created_at', 'Data Criação'],
+                  ['prazo_entrega_projeto', 'Prazo'],
+                  ['cliente_condominio_nome', 'Condomínio'],
+                  ['vendedor_nome', 'Vendedor'],
+                  ['cliente_cidade', 'Cidade'],
+                  ['cliente_estado', 'Estado'],
+                ] as [SortField, string][]).map(([field, label]) => (
+                  <Button
+                    key={field}
+                    variant={sortField === field ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => handleSort(field)}
+                    className="gap-1"
+                  >
+                    {label}
+                    <SortIcon field={field} />
+                  </Button>
+                ))}
+              </div>
 
               {/* Chamados List */}
               <div className="space-y-4">

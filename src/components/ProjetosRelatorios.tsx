@@ -1,12 +1,15 @@
 import { useState, useEffect, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { BarChart3, Clock, FileText, CheckCircle2, Users, CalendarDays } from 'lucide-react';
-import { format, subDays, subMonths, differenceInDays, parseISO, startOfMonth, endOfMonth } from 'date-fns';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { BarChart3, Clock, FileText, CheckCircle2, Users, CalendarDays, ExternalLink, ChevronDown, ChevronUp, X } from 'lucide-react';
+import { format, subDays, differenceInDays, parseISO, startOfMonth, endOfMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 interface ProjectRow {
@@ -17,6 +20,9 @@ interface ProjectRow {
   engineering_completed_at: string | null;
   created_by_user_id: string;
   status: string;
+  cliente_condominio_nome: string;
+  numero_projeto: number;
+  vendedor_nome: string;
 }
 
 interface ProfileRow {
@@ -30,11 +36,14 @@ interface ProjetistaStats {
   chamadosRecebidos: number;
   projetosAbertos: number;
   projetosConcluidos: number;
-  tempoMedioConclusao: number | null; // days
+  tempoMedioConclusao: number | null;
   conclusaoList: number[];
 }
 
+type CardType = 'chamados' | 'abertos' | 'concluidos' | null;
+
 export function ProjetosRelatorios() {
+  const navigate = useNavigate();
   const [projects, setProjects] = useState<ProjectRow[]>([]);
   const [projetistas, setProjetistas] = useState<ProfileRow[]>([]);
   const [vendedores, setVendedores] = useState<ProfileRow[]>([]);
@@ -43,6 +52,11 @@ export function ProjetosRelatorios() {
   const [dataInicio, setDataInicio] = useState('');
   const [dataFim, setDataFim] = useState('');
 
+  // Drill-down state
+  const [activeCard, setActiveCard] = useState<CardType>(null);
+  const [expandedProjetista, setExpandedProjetista] = useState<string | null>(null);
+  const [expandedVendedor, setExpandedVendedor] = useState<string | null>(null);
+
   useEffect(() => {
     fetchData();
   }, []);
@@ -50,7 +64,6 @@ export function ProjetosRelatorios() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      // Fetch projetistas and vendedores
       const [projetistasRoles, vendedoresRoles] = await Promise.all([
         supabase.from('user_roles').select('user_id').eq('role', 'projetos'),
         supabase.from('user_roles').select('user_id').eq('role', 'vendedor'),
@@ -67,7 +80,7 @@ export function ProjetosRelatorios() {
           .in('id', allIds.length > 0 ? allIds : ['none']),
         supabase
           .from('projects')
-          .select('id, created_at, engineering_status, engineering_received_at, engineering_completed_at, created_by_user_id, status')
+          .select('id, created_at, engineering_status, engineering_received_at, engineering_completed_at, created_by_user_id, status, cliente_condominio_nome, numero_projeto, vendedor_nome')
           .not('status', 'eq', 'RASCUNHO'),
       ]);
 
@@ -103,67 +116,40 @@ export function ProjetosRelatorios() {
     });
   }, [projects, dateRange]);
 
+  // Projects by category for card drill-down
+  const chamadosRecebidosProjects = useMemo(() => projects.filter(p => {
+    if (!p.engineering_received_at) return false;
+    const received = new Date(p.engineering_received_at);
+    return received >= dateRange.start && received <= dateRange.end;
+  }), [projects, dateRange]);
+
+  const concluidosProjects = useMemo(() => projects.filter(p => {
+    if (!p.engineering_completed_at) return false;
+    const completed = new Date(p.engineering_completed_at);
+    return completed >= dateRange.start && completed <= dateRange.end;
+  }), [projects, dateRange]);
+
   const stats = useMemo((): ProjetistaStats[] => {
     return projetistas.map(projetista => {
-      // Chamados recebidos = projetos que entraram no fluxo de engenharia no período
-      const chamadosRecebidos = projects.filter(p => {
-        if (!p.engineering_received_at) return false;
-        const received = new Date(p.engineering_received_at);
-        return received >= dateRange.start && received <= dateRange.end;
-      }).length;
-
-      // Projetos abertos no período (created_at within range)
+      const chamadosRecebidos = chamadosRecebidosProjects.length;
       const projetosAbertos = filteredProjects.length;
-
-      // Projetos concluídos no período
-      const concluidos = projects.filter(p => {
-        if (!p.engineering_completed_at) return false;
-        const completed = new Date(p.engineering_completed_at);
-        return completed >= dateRange.start && completed <= dateRange.end;
-      });
+      const concluidos = concluidosProjects;
       const projetosConcluidos = concluidos.length;
 
-      // Tempo médio de conclusão
       const conclusaoList = concluidos
         .filter(p => p.engineering_received_at && p.engineering_completed_at)
-        .map(p => differenceInDays(
-          parseISO(p.engineering_completed_at!),
-          parseISO(p.engineering_received_at!)
-        ));
+        .map(p => differenceInDays(parseISO(p.engineering_completed_at!), parseISO(p.engineering_received_at!)));
 
       const tempoMedioConclusao = conclusaoList.length > 0
         ? Math.round(conclusaoList.reduce((a, b) => a + b, 0) / conclusaoList.length)
         : null;
 
-      return {
-        id: projetista.id,
-        nome: projetista.nome,
-        chamadosRecebidos,
-        projetosAbertos,
-        projetosConcluidos,
-        tempoMedioConclusao,
-        conclusaoList,
-      };
+      return { id: projetista.id, nome: projetista.nome, chamadosRecebidos, projetosAbertos, projetosConcluidos, tempoMedioConclusao, conclusaoList };
     });
-  }, [projetistas, projects, filteredProjects, dateRange]);
+  }, [projetistas, chamadosRecebidosProjects, filteredProjects, concluidosProjects]);
 
-  // Global stats
   const globalStats = useMemo(() => {
-    const totalChamados = projects.filter(p => {
-      if (!p.engineering_received_at) return false;
-      const received = new Date(p.engineering_received_at);
-      return received >= dateRange.start && received <= dateRange.end;
-    }).length;
-
-    const totalAbertos = filteredProjects.length;
-
-    const concluidos = projects.filter(p => {
-      if (!p.engineering_completed_at) return false;
-      const completed = new Date(p.engineering_completed_at);
-      return completed >= dateRange.start && completed <= dateRange.end;
-    });
-
-    const allTimes = concluidos
+    const allTimes = concluidosProjects
       .filter(p => p.engineering_received_at && p.engineering_completed_at)
       .map(p => differenceInDays(parseISO(p.engineering_completed_at!), parseISO(p.engineering_received_at!)));
 
@@ -172,24 +158,21 @@ export function ProjetosRelatorios() {
       : null;
 
     return {
-      totalChamados,
-      totalAbertos,
-      totalConcluidos: concluidos.length,
+      totalChamados: chamadosRecebidosProjects.length,
+      totalAbertos: filteredProjects.length,
+      totalConcluidos: concluidosProjects.length,
       tempoMedio,
     };
-  }, [projects, filteredProjects, dateRange]);
+  }, [chamadosRecebidosProjects, filteredProjects, concluidosProjects]);
 
-  // Vendedor stats
   const vendedorStats = useMemo(() => {
     return vendedores.map(vendedor => {
       const vendedorProjects = filteredProjects.filter(p => p.created_by_user_id === vendedor.id);
       const projetosAbertos = vendedorProjects.length;
 
-      const projetosConcluidos = projects.filter(p => {
+      const projetosAprovados = projects.filter(p => {
         if (p.created_by_user_id !== vendedor.id) return false;
         if (p.status !== 'APROVADO_PROJETO') return false;
-        return true;
-      }).filter(p => {
         const created = new Date(p.created_at);
         return created >= dateRange.start && created <= dateRange.end;
       }).length;
@@ -201,15 +184,52 @@ export function ProjetosRelatorios() {
         return completed >= dateRange.start && completed <= dateRange.end;
       }).length;
 
-      return {
-        id: vendedor.id,
-        nome: vendedor.nome,
-        projetosAbertos,
-        projetosAprovados: projetosConcluidos,
-        vendasConcluidas,
-      };
+      return { id: vendedor.id, nome: vendedor.nome, projetosAbertos, projetosAprovados, vendasConcluidas };
     }).filter(v => v.projetosAbertos > 0 || v.projetosAprovados > 0 || v.vendasConcluidas > 0);
   }, [vendedores, projects, filteredProjects, dateRange]);
+
+  // Get projects for expanded vendedor
+  const getVendedorProjectsList = (vendedorId: string) => {
+    return filteredProjects.filter(p => p.created_by_user_id === vendedorId);
+  };
+
+  // Get card drill-down projects
+  const getCardProjects = () => {
+    switch (activeCard) {
+      case 'chamados': return chamadosRecebidosProjects;
+      case 'abertos': return filteredProjects;
+      case 'concluidos': return concluidosProjects;
+      default: return [];
+    }
+  };
+
+  const cardTitle = activeCard === 'chamados' ? 'Chamados Recebidos' : activeCard === 'abertos' ? 'Projetos Abertos' : 'Projetos Concluídos';
+
+  const ProjectList = ({ projectList }: { projectList: ProjectRow[] }) => (
+    <div className="space-y-1 mt-2">
+      {projectList.length === 0 ? (
+        <p className="text-sm text-muted-foreground py-2">Nenhum projeto encontrado</p>
+      ) : (
+        projectList.map(p => (
+          <div
+            key={p.id}
+            className="flex items-center justify-between py-2 px-3 rounded-md hover:bg-secondary/50 cursor-pointer transition-colors group"
+            onClick={() => navigate(`/projetos/${p.id}`)}
+          >
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">#{p.numero_projeto}</span>
+              <span className="text-sm font-medium">{p.cliente_condominio_nome}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-muted-foreground">{p.vendedor_nome}</span>
+              <span className="text-xs text-muted-foreground">{format(parseISO(p.created_at), "dd/MM/yyyy", { locale: ptBR })}</span>
+              <ExternalLink className="w-3.5 h-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+            </div>
+          </div>
+        ))
+      )}
+    </div>
+  );
 
   if (loading) {
     return (
@@ -246,21 +266,11 @@ export function ProjetosRelatorios() {
               <>
                 <div>
                   <label className="text-sm font-medium text-muted-foreground mb-1 block">Data Início</label>
-                  <Input
-                    type="date"
-                    value={dataInicio}
-                    onChange={(e) => setDataInicio(e.target.value)}
-                    className="w-[180px]"
-                  />
+                  <Input type="date" value={dataInicio} onChange={(e) => setDataInicio(e.target.value)} className="w-[180px]" />
                 </div>
                 <div>
                   <label className="text-sm font-medium text-muted-foreground mb-1 block">Data Fim</label>
-                  <Input
-                    type="date"
-                    value={dataFim}
-                    onChange={(e) => setDataFim(e.target.value)}
-                    className="w-[180px]"
-                  />
+                  <Input type="date" value={dataFim} onChange={(e) => setDataFim(e.target.value)} className="w-[180px]" />
                 </div>
               </>
             )}
@@ -272,9 +282,12 @@ export function ProjetosRelatorios() {
         </CardContent>
       </Card>
 
-      {/* Summary Cards */}
+      {/* Summary Cards - Clickable */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="shadow-card">
+        <Card
+          className={`shadow-card cursor-pointer transition-all hover:shadow-lg ${activeCard === 'chamados' ? 'ring-2 ring-primary' : ''}`}
+          onClick={() => setActiveCard(activeCard === 'chamados' ? null : 'chamados')}
+        >
           <CardContent className="pt-6">
             <div className="flex items-center gap-4">
               <div className="p-3 rounded-lg bg-status-sent-bg">
@@ -288,7 +301,10 @@ export function ProjetosRelatorios() {
           </CardContent>
         </Card>
 
-        <Card className="shadow-card">
+        <Card
+          className={`shadow-card cursor-pointer transition-all hover:shadow-lg ${activeCard === 'abertos' ? 'ring-2 ring-primary' : ''}`}
+          onClick={() => setActiveCard(activeCard === 'abertos' ? null : 'abertos')}
+        >
           <CardContent className="pt-6">
             <div className="flex items-center gap-4">
               <div className="p-3 rounded-lg bg-status-analysis-bg">
@@ -302,7 +318,10 @@ export function ProjetosRelatorios() {
           </CardContent>
         </Card>
 
-        <Card className="shadow-card">
+        <Card
+          className={`shadow-card cursor-pointer transition-all hover:shadow-lg ${activeCard === 'concluidos' ? 'ring-2 ring-primary' : ''}`}
+          onClick={() => setActiveCard(activeCard === 'concluidos' ? null : 'concluidos')}
+        >
           <CardContent className="pt-6">
             <div className="flex items-center gap-4">
               <div className="p-3 rounded-lg bg-status-approved-bg">
@@ -333,6 +352,21 @@ export function ProjetosRelatorios() {
         </Card>
       </div>
 
+      {/* Card Drill-down */}
+      {activeCard && (
+        <Card className="shadow-card border-primary/20">
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle className="text-lg">{cardTitle}</CardTitle>
+            <Button variant="ghost" size="sm" onClick={() => setActiveCard(null)}>
+              <X className="w-4 h-4" />
+            </Button>
+          </CardHeader>
+          <CardContent>
+            <ProjectList projectList={getCardProjects()} />
+          </CardContent>
+        </Card>
+      )}
+
       {/* Per Projetista Table */}
       <Card className="shadow-card">
         <CardHeader>
@@ -357,27 +391,46 @@ export function ProjetosRelatorios() {
               </TableHeader>
               <TableBody>
                 {stats.map((s) => (
-                  <TableRow key={s.id}>
-                    <TableCell className="font-medium">{s.nome}</TableCell>
-                    <TableCell className="text-center">
-                      <Badge variant="secondary">{s.chamadosRecebidos}</Badge>
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <Badge variant="outline">{s.projetosAbertos}</Badge>
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <Badge className="bg-status-approved-bg text-status-approved">{s.projetosConcluidos}</Badge>
-                    </TableCell>
-                    <TableCell className="text-center">
-                      {s.tempoMedioConclusao !== null ? (
-                        <Badge className={`${s.tempoMedioConclusao <= 5 ? 'bg-status-approved-bg text-status-approved' : s.tempoMedioConclusao <= 10 ? 'bg-status-pending-bg text-status-pending' : 'bg-destructive/10 text-destructive'}`}>
-                          {s.tempoMedioConclusao} dias
-                        </Badge>
-                      ) : (
-                        <span className="text-muted-foreground">—</span>
-                      )}
-                    </TableCell>
-                  </TableRow>
+                  <>
+                    <TableRow
+                      key={s.id}
+                      className="cursor-pointer"
+                      onClick={() => setExpandedProjetista(expandedProjetista === s.id ? null : s.id)}
+                    >
+                      <TableCell className="font-medium">
+                        <div className="flex items-center gap-2">
+                          {expandedProjetista === s.id ? <ChevronUp className="w-4 h-4 text-primary" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
+                          {s.nome}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <Badge variant="secondary">{s.chamadosRecebidos}</Badge>
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <Badge variant="outline">{s.projetosAbertos}</Badge>
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <Badge className="bg-status-approved-bg text-status-approved">{s.projetosConcluidos}</Badge>
+                      </TableCell>
+                      <TableCell className="text-center">
+                        {s.tempoMedioConclusao !== null ? (
+                          <Badge className={`${s.tempoMedioConclusao <= 5 ? 'bg-status-approved-bg text-status-approved' : s.tempoMedioConclusao <= 10 ? 'bg-status-pending-bg text-status-pending' : 'bg-destructive/10 text-destructive'}`}>
+                            {s.tempoMedioConclusao} dias
+                          </Badge>
+                        ) : (
+                          <span className="text-muted-foreground">—</span>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                    {expandedProjetista === s.id && (
+                      <TableRow key={`${s.id}-detail`}>
+                        <TableCell colSpan={5} className="bg-muted/30 p-4">
+                          <p className="text-sm font-medium text-muted-foreground mb-2">Projetos no período:</p>
+                          <ProjectList projectList={filteredProjects} />
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </>
                 ))}
               </TableBody>
             </Table>
@@ -408,18 +461,37 @@ export function ProjetosRelatorios() {
               </TableHeader>
               <TableBody>
                 {vendedorStats.map((v) => (
-                  <TableRow key={v.id}>
-                    <TableCell className="font-medium">{v.nome}</TableCell>
-                    <TableCell className="text-center">
-                      <Badge variant="outline">{v.projetosAbertos}</Badge>
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <Badge className="bg-status-approved-bg text-status-approved">{v.projetosAprovados}</Badge>
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <Badge variant="secondary">{v.vendasConcluidas}</Badge>
-                    </TableCell>
-                  </TableRow>
+                  <>
+                    <TableRow
+                      key={v.id}
+                      className="cursor-pointer"
+                      onClick={() => setExpandedVendedor(expandedVendedor === v.id ? null : v.id)}
+                    >
+                      <TableCell className="font-medium">
+                        <div className="flex items-center gap-2">
+                          {expandedVendedor === v.id ? <ChevronUp className="w-4 h-4 text-primary" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
+                          {v.nome}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <Badge variant="outline">{v.projetosAbertos}</Badge>
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <Badge className="bg-status-approved-bg text-status-approved">{v.projetosAprovados}</Badge>
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <Badge variant="secondary">{v.vendasConcluidas}</Badge>
+                      </TableCell>
+                    </TableRow>
+                    {expandedVendedor === v.id && (
+                      <TableRow key={`${v.id}-detail`}>
+                        <TableCell colSpan={4} className="bg-muted/30 p-4">
+                          <p className="text-sm font-medium text-muted-foreground mb-2">Projetos do vendedor no período:</p>
+                          <ProjectList projectList={getVendedorProjectsList(v.id)} />
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </>
                 ))}
               </TableBody>
             </Table>

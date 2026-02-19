@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 import { Send, FileText, Loader2, Bot, User, Paperclip, ArrowLeft, CheckCircle, Mail, Download } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { supabase } from '@/integrations/supabase/client';
@@ -16,19 +17,18 @@ const PDF_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-visi
 const EMAIL_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-visit-report`;
 
 export default function VendedorChat() {
-  const { token, sessaoId } = useParams<{ token: string; sessaoId: string }>();
+  const { sessaoId } = useParams<{ sessaoId: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user } = useAuth();
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [sessionValid, setSessionValid] = useState<boolean | null>(null);
-  const [vendedorNome, setVendedorNome] = useState('');
   const [uploading, setUploading] = useState(false);
   const [proposta, setProposta] = useState<string | null>(null);
   const [gerandoProposta, setGerandoProposta] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
-  // Validation flow states
   const [showValidation, setShowValidation] = useState(false);
   const [resumoVisita, setResumoVisita] = useState('');
   const [pdfHtml, setPdfHtml] = useState('');
@@ -45,30 +45,14 @@ export default function VendedorChat() {
   }, [messages]);
 
   useEffect(() => {
-    if (!token || !sessaoId) return;
+    if (!user || !sessaoId) return;
 
     (async () => {
-      const { data: tokenData } = await supabase
-        .from('vendedor_acesso_tokens' as any)
-        .select('vendedor_id, vendedor_nome')
-        .eq('token', token)
-        .eq('ativo', true)
-        .single();
-
-      if (!tokenData) {
-        setSessionValid(false);
-        setInitialLoading(false);
-        return;
-      }
-
-      const td = tokenData as any;
-      setVendedorNome(td.vendedor_nome);
-
       const { data: sessaoData } = await supabase
         .from('orcamento_sessoes')
         .select('id, vendedor_id, status, proposta_gerada')
         .eq('id', sessaoId)
-        .eq('vendedor_id', td.vendedor_id)
+        .eq('vendedor_id', user.id)
         .single();
 
       if (!sessaoData) {
@@ -99,7 +83,7 @@ export default function VendedorChat() {
         sendMessage('Olá, estou no local para a visita técnica.', true);
       }
     })();
-  }, [token, sessaoId]);
+  }, [user, sessaoId]);
 
   const sendMessage = async (text: string, isInitial = false) => {
     if (!text.trim() || isLoading) return;
@@ -213,10 +197,8 @@ export default function VendedorChat() {
   const validarEscopo = async () => {
     setLoadingPdf(true);
     try {
-      // Mark session as validated
       await supabase.from('orcamento_sessoes').update({ status: 'escopo_validado', updated_at: new Date().toISOString() }).eq('id', sessaoId);
 
-      // Generate PDF data
       const resp = await fetch(PDF_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` },
@@ -240,7 +222,6 @@ export default function VendedorChat() {
   const enviarRelatorio = async () => {
     setSendingEmail(true);
     try {
-      // If we don't have html yet, generate it
       let html = pdfHtml;
       if (!html) {
         const resp = await fetch(PDF_URL, {
@@ -278,7 +259,7 @@ export default function VendedorChat() {
 
   if (initialLoading) {
     return (
-      <VendedorLayout vendedorNome={vendedorNome}>
+      <VendedorLayout vendedorNome={user?.nome}>
         <div className="flex-1 flex items-center justify-center">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
@@ -288,13 +269,13 @@ export default function VendedorChat() {
 
   if (sessionValid === false) {
     return (
-      <VendedorLayout>
+      <VendedorLayout vendedorNome={user?.nome}>
         <div className="flex-1 flex items-center justify-center p-4">
           <Card className="max-w-md w-full">
             <CardContent className="py-12 text-center space-y-4">
               <h2 className="text-xl font-semibold">Sessão inválida</h2>
               <p className="text-muted-foreground">Esta sessão não foi encontrada ou você não tem acesso.</p>
-              <Button onClick={() => navigate(`/vendedor/${token}`)}>Voltar</Button>
+              <Button onClick={() => navigate('/orcar')}>Voltar</Button>
             </CardContent>
           </Card>
         </div>
@@ -305,7 +286,7 @@ export default function VendedorChat() {
   // Validation / Report screen
   if (showValidation) {
     return (
-      <VendedorLayout vendedorNome={vendedorNome}>
+      <VendedorLayout vendedorNome={user?.nome}>
         <div className="flex-1 flex flex-col">
           <div className="border-b bg-card px-4 py-3 flex items-center justify-between">
             <Button variant="ghost" size="sm" onClick={() => setShowValidation(false)}>
@@ -315,7 +296,6 @@ export default function VendedorChat() {
             <div />
           </div>
           <div className="flex-1 overflow-y-auto p-4 sm:p-6 max-w-3xl mx-auto w-full space-y-4">
-            {/* Status banner */}
             <Card className={emailSent ? 'border-green-500/50 bg-green-50 dark:bg-green-950/20' : 'border-primary/50'}>
               <CardContent className="p-4 flex items-center gap-3">
                 <CheckCircle className={`h-6 w-6 ${emailSent ? 'text-green-600' : 'text-primary'}`} />
@@ -332,7 +312,6 @@ export default function VendedorChat() {
               </CardContent>
             </Card>
 
-            {/* Summary */}
             {resumoVisita && (
               <Card>
                 <CardContent className="p-4">
@@ -344,7 +323,6 @@ export default function VendedorChat() {
               </Card>
             )}
 
-            {/* Proposal preview */}
             {proposta && (
               <Card>
                 <CardContent className="p-4">
@@ -356,7 +334,6 @@ export default function VendedorChat() {
               </Card>
             )}
 
-            {/* Actions */}
             {!emailSent && (
               <div className="flex flex-col sm:flex-row gap-3">
                 <Button onClick={enviarRelatorio} disabled={sendingEmail} className="flex-1" size="lg">
@@ -372,7 +349,7 @@ export default function VendedorChat() {
             <Button
               variant="outline"
               className="w-full"
-              onClick={() => navigate(`/vendedor/${token}`)}
+              onClick={() => navigate('/orcar')}
             >
               Voltar às Minhas Visitas
             </Button>
@@ -385,7 +362,7 @@ export default function VendedorChat() {
   // Proposal view
   if (proposta && !showValidation) {
     return (
-      <VendedorLayout vendedorNome={vendedorNome}>
+      <VendedorLayout vendedorNome={user?.nome}>
         <div className="flex-1 flex flex-col">
           <div className="border-b bg-card px-4 py-3 flex items-center justify-between">
             <Button variant="ghost" size="sm" onClick={() => setProposta(null)}>
@@ -417,10 +394,10 @@ export default function VendedorChat() {
 
   // Chat view
   return (
-    <VendedorLayout vendedorNome={vendedorNome}>
+    <VendedorLayout vendedorNome={user?.nome}>
       <div className="flex-1 flex flex-col">
         <div className="border-b bg-card px-4 py-3 flex items-center justify-between shrink-0">
-          <Button variant="ghost" size="sm" onClick={() => navigate(`/vendedor/${token}`)}>
+          <Button variant="ghost" size="sm" onClick={() => navigate('/orcar')}>
             <ArrowLeft className="mr-1 h-4 w-4" />Voltar
           </Button>
           {messages.length >= 6 && (

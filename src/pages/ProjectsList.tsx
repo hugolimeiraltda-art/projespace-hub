@@ -447,8 +447,8 @@ export default function ProjectsList() {
                   </Badge>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-4">
-                    {implantacaoProjects.slice(0, 5).map((project) => {
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {implantacaoProjects.slice(0, 4).map((project) => {
                       const progress = implantacaoEtapas[project.id] || 0;
                       const progressPercentage = (progress / 9) * 100;
                       const status = project.implantacao_status || 'A_EXECUTAR';
@@ -465,7 +465,7 @@ export default function ProjectsList() {
                                 <Rocket className="w-4 h-4 text-secondary-foreground" />
                               </div>
                               <div>
-                                <p className="font-medium text-foreground flex items-center gap-2">
+                                <p className="font-medium text-foreground flex items-center gap-2 text-sm">
                                   <span className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">#{project.numero_projeto}</span>
                                   {project.cliente_condominio_nome}
                                 </p>
@@ -476,7 +476,7 @@ export default function ProjectsList() {
                                 )}
                               </div>
                             </div>
-                            <Badge className={`border ${IMPLANTACAO_STATUS_COLORS[status]}`}>
+                            <Badge className={`border text-xs ${IMPLANTACAO_STATUS_COLORS[status]}`}>
                               {status === 'EM_EXECUCAO' && <PlayCircle className="w-3 h-3 mr-1" />}
                               {status === 'CONCLUIDO_IMPLANTACAO' && <CheckCircle2 className="w-3 h-3 mr-1" />}
                               {status === 'A_EXECUTAR' && <Clock className="w-3 h-3 mr-1" />}
@@ -494,7 +494,7 @@ export default function ProjectsList() {
                       );
                     })}
                   </div>
-                  {implantacaoProjects.length > 5 && (
+                  {implantacaoProjects.length > 4 && (
                     <div className="mt-4 text-center">
                       <Button variant="ghost" size="sm" asChild>
                         <Link to="/startup-projetos">

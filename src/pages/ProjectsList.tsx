@@ -88,6 +88,12 @@ export default function ProjectsList() {
   const [sortField, setSortField] = useState<SortField>('created_at');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
 
+  // Excel-like column filters
+  const [filterVendedor, setFilterVendedor] = useState<string[]>([]);
+  const [filterCondominio, setFilterCondominio] = useState<string[]>([]);
+  const [filterCidade, setFilterCidade] = useState<string[]>([]);
+  const [filterEstado, setFilterEstado] = useState<string[]>([]);
+
   const baseProjects = user?.role === 'vendedor' 
     ? getProjectsByUser(user.id) 
     : projects;
@@ -214,7 +220,12 @@ export default function ProjectsList() {
       const matchesEngineering = selectedEngineeringStatuses.length === 0 || 
         (p.engineering_status && selectedEngineeringStatuses.includes(p.engineering_status));
 
-      return matchesSearch && matchesStatus && matchesEngineering;
+      const matchesVendedor = filterVendedor.length === 0 || filterVendedor.includes(p.vendedor_nome);
+      const matchesCondominio = filterCondominio.length === 0 || filterCondominio.includes(p.cliente_condominio_nome);
+      const matchesCidade = filterCidade.length === 0 || filterCidade.includes(p.cliente_cidade);
+      const matchesEstado = filterEstado.length === 0 || filterEstado.includes(p.cliente_estado);
+
+      return matchesSearch && matchesStatus && matchesEngineering && matchesVendedor && matchesCondominio && matchesCidade && matchesEstado;
     });
 
     return filtered.sort((a, b) => {
@@ -236,7 +247,21 @@ export default function ProjectsList() {
       if (valA > valB) return sortDir === 'asc' ? 1 : -1;
       return 0;
     });
-  }, [chamados, chamadosSearch, selectedStatuses, selectedEngineeringStatuses, sortField, sortDir]);
+  }, [chamados, chamadosSearch, selectedStatuses, selectedEngineeringStatuses, sortField, sortDir, filterVendedor, filterCondominio, filterCidade, filterEstado]);
+
+  // Unique values for Excel-like filters
+  const uniqueVendedores = useMemo(() => [...new Set(chamados.map(p => p.vendedor_nome).filter(Boolean))].sort(), [chamados]);
+  const uniqueCondominios = useMemo(() => [...new Set(chamados.map(p => p.cliente_condominio_nome).filter(Boolean))].sort(), [chamados]);
+  const uniqueCidades = useMemo(() => [...new Set(chamados.map(p => p.cliente_cidade).filter(Boolean))].sort(), [chamados]);
+  const uniqueEstados = useMemo(() => [...new Set(chamados.map(p => p.cliente_estado).filter(Boolean))].sort(), [chamados]);
+
+  const hasColumnFilters = filterVendedor.length > 0 || filterCondominio.length > 0 || filterCidade.length > 0 || filterEstado.length > 0;
+  const clearColumnFilters = () => {
+    setFilterVendedor([]);
+    setFilterCondominio([]);
+    setFilterCidade([]);
+    setFilterEstado([]);
+  };
 
   // Chamados stats
   const chamadosStats = {
@@ -777,16 +802,14 @@ export default function ProjectsList() {
                 </CardContent>
               </Card>
 
-              {/* Sort Buttons */}
+              {/* Sort & Filter Buttons (Excel-like) */}
               <div className="flex flex-wrap items-center gap-2">
-                <span className="text-sm text-muted-foreground mr-1">Ordenar por:</span>
+                <span className="text-sm text-muted-foreground mr-1">Filtrar / Ordenar:</span>
+                
+                {/* Date sort-only buttons */}
                 {([
                   ['created_at', 'Data Criação'],
                   ['prazo_entrega_projeto', 'Prazo'],
-                  ['cliente_condominio_nome', 'Condomínio'],
-                  ['vendedor_nome', 'Vendedor'],
-                  ['cliente_cidade', 'Cidade'],
-                  ['cliente_estado', 'Estado'],
                 ] as [SortField, string][]).map(([field, label]) => (
                   <Button
                     key={field}
@@ -799,6 +822,83 @@ export default function ProjectsList() {
                     <SortIcon field={field} />
                   </Button>
                 ))}
+
+                {/* Excel-like filter popovers */}
+                {([
+                  { field: 'cliente_condominio_nome' as SortField, label: 'Condomínio', values: uniqueCondominios, selected: filterCondominio, setSelected: setFilterCondominio },
+                  { field: 'vendedor_nome' as SortField, label: 'Vendedor', values: uniqueVendedores, selected: filterVendedor, setSelected: setFilterVendedor },
+                  { field: 'cliente_cidade' as SortField, label: 'Cidade', values: uniqueCidades, selected: filterCidade, setSelected: setFilterCidade },
+                  { field: 'cliente_estado' as SortField, label: 'Estado', values: uniqueEstados, selected: filterEstado, setSelected: setFilterEstado },
+                ]).map(({ field, label, values, selected, setSelected }) => (
+                  <Popover key={field}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant={selected.length > 0 ? 'default' : sortField === field ? 'default' : 'outline'}
+                        size="sm"
+                        className="gap-1"
+                      >
+                        {label}
+                        {selected.length > 0 && (
+                          <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs bg-background/20 text-current">
+                            {selected.length}
+                          </Badge>
+                        )}
+                        <ChevronDown className="w-3.5 h-3.5" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-64 p-3" align="start">
+                      <div className="space-y-2">
+                        {/* Sort controls */}
+                        <div className="flex gap-1 mb-2 pb-2 border-b">
+                          <Button
+                            variant={sortField === field && sortDir === 'asc' ? 'default' : 'ghost'}
+                            size="sm"
+                            className="flex-1 gap-1 text-xs"
+                            onClick={() => { setSortField(field); setSortDir('asc'); }}
+                          >
+                            <ArrowUp className="w-3 h-3" /> A→Z
+                          </Button>
+                          <Button
+                            variant={sortField === field && sortDir === 'desc' ? 'default' : 'ghost'}
+                            size="sm"
+                            className="flex-1 gap-1 text-xs"
+                            onClick={() => { setSortField(field); setSortDir('desc'); }}
+                          >
+                            <ArrowDown className="w-3 h-3" /> Z→A
+                          </Button>
+                        </div>
+                        {/* Filter checkboxes */}
+                        <div className="max-h-48 overflow-y-auto space-y-1">
+                          {values.map(val => (
+                            <label key={val} className="flex items-center gap-2 cursor-pointer hover:bg-secondary p-1.5 rounded-md text-sm">
+                              <Checkbox
+                                checked={selected.includes(val)}
+                                onCheckedChange={() => {
+                                  setSelected(prev =>
+                                    prev.includes(val) ? prev.filter(v => v !== val) : [...prev, val]
+                                  );
+                                }}
+                              />
+                              <span className="truncate">{val}</span>
+                            </label>
+                          ))}
+                        </div>
+                        {selected.length > 0 && (
+                          <Button variant="ghost" size="sm" className="w-full mt-1" onClick={() => setSelected([])}>
+                            Limpar filtro
+                          </Button>
+                        )}
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+                ))}
+
+                {hasColumnFilters && (
+                  <Button variant="ghost" size="sm" onClick={clearColumnFilters} className="text-destructive gap-1">
+                    <X className="w-3.5 h-3.5" />
+                    Limpar filtros
+                  </Button>
+                )}
               </div>
 
               {/* Chamados List */}

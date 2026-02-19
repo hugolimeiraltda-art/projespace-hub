@@ -1398,6 +1398,7 @@ export type Database = {
           created_by: string
           created_by_name: string | null
           email_cliente: string | null
+          endereco_condominio: string | null
           id: string
           nome_cliente: string
           proposta_gerada: string | null
@@ -1414,6 +1415,7 @@ export type Database = {
           created_by: string
           created_by_name?: string | null
           email_cliente?: string | null
+          endereco_condominio?: string | null
           id?: string
           nome_cliente: string
           proposta_gerada?: string | null
@@ -1430,6 +1432,7 @@ export type Database = {
           created_by?: string
           created_by_name?: string | null
           email_cliente?: string | null
+          endereco_condominio?: string | null
           id?: string
           nome_cliente?: string
           proposta_gerada?: string | null

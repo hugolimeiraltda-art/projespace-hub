@@ -52,6 +52,7 @@ export default function Orcamentos() {
   const [newEmail, setNewEmail] = useState('');
   const [newTelefone, setNewTelefone] = useState('');
   const [newVendedorId, setNewVendedorId] = useState('');
+  const [newEndereco, setNewEndereco] = useState('');
   const [creating, setCreating] = useState(false);
   const [viewProposta, setViewProposta] = useState<Sessao | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
@@ -83,6 +84,7 @@ export default function Orcamentos() {
       nome_cliente: newNome.trim(),
       email_cliente: newEmail.trim() || null,
       telefone_cliente: newTelefone.trim() || null,
+      endereco_condominio: newEndereco.trim() || null,
       created_by: user!.id,
       created_by_name: user!.nome,
       vendedor_id: newVendedorId,
@@ -94,7 +96,7 @@ export default function Orcamentos() {
     } else {
       toast({ title: 'Sessão criada com sucesso!' });
       setShowNew(false);
-      setNewNome(''); setNewEmail(''); setNewTelefone(''); setNewVendedorId('');
+      setNewNome(''); setNewEmail(''); setNewTelefone(''); setNewVendedorId(''); setNewEndereco('');
       fetchData();
     }
     setCreating(false);
@@ -141,6 +143,10 @@ export default function Orcamentos() {
                   <div>
                     <Label>Nome do Cliente / Condomínio *</Label>
                     <Input value={newNome} onChange={e => setNewNome(e.target.value)} placeholder="Nome do condomínio" />
+                  </div>
+                  <div>
+                    <Label>Endereço do Condomínio</Label>
+                    <Input value={newEndereco} onChange={e => setNewEndereco(e.target.value)} placeholder="Rua, número, bairro, cidade - UF" />
                   </div>
                   <div>
                     <Label>Vendedor Responsável *</Label>

@@ -1,0 +1,1 @@
+ALTER TABLE public.orcamento_sessoes ADD COLUMN endereco_condominio text;

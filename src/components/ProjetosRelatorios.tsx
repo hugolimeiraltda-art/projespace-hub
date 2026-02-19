@@ -37,6 +37,7 @@ interface ProjetistaStats {
 export function ProjetosRelatorios() {
   const [projects, setProjects] = useState<ProjectRow[]>([]);
   const [projetistas, setProjetistas] = useState<ProfileRow[]>([]);
+  const [vendedores, setVendedores] = useState<ProfileRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [periodo, setPeriodo] = useState('30');
   const [dataInicio, setDataInicio] = useState('');
@@ -49,26 +50,30 @@ export function ProjetosRelatorios() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      // Fetch projetistas (users with role 'projetos')
-      const { data: rolesData } = await supabase
-        .from('user_roles')
-        .select('user_id')
-        .eq('role', 'projetos');
+      // Fetch projetistas and vendedores
+      const [projetistasRoles, vendedoresRoles] = await Promise.all([
+        supabase.from('user_roles').select('user_id').eq('role', 'projetos'),
+        supabase.from('user_roles').select('user_id').eq('role', 'vendedor'),
+      ]);
 
-      const projetistaIds = rolesData?.map(r => r.user_id) || [];
+      const projetistaIds = projetistasRoles.data?.map(r => r.user_id) || [];
+      const vendedorIds = vendedoresRoles.data?.map(r => r.user_id) || [];
+      const allIds = [...new Set([...projetistaIds, ...vendedorIds])];
 
       const [profilesRes, projectsRes] = await Promise.all([
         supabase
           .from('profiles')
           .select('id, nome')
-          .in('id', projetistaIds.length > 0 ? projetistaIds : ['none']),
+          .in('id', allIds.length > 0 ? allIds : ['none']),
         supabase
           .from('projects')
           .select('id, created_at, engineering_status, engineering_received_at, engineering_completed_at, created_by_user_id, status')
           .not('status', 'eq', 'RASCUNHO'),
       ]);
 
-      setProjetistas(profilesRes.data || []);
+      const allProfiles = profilesRes.data || [];
+      setProjetistas(allProfiles.filter(p => projetistaIds.includes(p.id)));
+      setVendedores(allProfiles.filter(p => vendedorIds.includes(p.id)));
       setProjects(projectsRes.data || []);
     } catch (error) {
       console.error('Error fetching report data:', error);
@@ -173,6 +178,38 @@ export function ProjetosRelatorios() {
       tempoMedio,
     };
   }, [projects, filteredProjects, dateRange]);
+
+  // Vendedor stats
+  const vendedorStats = useMemo(() => {
+    return vendedores.map(vendedor => {
+      const vendedorProjects = filteredProjects.filter(p => p.created_by_user_id === vendedor.id);
+      const projetosAbertos = vendedorProjects.length;
+
+      const projetosConcluidos = projects.filter(p => {
+        if (p.created_by_user_id !== vendedor.id) return false;
+        if (p.status !== 'APROVADO_PROJETO') return false;
+        return true;
+      }).filter(p => {
+        const created = new Date(p.created_at);
+        return created >= dateRange.start && created <= dateRange.end;
+      }).length;
+
+      const vendasConcluidas = projects.filter(p => {
+        if (p.created_by_user_id !== vendedor.id) return false;
+        if (!p.engineering_completed_at) return false;
+        const completed = new Date(p.engineering_completed_at);
+        return completed >= dateRange.start && completed <= dateRange.end;
+      }).length;
+
+      return {
+        id: vendedor.id,
+        nome: vendedor.nome,
+        projetosAbertos,
+        projetosAprovados: projetosConcluidos,
+        vendasConcluidas,
+      };
+    }).filter(v => v.projetosAbertos > 0 || v.projetosAprovados > 0 || v.vendasConcluidas > 0);
+  }, [vendedores, projects, filteredProjects, dateRange]);
 
   if (loading) {
     return (
@@ -339,6 +376,48 @@ export function ProjetosRelatorios() {
                       ) : (
                         <span className="text-muted-foreground">—</span>
                       )}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Per Vendedor Table */}
+      <Card className="shadow-card">
+        <CardHeader>
+          <CardTitle className="text-lg flex items-center gap-2">
+            <Users className="w-5 h-5 text-primary" />
+            Produtividade por Vendedor
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {vendedorStats.length === 0 ? (
+            <p className="text-center text-muted-foreground py-8">Nenhum vendedor com atividade no período</p>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Vendedor</TableHead>
+                  <TableHead className="text-center">Projetos Abertos</TableHead>
+                  <TableHead className="text-center">Projetos Aprovados</TableHead>
+                  <TableHead className="text-center">Vendas Concluídas</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {vendedorStats.map((v) => (
+                  <TableRow key={v.id}>
+                    <TableCell className="font-medium">{v.nome}</TableCell>
+                    <TableCell className="text-center">
+                      <Badge variant="outline">{v.projetosAbertos}</Badge>
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <Badge className="bg-status-approved-bg text-status-approved">{v.projetosAprovados}</Badge>
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <Badge variant="secondary">{v.vendasConcluidas}</Badge>
                     </TableCell>
                   </TableRow>
                 ))}

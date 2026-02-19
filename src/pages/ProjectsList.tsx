@@ -100,7 +100,7 @@ export default function ProjectsList() {
 
   // Check if user can see Chamados tab (only projetos and admin)
   const canSeeChamados = ['admin', 'projetos'].includes(user?.role || '');
-  const canSeeRelatorios = user?.role === 'admin';
+  const canSeeRelatorios = ['admin', 'administrativo', 'supervisor_operacoes', 'projetos'].includes(user?.role || '');
 
   // Fetch projects in implantação
   useEffect(() => {

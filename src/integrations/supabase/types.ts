@@ -1247,6 +1247,7 @@ export type Database = {
           codigo: string | null
           created_at: string
           descricao: string | null
+          historico_alteracoes: Json | null
           id: string
           id_kit: number | null
           nome: string
@@ -1263,6 +1264,7 @@ export type Database = {
           codigo?: string | null
           created_at?: string
           descricao?: string | null
+          historico_alteracoes?: Json | null
           id?: string
           id_kit?: number | null
           nome: string
@@ -1279,6 +1281,7 @@ export type Database = {
           codigo?: string | null
           created_at?: string
           descricao?: string | null
+          historico_alteracoes?: Json | null
           id?: string
           id_kit?: number | null
           nome?: string

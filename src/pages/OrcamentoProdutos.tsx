@@ -91,6 +91,8 @@ interface Produto {
   valor_minimo_locacao: number;
   adicional: boolean;
   ativo: boolean;
+  historico_alteracoes?: { user_name: string; alteracao: string; data: string }[];
+  updated_by_name?: string;
 }
 
 interface Kit {
@@ -211,7 +213,7 @@ export default function OrcamentoProdutos() {
       supabase.from('orcamento_kits').select('*').order('categoria').order('nome'),
       supabase.from('orcamento_regras_precificacao').select('campo, percentual'),
     ]);
-    setProdutos((prods as Produto[]) || []);
+    setProdutos((prods as unknown as Produto[]) || []);
 
     if (regras) {
       const map: Record<string, number> = {};
@@ -226,11 +228,11 @@ export default function OrcamentoProdutos() {
         .select('*')
         .in('kit_id', kitsData.map(k => k.id));
 
-      const kitsWithItens = (kitsData as Kit[]).map(k => ({
+      const kitsWithItens = (kitsData as unknown as Kit[]).map(k => ({
         ...k,
         itens: (itens || []).filter(i => i.kit_id === k.id).map(i => ({
           ...i,
-          produto: (prods as Produto[])?.find(p => p.id === i.produto_id),
+          produto: (prods as unknown as Produto[])?.find(p => p.id === i.produto_id),
         })),
       }));
       setKits(kitsWithItens);
@@ -259,7 +261,7 @@ export default function OrcamentoProdutos() {
 
   const saveProduto = async () => {
     if (!pForm.nome.trim()) { toast({ title: 'Informe o nome', variant: 'destructive' }); return; }
-    const payload = {
+    const payload: any = {
       nome: pForm.nome.trim(),
       descricao: pForm.descricao.trim() || null,
       categoria: pForm.categoria,
@@ -273,11 +275,42 @@ export default function OrcamentoProdutos() {
       valor_instalacao: parseFloat(parseBRL(pForm.valor_instalacao)) || 0,
       valor_minimo_locacao: parseFloat(parseBRL(pForm.valor_minimo_locacao)) || 0,
       adicional: pForm.adicional,
+      updated_by: user?.id,
+      updated_by_name: user?.nome,
     };
 
     if (editProduto) {
+      // Build change description
+      const changes: string[] = [];
+      const old = editProduto;
+      if (payload.nome !== old.nome) changes.push(`Nome: "${old.nome}" → "${payload.nome}"`);
+      if (payload.codigo !== old.codigo) changes.push(`Código: "${old.codigo || ''}" → "${payload.codigo || ''}"`);
+      if (payload.categoria !== old.categoria) changes.push(`Grupo: ${old.categoria} → ${payload.categoria}`);
+      if (payload.preco_unitario !== old.preco_unitario) changes.push(`Valor Atual: ${formatBRL(old.preco_unitario)} → ${formatBRL(payload.preco_unitario)}`);
+      if (payload.valor_minimo !== old.valor_minimo) changes.push(`Valor Mínimo: ${formatBRL(old.valor_minimo)} → ${formatBRL(payload.valor_minimo)}`);
+      if (payload.valor_locacao !== (old.valor_locacao || 0)) changes.push(`Valor Locação: ${formatBRL(old.valor_locacao || 0)} → ${formatBRL(payload.valor_locacao)}`);
+      if (payload.valor_instalacao !== (old.valor_instalacao || 0)) changes.push(`Valor Instalação: ${formatBRL(old.valor_instalacao || 0)} → ${formatBRL(payload.valor_instalacao)}`);
+      if (payload.adicional !== old.adicional) changes.push(`Adicional: ${old.adicional ? 'Sim' : 'Não'} → ${payload.adicional ? 'Sim' : 'Não'}`);
+      if (payload.qtd_max !== old.qtd_max) changes.push(`Qtd Máx: ${old.qtd_max} → ${payload.qtd_max}`);
+
+      if (changes.length > 0) {
+        const historico = [...(old.historico_alteracoes || [])];
+        historico.unshift({
+          user_name: user?.nome || 'Desconhecido',
+          alteracao: changes.join('; '),
+          data: new Date().toISOString(),
+        });
+        // Keep last 50 entries
+        payload.historico_alteracoes = historico.slice(0, 50);
+      }
+
       await supabase.from('orcamento_produtos').update(payload).eq('id', editProduto.id);
     } else {
+      payload.historico_alteracoes = [{
+        user_name: user?.nome || 'Desconhecido',
+        alteracao: 'Produto criado',
+        data: new Date().toISOString(),
+      }];
       await supabase.from('orcamento_produtos').insert(payload);
     }
     setShowProdutoForm(false);
@@ -620,6 +653,22 @@ export default function OrcamentoProdutos() {
               <Switch checked={pForm.adicional} onCheckedChange={v => setPForm(p => ({ ...p, adicional: v }))} />
               <Label>Adicional</Label>
             </div>
+            {editProduto && editProduto.historico_alteracoes && editProduto.historico_alteracoes.length > 0 && (
+              <div className="border-t pt-3 mt-2">
+                <Label className="text-xs font-semibold text-muted-foreground mb-2 block">Histórico de Alterações</Label>
+                <div className="max-h-[150px] overflow-y-auto space-y-2">
+                  {editProduto.historico_alteracoes.map((h, i) => (
+                    <div key={i} className="text-xs border rounded p-2 bg-muted/30">
+                      <div className="flex justify-between items-center mb-1">
+                        <span className="font-medium text-foreground">{h.user_name}</span>
+                        <span className="text-muted-foreground">{new Date(h.data).toLocaleString('pt-BR')}</span>
+                      </div>
+                      <p className="text-muted-foreground">{h.alteracao}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
             <Button onClick={saveProduto} className="w-full">{editProduto ? 'Salvar' : 'Criar'}</Button>
           </div>
         </DialogContent>

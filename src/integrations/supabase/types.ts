@@ -1364,6 +1364,7 @@ export type Database = {
           codigo: string | null
           created_at: string
           descricao: string | null
+          historico_alteracoes: Json | null
           id: string
           nome: string
           preco_unitario: number
@@ -1371,6 +1372,8 @@ export type Database = {
           subgrupo: string | null
           unidade: string
           updated_at: string
+          updated_by: string | null
+          updated_by_name: string | null
           valor_instalacao: number | null
           valor_locacao: number | null
           valor_minimo: number | null
@@ -1383,6 +1386,7 @@ export type Database = {
           codigo?: string | null
           created_at?: string
           descricao?: string | null
+          historico_alteracoes?: Json | null
           id?: string
           nome: string
           preco_unitario?: number
@@ -1390,6 +1394,8 @@ export type Database = {
           subgrupo?: string | null
           unidade?: string
           updated_at?: string
+          updated_by?: string | null
+          updated_by_name?: string | null
           valor_instalacao?: number | null
           valor_locacao?: number | null
           valor_minimo?: number | null
@@ -1402,6 +1408,7 @@ export type Database = {
           codigo?: string | null
           created_at?: string
           descricao?: string | null
+          historico_alteracoes?: Json | null
           id?: string
           nome?: string
           preco_unitario?: number
@@ -1409,6 +1416,8 @@ export type Database = {
           subgrupo?: string | null
           unidade?: string
           updated_at?: string
+          updated_by?: string | null
+          updated_by_name?: string | null
           valor_instalacao?: number | null
           valor_locacao?: number | null
           valor_minimo?: number | null

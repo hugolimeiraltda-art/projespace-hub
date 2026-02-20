@@ -25,7 +25,7 @@ export function Layout({ children }: LayoutProps) {
   const { user, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
-  const [expandedMenus, setExpandedMenus] = useState<string[]>(['/manutencao']);
+  const [expandedMenus, setExpandedMenus] = useState<string[]>(['/manutencao', '/projetos']);
 
   const handleLogout = () => {
     logout();
@@ -47,32 +47,36 @@ export function Layout({ children }: LayoutProps) {
       label: 'Dashboard',
       icon: LayoutDashboard
     },
-    // 2. Novo Projeto
-    {
-      path: '/projetos/novo',
-      label: 'Novo Projeto',
-      icon: FolderPlus,
-      roles: ['vendedor', 'admin', 'administrativo', 'sucesso_cliente', 'supervisor_operacoes']
-    },
-    // 3. Informar Nova Venda
-    {
-      path: '/informar-venda',
-      label: 'Informar Nova Venda',
-      icon: ShoppingCart,
-      roles: ['vendedor', 'admin', 'administrativo', 'sucesso_cliente', 'supervisor_operacoes']
-    },
-    // 4. Projetos (Meus Projetos para vendedor, Projetos para outros)
-    {
-      path: '/projetos',
-      label: 'Meus Projetos',
-      icon: List,
-      roles: ['vendedor']
-    },
+    // 2. Projetos (agrupado) - para vendedores
     {
       path: '/projetos',
       label: 'Projetos',
       icon: List,
-      roles: ['projetos', 'admin', 'gerente_comercial', 'administrativo'],
+      roles: ['vendedor'],
+      subItems: [
+        { path: '/projetos/novo', label: 'Novo Projeto', icon: FolderPlus },
+        { path: '/informar-venda', label: 'Informar Nova Venda', icon: ShoppingCart },
+        { path: '/projetos', label: 'Meus Projetos', icon: List },
+      ]
+    },
+    // Projetos (agrupado) - para admin e outros roles
+    {
+      path: '/projetos',
+      label: 'Projetos',
+      icon: List,
+      roles: ['admin', 'administrativo', 'sucesso_cliente', 'supervisor_operacoes'],
+      subItems: [
+        { path: '/projetos/novo', label: 'Novo Projeto', icon: FolderPlus },
+        { path: '/informar-venda', label: 'Informar Nova Venda', icon: ShoppingCart },
+        { path: '/projetos', label: 'Projetos', icon: List },
+      ]
+    },
+    // Projetos (agrupado) - para projetos e gerente_comercial (sem novo projeto/venda)
+    {
+      path: '/projetos',
+      label: 'Projetos',
+      icon: List,
+      roles: ['projetos', 'gerente_comercial'],
       exact: true
     },
     // 5. Implantação

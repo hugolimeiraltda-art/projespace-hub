@@ -1,0 +1,1 @@
+ALTER TABLE public.orcamento_kits ADD COLUMN codigo text NULL;

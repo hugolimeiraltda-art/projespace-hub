@@ -1,0 +1,1 @@
+ALTER TABLE public.orcamento_produtos ADD COLUMN IF NOT EXISTS valor_locacao numeric DEFAULT 0;

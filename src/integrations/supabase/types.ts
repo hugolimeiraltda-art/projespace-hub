@@ -1372,6 +1372,7 @@ export type Database = {
           unidade: string
           updated_at: string
           valor_instalacao: number | null
+          valor_locacao: number | null
           valor_minimo: number | null
           valor_minimo_locacao: number | null
         }
@@ -1390,6 +1391,7 @@ export type Database = {
           unidade?: string
           updated_at?: string
           valor_instalacao?: number | null
+          valor_locacao?: number | null
           valor_minimo?: number | null
           valor_minimo_locacao?: number | null
         }
@@ -1408,6 +1410,7 @@ export type Database = {
           unidade?: string
           updated_at?: string
           valor_instalacao?: number | null
+          valor_locacao?: number | null
           valor_minimo?: number | null
           valor_minimo_locacao?: number | null
         }

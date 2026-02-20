@@ -69,6 +69,7 @@ interface Produto {
   unidade: string;
   qtd_max: number;
   valor_minimo: number;
+  valor_locacao: number;
   valor_instalacao: number;
   valor_minimo_locacao: number;
   adicional: boolean;
@@ -95,7 +96,7 @@ export default function OrcamentoProdutos() {
   // Product form
   const [showProdutoForm, setShowProdutoForm] = useState(false);
   const [editProduto, setEditProduto] = useState<Produto | null>(null);
-  const [pForm, setPForm] = useState({ nome: '', descricao: '', categoria: 'Smartportaria', subgrupo: '', codigo: '', preco_unitario: '', unidade: 'un', qtd_max: '', valor_minimo: '', valor_instalacao: '', valor_minimo_locacao: '', adicional: false });
+  const [pForm, setPForm] = useState({ nome: '', descricao: '', categoria: 'Smartportaria', subgrupo: '', codigo: '', preco_unitario: '', unidade: 'un', qtd_max: '', valor_minimo: '', valor_locacao: '', valor_instalacao: '', valor_minimo_locacao: '', adicional: false });
 
   // Kit form
   const [showKitForm, setShowKitForm] = useState(false);
@@ -143,6 +144,7 @@ export default function OrcamentoProdutos() {
       subgrupo: p.subgrupo || '', codigo: p.codigo || '',
       preco_unitario: String(p.preco_unitario), unidade: p.unidade,
       qtd_max: String(p.qtd_max || ''), valor_minimo: String(p.valor_minimo || ''),
+      valor_locacao: String(p.valor_locacao || ''),
       valor_instalacao: String(p.valor_instalacao || ''), valor_minimo_locacao: String(p.valor_minimo_locacao || ''),
       adicional: p.adicional || false,
     });
@@ -161,6 +163,7 @@ export default function OrcamentoProdutos() {
       unidade: pForm.unidade,
       qtd_max: parseInt(pForm.qtd_max) || 0,
       valor_minimo: parseFloat(pForm.valor_minimo) || 0,
+      valor_locacao: parseFloat(pForm.valor_locacao) || 0,
       valor_instalacao: parseFloat(pForm.valor_instalacao) || 0,
       valor_minimo_locacao: parseFloat(pForm.valor_minimo_locacao) || 0,
       adicional: pForm.adicional,
@@ -178,7 +181,7 @@ export default function OrcamentoProdutos() {
     toast({ title: editProduto ? 'Produto atualizado' : 'Produto criado' });
   };
 
-  const resetPForm = () => setPForm({ nome: '', descricao: '', categoria: 'Smartportaria', subgrupo: '', codigo: '', preco_unitario: '', unidade: 'un', qtd_max: '', valor_minimo: '', valor_instalacao: '', valor_minimo_locacao: '', adicional: false });
+  const resetPForm = () => setPForm({ nome: '', descricao: '', categoria: 'Smartportaria', subgrupo: '', codigo: '', preco_unitario: '', unidade: 'un', qtd_max: '', valor_minimo: '', valor_locacao: '', valor_instalacao: '', valor_minimo_locacao: '', adicional: false });
 
   // ---- Kit CRUD ----
   const openKitEdit = (k: Kit) => {
@@ -367,7 +370,7 @@ export default function OrcamentoProdutos() {
 
       {/* Produto Dialog */}
       <Dialog open={showProdutoForm} onOpenChange={v => { if (!v) { setShowProdutoForm(false); setEditProduto(null); } }}>
-        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle>{editProduto ? 'Editar Produto' : 'Novo Produto'}</DialogTitle></DialogHeader>
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
@@ -400,18 +403,19 @@ export default function OrcamentoProdutos() {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div><Label>Qtd Máxima</Label><Input type="number" value={pForm.qtd_max} onChange={e => setPForm(p => ({ ...p, qtd_max: e.target.value }))} /></div>
-              <div><Label>Valor Mínimo (R$)</Label><Input type="number" step="0.01" value={pForm.valor_minimo} onChange={e => setPForm(p => ({ ...p, valor_minimo: e.target.value }))} /></div>
+              <div><Label>Valor Atual (R$)</Label><Input type="number" step="0.01" value={pForm.preco_unitario} onChange={e => setPForm(p => ({ ...p, preco_unitario: e.target.value }))} /></div>
             </div>
             <div className="grid grid-cols-2 gap-4">
-              <div><Label>Valor Atual (R$)</Label><Input type="number" step="0.01" value={pForm.preco_unitario} onChange={e => setPForm(p => ({ ...p, preco_unitario: e.target.value }))} /></div>
-              <div><Label>Valor Instalação (R$)</Label><Input type="number" step="0.01" value={pForm.valor_instalacao} onChange={e => setPForm(p => ({ ...p, valor_instalacao: e.target.value }))} /></div>
+              <div><Label>Valor Mínimo (R$)</Label><Input type="number" step="0.01" value={pForm.valor_minimo} onChange={e => setPForm(p => ({ ...p, valor_minimo: e.target.value }))} /></div>
+              <div><Label>Valor Locação (R$)</Label><Input type="number" step="0.01" value={pForm.valor_locacao} onChange={e => setPForm(p => ({ ...p, valor_locacao: e.target.value }))} /></div>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div><Label>Valor Mín. Locação (R$)</Label><Input type="number" step="0.01" value={pForm.valor_minimo_locacao} onChange={e => setPForm(p => ({ ...p, valor_minimo_locacao: e.target.value }))} /></div>
-              <div className="flex items-center gap-3 pt-6">
-                <Switch checked={pForm.adicional} onCheckedChange={v => setPForm(p => ({ ...p, adicional: v }))} />
-                <Label>Adicional</Label>
-              </div>
+              <div><Label>Valor Instalação (R$)</Label><Input type="number" step="0.01" value={pForm.valor_instalacao} onChange={e => setPForm(p => ({ ...p, valor_instalacao: e.target.value }))} /></div>
+            </div>
+            <div className="flex items-center gap-3">
+              <Switch checked={pForm.adicional} onCheckedChange={v => setPForm(p => ({ ...p, adicional: v }))} />
+              <Label>Adicional</Label>
             </div>
             <Button onClick={saveProduto} className="w-full">{editProduto ? 'Salvar' : 'Criar'}</Button>
           </div>

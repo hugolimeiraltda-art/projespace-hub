@@ -669,13 +669,16 @@ export default function OrcamentoProdutos() {
                     if (isServico) {
                       const svcMinPct = pricingRules.servico_valor_minimo ?? pricingRules.valor_minimo;
                       const svcLocPct = pricingRules.servico_valor_locacao ?? pricingRules.valor_locacao;
+                      const svcMinLocPct = pricingRules.servico_valor_minimo_locacao ?? pricingRules.valor_minimo_locacao;
+                      const svcInstPct = pricingRules.servico_valor_instalacao ?? pricingRules.valor_instalacao;
+                      const svcLocacao = val * (svcLocPct / 100);
                       setPForm(p => ({
                         ...p,
                         preco_unitario: formatBRL(val),
                         valor_minimo: formatBRL(val * (svcMinPct / 100)),
-                        valor_locacao: formatBRL(val * (svcLocPct / 100)),
-                        valor_minimo_locacao: '',
-                        valor_instalacao: p.valor_instalacao,
+                        valor_locacao: formatBRL(svcLocacao),
+                        valor_minimo_locacao: formatBRL(svcLocacao * (svcMinLocPct / 100)),
+                        valor_instalacao: formatBRL(val * (svcInstPct / 100)),
                       }));
                     } else {
                       const locacao = val * (pricingRules.valor_locacao / 100);

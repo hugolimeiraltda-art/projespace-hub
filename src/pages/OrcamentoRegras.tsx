@@ -23,6 +23,8 @@ const CAMPO_LABELS: Record<string, string> = {
   valor_instalacao: 'Valor Instalação',
   servico_valor_minimo: 'Valor Mínimo',
   servico_valor_locacao: 'Valor Locação',
+  servico_valor_minimo_locacao: 'Valor Mín. Locação',
+  servico_valor_instalacao: 'Valor Instalação',
 };
 
 const BASE_LABELS: Record<string, string> = {
@@ -31,7 +33,7 @@ const BASE_LABELS: Record<string, string> = {
 };
 
 const PRODUTO_CAMPOS = ['valor_minimo', 'valor_locacao', 'valor_minimo_locacao', 'valor_instalacao'];
-const SERVICO_CAMPOS = ['servico_valor_minimo', 'servico_valor_locacao'];
+const SERVICO_CAMPOS = ['servico_valor_minimo', 'servico_valor_locacao', 'servico_valor_minimo_locacao', 'servico_valor_instalacao'];
 
 export default function OrcamentoRegras() {
   const [regras, setRegras] = useState<Regra[]>([]);
@@ -99,6 +101,8 @@ export default function OrcamentoRegras() {
       const valInstPct = (regraMap['valor_instalacao']?.percentual || 10) / 100;
       const svcMinPct = (regraMap['servico_valor_minimo']?.percentual || 90) / 100;
       const svcLocPct = (regraMap['servico_valor_locacao']?.percentual || 3.57) / 100;
+      const svcMinLocPct = (regraMap['servico_valor_minimo_locacao']?.percentual || 90) / 100;
+      const svcInstPct = (regraMap['servico_valor_instalacao']?.percentual || 10) / 100;
 
       const { data: produtos } = await supabase.from('orcamento_produtos').select('id, preco_unitario, subgrupo').gt('preco_unitario', 0);
       if (!produtos || produtos.length === 0) {
@@ -113,11 +117,12 @@ export default function OrcamentoRegras() {
         const isServico = p.subgrupo === 'Serviço';
 
         if (isServico) {
+          const svcLocacao = va * svcLocPct;
           await supabase.from('orcamento_produtos').update({
             valor_minimo: parseFloat((va * svcMinPct).toFixed(2)),
-            valor_locacao: parseFloat((va * svcLocPct).toFixed(2)),
-            valor_minimo_locacao: 0,
-            valor_instalacao: 0,
+            valor_locacao: parseFloat(svcLocacao.toFixed(2)),
+            valor_minimo_locacao: parseFloat((svcLocacao * svcMinLocPct).toFixed(2)),
+            valor_instalacao: parseFloat((va * svcInstPct).toFixed(2)),
             updated_at: new Date().toISOString(),
           }).eq('id', p.id);
         } else {
@@ -159,9 +164,14 @@ export default function OrcamentoRegras() {
   const getServicoPreview = () => {
     const valMin = parseFloat(editValues[regrasServico.find(r => r.campo === 'servico_valor_minimo')?.id || ''] || '0') / 100;
     const valLoc = parseFloat(editValues[regrasServico.find(r => r.campo === 'servico_valor_locacao')?.id || ''] || '0') / 100;
+    const valMinLoc = parseFloat(editValues[regrasServico.find(r => r.campo === 'servico_valor_minimo_locacao')?.id || ''] || '0') / 100;
+    const valInst = parseFloat(editValues[regrasServico.find(r => r.campo === 'servico_valor_instalacao')?.id || ''] || '0') / 100;
+    const locacao = previewValue * valLoc;
     return {
       valor_minimo: (previewValue * valMin).toFixed(2),
-      valor_locacao: (previewValue * valLoc).toFixed(2),
+      valor_locacao: locacao.toFixed(2),
+      valor_minimo_locacao: (locacao * valMinLoc).toFixed(2),
+      valor_instalacao: (previewValue * valInst).toFixed(2),
     };
   };
 
@@ -237,7 +247,7 @@ export default function OrcamentoRegras() {
             {renderRegrasSection(
               'Percentuais — Serviços',
               <Wrench className="w-5 h-5" />,
-              'Regras aplicadas a itens com subgrupo "Serviço". Valor Mín. Locação e Instalação são sempre zero.',
+              'Regras aplicadas a itens com subgrupo "Serviço".',
               regrasServico
             )}
 
@@ -247,9 +257,11 @@ export default function OrcamentoRegras() {
                   <CardTitle className="text-base">Simulação Serviço (Valor Atual = R$ {previewValue.toFixed(2)})</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                     <div><p className="text-muted-foreground">Valor Mínimo</p><p className="font-semibold">R$ {svcPreview.valor_minimo}</p></div>
                     <div><p className="text-muted-foreground">Valor Locação</p><p className="font-semibold">R$ {svcPreview.valor_locacao}</p></div>
+                    <div><p className="text-muted-foreground">Valor Mín. Locação</p><p className="font-semibold">R$ {svcPreview.valor_minimo_locacao}</p></div>
+                    <div><p className="text-muted-foreground">Valor Instalação</p><p className="font-semibold">R$ {svcPreview.valor_instalacao}</p></div>
                   </div>
                 </CardContent>
               </Card>

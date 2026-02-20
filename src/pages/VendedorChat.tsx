@@ -80,7 +80,8 @@ export default function VendedorChat() {
         setInitialLoading(false);
       } else {
         setInitialLoading(false);
-        sendMessage('Olá, estou no local para a visita técnica.', true);
+        // Send hidden trigger - don't show user message, only AI response
+        sendMessage('Iniciar orçamento. Dê boas-vindas ao vendedor e comece o checklist.', true);
       }
     })();
   }, [user, sessaoId]);

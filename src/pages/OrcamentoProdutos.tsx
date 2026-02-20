@@ -560,7 +560,21 @@ export default function OrcamentoProdutos() {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div><Label>Qtd Máxima</Label><Input type="number" value={pForm.qtd_max} onChange={e => setPForm(p => ({ ...p, qtd_max: e.target.value }))} /></div>
-              <div><Label>Valor Atual (R$)</Label><Input type="number" step="0.01" value={pForm.preco_unitario} onChange={e => setPForm(p => ({ ...p, preco_unitario: e.target.value }))} /></div>
+              <div><Label>Valor Atual (R$)</Label><Input type="number" step="0.01" value={pForm.preco_unitario} onChange={e => {
+                const val = parseFloat(e.target.value);
+                const updates: any = { preco_unitario: e.target.value };
+                if (!isNaN(val)) {
+                  const minimo = (val * 0.9);
+                  const locacao = (val * 0.0357);
+                  const minLocacao = (locacao * 0.9);
+                  const instalacao = (val * 0.1);
+                  updates.valor_minimo = minimo.toFixed(2);
+                  updates.valor_locacao = locacao.toFixed(2);
+                  updates.valor_minimo_locacao = minLocacao.toFixed(2);
+                  updates.valor_instalacao = instalacao.toFixed(2);
+                }
+                setPForm(p => ({ ...p, ...updates }));
+              }} /></div>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div><Label>Valor Mínimo (R$)</Label><Input type="number" step="0.01" value={pForm.valor_minimo} onChange={e => setPForm(p => ({ ...p, valor_minimo: e.target.value }))} /></div>

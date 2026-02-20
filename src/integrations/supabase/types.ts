@@ -1358,37 +1358,58 @@ export type Database = {
       }
       orcamento_produtos: {
         Row: {
+          adicional: boolean | null
           ativo: boolean
           categoria: string
+          codigo: string | null
           created_at: string
           descricao: string | null
           id: string
           nome: string
           preco_unitario: number
+          qtd_max: number | null
+          subgrupo: string | null
           unidade: string
           updated_at: string
+          valor_instalacao: number | null
+          valor_minimo: number | null
+          valor_minimo_locacao: number | null
         }
         Insert: {
+          adicional?: boolean | null
           ativo?: boolean
           categoria: string
+          codigo?: string | null
           created_at?: string
           descricao?: string | null
           id?: string
           nome: string
           preco_unitario?: number
+          qtd_max?: number | null
+          subgrupo?: string | null
           unidade?: string
           updated_at?: string
+          valor_instalacao?: number | null
+          valor_minimo?: number | null
+          valor_minimo_locacao?: number | null
         }
         Update: {
+          adicional?: boolean | null
           ativo?: boolean
           categoria?: string
+          codigo?: string | null
           created_at?: string
           descricao?: string | null
           id?: string
           nome?: string
           preco_unitario?: number
+          qtd_max?: number | null
+          subgrupo?: string | null
           unidade?: string
           updated_at?: string
+          valor_instalacao?: number | null
+          valor_minimo?: number | null
+          valor_minimo_locacao?: number | null
         }
         Relationships: []
       }

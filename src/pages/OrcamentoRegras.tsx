@@ -38,7 +38,8 @@ const SERVICO_CAMPOS = ['servico_valor_minimo', 'servico_valor_locacao', 'servic
 export default function OrcamentoRegras() {
   const [regras, setRegras] = useState<Regra[]>([]);
   const [loading, setLoading] = useState(true);
-  const [applying, setApplying] = useState(false);
+  const [applyingProdutos, setApplyingProdutos] = useState(false);
+  const [applyingServicos, setApplyingServicos] = useState(false);
   const [editValues, setEditValues] = useState<Record<string, string>>({});
 
   useEffect(() => { fetchRegras(); }, []);
@@ -90,8 +91,9 @@ export default function OrcamentoRegras() {
     setterSaving(false);
   };
 
-  const aplicarRegras = async () => {
-    setApplying(true);
+  const aplicarRegrasPorTipo = async (tipo: 'produtos' | 'servicos') => {
+    const setterApplying = tipo === 'produtos' ? setApplyingProdutos : setApplyingServicos;
+    setterApplying(true);
     try {
       const { data: currentRegras } = await supabase.from('orcamento_regras_precificacao').select('*');
       if (!currentRegras) throw new Error('Sem regras');
@@ -99,54 +101,45 @@ export default function OrcamentoRegras() {
       const regraMap: Record<string, Regra> = {};
       currentRegras.forEach(r => { regraMap[r.campo] = r; });
 
-      const valMinPct = (regraMap['valor_minimo']?.percentual || 90) / 100;
-      const valLocPct = (regraMap['valor_locacao']?.percentual || 3.57) / 100;
-      const valMinLocPct = (regraMap['valor_minimo_locacao']?.percentual || 90) / 100;
-      const valInstPct = (regraMap['valor_instalacao']?.percentual || 10) / 100;
-      const svcMinPct = (regraMap['servico_valor_minimo']?.percentual || 90) / 100;
-      const svcLocPct = (regraMap['servico_valor_locacao']?.percentual || 3.57) / 100;
-      const svcMinLocPct = (regraMap['servico_valor_minimo_locacao']?.percentual || 90) / 100;
-      const svcInstPct = (regraMap['servico_valor_instalacao']?.percentual || 10) / 100;
+      const isProductType = tipo === 'produtos';
+      const minPct = (regraMap[isProductType ? 'valor_minimo' : 'servico_valor_minimo']?.percentual || 90) / 100;
+      const locPct = (regraMap[isProductType ? 'valor_locacao' : 'servico_valor_locacao']?.percentual || 3.57) / 100;
+      const minLocPct = (regraMap[isProductType ? 'valor_minimo_locacao' : 'servico_valor_minimo_locacao']?.percentual || 90) / 100;
+      const instPct = (regraMap[isProductType ? 'valor_instalacao' : 'servico_valor_instalacao']?.percentual || 10) / 100;
 
       const { data: produtos } = await supabase.from('orcamento_produtos').select('id, preco_unitario, subgrupo').gt('preco_unitario', 0);
       if (!produtos || produtos.length === 0) {
-        toast({ title: 'Nenhum produto com valor atual > 0' });
-        setApplying(false);
+        toast({ title: 'Nenhum item com valor atual > 0' });
+        setterApplying(false);
+        return;
+      }
+
+      const filtered = produtos.filter(p => isProductType ? p.subgrupo !== 'Serviço' : p.subgrupo === 'Serviço');
+      if (filtered.length === 0) {
+        toast({ title: `Nenhum ${isProductType ? 'produto' : 'serviço'} encontrado para recalcular` });
+        setterApplying(false);
         return;
       }
 
       let updated = 0;
-      for (const p of produtos) {
+      for (const p of filtered) {
         const va = Number(p.preco_unitario);
-        const isServico = p.subgrupo === 'Serviço';
-
-        if (isServico) {
-          const svcLocacao = va * svcLocPct;
-          await supabase.from('orcamento_produtos').update({
-            valor_minimo: parseFloat((va * svcMinPct).toFixed(2)),
-            valor_locacao: parseFloat(svcLocacao.toFixed(2)),
-            valor_minimo_locacao: parseFloat((svcLocacao * svcMinLocPct).toFixed(2)),
-            valor_instalacao: parseFloat((va * svcInstPct).toFixed(2)),
-            updated_at: new Date().toISOString(),
-          }).eq('id', p.id);
-        } else {
-          const locacao = va * valLocPct;
-          await supabase.from('orcamento_produtos').update({
-            valor_minimo: parseFloat((va * valMinPct).toFixed(2)),
-            valor_locacao: parseFloat(locacao.toFixed(2)),
-            valor_minimo_locacao: parseFloat((locacao * valMinLocPct).toFixed(2)),
-            valor_instalacao: parseFloat((va * valInstPct).toFixed(2)),
-            updated_at: new Date().toISOString(),
-          }).eq('id', p.id);
-        }
+        const locacao = va * locPct;
+        await supabase.from('orcamento_produtos').update({
+          valor_minimo: parseFloat((va * minPct).toFixed(2)),
+          valor_locacao: parseFloat(locacao.toFixed(2)),
+          valor_minimo_locacao: parseFloat((locacao * minLocPct).toFixed(2)),
+          valor_instalacao: parseFloat((va * instPct).toFixed(2)),
+          updated_at: new Date().toISOString(),
+        }).eq('id', p.id);
         updated++;
       }
 
-      toast({ title: `${updated} produtos atualizados com as novas regras!` });
+      toast({ title: `${updated} ${isProductType ? 'produtos' : 'serviços'} atualizados!` });
     } catch (err: any) {
       toast({ title: 'Erro ao aplicar regras', description: err.message, variant: 'destructive' });
     }
-    setApplying(false);
+    setterApplying(false);
   };
 
   const previewValue = 1000;
@@ -280,9 +273,13 @@ export default function OrcamentoRegras() {
                 <Save className="w-4 h-4 mr-2" />
                 {savingServicos ? 'Salvando...' : 'Salvar Regras Serviços'}
               </Button>
-              <Button variant="outline" onClick={aplicarRegras} disabled={applying}>
-                <RefreshCw className={cn('w-4 h-4 mr-2', applying && 'animate-spin')} />
-                {applying ? 'Aplicando...' : 'Recalcular Todos os Produtos'}
+              <Button variant="outline" onClick={() => aplicarRegrasPorTipo('produtos')} disabled={applyingProdutos}>
+                <RefreshCw className={cn('w-4 h-4 mr-2', applyingProdutos && 'animate-spin')} />
+                {applyingProdutos ? 'Aplicando...' : 'Recalcular Produtos'}
+              </Button>
+              <Button variant="outline" onClick={() => aplicarRegrasPorTipo('servicos')} disabled={applyingServicos}>
+                <RefreshCw className={cn('w-4 h-4 mr-2', applyingServicos && 'animate-spin')} />
+                {applyingServicos ? 'Aplicando...' : 'Recalcular Serviços'}
               </Button>
             </div>
           </>

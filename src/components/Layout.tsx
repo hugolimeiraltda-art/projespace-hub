@@ -4,7 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { NotificationsSidebarItem } from '@/components/NotificationsSidebarItem';
 import { cn } from '@/lib/utils';
-import { LayoutDashboard, FolderPlus, List, Settings, LogOut, User, ClipboardList, Users, Briefcase, ShoppingCart, Package, Heart, Wrench, ChevronDown, ChevronRight, AlertTriangle, Calendar, Bot, Boxes, Percent } from 'lucide-react';
+import { LayoutDashboard, FolderPlus, List, Settings, LogOut, User, ClipboardList, Users, Briefcase, ShoppingCart, Package, Heart, Wrench, ChevronDown, ChevronRight, AlertTriangle, Calendar, Bot, Boxes, Percent, Brain } from 'lucide-react';
 import emiveLogo from '@/assets/emive-logo.png';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
@@ -134,7 +134,14 @@ export function Layout({ children }: LayoutProps) {
       icon: Bot,
       roles: ['vendedor', 'gerente_comercial', 'supervisor_operacoes']
     },
-    // 11. Configurações (inclui Gestão de Usuários)
+    // 11. Painel de IA
+    {
+      path: '/painel-ia',
+      label: 'Painel de IA',
+      icon: Brain,
+      roles: ['admin']
+    },
+    // 12. Configurações (inclui Gestão de Usuários)
     {
       path: '/configuracoes',
       label: 'Configurações',

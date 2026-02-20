@@ -42,6 +42,7 @@ import OrcamentoProdutos from "./pages/OrcamentoProdutos";
 import OrcamentoRegras from "./pages/OrcamentoRegras";
 import VendedorHome from "./pages/VendedorHome";
 import VendedorChat from "./pages/VendedorChat";
+import PainelIA from "./pages/PainelIA";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -214,6 +215,10 @@ function AppRoutes() {
       <Route 
         path="/orcamento/:token" 
         element={<ProtectedRoute><OrcamentoChat /></ProtectedRoute>} 
+      />
+      <Route 
+        path="/painel-ia" 
+        element={<ProtectedRoute><PainelIA /></ProtectedRoute>} 
       />
       <Route 
         path="/orcamento-visita" 

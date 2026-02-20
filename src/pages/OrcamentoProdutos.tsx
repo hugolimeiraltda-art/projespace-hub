@@ -594,7 +594,10 @@ export default function OrcamentoProdutos() {
                           {k.itens && k.itens.length > 0 && (
                             <div className="mt-2 text-xs text-muted-foreground">
                               {k.itens.map(i => (
-                                <span key={i.id} className="mr-3">{i.quantidade}x {i.produto?.nome || 'Produto removido'}</span>
+                                <span key={i.id} className="mr-3">
+                                  {i.produto?.codigo && <span className="font-mono text-muted-foreground/70">{i.produto.codigo} - </span>}
+                                  {i.quantidade}x {i.produto?.nome || 'Produto removido'}
+                                </span>
                               ))}
                             </div>
                           )}

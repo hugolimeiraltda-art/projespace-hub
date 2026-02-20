@@ -25,7 +25,14 @@ export function Layout({ children }: LayoutProps) {
   const { user, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
-  const [expandedMenus, setExpandedMenus] = useState<string[]>([]);
+  const [expandedMenus, setExpandedMenus] = useState<string[]>(() => {
+    const path = window.location.pathname;
+    const initial: string[] = [];
+    if (path.startsWith('/projetos') || path === '/informar-venda') initial.push('/projetos');
+    if (path.startsWith('/manutencao')) initial.push('/manutencao');
+    if (path.startsWith('/orcamentos') || path.startsWith('/orcamento')) initial.push('/orcamentos');
+    return initial;
+  });
 
   const handleLogout = () => {
     logout();

@@ -1247,11 +1247,14 @@ export type Database = {
           codigo: string | null
           created_at: string
           descricao: string | null
+          descricao_uso: string | null
           historico_alteracoes: Json | null
           id: string
           id_kit: number | null
           nome: string
+          palavras_chave: string[] | null
           preco_kit: number
+          regras_condicionais: Json | null
           updated_at: string
           valor_instalacao: number | null
           valor_locacao: number | null
@@ -1264,11 +1267,14 @@ export type Database = {
           codigo?: string | null
           created_at?: string
           descricao?: string | null
+          descricao_uso?: string | null
           historico_alteracoes?: Json | null
           id?: string
           id_kit?: number | null
           nome: string
+          palavras_chave?: string[] | null
           preco_kit?: number
+          regras_condicionais?: Json | null
           updated_at?: string
           valor_instalacao?: number | null
           valor_locacao?: number | null
@@ -1281,11 +1287,14 @@ export type Database = {
           codigo?: string | null
           created_at?: string
           descricao?: string | null
+          descricao_uso?: string | null
           historico_alteracoes?: Json | null
           id?: string
           id_kit?: number | null
           nome?: string
+          palavras_chave?: string[] | null
           preco_kit?: number
+          regras_condicionais?: Json | null
           updated_at?: string
           valor_instalacao?: number | null
           valor_locacao?: number | null

@@ -27,7 +27,7 @@ async function fetchContextData(supabase: any) {
     supabase.from("customer_portfolio").select("razao_social, unidades, mensalidade, taxa_ativacao, cameras, portoes, portas, cancelas, catracas, totem_simples, totem_duplo, faciais_hik, faciais_avicam, tipo, sistema")
       .not("mensalidade", "is", null).order("created_at", { ascending: false }).limit(30),
     supabase.from("orcamento_produtos").select("*").eq("ativo", true).order("categoria").order("nome"),
-    supabase.from("orcamento_kits").select("*, orcamento_kit_itens(*, orcamento_produtos(*))").eq("ativo", true).order("categoria").order("nome"),
+    supabase.from("orcamento_kits").select("*, descricao_uso, palavras_chave, regras_condicionais, orcamento_kit_itens(*, orcamento_produtos(*))").eq("ativo", true).order("categoria").order("nome"),
   ]);
   return { projects: projects || [], portfolio: portfolio || [], produtos: produtos || [], kits: kits || [] };
 }
@@ -153,8 +153,8 @@ Poste exclusivo com até 4 câmeras com vídeo analítico conectadas à Central 
 **Produtos (catálogo completo com preços):**
 ${JSON.stringify(ctx.produtos.map((p: any) => ({ id: p.id_produto, codigo: p.codigo, nome: p.nome, categoria: p.categoria, subgrupo: p.subgrupo, unidade: p.unidade, preco_atual: p.preco_unitario, preco_minimo: p.valor_minimo, locacao: p.valor_locacao, locacao_minimo: p.valor_minimo_locacao, instalacao: p.valor_instalacao })), null, 2)}
 
-**Kits (composições com preços totais):**
-${JSON.stringify(ctx.kits.map((k: any) => ({ id_kit: k.id_kit, codigo: k.codigo, nome: k.nome, categoria: k.categoria, preco_total: k.preco_kit, minimo_total: k.valor_minimo, locacao_total: k.valor_locacao, locacao_minimo_total: k.valor_minimo_locacao, instalacao_total: k.valor_instalacao, itens: (k.orcamento_kit_itens || []).map((i: any) => ({ codigo: i.orcamento_produtos?.codigo, produto: i.orcamento_produtos?.nome, qtd: i.quantidade, preco_unit: i.orcamento_produtos?.preco_unitario })) })), null, 2)}
+**Kits (composições com preços totais e REGRAS DE USO - use estas regras para saber QUANDO sugerir cada kit):**
+${JSON.stringify(ctx.kits.map((k: any) => ({ id_kit: k.id_kit, codigo: k.codigo, nome: k.nome, categoria: k.categoria, preco_total: k.preco_kit, minimo_total: k.valor_minimo, locacao_total: k.valor_locacao, locacao_minimo_total: k.valor_minimo_locacao, instalacao_total: k.valor_instalacao, quando_usar: k.descricao_uso || null, palavras_chave: k.palavras_chave || [], regras: k.regras_condicionais || [], itens: (k.orcamento_kit_itens || []).map((i: any) => ({ codigo: i.orcamento_produtos?.codigo, produto: i.orcamento_produtos?.nome, qtd: i.quantidade, preco_unit: i.orcamento_produtos?.preco_unitario })) })), null, 2)}
 
 ## REFERÊNCIAS DE PREÇOS DA CARTEIRA (resumo):
 ${JSON.stringify(ctx.portfolio.slice(0, 8).map((c: any) => ({ razao: c.razao_social, unidades: c.unidades, mensalidade: c.mensalidade, taxa: c.taxa_ativacao, cameras: c.cameras, portoes: c.portoes, portas: c.portas })), null, 2)}

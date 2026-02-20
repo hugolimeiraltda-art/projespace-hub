@@ -184,32 +184,70 @@ ${JSON.stringify(ctx.portfolio.slice(0, 8).map((c: any) => ({ razao: c.razao_soc
 - Responda em português brasileiro`;
 }
 
-function buildPropostaPrompt(ctx: any) {
-  return `Você é um especialista em propostas comerciais de portaria digital e segurança condominial da empresa Emive.
-Baseado no histórico da visita técnica com o vendedor, gere uma PROPOSTA COMERCIAL completa e profissional.
+function buildPropostaPrompt(ctx: any, sessao: any) {
+  return `Você é um especialista em propostas comerciais de portaria digital e segurança condominial da empresa Emive (OUTSOURCING PCI).
+Baseado no histórico da visita técnica com o vendedor, gere uma PROPOSTA COMERCIAL no formato padrão Emive.
 
-Use os produtos e kits cadastrados para dimensionar e precificar:
+## FORMATO OBRIGATÓRIO DA PROPOSTA (siga EXATAMENTE esta estrutura em markdown):
 
-**Produtos (com todos os campos de preço: preco_unitario=atual, valor_minimo, valor_locacao, valor_minimo_locacao, valor_instalacao):**
-${JSON.stringify(ctx.produtos.map((p: any) => ({ id: p.id_produto, codigo: p.codigo, nome: p.nome, categoria: p.categoria, subgrupo: p.subgrupo, unidade: p.unidade, preco_atual: p.preco_unitario, preco_minimo: p.valor_minimo, locacao: p.valor_locacao, locacao_minimo: p.valor_minimo_locacao, instalacao: p.valor_instalacao })), null, 2)}
+# PROPOSTA
 
-**Kits (composições com preços totais):**
-${JSON.stringify(ctx.kits.map((k: any) => ({ id_kit: k.id_kit, codigo: k.codigo, nome: k.nome, categoria: k.categoria, preco_total: k.preco_kit, minimo_total: k.valor_minimo, locacao_total: k.valor_locacao, locacao_minimo_total: k.valor_minimo_locacao, instalacao_total: k.valor_instalacao, itens: (k.orcamento_kit_itens || []).map((i: any) => ({ codigo: i.orcamento_produtos?.codigo, produto: i.orcamento_produtos?.nome, qtd: i.quantidade, preco_unit: i.orcamento_produtos?.preco_unitario })) })), null, 2)}
+## OUTSOURCING PCI
 
-**Projetos Recentes (referência de escopo):**
-${JSON.stringify(ctx.projects.slice(0, 10), null, 2)}
+| | |
+|---|---|
+| **PROPOSTA:** [número sequencial] - **DATA:** ${new Date().toLocaleDateString('pt-BR')} | |
+| **Cliente:** [nome do condomínio] | **Telefone:** [telefone se disponível] |
+| **Sr(a).** [nome do contato/síndico se disponível] | **E-mail:** [email se disponível] |
+| **Consultor:** ${sessao?.vendedor_nome || '[vendedor]'} | |
+| **ENDEREÇO DE COBRANÇA** | **ENDEREÇO DE INSTALAÇÃO** |
+| [endereço completo] | [endereço completo] |
 
-**Carteira de Clientes (referência de preços):**
-${JSON.stringify(ctx.portfolio.slice(0, 15), null, 2)}
+### PRODUTOS UTILIZADOS
 
-Regras:
-- Escreva em português brasileiro formal e profissional
-- A proposta deve incluir: Resumo Executivo, Escopo dos Serviços, Equipamentos Detalhados (usando produtos/kits do catálogo), Investimento (taxa de ativação e mensalidade estimadas), Prazo de Implantação, Condições Gerais
-- Use os produtos e preços do catálogo quando possível
-- Se não houver dados suficientes para precificar, indique "valor sob consulta"
-- Formate usando markdown com cabeçalhos, listas e tabelas
-- Inclua todos os dados coletados na visita
-- NÃO invente dados que não foram coletados`;
+| Qtde | Descrição |
+|------|-----------|
+| [qtd][unidade] | [NOME EXATO DO PRODUTO OU KIT DO CATÁLOGO] |
+
+(liste TODOS os produtos e kits necessários, um por linha, usando EXATAMENTE os nomes do catálogo)
+
+| | |
+|---|---|
+| **MONITORAMENTO 24 HORAS COM UNIDADE VOLANTE** | **R$ [valor]/mês** |
+| **TAXA DE CONEXÃO** | **R$ [valor]** |
+
+### Observações:
+
+**ESTA PROPOSTA TEM VALIDADE DE 5 DIAS ÚTEIS.**
+
+**NÃO SERÃO CONSIDERADAS PELA EMIVE NENHUMA CONDIÇÃO NÃO DESCRITA NESTA PROPOSTA.**
+
+---
+
+## REGRAS PARA PREENCHER A TABELA DE PRODUTOS:
+1. Use APENAS produtos e kits que existem no catálogo abaixo
+2. PRIORIZE KITS sobre produtos avulsos (ex: use "KIT PORTÃO DE GARAGEM DESLIZANTE" ao invés de listar itens separados)
+3. A coluna "Qtde" deve ter o número + unidade (ex: "2.00un", "100un", "50.00un")
+4. A coluna "Descrição" deve ter o NOME EXATO do produto/kit como aparece no catálogo, em MAIÚSCULAS
+5. A mensalidade estimada vai no campo "MONITORAMENTO 24 HORAS COM UNIDADE VOLANTE"
+6. A taxa de instalação/ativação vai no campo "TAXA DE CONEXÃO"
+7. Use a carteira de clientes como referência para estimar mensalidade e taxa quando necessário
+8. Se não tiver dados suficientes para precificar, coloque "Sob consulta"
+
+## CATÁLOGO DE PRODUTOS (use nomes exatamente como aparecem aqui):
+${JSON.stringify(ctx.produtos.map((p: any) => ({ id: p.id_produto, codigo: p.codigo, nome: p.nome, categoria: p.categoria, unidade: p.unidade, preco_atual: p.preco_unitario, preco_minimo: p.valor_minimo, locacao: p.valor_locacao, instalacao: p.valor_instalacao })), null, 2)}
+
+## CATÁLOGO DE KITS (priorize kits sobre produtos avulsos):
+${JSON.stringify(ctx.kits.map((k: any) => ({ id_kit: k.id_kit, codigo: k.codigo, nome: k.nome, categoria: k.categoria, preco_total: k.preco_kit, minimo_total: k.valor_minimo, locacao_total: k.valor_locacao, instalacao_total: k.valor_instalacao, quando_usar: k.descricao_uso || null, palavras_chave: k.palavras_chave || [], regras: k.regras_condicionais || [], itens: (k.orcamento_kit_itens || []).map((i: any) => ({ produto: i.orcamento_produtos?.nome, qtd: i.quantidade })) })), null, 2)}
+
+## CARTEIRA DE CLIENTES (referência de preços mensalidade/taxa):
+${JSON.stringify(ctx.portfolio.slice(0, 15).map((c: any) => ({ razao: c.razao_social, unidades: c.unidades, mensalidade: c.mensalidade, taxa: c.taxa_ativacao, cameras: c.cameras, portoes: c.portoes, portas: c.portas, tipo: c.tipo })), null, 2)}
+
+## REGRAS CRÍTICAS:
+- NÃO invente produtos, marcas ou modelos que não estejam no catálogo
+- NÃO invente dados que não foram coletados na visita
+- Se faltar informação, omita o campo ou coloque "A definir"
+- Responda em português brasileiro`;
 }
 
 serve(async (req) => {
@@ -262,7 +300,7 @@ serve(async (req) => {
         body: JSON.stringify({
           model: "google/gemini-2.5-flash",
           messages: [
-            { role: "system", content: buildPropostaPrompt(ctx) },
+            { role: "system", content: buildPropostaPrompt(ctx, sessao) },
             ...(allMsgs || []).map((m: any) => ({ role: m.role, content: m.content })),
             { role: "user", content: "Agora gere a proposta comercial completa baseada em tudo que coletamos na visita." },
           ],

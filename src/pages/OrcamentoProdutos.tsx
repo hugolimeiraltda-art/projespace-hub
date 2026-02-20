@@ -665,15 +665,29 @@ export default function OrcamentoProdutos() {
                   const raw = parseBRL(e.target.value);
                   const val = parseFloat(raw);
                   if (!isNaN(val) && val > 0) {
-                    const locacao = val * (pricingRules.valor_locacao / 100);
-                    setPForm(p => ({
-                      ...p,
-                      preco_unitario: formatBRL(val),
-                      valor_minimo: formatBRL(val * (pricingRules.valor_minimo / 100)),
-                      valor_locacao: formatBRL(locacao),
-                      valor_minimo_locacao: formatBRL(locacao * (pricingRules.valor_minimo_locacao / 100)),
-                      valor_instalacao: p.subgrupo === 'Serviço' ? p.valor_instalacao : formatBRL(val * (pricingRules.valor_instalacao / 100)),
-                    }));
+                    const isServico = pForm.subgrupo === 'Serviço';
+                    if (isServico) {
+                      const svcMinPct = pricingRules.servico_valor_minimo ?? pricingRules.valor_minimo;
+                      const svcLocPct = pricingRules.servico_valor_locacao ?? pricingRules.valor_locacao;
+                      setPForm(p => ({
+                        ...p,
+                        preco_unitario: formatBRL(val),
+                        valor_minimo: formatBRL(val * (svcMinPct / 100)),
+                        valor_locacao: formatBRL(val * (svcLocPct / 100)),
+                        valor_minimo_locacao: '',
+                        valor_instalacao: p.valor_instalacao,
+                      }));
+                    } else {
+                      const locacao = val * (pricingRules.valor_locacao / 100);
+                      setPForm(p => ({
+                        ...p,
+                        preco_unitario: formatBRL(val),
+                        valor_minimo: formatBRL(val * (pricingRules.valor_minimo / 100)),
+                        valor_locacao: formatBRL(locacao),
+                        valor_minimo_locacao: formatBRL(locacao * (pricingRules.valor_minimo_locacao / 100)),
+                        valor_instalacao: formatBRL(val * (pricingRules.valor_instalacao / 100)),
+                      }));
+                    }
                   }
                 }}
                 placeholder="0,00"

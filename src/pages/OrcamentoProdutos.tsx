@@ -639,7 +639,11 @@ export default function OrcamentoProdutos() {
               </div>
               <div>
                 <Label>Subgrupo</Label>
-                <Select value={pForm.subgrupo || ''} onValueChange={v => setPForm(p => ({ ...p, subgrupo: v }))}>
+                <Select value={pForm.subgrupo || ''} onValueChange={v => {
+                  const updates: any = { subgrupo: v };
+                  if (v === 'Serviço') updates.valor_instalacao = '';
+                  setPForm(p => ({ ...p, ...updates }));
+                }}>
                   <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
                   <SelectContent>{SUBGRUPOS.map(s => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}</SelectContent>
                 </Select>
@@ -668,7 +672,7 @@ export default function OrcamentoProdutos() {
                       valor_minimo: formatBRL(val * (pricingRules.valor_minimo / 100)),
                       valor_locacao: formatBRL(locacao),
                       valor_minimo_locacao: formatBRL(locacao * (pricingRules.valor_minimo_locacao / 100)),
-                      valor_instalacao: formatBRL(val * (pricingRules.valor_instalacao / 100)),
+                      valor_instalacao: p.subgrupo === 'Serviço' ? p.valor_instalacao : formatBRL(val * (pricingRules.valor_instalacao / 100)),
                     }));
                   }
                 }}
@@ -681,7 +685,11 @@ export default function OrcamentoProdutos() {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div><Label>Valor Mín. Locação (R$)</Label><Input value={pForm.valor_minimo_locacao} onChange={e => setPForm(p => ({ ...p, valor_minimo_locacao: e.target.value }))} onBlur={e => { const v = parseFloat(parseBRL(e.target.value)); if (!isNaN(v)) setPForm(p => ({ ...p, valor_minimo_locacao: formatBRL(v) })); }} placeholder="0,00" /></div>
-              <div><Label>Valor Instalação (R$)</Label><Input value={pForm.valor_instalacao} onChange={e => setPForm(p => ({ ...p, valor_instalacao: e.target.value }))} onBlur={e => { const v = parseFloat(parseBRL(e.target.value)); if (!isNaN(v)) setPForm(p => ({ ...p, valor_instalacao: formatBRL(v) })); }} placeholder="0,00" /></div>
+              <div>
+                <Label>Valor Instalação (R$)</Label>
+                <Input value={pForm.valor_instalacao} onChange={e => setPForm(p => ({ ...p, valor_instalacao: e.target.value }))} onBlur={e => { const v = parseFloat(parseBRL(e.target.value)); if (!isNaN(v)) setPForm(p => ({ ...p, valor_instalacao: formatBRL(v) })); }} placeholder={pForm.subgrupo === 'Serviço' ? '0,00 (Serviço)' : '0,00'} />
+                {pForm.subgrupo === 'Serviço' && <p className="text-xs text-warning mt-1">Subgrupo Serviço: instalação zerada. Edite manualmente se necessário.</p>}
+              </div>
             </div>
             <div className="flex items-center gap-3">
               <Switch checked={pForm.adicional} onCheckedChange={v => setPForm(p => ({ ...p, adicional: v }))} />

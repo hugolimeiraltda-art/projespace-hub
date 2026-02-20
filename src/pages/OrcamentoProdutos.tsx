@@ -408,6 +408,10 @@ export default function OrcamentoProdutos() {
       }];
       await supabase.from('orcamento_produtos').insert(payload);
     }
+    // Recalculate kit prices if editing a product (price may have changed)
+    if (editProduto) {
+      await recalcAllKitPrices();
+    }
     setShowProdutoForm(false);
     setEditProduto(null);
     resetPForm();
@@ -416,6 +420,32 @@ export default function OrcamentoProdutos() {
   };
 
   const resetPForm = () => setPForm({ nome: '', descricao: '', categoria: 'Smartportaria', subgrupo: '', codigo: '', id_produto: '', preco_unitario: '', unidade: 'un', qtd_max: '', valor_minimo: '', valor_locacao: '', valor_instalacao: '', valor_minimo_locacao: '', adicional: false });
+
+  // Recalculate all kit prices based on current product prices
+  const recalcAllKitPrices = async () => {
+    const { data: allKitItens } = await supabase.from('orcamento_kit_itens').select('kit_id, produto_id, quantidade');
+    const { data: allProdutos } = await supabase.from('orcamento_produtos').select('id, preco_unitario, valor_minimo, valor_locacao, valor_minimo_locacao, valor_instalacao');
+    if (!allKitItens || !allProdutos) return;
+
+    const prodMap = new Map(allProdutos.map(p => [p.id, p]));
+    const kitTotals = new Map<string, { preco_kit: number; valor_minimo: number; valor_locacao: number; valor_minimo_locacao: number; valor_instalacao: number }>();
+
+    allKitItens.forEach(item => {
+      const prod = prodMap.get(item.produto_id);
+      if (!prod) return;
+      const existing = kitTotals.get(item.kit_id) || { preco_kit: 0, valor_minimo: 0, valor_locacao: 0, valor_minimo_locacao: 0, valor_instalacao: 0 };
+      existing.preco_kit += (prod.preco_unitario || 0) * item.quantidade;
+      existing.valor_minimo += (prod.valor_minimo || 0) * item.quantidade;
+      existing.valor_locacao += (prod.valor_locacao || 0) * item.quantidade;
+      existing.valor_minimo_locacao += (prod.valor_minimo_locacao || 0) * item.quantidade;
+      existing.valor_instalacao += (prod.valor_instalacao || 0) * item.quantidade;
+      kitTotals.set(item.kit_id, existing);
+    });
+
+    for (const [kitId, totals] of kitTotals) {
+      await supabase.from('orcamento_kits').update(totals).eq('id', kitId);
+    }
+  };
 
   // ---- Kit CRUD ----
   const openKitEdit = (k: Kit) => {

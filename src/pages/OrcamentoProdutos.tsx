@@ -20,22 +20,35 @@ import {
 } from '@/components/ui/alert-dialog';
 
 const GRUPOS = [
-  { value: 'central', label: 'Central' },
-  { value: 'acesso_pedestre', label: 'Acesso de Pedestre' },
-  { value: 'acesso_veiculos', label: 'Acesso de Veículos' },
-  { value: 'cftv', label: 'CFTV' },
-  { value: 'perimetro', label: 'Perímetro / Alarme' },
-  { value: 'infraestrutura', label: 'Infraestrutura' },
-  { value: 'interfonia', label: 'Interfonia' },
+  { value: 'Smartportaria', label: 'Smartportaria' },
+  { value: 'Cftv', label: 'CFTV' },
+  { value: 'Alarme', label: 'Alarme' },
+  { value: 'Ambos', label: 'Ambos' },
 ];
 
 const SUBGRUPOS = [
-  { value: 'controle', label: 'Controle' },
-  { value: 'suporte', label: 'Suporte' },
-  { value: 'smartportaria', label: 'Smartportaria' },
-  { value: 'instalacao', label: 'Instalação' },
-  { value: 'manutencao', label: 'Manutenção' },
-  { value: 'outro', label: 'Outro' },
+  { value: 'Controle', label: 'Controle' },
+  { value: 'Cabo', label: 'Cabo' },
+  { value: 'Camera', label: 'Câmera' },
+  { value: 'Cftv', label: 'CFTV' },
+  { value: 'Comunicador', label: 'Comunicador' },
+  { value: 'Fonte', label: 'Fonte' },
+  { value: 'Gabinete', label: 'Gabinete' },
+  { value: 'Central', label: 'Central' },
+  { value: 'Cerca', label: 'Cerca' },
+  { value: 'Bateria', label: 'Bateria' },
+  { value: 'Serviço', label: 'Serviço' },
+  { value: 'Suporte', label: 'Suporte' },
+  { value: 'Transformador', label: 'Transformador' },
+  { value: 'Transmissor', label: 'Transmissor' },
+  { value: 'Sensor Magnetico', label: 'Sensor Magnético' },
+  { value: 'Receptor', label: 'Receptor' },
+  { value: 'Radio', label: 'Rádio' },
+  { value: 'Teclado', label: 'Teclado' },
+  { value: 'Kit', label: 'Kit' },
+  { value: 'Anunciador', label: 'Anunciador' },
+  { value: 'Arame', label: 'Arame' },
+  { value: 'Sirene', label: 'Sirene' },
 ];
 
 const UNIDADES = [
@@ -82,12 +95,12 @@ export default function OrcamentoProdutos() {
   // Product form
   const [showProdutoForm, setShowProdutoForm] = useState(false);
   const [editProduto, setEditProduto] = useState<Produto | null>(null);
-  const [pForm, setPForm] = useState({ nome: '', descricao: '', categoria: 'central', subgrupo: '', codigo: '', preco_unitario: '', unidade: 'un', qtd_max: '', valor_minimo: '', valor_instalacao: '', valor_minimo_locacao: '', adicional: false });
+  const [pForm, setPForm] = useState({ nome: '', descricao: '', categoria: 'Smartportaria', subgrupo: '', codigo: '', preco_unitario: '', unidade: 'un', qtd_max: '', valor_minimo: '', valor_instalacao: '', valor_minimo_locacao: '', adicional: false });
 
   // Kit form
   const [showKitForm, setShowKitForm] = useState(false);
   const [editKit, setEditKit] = useState<Kit | null>(null);
-  const [kForm, setKForm] = useState({ nome: '', descricao: '', categoria: 'central', preco_kit: '' });
+  const [kForm, setKForm] = useState({ nome: '', descricao: '', categoria: 'Smartportaria', preco_kit: '' });
   const [kitItens, setKitItens] = useState<{ produto_id: string; quantidade: number }[]>([]);
 
   const [deleteTarget, setDeleteTarget] = useState<{ type: 'produto' | 'kit'; id: string } | null>(null);
@@ -165,7 +178,7 @@ export default function OrcamentoProdutos() {
     toast({ title: editProduto ? 'Produto atualizado' : 'Produto criado' });
   };
 
-  const resetPForm = () => setPForm({ nome: '', descricao: '', categoria: 'central', subgrupo: '', codigo: '', preco_unitario: '', unidade: 'un', qtd_max: '', valor_minimo: '', valor_instalacao: '', valor_minimo_locacao: '', adicional: false });
+  const resetPForm = () => setPForm({ nome: '', descricao: '', categoria: 'Smartportaria', subgrupo: '', codigo: '', preco_unitario: '', unidade: 'un', qtd_max: '', valor_minimo: '', valor_instalacao: '', valor_minimo_locacao: '', adicional: false });
 
   // ---- Kit CRUD ----
   const openKitEdit = (k: Kit) => {
@@ -196,7 +209,7 @@ export default function OrcamentoProdutos() {
 
     setShowKitForm(false);
     setEditKit(null);
-    setKForm({ nome: '', descricao: '', categoria: 'central', preco_kit: '' });
+    setKForm({ nome: '', descricao: '', categoria: 'Smartportaria', preco_kit: '' });
     setKitItens([]);
     fetchAll();
     toast({ title: editKit ? 'Kit atualizado' : 'Kit criado' });

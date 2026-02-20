@@ -38,7 +38,6 @@ const SERVICO_CAMPOS = ['servico_valor_minimo', 'servico_valor_locacao', 'servic
 export default function OrcamentoRegras() {
   const [regras, setRegras] = useState<Regra[]>([]);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
   const [applying, setApplying] = useState(false);
   const [editValues, setEditValues] = useState<Record<string, string>>({});
 
@@ -63,14 +62,19 @@ export default function OrcamentoRegras() {
   const regrasProduto = regras.filter(r => PRODUTO_CAMPOS.includes(r.campo));
   const regrasServico = regras.filter(r => SERVICO_CAMPOS.includes(r.campo));
 
-  const saveRegras = async () => {
-    setSaving(true);
+  const [savingProdutos, setSavingProdutos] = useState(false);
+  const [savingServicos, setSavingServicos] = useState(false);
+
+  const saveRegrasPorTipo = async (tipo: 'produtos' | 'servicos') => {
+    const setterSaving = tipo === 'produtos' ? setSavingProdutos : setSavingServicos;
+    const regrasList = tipo === 'produtos' ? regrasProduto : regrasServico;
+    setterSaving(true);
     try {
-      for (const regra of regras) {
+      for (const regra of regrasList) {
         const newPercentual = parseFloat(editValues[regra.id] || '0');
         if (isNaN(newPercentual) || newPercentual <= 0) {
           toast({ title: 'Valor inválido', description: `Percentual de ${CAMPO_LABELS[regra.campo]} deve ser maior que zero.`, variant: 'destructive' });
-          setSaving(false);
+          setterSaving(false);
           return;
         }
         await supabase
@@ -78,12 +82,12 @@ export default function OrcamentoRegras() {
           .update({ percentual: newPercentual, updated_at: new Date().toISOString() })
           .eq('id', regra.id);
       }
-      toast({ title: 'Regras salvas com sucesso!' });
+      toast({ title: `Regras de ${tipo === 'produtos' ? 'Produtos' : 'Serviços'} salvas com sucesso!` });
       fetchRegras();
     } catch {
       toast({ title: 'Erro ao salvar', variant: 'destructive' });
     }
-    setSaving(false);
+    setterSaving(false);
   };
 
   const aplicarRegras = async () => {
@@ -267,10 +271,14 @@ export default function OrcamentoRegras() {
               </Card>
             )}
 
-            <div className="flex gap-3">
-              <Button onClick={saveRegras} disabled={saving}>
+            <div className="flex flex-wrap gap-3">
+              <Button onClick={() => saveRegrasPorTipo('produtos')} disabled={savingProdutos}>
                 <Save className="w-4 h-4 mr-2" />
-                {saving ? 'Salvando...' : 'Salvar Regras'}
+                {savingProdutos ? 'Salvando...' : 'Salvar Regras Produtos'}
+              </Button>
+              <Button onClick={() => saveRegrasPorTipo('servicos')} disabled={savingServicos}>
+                <Save className="w-4 h-4 mr-2" />
+                {savingServicos ? 'Salvando...' : 'Salvar Regras Serviços'}
               </Button>
               <Button variant="outline" onClick={aplicarRegras} disabled={applying}>
                 <RefreshCw className={cn('w-4 h-4 mr-2', applying && 'animate-spin')} />

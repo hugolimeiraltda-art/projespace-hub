@@ -1248,6 +1248,7 @@ export type Database = {
           created_at: string
           descricao: string | null
           id: string
+          id_kit: number | null
           nome: string
           preco_kit: number
           updated_at: string
@@ -1263,6 +1264,7 @@ export type Database = {
           created_at?: string
           descricao?: string | null
           id?: string
+          id_kit?: number | null
           nome: string
           preco_kit?: number
           updated_at?: string
@@ -1278,6 +1280,7 @@ export type Database = {
           created_at?: string
           descricao?: string | null
           id?: string
+          id_kit?: number | null
           nome?: string
           preco_kit?: number
           updated_at?: string

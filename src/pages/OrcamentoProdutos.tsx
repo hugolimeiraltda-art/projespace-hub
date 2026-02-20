@@ -108,7 +108,9 @@ interface Kit {
   valor_minimo_locacao: number;
   valor_instalacao: number;
   ativo: boolean;
+  historico_alteracoes?: any[];
   itens?: { id: string; produto_id: string; quantidade: number; produto?: Produto }[];
+  orcamento_kit_itens?: any[];
 }
 
 export default function OrcamentoProdutos() {
@@ -385,6 +387,7 @@ export default function OrcamentoProdutos() {
 
       const kitsWithItens = (kitsData as unknown as Kit[]).map(k => ({
         ...k,
+        orcamento_kit_itens: (itens || []).filter(i => i.kit_id === k.id),
         itens: (itens || []).filter(i => i.kit_id === k.id).map(i => ({
           ...i,
           produto: (prods as unknown as Produto[])?.find(p => p.id === i.produto_id),
@@ -524,6 +527,40 @@ export default function OrcamentoProdutos() {
 
     let kitId = editKit?.id;
     if (editKit) {
+      // Build change history entry
+      const changes: string[] = [];
+      if (editKit.nome !== payload.nome) changes.push(`Nome: "${editKit.nome}" → "${payload.nome}"`);
+      if (editKit.descricao !== payload.descricao) changes.push(`Descrição alterada`);
+      if (editKit.categoria !== payload.categoria) changes.push(`Categoria: "${editKit.categoria}" → "${payload.categoria}"`);
+      if (editKit.codigo !== payload.codigo) changes.push(`Código: "${editKit.codigo || ''}" → "${payload.codigo || ''}"`);
+      if (Number(editKit.preco_kit) !== payload.preco_kit) changes.push(`Preço Kit: ${Number(editKit.preco_kit)} → ${payload.preco_kit}`);
+      if (Number(editKit.valor_minimo) !== payload.valor_minimo) changes.push(`Val. Mínimo: ${Number(editKit.valor_minimo)} → ${payload.valor_minimo}`);
+      if (Number(editKit.valor_locacao) !== payload.valor_locacao) changes.push(`Val. Locação: ${Number(editKit.valor_locacao)} → ${payload.valor_locacao}`);
+      if (Number(editKit.valor_minimo_locacao) !== payload.valor_minimo_locacao) changes.push(`Mín. Locação: ${Number(editKit.valor_minimo_locacao)} → ${payload.valor_minimo_locacao}`);
+      if (Number(editKit.valor_instalacao) !== payload.valor_instalacao) changes.push(`Instalação: ${Number(editKit.valor_instalacao)} → ${payload.valor_instalacao}`);
+
+      // Check items changes
+      const oldItens = (editKit as any).orcamento_kit_itens || [];
+      const oldItensMap = new Map(oldItens.map((i: any) => [i.produto_id, i.quantidade]));
+      const newItensMap = new Map(kitItens.filter(i => i.produto_id).map(i => [i.produto_id, i.quantidade]));
+      const addedItems = kitItens.filter(i => i.produto_id && !oldItensMap.has(i.produto_id));
+      const removedItems = oldItens.filter((i: any) => !newItensMap.has(i.produto_id));
+      const changedQty = kitItens.filter(i => i.produto_id && oldItensMap.has(i.produto_id) && oldItensMap.get(i.produto_id) !== i.quantidade);
+      if (addedItems.length) changes.push(`${addedItems.length} produto(s) adicionado(s)`);
+      if (removedItems.length) changes.push(`${removedItems.length} produto(s) removido(s)`);
+      if (changedQty.length) changes.push(`Qtd alterada em ${changedQty.length} produto(s)`);
+
+      if (changes.length > 0) {
+        const historico = Array.isArray(editKit.historico_alteracoes) ? editKit.historico_alteracoes : [];
+        const entry = {
+          data: new Date().toISOString(),
+          usuario: user?.nome || user?.email || 'Desconhecido',
+          usuario_id: user?.id,
+          alteracoes: changes,
+        };
+        (payload as any).historico_alteracoes = [...historico, entry];
+      }
+
       await supabase.from('orcamento_kits').update(payload).eq('id', editKit.id);
       await supabase.from('orcamento_kit_itens').delete().eq('kit_id', editKit.id);
     } else {

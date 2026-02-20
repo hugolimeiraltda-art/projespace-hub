@@ -1381,6 +1381,7 @@ export type Database = {
           descricao: string | null
           historico_alteracoes: Json | null
           id: string
+          id_produto: number | null
           nome: string
           preco_unitario: number
           qtd_max: number | null
@@ -1403,6 +1404,7 @@ export type Database = {
           descricao?: string | null
           historico_alteracoes?: Json | null
           id?: string
+          id_produto?: number | null
           nome: string
           preco_unitario?: number
           qtd_max?: number | null
@@ -1425,6 +1427,7 @@ export type Database = {
           descricao?: string | null
           historico_alteracoes?: Json | null
           id?: string
+          id_produto?: number | null
           nome?: string
           preco_unitario?: number
           qtd_max?: number | null

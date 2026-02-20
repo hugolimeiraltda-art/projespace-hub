@@ -77,6 +77,7 @@ const UNIDADES = [
 
 interface Produto {
   id: string;
+  id_produto: number | null;
   nome: string;
   descricao: string | null;
   categoria: string;
@@ -126,8 +127,9 @@ export default function OrcamentoProdutos() {
   const [sortField, setSortField] = useState<string>('nome');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
 
-  type ColKey = 'codigo' | 'nome' | 'grupo' | 'subgrupo' | 'unidade' | 'qtd_max' | 'valor_atual' | 'valor_minimo' | 'valor_locacao' | 'valor_min_locacao' | 'valor_instalacao' | 'adicional' | 'ativo';
+  type ColKey = 'id_produto' | 'codigo' | 'nome' | 'grupo' | 'subgrupo' | 'unidade' | 'qtd_max' | 'valor_atual' | 'valor_minimo' | 'valor_locacao' | 'valor_min_locacao' | 'valor_instalacao' | 'adicional' | 'ativo';
   const ALL_COLUMNS: { key: ColKey; label: string }[] = [
+    { key: 'id_produto', label: 'Id' },
     { key: 'codigo', label: 'Código' },
     { key: 'nome', label: 'Nome' },
     { key: 'grupo', label: 'Grupo' },
@@ -142,7 +144,7 @@ export default function OrcamentoProdutos() {
     { key: 'adicional', label: 'Adicional' },
     { key: 'ativo', label: 'Ativo' },
   ];
-  const [visibleCols, setVisibleCols] = useState<Set<ColKey>>(new Set(['codigo', 'nome', 'grupo', 'subgrupo', 'unidade', 'valor_atual', 'valor_minimo', 'adicional', 'ativo']));
+  const [visibleCols, setVisibleCols] = useState<Set<ColKey>>(new Set(['id_produto', 'codigo', 'nome', 'grupo', 'subgrupo', 'unidade', 'valor_atual', 'valor_minimo', 'adicional', 'ativo']));
 
   const toggleCol = (key: ColKey) => {
     setVisibleCols(prev => {
@@ -175,6 +177,7 @@ export default function OrcamentoProdutos() {
     result.sort((a, b) => {
       let va: any, vb: any;
       switch (sortField) {
+        case 'id_produto': va = a.id_produto || 0; vb = b.id_produto || 0; break;
         case 'codigo': va = a.codigo || ''; vb = b.codigo || ''; break;
         case 'nome': va = a.nome; vb = b.nome; break;
         case 'grupo': va = a.categoria; vb = b.categoria; break;
@@ -197,7 +200,7 @@ export default function OrcamentoProdutos() {
 
   const [showProdutoForm, setShowProdutoForm] = useState(false);
   const [editProduto, setEditProduto] = useState<Produto | null>(null);
-  const [pForm, setPForm] = useState({ nome: '', descricao: '', categoria: 'Smartportaria', subgrupo: '', codigo: '', preco_unitario: '', unidade: 'un', qtd_max: '', valor_minimo: '', valor_locacao: '', valor_instalacao: '', valor_minimo_locacao: '', adicional: false });
+  const [pForm, setPForm] = useState({ nome: '', descricao: '', categoria: 'Smartportaria', subgrupo: '', codigo: '', id_produto: '', preco_unitario: '', unidade: 'un', qtd_max: '', valor_minimo: '', valor_locacao: '', valor_instalacao: '', valor_minimo_locacao: '', adicional: false });
 
   // Kit form
   const [showKitForm, setShowKitForm] = useState(false);
@@ -278,6 +281,7 @@ export default function OrcamentoProdutos() {
     setPForm({
       nome: p.nome, descricao: p.descricao || '', categoria: p.categoria,
       subgrupo: p.subgrupo || '', codigo: p.codigo || '',
+      id_produto: p.id_produto != null ? String(p.id_produto) : '',
       preco_unitario: formatBRL(p.preco_unitario), unidade: p.unidade,
       qtd_max: String(p.qtd_max || ''), valor_minimo: formatBRL(p.valor_minimo || 0),
       valor_locacao: formatBRL(p.valor_locacao || 0),
@@ -295,6 +299,7 @@ export default function OrcamentoProdutos() {
       categoria: pForm.categoria,
       subgrupo: pForm.subgrupo.trim() || null,
       codigo: pForm.codigo.trim() || null,
+      id_produto: pForm.id_produto ? parseInt(pForm.id_produto) : null,
       preco_unitario: parseFloat(parseBRL(pForm.preco_unitario)) || 0,
       unidade: pForm.unidade,
       qtd_max: parseInt(pForm.qtd_max) || 0,
@@ -348,7 +353,7 @@ export default function OrcamentoProdutos() {
     toast({ title: editProduto ? 'Produto atualizado' : 'Produto criado' });
   };
 
-  const resetPForm = () => setPForm({ nome: '', descricao: '', categoria: 'Smartportaria', subgrupo: '', codigo: '', preco_unitario: '', unidade: 'un', qtd_max: '', valor_minimo: '', valor_locacao: '', valor_instalacao: '', valor_minimo_locacao: '', adicional: false });
+  const resetPForm = () => setPForm({ nome: '', descricao: '', categoria: 'Smartportaria', subgrupo: '', codigo: '', id_produto: '', preco_unitario: '', unidade: 'un', qtd_max: '', valor_minimo: '', valor_locacao: '', valor_instalacao: '', valor_minimo_locacao: '', adicional: false });
 
   // ---- Kit CRUD ----
   const openKitEdit = (k: Kit) => {
@@ -519,6 +524,7 @@ export default function OrcamentoProdutos() {
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b bg-muted/50">
+                      {visibleCols.has('id_produto') && <th className="px-3 py-2 text-left cursor-pointer hover:bg-muted" onClick={() => toggleSort('id_produto')}><div className="flex items-center gap-1">Id {sortField === 'id_produto' ? (sortDir === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />) : <ArrowUpDown className="h-3 w-3 opacity-30" />}</div></th>}
                       {visibleCols.has('codigo') && <th className="px-3 py-2 text-left cursor-pointer hover:bg-muted" onClick={() => toggleSort('codigo')}><div className="flex items-center gap-1">Código {sortField === 'codigo' ? (sortDir === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />) : <ArrowUpDown className="h-3 w-3 opacity-30" />}</div></th>}
                       {visibleCols.has('nome') && <th className="px-3 py-2 text-left cursor-pointer hover:bg-muted" onClick={() => toggleSort('nome')}><div className="flex items-center gap-1">Nome {sortField === 'nome' ? (sortDir === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />) : <ArrowUpDown className="h-3 w-3 opacity-30" />}</div></th>}
                       {visibleCols.has('grupo') && <th className="px-3 py-2 text-left cursor-pointer hover:bg-muted" onClick={() => toggleSort('grupo')}><div className="flex items-center gap-1">Grupo {sortField === 'grupo' ? (sortDir === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />) : <ArrowUpDown className="h-3 w-3 opacity-30" />}</div></th>}
@@ -538,6 +544,7 @@ export default function OrcamentoProdutos() {
                   <tbody>
                     {filteredProdutos.map(p => (
                       <tr key={p.id} className={`border-b hover:bg-muted/30 ${!p.ativo ? 'opacity-50' : ''}`}>
+                        {visibleCols.has('id_produto') && <td className="px-3 py-2 font-mono text-xs text-muted-foreground">{p.id_produto ?? '-'}</td>}
                         {visibleCols.has('codigo') && <td className="px-3 py-2 font-mono text-xs text-muted-foreground">{p.codigo || '-'}</td>}
                         {visibleCols.has('nome') && <td className="px-3 py-2 font-medium text-foreground max-w-[300px] truncate">{p.nome}</td>}
                         {visibleCols.has('grupo') && <td className="px-3 py-2"><Badge variant="outline" className="text-xs">{catLabel(p.categoria)}</Badge></td>}
@@ -629,8 +636,9 @@ export default function OrcamentoProdutos() {
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle>{editProduto ? 'Editar Produto' : 'Novo Produto'}</DialogTitle></DialogHeader>
           <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-3 gap-4">
               <div><Label>Nome *</Label><Input value={pForm.nome} onChange={e => setPForm(p => ({ ...p, nome: e.target.value }))} /></div>
+              <div><Label>Id</Label><Input type="number" value={pForm.id_produto} onChange={e => setPForm(p => ({ ...p, id_produto: e.target.value }))} placeholder="Ex: 3246" /></div>
               <div><Label>Código</Label><Input value={pForm.codigo} onChange={e => setPForm(p => ({ ...p, codigo: e.target.value }))} placeholder="Ex: 8500" /></div>
             </div>
             <div><Label>Descrição</Label><Textarea value={pForm.descricao} onChange={e => setPForm(p => ({ ...p, descricao: e.target.value }))} rows={2} /></div>

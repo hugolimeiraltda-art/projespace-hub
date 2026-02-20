@@ -1,0 +1,1 @@
+ALTER TABLE public.orcamento_produtos ADD COLUMN id_produto integer;

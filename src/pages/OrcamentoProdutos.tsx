@@ -21,6 +21,21 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 
+// Currency formatting helpers
+const formatBRL = (value: string | number): string => {
+  const num = typeof value === 'string' ? parseFloat(value) : value;
+  if (isNaN(num) || num === 0) return '';
+  return num.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+};
+
+const parseBRL = (value: string): string => {
+  // Remove thousand separators (.) and replace decimal comma with dot
+  const cleaned = value.replace(/\./g, '').replace(',', '.');
+  const num = parseFloat(cleaned);
+  if (isNaN(num)) return '';
+  return num.toString();
+};
+
 const GRUPOS = [
   { value: 'Smartportaria', label: 'Smartportaria' },
   { value: 'Cftv', label: 'CFTV' },
@@ -233,10 +248,10 @@ export default function OrcamentoProdutos() {
     setPForm({
       nome: p.nome, descricao: p.descricao || '', categoria: p.categoria,
       subgrupo: p.subgrupo || '', codigo: p.codigo || '',
-      preco_unitario: String(p.preco_unitario), unidade: p.unidade,
-      qtd_max: String(p.qtd_max || ''), valor_minimo: String(p.valor_minimo || ''),
-      valor_locacao: String(p.valor_locacao || ''),
-      valor_instalacao: String(p.valor_instalacao || ''), valor_minimo_locacao: String(p.valor_minimo_locacao || ''),
+      preco_unitario: formatBRL(p.preco_unitario), unidade: p.unidade,
+      qtd_max: String(p.qtd_max || ''), valor_minimo: formatBRL(p.valor_minimo || 0),
+      valor_locacao: formatBRL(p.valor_locacao || 0),
+      valor_instalacao: formatBRL(p.valor_instalacao || 0), valor_minimo_locacao: formatBRL(p.valor_minimo_locacao || 0),
       adicional: p.adicional || false,
     });
     setShowProdutoForm(true);
@@ -250,13 +265,13 @@ export default function OrcamentoProdutos() {
       categoria: pForm.categoria,
       subgrupo: pForm.subgrupo.trim() || null,
       codigo: pForm.codigo.trim() || null,
-      preco_unitario: parseFloat(pForm.preco_unitario) || 0,
+      preco_unitario: parseFloat(parseBRL(pForm.preco_unitario)) || 0,
       unidade: pForm.unidade,
       qtd_max: parseInt(pForm.qtd_max) || 0,
-      valor_minimo: parseFloat(pForm.valor_minimo) || 0,
-      valor_locacao: parseFloat(pForm.valor_locacao) || 0,
-      valor_instalacao: parseFloat(pForm.valor_instalacao) || 0,
-      valor_minimo_locacao: parseFloat(pForm.valor_minimo_locacao) || 0,
+      valor_minimo: parseFloat(parseBRL(pForm.valor_minimo)) || 0,
+      valor_locacao: parseFloat(parseBRL(pForm.valor_locacao)) || 0,
+      valor_instalacao: parseFloat(parseBRL(pForm.valor_instalacao)) || 0,
+      valor_minimo_locacao: parseFloat(parseBRL(pForm.valor_minimo_locacao)) || 0,
       adicional: pForm.adicional,
     };
 
@@ -572,26 +587,34 @@ export default function OrcamentoProdutos() {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div><Label>Qtd Máxima</Label><Input type="number" value={pForm.qtd_max} onChange={e => setPForm(p => ({ ...p, qtd_max: e.target.value }))} /></div>
-              <div><Label>Valor Atual (R$)</Label><Input type="number" step="0.01" value={pForm.preco_unitario} onChange={e => {
-                const val = parseFloat(e.target.value);
-                const updates: any = { preco_unitario: e.target.value };
-                if (!isNaN(val)) {
-                  const locacao = val * (pricingRules.valor_locacao / 100);
-                  updates.valor_minimo = (val * (pricingRules.valor_minimo / 100)).toFixed(2);
-                  updates.valor_locacao = locacao.toFixed(2);
-                  updates.valor_minimo_locacao = (locacao * (pricingRules.valor_minimo_locacao / 100)).toFixed(2);
-                  updates.valor_instalacao = (val * (pricingRules.valor_instalacao / 100)).toFixed(2);
-                }
-                setPForm(p => ({ ...p, ...updates }));
-              }} /></div>
+              <div><Label>Valor Atual (R$)</Label><Input
+                value={pForm.preco_unitario}
+                onChange={e => setPForm(p => ({ ...p, preco_unitario: e.target.value }))}
+                onBlur={e => {
+                  const raw = parseBRL(e.target.value);
+                  const val = parseFloat(raw);
+                  if (!isNaN(val) && val > 0) {
+                    const locacao = val * (pricingRules.valor_locacao / 100);
+                    setPForm(p => ({
+                      ...p,
+                      preco_unitario: formatBRL(val),
+                      valor_minimo: formatBRL(val * (pricingRules.valor_minimo / 100)),
+                      valor_locacao: formatBRL(locacao),
+                      valor_minimo_locacao: formatBRL(locacao * (pricingRules.valor_minimo_locacao / 100)),
+                      valor_instalacao: formatBRL(val * (pricingRules.valor_instalacao / 100)),
+                    }));
+                  }
+                }}
+                placeholder="0,00"
+              /></div>
             </div>
             <div className="grid grid-cols-2 gap-4">
-              <div><Label>Valor Mínimo (R$)</Label><Input type="number" step="0.01" value={pForm.valor_minimo} onChange={e => setPForm(p => ({ ...p, valor_minimo: e.target.value }))} /></div>
-              <div><Label>Valor Locação (R$)</Label><Input type="number" step="0.01" value={pForm.valor_locacao} onChange={e => setPForm(p => ({ ...p, valor_locacao: e.target.value }))} /></div>
+              <div><Label>Valor Mínimo (R$)</Label><Input value={pForm.valor_minimo} onChange={e => setPForm(p => ({ ...p, valor_minimo: e.target.value }))} onBlur={e => { const v = parseFloat(parseBRL(e.target.value)); if (!isNaN(v)) setPForm(p => ({ ...p, valor_minimo: formatBRL(v) })); }} placeholder="0,00" /></div>
+              <div><Label>Valor Locação (R$)</Label><Input value={pForm.valor_locacao} onChange={e => setPForm(p => ({ ...p, valor_locacao: e.target.value }))} onBlur={e => { const v = parseFloat(parseBRL(e.target.value)); if (!isNaN(v)) setPForm(p => ({ ...p, valor_locacao: formatBRL(v) })); }} placeholder="0,00" /></div>
             </div>
             <div className="grid grid-cols-2 gap-4">
-              <div><Label>Valor Mín. Locação (R$)</Label><Input type="number" step="0.01" value={pForm.valor_minimo_locacao} onChange={e => setPForm(p => ({ ...p, valor_minimo_locacao: e.target.value }))} /></div>
-              <div><Label>Valor Instalação (R$)</Label><Input type="number" step="0.01" value={pForm.valor_instalacao} onChange={e => setPForm(p => ({ ...p, valor_instalacao: e.target.value }))} /></div>
+              <div><Label>Valor Mín. Locação (R$)</Label><Input value={pForm.valor_minimo_locacao} onChange={e => setPForm(p => ({ ...p, valor_minimo_locacao: e.target.value }))} onBlur={e => { const v = parseFloat(parseBRL(e.target.value)); if (!isNaN(v)) setPForm(p => ({ ...p, valor_minimo_locacao: formatBRL(v) })); }} placeholder="0,00" /></div>
+              <div><Label>Valor Instalação (R$)</Label><Input value={pForm.valor_instalacao} onChange={e => setPForm(p => ({ ...p, valor_instalacao: e.target.value }))} onBlur={e => { const v = parseFloat(parseBRL(e.target.value)); if (!isNaN(v)) setPForm(p => ({ ...p, valor_instalacao: formatBRL(v) })); }} placeholder="0,00" /></div>
             </div>
             <div className="flex items-center gap-3">
               <Switch checked={pForm.adicional} onCheckedChange={v => setPForm(p => ({ ...p, adicional: v }))} />

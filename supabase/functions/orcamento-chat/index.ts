@@ -96,11 +96,11 @@ Seu papel é conduzir a visita de forma estruturada, seguindo o checklist abaixo
 
 ## CATÁLOGO DE PRODUTOS E KITS (use para dimensionar e precificar):
 
-**Produtos:**
-${JSON.stringify(ctx.produtos.map((p: any) => ({ nome: p.nome, categoria: p.categoria, preco: p.preco_unitario, unidade: p.unidade })), null, 2)}
+**Produtos (catálogo completo com preços):**
+${JSON.stringify(ctx.produtos.map((p: any) => ({ id: p.id_produto, codigo: p.codigo, nome: p.nome, categoria: p.categoria, subgrupo: p.subgrupo, unidade: p.unidade, preco_atual: p.preco_unitario, preco_minimo: p.valor_minimo, locacao: p.valor_locacao, locacao_minimo: p.valor_minimo_locacao, instalacao: p.valor_instalacao })), null, 2)}
 
-**Kits:**
-${JSON.stringify(ctx.kits.map((k: any) => ({ nome: k.nome, categoria: k.categoria, preco: k.preco_kit, itens: (k.orcamento_kit_itens || []).map((i: any) => ({ produto: i.orcamento_produtos?.nome, qtd: i.quantidade })) })), null, 2)}
+**Kits (composições com preços totais):**
+${JSON.stringify(ctx.kits.map((k: any) => ({ id_kit: k.id_kit, codigo: k.codigo, nome: k.nome, categoria: k.categoria, preco_total: k.preco_kit, minimo_total: k.valor_minimo, locacao_total: k.valor_locacao, locacao_minimo_total: k.valor_minimo_locacao, instalacao_total: k.valor_instalacao, itens: (k.orcamento_kit_itens || []).map((i: any) => ({ codigo: i.orcamento_produtos?.codigo, produto: i.orcamento_produtos?.nome, qtd: i.quantidade, preco_unit: i.orcamento_produtos?.preco_unitario })) })), null, 2)}
 
 ## REFERÊNCIAS DE PREÇOS DA CARTEIRA (resumo):
 ${JSON.stringify(ctx.portfolio.slice(0, 8).map((c: any) => ({ razao: c.razao_social, unidades: c.unidades, mensalidade: c.mensalidade, taxa: c.taxa_ativacao, cameras: c.cameras, portoes: c.portoes, portas: c.portas })), null, 2)}
@@ -127,11 +127,11 @@ Baseado no histórico da visita técnica com o vendedor, gere uma PROPOSTA COMER
 
 Use os produtos e kits cadastrados para dimensionar e precificar:
 
-**Produtos:**
-${JSON.stringify(ctx.produtos, null, 2)}
+**Produtos (com todos os campos de preço: preco_unitario=atual, valor_minimo, valor_locacao, valor_minimo_locacao, valor_instalacao):**
+${JSON.stringify(ctx.produtos.map((p: any) => ({ id: p.id_produto, codigo: p.codigo, nome: p.nome, categoria: p.categoria, subgrupo: p.subgrupo, unidade: p.unidade, preco_atual: p.preco_unitario, preco_minimo: p.valor_minimo, locacao: p.valor_locacao, locacao_minimo: p.valor_minimo_locacao, instalacao: p.valor_instalacao })), null, 2)}
 
-**Kits:**
-${JSON.stringify(ctx.kits, null, 2)}
+**Kits (composições com preços totais):**
+${JSON.stringify(ctx.kits.map((k: any) => ({ id_kit: k.id_kit, codigo: k.codigo, nome: k.nome, categoria: k.categoria, preco_total: k.preco_kit, minimo_total: k.valor_minimo, locacao_total: k.valor_locacao, locacao_minimo_total: k.valor_minimo_locacao, instalacao_total: k.valor_instalacao, itens: (k.orcamento_kit_itens || []).map((i: any) => ({ codigo: i.orcamento_produtos?.codigo, produto: i.orcamento_produtos?.nome, qtd: i.quantidade, preco_unit: i.orcamento_produtos?.preco_unitario })) })), null, 2)}
 
 **Projetos Recentes (referência de escopo):**
 ${JSON.stringify(ctx.projects.slice(0, 10), null, 2)}

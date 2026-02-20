@@ -372,8 +372,8 @@ export default function OrcamentoChat() {
         <div className="flex items-center gap-3">
           <img src={emiveLogo} alt="Emive" className="h-8" />
           <div>
-            <h1 className="text-lg font-semibold text-foreground">Visita Técnica - Orçamento</h1>
-            <p className="text-xs text-muted-foreground">IA guiando a coleta de dados para proposta</p>
+            <h1 className="text-lg font-semibold text-foreground">Chat de Orçamento</h1>
+            <p className="text-xs text-muted-foreground">IA para geração de propostas comerciais</p>
           </div>
         </div>
         {messages.length >= 6 && (

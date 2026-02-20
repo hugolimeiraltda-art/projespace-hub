@@ -764,49 +764,80 @@ export default function OrcamentoProdutos() {
 
       {/* Kit Dialog */}
       <Dialog open={showKitForm} onOpenChange={v => { if (!v) { setShowKitForm(false); setEditKit(null); } }}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle>{editKit ? 'Editar Kit' : 'Novo Kit'}</DialogTitle></DialogHeader>
           <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div><Label>Nome *</Label><Input value={kForm.nome} onChange={e => setKForm(k => ({ ...k, nome: e.target.value }))} /></div>
+            <div className="grid grid-cols-4 gap-4">
+              <div className="col-span-2"><Label>Nome *</Label><Input value={kForm.nome} onChange={e => setKForm(k => ({ ...k, nome: e.target.value }))} /></div>
               <div><Label>ID do Kit</Label><Input value={kForm.codigo} onChange={e => setKForm(k => ({ ...k, codigo: e.target.value }))} placeholder="Ex: KIT-001" /></div>
+              <div>
+                <Label>Categoria</Label>
+                <Select value={kForm.categoria} onValueChange={v => setKForm(k => ({ ...k, categoria: v }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>{GRUPOS.map(c => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
             </div>
             <div><Label>Descrição</Label><Textarea value={kForm.descricao} onChange={e => setKForm(k => ({ ...k, descricao: e.target.value }))} rows={2} /></div>
-            <div>
-              <Label>Categoria</Label>
-              <Select value={kForm.categoria} onValueChange={v => setKForm(k => ({ ...k, categoria: v }))}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>{GRUPOS.map(c => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}</SelectContent>
-              </Select>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div><Label>Valor Atual (R$)</Label><Input value={kForm.preco_kit} readOnly className="bg-muted" /></div>
-              <div><Label>Valor Mínimo (R$)</Label><Input value={kForm.valor_minimo} readOnly className="bg-muted" /></div>
-            </div>
-            <div className="grid grid-cols-3 gap-4">
-              <div><Label>Valor Locação (R$)</Label><Input value={kForm.valor_locacao} readOnly className="bg-muted" /></div>
-              <div><Label>Valor Mín. Locação (R$)</Label><Input value={kForm.valor_minimo_locacao} readOnly className="bg-muted" /></div>
-              <div><Label>Valor Instalação (R$)</Label><Input value={kForm.valor_instalacao} readOnly className="bg-muted" /></div>
-            </div>
 
             <div>
-              <Label>Produtos do Kit</Label>
-              <div className="space-y-2 mt-2">
-                {kitItens.map((item, idx) => (
-                  <div key={idx} className="flex gap-2 items-center">
-                    <Select value={item.produto_id} onValueChange={v => { const updated = kitItens.map((it, i) => i === idx ? { ...it, produto_id: v } : it); setKitItens(updated); recalcKitPrices(updated); }}>
-                      <SelectTrigger className="flex-1"><SelectValue placeholder="Selecione um produto" /></SelectTrigger>
-                      <SelectContent>{produtos.filter(p => p.ativo).map(p => <SelectItem key={p.id} value={p.id}>{p.nome}</SelectItem>)}</SelectContent>
-                    </Select>
-                    <Input type="number" min="1" className="w-20" value={item.quantidade} onChange={e => { const updated = kitItens.map((it, i) => i === idx ? { ...it, quantidade: parseInt(e.target.value) || 1 } : it); setKitItens(updated); recalcKitPrices(updated); }} />
-                    <Button size="icon" variant="ghost" className="text-destructive" onClick={() => { const updated = kitItens.filter((_, i) => i !== idx); setKitItens(updated); recalcKitPrices(updated); }}><Trash2 className="h-4 w-4" /></Button>
-                  </div>
-                ))}
-                <Button variant="outline" size="sm" onClick={() => setKitItens(prev => [...prev, { produto_id: '', quantidade: 1 }])}>
-                  <Plus className="mr-1 h-3 w-3" />Adicionar Produto
-                </Button>
+              <Label className="mb-2 block">Produtos do Kit</Label>
+              <div className="border rounded-lg overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b bg-muted/50">
+                      <th className="px-2 py-2 text-left">Produto</th>
+                      <th className="px-2 py-2 text-center w-16">Qtd</th>
+                      <th className="px-2 py-2 text-right">Val. Atual</th>
+                      <th className="px-2 py-2 text-right">Val. Mínimo</th>
+                      <th className="px-2 py-2 text-right">Val. Locação</th>
+                      <th className="px-2 py-2 text-right">Mín. Locação</th>
+                      <th className="px-2 py-2 text-right">Instalação</th>
+                      <th className="px-2 py-2 w-10"></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {kitItens.map((item, idx) => {
+                      const prod = produtos.find(p => p.id === item.produto_id);
+                      return (
+                        <tr key={idx} className="border-b last:border-0">
+                          <td className="px-2 py-1.5">
+                            <Select value={item.produto_id} onValueChange={v => { const updated = kitItens.map((it, i) => i === idx ? { ...it, produto_id: v } : it); setKitItens(updated); recalcKitPrices(updated); }}>
+                              <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Selecione um produto" /></SelectTrigger>
+                              <SelectContent>{produtos.filter(p => p.ativo).map(p => <SelectItem key={p.id} value={p.id}>{p.nome}</SelectItem>)}</SelectContent>
+                            </Select>
+                          </td>
+                          <td className="px-2 py-1.5 text-center">
+                            <Input type="number" min="1" className="w-16 h-8 text-xs text-center" value={item.quantidade} onChange={e => { const updated = kitItens.map((it, i) => i === idx ? { ...it, quantidade: parseInt(e.target.value) || 1 } : it); setKitItens(updated); recalcKitPrices(updated); }} />
+                          </td>
+                          <td className="px-2 py-1.5 text-right text-xs">R$ {((prod?.preco_unitario || 0) * item.quantidade).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                          <td className="px-2 py-1.5 text-right text-xs">R$ {((prod?.valor_minimo || 0) * item.quantidade).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                          <td className="px-2 py-1.5 text-right text-xs">R$ {((prod?.valor_locacao || 0) * item.quantidade).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                          <td className="px-2 py-1.5 text-right text-xs">R$ {((prod?.valor_minimo_locacao || 0) * item.quantidade).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                          <td className="px-2 py-1.5 text-right text-xs">R$ {((prod?.valor_instalacao || 0) * item.quantidade).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                          <td className="px-2 py-1.5 text-center">
+                            <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => { const updated = kitItens.filter((_, i) => i !== idx); setKitItens(updated); recalcKitPrices(updated); }}><Trash2 className="h-3 w-3" /></Button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                  <tfoot>
+                    <tr className="bg-muted/30 font-semibold text-xs">
+                      <td className="px-2 py-2" colSpan={2}>Total do Kit</td>
+                      <td className="px-2 py-2 text-right">{kForm.preco_kit ? `R$ ${kForm.preco_kit}` : 'R$ 0,00'}</td>
+                      <td className="px-2 py-2 text-right">{kForm.valor_minimo ? `R$ ${kForm.valor_minimo}` : 'R$ 0,00'}</td>
+                      <td className="px-2 py-2 text-right">{kForm.valor_locacao ? `R$ ${kForm.valor_locacao}` : 'R$ 0,00'}</td>
+                      <td className="px-2 py-2 text-right">{kForm.valor_minimo_locacao ? `R$ ${kForm.valor_minimo_locacao}` : 'R$ 0,00'}</td>
+                      <td className="px-2 py-2 text-right">{kForm.valor_instalacao ? `R$ ${kForm.valor_instalacao}` : 'R$ 0,00'}</td>
+                      <td></td>
+                    </tr>
+                  </tfoot>
+                </table>
               </div>
+              <Button variant="outline" size="sm" className="mt-2" onClick={() => setKitItens(prev => [...prev, { produto_id: '', quantidade: 1 }])}>
+                <Plus className="mr-1 h-3 w-3" />Adicionar Produto
+              </Button>
             </div>
 
             <Button onClick={saveKit} className="w-full">{editKit ? 'Salvar' : 'Criar'}</Button>

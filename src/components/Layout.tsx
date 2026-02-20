@@ -124,7 +124,7 @@ export function Layout({ children }: LayoutProps) {
       path: '/orcamentos',
       label: 'Orçamentos IA',
       icon: Bot,
-      roles: ['admin'],
+      roles: ['admin', 'implantacao', 'supervisor_operacoes'],
       subItems: [
         { path: '/orcamentos', label: 'Sessões', icon: Bot },
         { path: '/orcamentos/produtos', label: 'Produtos e Kits', icon: Boxes },

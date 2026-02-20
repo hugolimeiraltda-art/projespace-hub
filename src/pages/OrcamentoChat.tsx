@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Send, FileText, Loader2, Bot, User, Paperclip, Image, Video, Mic } from 'lucide-react';
+import { Send, FileText, Loader2, Bot, User, Paperclip, Image, Video, Mic, MicOff } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import emiveLogo from '@/assets/emive-logo.png';
 import jsPDF from 'jspdf';
@@ -29,9 +29,11 @@ export default function OrcamentoChat() {
   const [sessionValid, setSessionValid] = useState<boolean | null>(null);
   const [sessaoId, setSessaoId] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const recognitionRef = useRef<any>(null);
 
   useEffect(() => {
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
@@ -228,6 +230,49 @@ export default function OrcamentoChat() {
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
+  const toggleRecording = () => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      toast({ title: 'Navegador não suporta gravação de áudio', variant: 'destructive' });
+      return;
+    }
+
+    if (isRecording && recognitionRef.current) {
+      recognitionRef.current.stop();
+      setIsRecording(false);
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'pt-BR';
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognitionRef.current = recognition;
+
+    recognition.onresult = (event: any) => {
+      let transcript = '';
+      for (let i = 0; i < event.results.length; i++) {
+        transcript += event.results[i][0].transcript;
+      }
+      setInput(transcript);
+    };
+
+    recognition.onerror = (event: any) => {
+      console.error('Speech recognition error:', event.error);
+      setIsRecording(false);
+      if (event.error !== 'aborted') {
+        toast({ title: 'Erro no reconhecimento de voz', variant: 'destructive' });
+      }
+    };
+
+    recognition.onend = () => {
+      setIsRecording(false);
+    };
+
+    recognition.start();
+    setIsRecording(true);
+  };
+
   const gerarProposta = async () => {
     setGerandoProposta(true);
     try {
@@ -406,11 +451,14 @@ export default function OrcamentoChat() {
               </Button>
             </>
           )}
+          <Button type="button" variant={isRecording ? "destructive" : "outline"} size="icon" onClick={toggleRecording} disabled={isLoading}>
+            {isRecording ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+          </Button>
           <Input
             ref={inputRef}
             value={input}
             onChange={e => setInput(e.target.value)}
-            placeholder="Digite sua mensagem..."
+            placeholder={isRecording ? "Ouvindo..." : "Digite sua mensagem..."}
             disabled={isLoading}
             className="flex-1"
           />

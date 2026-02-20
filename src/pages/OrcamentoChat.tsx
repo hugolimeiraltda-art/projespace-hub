@@ -396,7 +396,7 @@ export default function OrcamentoChat() {
               msg.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted text-foreground'
             }`}>
               {msg.role === 'assistant' ? (
-                <div className="prose prose-sm max-w-none dark:prose-invert [&_p]:m-0">
+                <div className="prose prose-sm max-w-none dark:prose-invert [&_p]:my-1 [&_ul]:my-1 [&_ol]:my-1 [&_li]:my-0.5 [&_br]:content-[''] [&_br]:block [&_br]:my-1">
                   <ReactMarkdown>{msg.content}</ReactMarkdown>
                 </div>
               ) : (

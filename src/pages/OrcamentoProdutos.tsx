@@ -19,7 +19,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 
-const CATEGORIAS = [
+const GRUPOS = [
   { value: 'central', label: 'Central' },
   { value: 'acesso_pedestre', label: 'Acesso de Pedestre' },
   { value: 'acesso_veiculos', label: 'Acesso de Veículos' },
@@ -27,6 +27,15 @@ const CATEGORIAS = [
   { value: 'perimetro', label: 'Perímetro / Alarme' },
   { value: 'infraestrutura', label: 'Infraestrutura' },
   { value: 'interfonia', label: 'Interfonia' },
+];
+
+const SUBGRUPOS = [
+  { value: 'controle', label: 'Controle' },
+  { value: 'suporte', label: 'Suporte' },
+  { value: 'smartportaria', label: 'Smartportaria' },
+  { value: 'instalacao', label: 'Instalação' },
+  { value: 'manutencao', label: 'Manutenção' },
+  { value: 'outro', label: 'Outro' },
 ];
 
 const UNIDADES = [
@@ -41,8 +50,15 @@ interface Produto {
   nome: string;
   descricao: string | null;
   categoria: string;
+  subgrupo: string | null;
+  codigo: string | null;
   preco_unitario: number;
   unidade: string;
+  qtd_max: number;
+  valor_minimo: number;
+  valor_instalacao: number;
+  valor_minimo_locacao: number;
+  adicional: boolean;
   ativo: boolean;
 }
 
@@ -66,7 +82,7 @@ export default function OrcamentoProdutos() {
   // Product form
   const [showProdutoForm, setShowProdutoForm] = useState(false);
   const [editProduto, setEditProduto] = useState<Produto | null>(null);
-  const [pForm, setPForm] = useState({ nome: '', descricao: '', categoria: 'central', preco_unitario: '', unidade: 'un' });
+  const [pForm, setPForm] = useState({ nome: '', descricao: '', categoria: 'central', subgrupo: '', codigo: '', preco_unitario: '', unidade: 'un', qtd_max: '', valor_minimo: '', valor_instalacao: '', valor_minimo_locacao: '', adicional: false });
 
   // Kit form
   const [showKitForm, setShowKitForm] = useState(false);
@@ -109,13 +125,33 @@ export default function OrcamentoProdutos() {
   // ---- Produto CRUD ----
   const openProdutoEdit = (p: Produto) => {
     setEditProduto(p);
-    setPForm({ nome: p.nome, descricao: p.descricao || '', categoria: p.categoria, preco_unitario: String(p.preco_unitario), unidade: p.unidade });
+    setPForm({
+      nome: p.nome, descricao: p.descricao || '', categoria: p.categoria,
+      subgrupo: p.subgrupo || '', codigo: p.codigo || '',
+      preco_unitario: String(p.preco_unitario), unidade: p.unidade,
+      qtd_max: String(p.qtd_max || ''), valor_minimo: String(p.valor_minimo || ''),
+      valor_instalacao: String(p.valor_instalacao || ''), valor_minimo_locacao: String(p.valor_minimo_locacao || ''),
+      adicional: p.adicional || false,
+    });
     setShowProdutoForm(true);
   };
 
   const saveProduto = async () => {
     if (!pForm.nome.trim()) { toast({ title: 'Informe o nome', variant: 'destructive' }); return; }
-    const payload = { nome: pForm.nome.trim(), descricao: pForm.descricao.trim() || null, categoria: pForm.categoria, preco_unitario: parseFloat(pForm.preco_unitario) || 0, unidade: pForm.unidade };
+    const payload = {
+      nome: pForm.nome.trim(),
+      descricao: pForm.descricao.trim() || null,
+      categoria: pForm.categoria,
+      subgrupo: pForm.subgrupo.trim() || null,
+      codigo: pForm.codigo.trim() || null,
+      preco_unitario: parseFloat(pForm.preco_unitario) || 0,
+      unidade: pForm.unidade,
+      qtd_max: parseInt(pForm.qtd_max) || 0,
+      valor_minimo: parseFloat(pForm.valor_minimo) || 0,
+      valor_instalacao: parseFloat(pForm.valor_instalacao) || 0,
+      valor_minimo_locacao: parseFloat(pForm.valor_minimo_locacao) || 0,
+      adicional: pForm.adicional,
+    };
 
     if (editProduto) {
       await supabase.from('orcamento_produtos').update(payload).eq('id', editProduto.id);
@@ -124,10 +160,12 @@ export default function OrcamentoProdutos() {
     }
     setShowProdutoForm(false);
     setEditProduto(null);
-    setPForm({ nome: '', descricao: '', categoria: 'central', preco_unitario: '', unidade: 'un' });
+    resetPForm();
     fetchAll();
     toast({ title: editProduto ? 'Produto atualizado' : 'Produto criado' });
   };
+
+  const resetPForm = () => setPForm({ nome: '', descricao: '', categoria: 'central', subgrupo: '', codigo: '', preco_unitario: '', unidade: 'un', qtd_max: '', valor_minimo: '', valor_instalacao: '', valor_minimo_locacao: '', adicional: false });
 
   // ---- Kit CRUD ----
   const openKitEdit = (k: Kit) => {
@@ -185,7 +223,8 @@ export default function OrcamentoProdutos() {
     fetchAll();
   };
 
-  const catLabel = (cat: string) => CATEGORIAS.find(c => c.value === cat)?.label || cat;
+  const catLabel = (cat: string) => GRUPOS.find(c => c.value === cat)?.label || cat;
+  const subLabel = (sub: string) => SUBGRUPOS.find(s => s.value === sub)?.label || sub;
   const unLabel = (un: string) => UNIDADES.find(u => u.value === un)?.label || un;
 
   if (user?.role !== 'admin') {
@@ -209,7 +248,7 @@ export default function OrcamentoProdutos() {
           {/* PRODUTOS TAB */}
           <TabsContent value="produtos" className="space-y-4">
             <div className="flex justify-end">
-              <Button onClick={() => { setEditProduto(null); setPForm({ nome: '', descricao: '', categoria: 'central', preco_unitario: '', unidade: 'un' }); setShowProdutoForm(true); }}>
+              <Button onClick={() => { setEditProduto(null); resetPForm(); setShowProdutoForm(true); }}>
                 <Plus className="mr-2 h-4 w-4" />Novo Produto
               </Button>
             </div>
@@ -220,7 +259,7 @@ export default function OrcamentoProdutos() {
               <Card><CardContent className="py-12 text-center text-muted-foreground">Nenhum produto cadastrado.</CardContent></Card>
             ) : (
               <div className="grid gap-3">
-                {CATEGORIAS.map(cat => {
+                {GRUPOS.map(cat => {
                   const catProds = produtos.filter(p => p.categoria === cat.value);
                   if (catProds.length === 0) return null;
                   return (
@@ -232,11 +271,20 @@ export default function OrcamentoProdutos() {
                             <CardContent className="py-3 px-4 flex items-center justify-between">
                               <div className="flex-1">
                                 <div className="flex items-center gap-2">
+                                  {p.codigo && <span className="text-xs text-muted-foreground font-mono">{p.codigo}</span>}
                                   <span className="font-medium text-foreground">{p.nome}</span>
+                                  {p.subgrupo && <Badge variant="outline" className="text-xs">{subLabel(p.subgrupo)}</Badge>}
                                   <Badge variant="outline" className="text-xs">{unLabel(p.unidade)}</Badge>
+                                  {p.adicional && <Badge className="text-xs bg-primary/20 text-primary">Adicional</Badge>}
                                   {!p.ativo && <Badge variant="secondary">Inativo</Badge>}
                                 </div>
                                 {p.descricao && <p className="text-xs text-muted-foreground mt-1">{p.descricao}</p>}
+                                <div className="flex gap-3 mt-1 text-xs text-muted-foreground">
+                                  <span>Atual: R$ {p.preco_unitario.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                                  {p.valor_minimo > 0 && <span>Mín: R$ {p.valor_minimo.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>}
+                                  {p.valor_instalacao > 0 && <span>Instal: R$ {p.valor_instalacao.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>}
+                                  {p.valor_minimo_locacao > 0 && <span>Loc: R$ {p.valor_minimo_locacao.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>}
+                                </div>
                               </div>
                               <div className="flex items-center gap-3">
                                 <span className="font-semibold text-foreground">R$ {p.preco_unitario.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
@@ -306,17 +354,27 @@ export default function OrcamentoProdutos() {
 
       {/* Produto Dialog */}
       <Dialog open={showProdutoForm} onOpenChange={v => { if (!v) { setShowProdutoForm(false); setEditProduto(null); } }}>
-        <DialogContent>
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle>{editProduto ? 'Editar Produto' : 'Novo Produto'}</DialogTitle></DialogHeader>
           <div className="space-y-4">
-            <div><Label>Nome *</Label><Input value={pForm.nome} onChange={e => setPForm(p => ({ ...p, nome: e.target.value }))} /></div>
-            <div><Label>Descrição</Label><Textarea value={pForm.descricao} onChange={e => setPForm(p => ({ ...p, descricao: e.target.value }))} rows={2} /></div>
             <div className="grid grid-cols-2 gap-4">
+              <div><Label>Nome *</Label><Input value={pForm.nome} onChange={e => setPForm(p => ({ ...p, nome: e.target.value }))} /></div>
+              <div><Label>Código</Label><Input value={pForm.codigo} onChange={e => setPForm(p => ({ ...p, codigo: e.target.value }))} placeholder="Ex: 8500" /></div>
+            </div>
+            <div><Label>Descrição</Label><Textarea value={pForm.descricao} onChange={e => setPForm(p => ({ ...p, descricao: e.target.value }))} rows={2} /></div>
+            <div className="grid grid-cols-3 gap-4">
               <div>
-                <Label>Categoria</Label>
+                <Label>Grupo</Label>
                 <Select value={pForm.categoria} onValueChange={v => setPForm(p => ({ ...p, categoria: v }))}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>{CATEGORIAS.map(c => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}</SelectContent>
+                  <SelectContent>{GRUPOS.map(c => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Subgrupo</Label>
+                <Select value={pForm.subgrupo || ''} onValueChange={v => setPForm(p => ({ ...p, subgrupo: v }))}>
+                  <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                  <SelectContent>{SUBGRUPOS.map(s => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
               <div>
@@ -327,7 +385,21 @@ export default function OrcamentoProdutos() {
                 </Select>
               </div>
             </div>
-            <div><Label>Preço (R$)</Label><Input type="number" step="0.01" value={pForm.preco_unitario} onChange={e => setPForm(p => ({ ...p, preco_unitario: e.target.value }))} /></div>
+            <div className="grid grid-cols-2 gap-4">
+              <div><Label>Qtd Máxima</Label><Input type="number" value={pForm.qtd_max} onChange={e => setPForm(p => ({ ...p, qtd_max: e.target.value }))} /></div>
+              <div><Label>Valor Mínimo (R$)</Label><Input type="number" step="0.01" value={pForm.valor_minimo} onChange={e => setPForm(p => ({ ...p, valor_minimo: e.target.value }))} /></div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div><Label>Valor Atual (R$)</Label><Input type="number" step="0.01" value={pForm.preco_unitario} onChange={e => setPForm(p => ({ ...p, preco_unitario: e.target.value }))} /></div>
+              <div><Label>Valor Instalação (R$)</Label><Input type="number" step="0.01" value={pForm.valor_instalacao} onChange={e => setPForm(p => ({ ...p, valor_instalacao: e.target.value }))} /></div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div><Label>Valor Mín. Locação (R$)</Label><Input type="number" step="0.01" value={pForm.valor_minimo_locacao} onChange={e => setPForm(p => ({ ...p, valor_minimo_locacao: e.target.value }))} /></div>
+              <div className="flex items-center gap-3 pt-6">
+                <Switch checked={pForm.adicional} onCheckedChange={v => setPForm(p => ({ ...p, adicional: v }))} />
+                <Label>Adicional</Label>
+              </div>
+            </div>
             <Button onClick={saveProduto} className="w-full">{editProduto ? 'Salvar' : 'Criar'}</Button>
           </div>
         </DialogContent>
@@ -345,7 +417,7 @@ export default function OrcamentoProdutos() {
                 <Label>Categoria</Label>
                 <Select value={kForm.categoria} onValueChange={v => setKForm(k => ({ ...k, categoria: v }))}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>{CATEGORIAS.map(c => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}</SelectContent>
+                  <SelectContent>{GRUPOS.map(c => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
               <div><Label>Preço do Kit (R$)</Label><Input type="number" step="0.01" value={kForm.preco_kit} onChange={e => setKForm(k => ({ ...k, preco_kit: e.target.value }))} /></div>

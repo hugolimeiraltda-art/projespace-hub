@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Layout } from '@/components/Layout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,10 +9,12 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { Plus, Pencil, Trash2, Package, Boxes } from 'lucide-react';
+import { Plus, Pencil, Trash2, Package, Boxes, Search, Filter, ArrowUpDown, ArrowUp, ArrowDown, X, SlidersHorizontal } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -93,7 +95,84 @@ export default function OrcamentoProdutos() {
   const [kits, setKits] = useState<Kit[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Product form
+  // Filters, sorting, columns
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterGrupo, setFilterGrupo] = useState<string>('all');
+  const [filterSubgrupo, setFilterSubgrupo] = useState<string>('all');
+  const [filterAdicional, setFilterAdicional] = useState<string>('all');
+  const [filterAtivo, setFilterAtivo] = useState<string>('all');
+  const [sortField, setSortField] = useState<string>('nome');
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
+
+  type ColKey = 'codigo' | 'nome' | 'grupo' | 'subgrupo' | 'unidade' | 'qtd_max' | 'valor_atual' | 'valor_minimo' | 'valor_locacao' | 'valor_min_locacao' | 'valor_instalacao' | 'adicional' | 'ativo';
+  const ALL_COLUMNS: { key: ColKey; label: string }[] = [
+    { key: 'codigo', label: 'Código' },
+    { key: 'nome', label: 'Nome' },
+    { key: 'grupo', label: 'Grupo' },
+    { key: 'subgrupo', label: 'Subgrupo' },
+    { key: 'unidade', label: 'Unidade' },
+    { key: 'qtd_max', label: 'Qtd Máx' },
+    { key: 'valor_atual', label: 'Valor Atual' },
+    { key: 'valor_minimo', label: 'Valor Mínimo' },
+    { key: 'valor_locacao', label: 'Valor Locação' },
+    { key: 'valor_min_locacao', label: 'Valor Mín. Loc.' },
+    { key: 'valor_instalacao', label: 'Valor Instalação' },
+    { key: 'adicional', label: 'Adicional' },
+    { key: 'ativo', label: 'Ativo' },
+  ];
+  const [visibleCols, setVisibleCols] = useState<Set<ColKey>>(new Set(['codigo', 'nome', 'grupo', 'subgrupo', 'unidade', 'valor_atual', 'valor_minimo', 'adicional', 'ativo']));
+
+  const toggleCol = (key: ColKey) => {
+    setVisibleCols(prev => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key); else next.add(key);
+      return next;
+    });
+  };
+
+  const toggleSort = (field: string) => {
+    if (sortField === field) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
+    else { setSortField(field); setSortDir('asc'); }
+  };
+
+  const filteredProdutos = useMemo(() => {
+    let result = [...produtos];
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase();
+      result = result.filter(p =>
+        p.nome.toLowerCase().includes(term) ||
+        (p.codigo && p.codigo.toLowerCase().includes(term)) ||
+        (p.descricao && p.descricao.toLowerCase().includes(term))
+      );
+    }
+    if (filterGrupo !== 'all') result = result.filter(p => p.categoria === filterGrupo);
+    if (filterSubgrupo !== 'all') result = result.filter(p => p.subgrupo === filterSubgrupo);
+    if (filterAdicional !== 'all') result = result.filter(p => filterAdicional === 'sim' ? p.adicional : !p.adicional);
+    if (filterAtivo !== 'all') result = result.filter(p => filterAtivo === 'sim' ? p.ativo : !p.ativo);
+
+    result.sort((a, b) => {
+      let va: any, vb: any;
+      switch (sortField) {
+        case 'codigo': va = a.codigo || ''; vb = b.codigo || ''; break;
+        case 'nome': va = a.nome; vb = b.nome; break;
+        case 'grupo': va = a.categoria; vb = b.categoria; break;
+        case 'subgrupo': va = a.subgrupo || ''; vb = b.subgrupo || ''; break;
+        case 'valor_atual': va = a.preco_unitario; vb = b.preco_unitario; break;
+        case 'valor_minimo': va = a.valor_minimo; vb = b.valor_minimo; break;
+        case 'valor_instalacao': va = a.valor_instalacao; vb = b.valor_instalacao; break;
+        default: va = a.nome; vb = b.nome;
+      }
+      if (typeof va === 'string') { va = va.toLowerCase(); vb = (vb as string).toLowerCase(); }
+      if (va < vb) return sortDir === 'asc' ? -1 : 1;
+      if (va > vb) return sortDir === 'asc' ? 1 : -1;
+      return 0;
+    });
+    return result;
+  }, [produtos, searchTerm, filterGrupo, filterSubgrupo, filterAdicional, filterAtivo, sortField, sortDir]);
+
+  const hasActiveFilters = searchTerm || filterGrupo !== 'all' || filterSubgrupo !== 'all' || filterAdicional !== 'all' || filterAtivo !== 'all';
+  const clearFilters = () => { setSearchTerm(''); setFilterGrupo('all'); setFilterSubgrupo('all'); setFilterAdicional('all'); setFilterAtivo('all'); };
+
   const [showProdutoForm, setShowProdutoForm] = useState(false);
   const [editProduto, setEditProduto] = useState<Produto | null>(null);
   const [pForm, setPForm] = useState({ nome: '', descricao: '', categoria: 'Smartportaria', subgrupo: '', codigo: '', preco_unitario: '', unidade: 'un', qtd_max: '', valor_minimo: '', valor_locacao: '', valor_instalacao: '', valor_minimo_locacao: '', adicional: false });
@@ -263,58 +342,136 @@ export default function OrcamentoProdutos() {
 
           {/* PRODUTOS TAB */}
           <TabsContent value="produtos" className="space-y-4">
-            <div className="flex justify-end">
-              <Button onClick={() => { setEditProduto(null); resetPForm(); setShowProdutoForm(true); }}>
-                <Plus className="mr-2 h-4 w-4" />Novo Produto
-              </Button>
+            {/* Toolbar: Search + Filters + Columns + Add */}
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="relative flex-1 min-w-[200px] max-w-sm">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Buscar por nome, código..."
+                  value={searchTerm}
+                  onChange={e => setSearchTerm(e.target.value)}
+                  className="pl-9"
+                />
+              </div>
+              <Select value={filterGrupo} onValueChange={setFilterGrupo}>
+                <SelectTrigger className="w-[160px]"><Filter className="mr-2 h-3 w-3" /><SelectValue placeholder="Grupo" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos os Grupos</SelectItem>
+                  {GRUPOS.map(g => <SelectItem key={g.value} value={g.value}>{g.label}</SelectItem>)}
+                </SelectContent>
+              </Select>
+              <Select value={filterSubgrupo} onValueChange={setFilterSubgrupo}>
+                <SelectTrigger className="w-[160px]"><SelectValue placeholder="Subgrupo" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos Subgrupos</SelectItem>
+                  {SUBGRUPOS.map(s => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}
+                </SelectContent>
+              </Select>
+              <Select value={filterAdicional} onValueChange={setFilterAdicional}>
+                <SelectTrigger className="w-[130px]"><SelectValue placeholder="Adicional" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos</SelectItem>
+                  <SelectItem value="sim">Adicional</SelectItem>
+                  <SelectItem value="nao">Não Adicional</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={filterAtivo} onValueChange={setFilterAtivo}>
+                <SelectTrigger className="w-[120px]"><SelectValue placeholder="Status" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos</SelectItem>
+                  <SelectItem value="sim">Ativos</SelectItem>
+                  <SelectItem value="nao">Inativos</SelectItem>
+                </SelectContent>
+              </Select>
+
+              {/* Column selector */}
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" size="sm"><SlidersHorizontal className="mr-2 h-3 w-3" />Colunas</Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-56 p-3">
+                  <p className="text-sm font-medium mb-2">Colunas visíveis</p>
+                  <div className="space-y-2">
+                    {ALL_COLUMNS.map(col => (
+                      <label key={col.key} className="flex items-center gap-2 text-sm cursor-pointer">
+                        <Checkbox checked={visibleCols.has(col.key)} onCheckedChange={() => toggleCol(col.key)} />
+                        {col.label}
+                      </label>
+                    ))}
+                  </div>
+                </PopoverContent>
+              </Popover>
+
+              {hasActiveFilters && (
+                <Button variant="ghost" size="sm" onClick={clearFilters}><X className="mr-1 h-3 w-3" />Limpar filtros</Button>
+              )}
+
+              <div className="ml-auto">
+                <Button onClick={() => { setEditProduto(null); resetPForm(); setShowProdutoForm(true); }}>
+                  <Plus className="mr-2 h-4 w-4" />Novo Produto
+                </Button>
+              </div>
             </div>
+
+            {hasActiveFilters && (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <span>{filteredProdutos.length} de {produtos.length} produtos</span>
+              </div>
+            )}
 
             {loading ? (
               <div className="flex justify-center py-12"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" /></div>
-            ) : produtos.length === 0 ? (
-              <Card><CardContent className="py-12 text-center text-muted-foreground">Nenhum produto cadastrado.</CardContent></Card>
+            ) : filteredProdutos.length === 0 ? (
+              <Card><CardContent className="py-12 text-center text-muted-foreground">
+                {produtos.length === 0 ? 'Nenhum produto cadastrado.' : 'Nenhum produto encontrado com os filtros atuais.'}
+              </CardContent></Card>
             ) : (
-              <div className="grid gap-3">
-                {GRUPOS.map(cat => {
-                  const catProds = produtos.filter(p => p.categoria === cat.value);
-                  if (catProds.length === 0) return null;
-                  return (
-                    <div key={cat.value}>
-                      <h3 className="text-sm font-semibold text-muted-foreground mb-2 uppercase">{cat.label}</h3>
-                      <div className="grid gap-2">
-                        {catProds.map(p => (
-                          <Card key={p.id} className={!p.ativo ? 'opacity-50' : ''}>
-                            <CardContent className="py-3 px-4 flex items-center justify-between">
-                              <div className="flex-1">
-                                <div className="flex items-center gap-2">
-                                  {p.codigo && <span className="text-xs text-muted-foreground font-mono">{p.codigo}</span>}
-                                  <span className="font-medium text-foreground">{p.nome}</span>
-                                  {p.subgrupo && <Badge variant="outline" className="text-xs">{subLabel(p.subgrupo)}</Badge>}
-                                  <Badge variant="outline" className="text-xs">{unLabel(p.unidade)}</Badge>
-                                  {p.adicional && <Badge className="text-xs bg-primary/20 text-primary">Adicional</Badge>}
-                                  {!p.ativo && <Badge variant="secondary">Inativo</Badge>}
-                                </div>
-                                {p.descricao && <p className="text-xs text-muted-foreground mt-1">{p.descricao}</p>}
-                                <div className="flex gap-3 mt-1 text-xs text-muted-foreground">
-                                  <span>Atual: R$ {p.preco_unitario.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
-                                  {p.valor_minimo > 0 && <span>Mín: R$ {p.valor_minimo.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>}
-                                  {p.valor_instalacao > 0 && <span>Instal: R$ {p.valor_instalacao.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>}
-                                  {p.valor_minimo_locacao > 0 && <span>Loc: R$ {p.valor_minimo_locacao.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>}
-                                </div>
-                              </div>
-                              <div className="flex items-center gap-3">
-                                <span className="font-semibold text-foreground">R$ {p.preco_unitario.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
-                                <Switch checked={p.ativo} onCheckedChange={v => toggleAtivo('produto', p.id, v)} />
-                                <Button size="icon" variant="ghost" onClick={() => openProdutoEdit(p)}><Pencil className="h-4 w-4" /></Button>
-                                <Button size="icon" variant="ghost" className="text-destructive" onClick={() => setDeleteTarget({ type: 'produto', id: p.id })}><Trash2 className="h-4 w-4" /></Button>
-                              </div>
-                            </CardContent>
-                          </Card>
-                        ))}
-                      </div>
-                    </div>
-                  );
-                })}
+              <div className="border rounded-lg overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b bg-muted/50">
+                      {visibleCols.has('codigo') && <th className="px-3 py-2 text-left cursor-pointer hover:bg-muted" onClick={() => toggleSort('codigo')}><div className="flex items-center gap-1">Código {sortField === 'codigo' ? (sortDir === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />) : <ArrowUpDown className="h-3 w-3 opacity-30" />}</div></th>}
+                      {visibleCols.has('nome') && <th className="px-3 py-2 text-left cursor-pointer hover:bg-muted" onClick={() => toggleSort('nome')}><div className="flex items-center gap-1">Nome {sortField === 'nome' ? (sortDir === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />) : <ArrowUpDown className="h-3 w-3 opacity-30" />}</div></th>}
+                      {visibleCols.has('grupo') && <th className="px-3 py-2 text-left cursor-pointer hover:bg-muted" onClick={() => toggleSort('grupo')}><div className="flex items-center gap-1">Grupo {sortField === 'grupo' ? (sortDir === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />) : <ArrowUpDown className="h-3 w-3 opacity-30" />}</div></th>}
+                      {visibleCols.has('subgrupo') && <th className="px-3 py-2 text-left cursor-pointer hover:bg-muted" onClick={() => toggleSort('subgrupo')}><div className="flex items-center gap-1">Subgrupo {sortField === 'subgrupo' ? (sortDir === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />) : <ArrowUpDown className="h-3 w-3 opacity-30" />}</div></th>}
+                      {visibleCols.has('unidade') && <th className="px-3 py-2 text-left">Unidade</th>}
+                      {visibleCols.has('qtd_max') && <th className="px-3 py-2 text-right">Qtd Máx</th>}
+                      {visibleCols.has('valor_atual') && <th className="px-3 py-2 text-right cursor-pointer hover:bg-muted" onClick={() => toggleSort('valor_atual')}><div className="flex items-center justify-end gap-1">Valor Atual {sortField === 'valor_atual' ? (sortDir === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />) : <ArrowUpDown className="h-3 w-3 opacity-30" />}</div></th>}
+                      {visibleCols.has('valor_minimo') && <th className="px-3 py-2 text-right cursor-pointer hover:bg-muted" onClick={() => toggleSort('valor_minimo')}><div className="flex items-center justify-end gap-1">Val. Mín {sortField === 'valor_minimo' ? (sortDir === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />) : <ArrowUpDown className="h-3 w-3 opacity-30" />}</div></th>}
+                      {visibleCols.has('valor_locacao') && <th className="px-3 py-2 text-right">Val. Loc.</th>}
+                      {visibleCols.has('valor_min_locacao') && <th className="px-3 py-2 text-right">Mín. Loc.</th>}
+                      {visibleCols.has('valor_instalacao') && <th className="px-3 py-2 text-right cursor-pointer hover:bg-muted" onClick={() => toggleSort('valor_instalacao')}><div className="flex items-center justify-end gap-1">Instalação {sortField === 'valor_instalacao' ? (sortDir === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />) : <ArrowUpDown className="h-3 w-3 opacity-30" />}</div></th>}
+                      {visibleCols.has('adicional') && <th className="px-3 py-2 text-center">Adic.</th>}
+                      {visibleCols.has('ativo') && <th className="px-3 py-2 text-center">Ativo</th>}
+                      <th className="px-3 py-2 text-right">Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredProdutos.map(p => (
+                      <tr key={p.id} className={`border-b hover:bg-muted/30 ${!p.ativo ? 'opacity-50' : ''}`}>
+                        {visibleCols.has('codigo') && <td className="px-3 py-2 font-mono text-xs text-muted-foreground">{p.codigo || '-'}</td>}
+                        {visibleCols.has('nome') && <td className="px-3 py-2 font-medium text-foreground max-w-[300px] truncate">{p.nome}</td>}
+                        {visibleCols.has('grupo') && <td className="px-3 py-2"><Badge variant="outline" className="text-xs">{catLabel(p.categoria)}</Badge></td>}
+                        {visibleCols.has('subgrupo') && <td className="px-3 py-2">{p.subgrupo ? <Badge variant="outline" className="text-xs">{subLabel(p.subgrupo)}</Badge> : '-'}</td>}
+                        {visibleCols.has('unidade') && <td className="px-3 py-2 text-xs">{unLabel(p.unidade)}</td>}
+                        {visibleCols.has('qtd_max') && <td className="px-3 py-2 text-right text-xs">{p.qtd_max}</td>}
+                        {visibleCols.has('valor_atual') && <td className="px-3 py-2 text-right text-xs font-medium">R$ {p.preco_unitario.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>}
+                        {visibleCols.has('valor_minimo') && <td className="px-3 py-2 text-right text-xs">R$ {p.valor_minimo.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>}
+                        {visibleCols.has('valor_locacao') && <td className="px-3 py-2 text-right text-xs">R$ {(p.valor_locacao || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>}
+                        {visibleCols.has('valor_min_locacao') && <td className="px-3 py-2 text-right text-xs">R$ {p.valor_minimo_locacao.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>}
+                        {visibleCols.has('valor_instalacao') && <td className="px-3 py-2 text-right text-xs">R$ {p.valor_instalacao.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>}
+                        {visibleCols.has('adicional') && <td className="px-3 py-2 text-center">{p.adicional ? <Badge className="text-xs bg-primary/20 text-primary">Sim</Badge> : <span className="text-xs text-muted-foreground">Não</span>}</td>}
+                        {visibleCols.has('ativo') && <td className="px-3 py-2 text-center"><Switch checked={p.ativo} onCheckedChange={v => toggleAtivo('produto', p.id, v)} /></td>}
+                        <td className="px-3 py-2 text-right">
+                          <div className="flex items-center justify-end gap-1">
+                            <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => openProdutoEdit(p)}><Pencil className="h-3 w-3" /></Button>
+                            <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => setDeleteTarget({ type: 'produto', id: p.id })}><Trash2 className="h-3 w-3" /></Button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             )}
           </TabsContent>

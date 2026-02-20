@@ -185,12 +185,24 @@ export default function OrcamentoProdutos() {
 
   const [deleteTarget, setDeleteTarget] = useState<{ type: 'produto' | 'kit'; id: string } | null>(null);
 
+  // Pricing rules from DB
+  const [pricingRules, setPricingRules] = useState<Record<string, number>>({
+    valor_minimo: 90, valor_locacao: 3.57, valor_minimo_locacao: 90, valor_instalacao: 10,
+  });
+
   const fetchAll = async () => {
-    const [{ data: prods }, { data: kitsData }] = await Promise.all([
+    const [{ data: prods }, { data: kitsData }, { data: regras }] = await Promise.all([
       supabase.from('orcamento_produtos').select('*').order('categoria').order('nome'),
       supabase.from('orcamento_kits').select('*').order('categoria').order('nome'),
+      supabase.from('orcamento_regras_precificacao').select('campo, percentual'),
     ]);
     setProdutos((prods as Produto[]) || []);
+
+    if (regras) {
+      const map: Record<string, number> = {};
+      regras.forEach((r: any) => { map[r.campo] = Number(r.percentual); });
+      setPricingRules(prev => ({ ...prev, ...map }));
+    }
 
     // Fetch kit items
     if (kitsData && kitsData.length > 0) {
@@ -564,14 +576,11 @@ export default function OrcamentoProdutos() {
                 const val = parseFloat(e.target.value);
                 const updates: any = { preco_unitario: e.target.value };
                 if (!isNaN(val)) {
-                  const minimo = (val * 0.9);
-                  const locacao = (val * 0.0357);
-                  const minLocacao = (locacao * 0.9);
-                  const instalacao = (val * 0.1);
-                  updates.valor_minimo = minimo.toFixed(2);
+                  const locacao = val * (pricingRules.valor_locacao / 100);
+                  updates.valor_minimo = (val * (pricingRules.valor_minimo / 100)).toFixed(2);
                   updates.valor_locacao = locacao.toFixed(2);
-                  updates.valor_minimo_locacao = minLocacao.toFixed(2);
-                  updates.valor_instalacao = instalacao.toFixed(2);
+                  updates.valor_minimo_locacao = (locacao * (pricingRules.valor_minimo_locacao / 100)).toFixed(2);
+                  updates.valor_instalacao = (val * (pricingRules.valor_instalacao / 100)).toFixed(2);
                 }
                 setPForm(p => ({ ...p, ...updates }));
               }} /></div>

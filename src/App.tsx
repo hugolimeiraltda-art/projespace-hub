@@ -39,6 +39,7 @@ import ManutencaoPendencias from "./pages/ManutencaoPendencias";
 import Orcamentos from "./pages/Orcamentos";
 import OrcamentoChat from "./pages/OrcamentoChat";
 import OrcamentoProdutos from "./pages/OrcamentoProdutos";
+import OrcamentoRegras from "./pages/OrcamentoRegras";
 import VendedorHome from "./pages/VendedorHome";
 import VendedorChat from "./pages/VendedorChat";
 import NotFound from "./pages/NotFound";
@@ -205,6 +206,10 @@ function AppRoutes() {
       <Route 
         path="/orcamentos/produtos" 
         element={<ProtectedRoute><OrcamentoProdutos /></ProtectedRoute>} 
+      />
+      <Route 
+        path="/orcamentos/regras" 
+        element={<ProtectedRoute><OrcamentoRegras /></ProtectedRoute>} 
       />
       <Route 
         path="/orcamento/:token" 

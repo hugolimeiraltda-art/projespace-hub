@@ -1416,6 +1416,36 @@ export type Database = {
         }
         Relationships: []
       }
+      orcamento_regras_precificacao: {
+        Row: {
+          base_campo: string
+          campo: string
+          created_at: string
+          descricao: string | null
+          id: string
+          percentual: number
+          updated_at: string
+        }
+        Insert: {
+          base_campo?: string
+          campo: string
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          percentual: number
+          updated_at?: string
+        }
+        Update: {
+          base_campo?: string
+          campo?: string
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          percentual?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       orcamento_sessoes: {
         Row: {
           created_at: string

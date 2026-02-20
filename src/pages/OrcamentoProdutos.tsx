@@ -146,6 +146,67 @@ export default function OrcamentoProdutos() {
   ];
   const [visibleCols, setVisibleCols] = useState<Set<ColKey>>(new Set(['id_produto', 'codigo', 'nome', 'grupo', 'subgrupo', 'unidade', 'valor_atual', 'valor_minimo', 'adicional', 'ativo']));
 
+  // Kit filters & sorting
+  const [kitSearch, setKitSearch] = useState('');
+  const [kitFilterCategoria, setKitFilterCategoria] = useState<string[]>([]);
+  const [kitFilterAtivo, setKitFilterAtivo] = useState<string>('all');
+  const [kitSortField, setKitSortField] = useState<string>('nome');
+  const [kitSortDir, setKitSortDir] = useState<'asc' | 'desc'>('asc');
+
+  const toggleKitSort = (field: string) => {
+    if (kitSortField === field) setKitSortDir(d => d === 'asc' ? 'desc' : 'asc');
+    else { setKitSortField(field); setKitSortDir('asc'); }
+  };
+
+  const kitSortIcon = (field: string) => {
+    if (kitSortField !== field) return <ArrowUpDown className="h-3 w-3 text-muted-foreground" />;
+    return kitSortDir === 'asc' ? <ArrowUp className="h-3 w-3 text-primary" /> : <ArrowDown className="h-3 w-3 text-primary" />;
+  };
+
+  const toggleKitCategoria = (cat: string) => {
+    setKitFilterCategoria(prev => prev.includes(cat) ? prev.filter(c => c !== cat) : [...prev, cat]);
+  };
+
+  const filteredKits = useMemo(() => {
+    let result = [...kits];
+    if (kitSearch) {
+      const term = kitSearch.toLowerCase();
+      result = result.filter(k => k.nome.toLowerCase().includes(term) || (k.codigo && k.codigo.toLowerCase().includes(term)));
+    }
+    if (kitFilterCategoria.length > 0) result = result.filter(k => kitFilterCategoria.includes(k.categoria));
+    if (kitFilterAtivo !== 'all') result = result.filter(k => kitFilterAtivo === 'sim' ? k.ativo : !k.ativo);
+
+    // Compute totals for sorting
+    const getKitTotals = (k: Kit) => {
+      const t = { atual: 0, minimo: 0, locacao: 0, minLocacao: 0, instalacao: 0 };
+      k.itens?.forEach(i => { if (i.produto) { t.atual += (i.produto.preco_unitario || 0) * i.quantidade; t.minimo += (i.produto.valor_minimo || 0) * i.quantidade; t.locacao += (i.produto.valor_locacao || 0) * i.quantidade; t.minLocacao += (i.produto.valor_minimo_locacao || 0) * i.quantidade; t.instalacao += (i.produto.valor_instalacao || 0) * i.quantidade; } });
+      return t;
+    };
+
+    result.sort((a, b) => {
+      let va: any, vb: any;
+      const ta = getKitTotals(a), tb = getKitTotals(b);
+      switch (kitSortField) {
+        case 'nome': va = a.nome.toLowerCase(); vb = b.nome.toLowerCase(); break;
+        case 'categoria': va = a.categoria; vb = b.categoria; break;
+        case 'itens': va = a.itens?.length || 0; vb = b.itens?.length || 0; break;
+        case 'atual': va = ta.atual; vb = tb.atual; break;
+        case 'minimo': va = ta.minimo; vb = tb.minimo; break;
+        case 'locacao': va = ta.locacao; vb = tb.locacao; break;
+        case 'minLocacao': va = ta.minLocacao; vb = tb.minLocacao; break;
+        case 'instalacao': va = ta.instalacao; vb = tb.instalacao; break;
+        default: va = a.nome.toLowerCase(); vb = b.nome.toLowerCase();
+      }
+      if (va < vb) return kitSortDir === 'asc' ? -1 : 1;
+      if (va > vb) return kitSortDir === 'asc' ? 1 : -1;
+      return 0;
+    });
+    return result;
+  }, [kits, kitSearch, kitFilterCategoria, kitFilterAtivo, kitSortField, kitSortDir]);
+
+  const hasKitFilters = kitSearch || kitFilterCategoria.length > 0 || kitFilterAtivo !== 'all';
+  const clearKitFilters = () => { setKitSearch(''); setKitFilterCategoria([]); setKitFilterAtivo('all'); };
+
   const toggleCol = (key: ColKey) => {
     setVisibleCols(prev => {
       const next = new Set(prev);
@@ -575,35 +636,76 @@ export default function OrcamentoProdutos() {
 
           {/* KITS TAB */}
           <TabsContent value="kits" className="space-y-4">
-            <div className="flex justify-end">
-              <Button onClick={() => { setEditKit(null); setKForm({ nome: '', descricao: '', categoria: 'Smartportaria', codigo: '', preco_kit: '', valor_minimo: '', valor_locacao: '', valor_minimo_locacao: '', valor_instalacao: '' }); setKitItens([]); setShowKitForm(true); }}>
-                <Plus className="mr-2 h-4 w-4" />Novo Kit
-              </Button>
+            {/* Kit Filters */}
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="relative flex-1 min-w-[200px] max-w-sm">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input placeholder="Buscar kit..." value={kitSearch} onChange={e => setKitSearch(e.target.value)} className="pl-9" />
+              </div>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" size="sm" className={kitFilterCategoria.length > 0 ? 'border-primary text-primary' : ''}>
+                    <Filter className="mr-1 h-3 w-3" />Categoria {kitFilterCategoria.length > 0 && `(${kitFilterCategoria.length})`}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-48 p-3">
+                  <div className="space-y-2">
+                    {GRUPOS.map(g => (
+                      <label key={g.value} className="flex items-center gap-2 text-sm cursor-pointer">
+                        <Checkbox checked={kitFilterCategoria.includes(g.value)} onCheckedChange={() => toggleKitCategoria(g.value)} />
+                        {g.label}
+                      </label>
+                    ))}
+                  </div>
+                </PopoverContent>
+              </Popover>
+              <Select value={kitFilterAtivo} onValueChange={setKitFilterAtivo}>
+                <SelectTrigger className="w-[120px]"><SelectValue placeholder="Ativo" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos</SelectItem>
+                  <SelectItem value="sim">Ativo</SelectItem>
+                  <SelectItem value="nao">Inativo</SelectItem>
+                </SelectContent>
+              </Select>
+              {hasKitFilters && (
+                <Button variant="ghost" size="sm" onClick={clearKitFilters}><X className="mr-1 h-3 w-3" />Limpar</Button>
+              )}
+              <div className="ml-auto">
+                <Button onClick={() => { setEditKit(null); setKForm({ nome: '', descricao: '', categoria: 'Smartportaria', codigo: '', preco_kit: '', valor_minimo: '', valor_locacao: '', valor_minimo_locacao: '', valor_instalacao: '' }); setKitItens([]); setShowKitForm(true); }}>
+                  <Plus className="mr-2 h-4 w-4" />Novo Kit
+                </Button>
+              </div>
             </div>
+
+            {hasKitFilters && (
+              <div className="text-sm text-muted-foreground">
+                Exibindo {filteredKits.length} de {kits.length} kits
+              </div>
+            )}
 
             {loading ? (
               <div className="flex justify-center py-12"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" /></div>
-            ) : kits.length === 0 ? (
-              <Card><CardContent className="py-12 text-center text-muted-foreground">Nenhum kit cadastrado.</CardContent></Card>
+            ) : filteredKits.length === 0 ? (
+              <Card><CardContent className="py-12 text-center text-muted-foreground">{kits.length === 0 ? 'Nenhum kit cadastrado.' : 'Nenhum kit encontrado com os filtros aplicados.'}</CardContent></Card>
             ) : (
               <div className="border rounded-lg overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b bg-muted/50">
-                      <th className="px-3 py-2 text-left">Kit</th>
-                      <th className="px-3 py-2 text-left">Categoria</th>
-                      <th className="px-3 py-2 text-center">Itens</th>
-                      <th className="px-3 py-2 text-right">Val. Atual</th>
-                      <th className="px-3 py-2 text-right">Val. Mínimo</th>
-                      <th className="px-3 py-2 text-right">Val. Locação</th>
-                      <th className="px-3 py-2 text-right">Mín. Locação</th>
-                      <th className="px-3 py-2 text-right">Instalação</th>
+                      <th className="px-3 py-2 text-left cursor-pointer select-none" onClick={() => toggleKitSort('nome')}><div className="flex items-center gap-1">Kit {kitSortIcon('nome')}</div></th>
+                      <th className="px-3 py-2 text-left cursor-pointer select-none" onClick={() => toggleKitSort('categoria')}><div className="flex items-center gap-1">Categoria {kitSortIcon('categoria')}</div></th>
+                      <th className="px-3 py-2 text-center cursor-pointer select-none" onClick={() => toggleKitSort('itens')}><div className="flex items-center justify-center gap-1">Itens {kitSortIcon('itens')}</div></th>
+                      <th className="px-3 py-2 text-right cursor-pointer select-none" onClick={() => toggleKitSort('atual')}><div className="flex items-center justify-end gap-1">Val. Atual {kitSortIcon('atual')}</div></th>
+                      <th className="px-3 py-2 text-right cursor-pointer select-none" onClick={() => toggleKitSort('minimo')}><div className="flex items-center justify-end gap-1">Val. Mínimo {kitSortIcon('minimo')}</div></th>
+                      <th className="px-3 py-2 text-right cursor-pointer select-none" onClick={() => toggleKitSort('locacao')}><div className="flex items-center justify-end gap-1">Val. Locação {kitSortIcon('locacao')}</div></th>
+                      <th className="px-3 py-2 text-right cursor-pointer select-none" onClick={() => toggleKitSort('minLocacao')}><div className="flex items-center justify-end gap-1">Mín. Locação {kitSortIcon('minLocacao')}</div></th>
+                      <th className="px-3 py-2 text-right cursor-pointer select-none" onClick={() => toggleKitSort('instalacao')}><div className="flex items-center justify-end gap-1">Instalação {kitSortIcon('instalacao')}</div></th>
                       <th className="px-3 py-2 text-center">Ativo</th>
                       <th className="px-3 py-2 text-right">Ações</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {kits.map(k => {
+                    {filteredKits.map(k => {
                       const totals = { atual: 0, minimo: 0, locacao: 0, minLocacao: 0, instalacao: 0 };
                       k.itens?.forEach(i => {
                         if (i.produto) {

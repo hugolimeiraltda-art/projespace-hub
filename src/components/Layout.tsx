@@ -25,7 +25,7 @@ export function Layout({ children }: LayoutProps) {
   const { user, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
-  const [expandedMenus, setExpandedMenus] = useState<string[]>(['/manutencao', '/projetos']);
+  const [expandedMenus, setExpandedMenus] = useState<string[]>([]);
 
   const handleLogout = () => {
     logout();

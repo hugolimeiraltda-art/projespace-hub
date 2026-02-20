@@ -13,7 +13,7 @@ export function VendedorLayout({ children, vendedorNome, onLogout }: VendedorLay
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="h-[100dvh] bg-background flex flex-col overflow-hidden">
       {/* Header */}
       <header className="border-b bg-card px-4 py-3 flex items-center justify-between shrink-0">
         <div 

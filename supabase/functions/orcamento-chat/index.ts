@@ -164,7 +164,7 @@ serve(async (req) => {
     // Resolve session: by token (legacy) or by sessao_id (vendedor logado)
     let sessao: any;
     if (sessao_id) {
-      const { data, error } = await supabase.from("orcamento_sessoes").select("*").eq("id", sessao_id).eq("status", "ativo").single();
+      const { data, error } = await supabase.from("orcamento_sessoes").select("*").eq("id", sessao_id).not("status", "eq", "cancelado").single();
       if (error || !data) {
         return new Response(JSON.stringify({ error: "Sessão inválida ou expirada." }), {
           status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -172,7 +172,7 @@ serve(async (req) => {
       }
       sessao = data;
     } else if (token) {
-      const { data, error } = await supabase.from("orcamento_sessoes").select("*").eq("token", token).eq("status", "ativo").single();
+      const { data, error } = await supabase.from("orcamento_sessoes").select("*").eq("token", token).not("status", "eq", "cancelado").single();
       if (error || !data) {
         return new Response(JSON.stringify({ error: "Sessão inválida ou expirada." }), {
           status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" },

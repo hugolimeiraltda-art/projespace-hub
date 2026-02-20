@@ -201,7 +201,7 @@ export default function OrcamentoProdutos() {
   // Kit form
   const [showKitForm, setShowKitForm] = useState(false);
   const [editKit, setEditKit] = useState<Kit | null>(null);
-  const [kForm, setKForm] = useState({ nome: '', descricao: '', categoria: 'Smartportaria', preco_kit: '', valor_minimo: '', valor_locacao: '', valor_minimo_locacao: '', valor_instalacao: '' });
+  const [kForm, setKForm] = useState({ nome: '', descricao: '', categoria: 'Smartportaria', codigo: '', preco_kit: '', valor_minimo: '', valor_locacao: '', valor_minimo_locacao: '', valor_instalacao: '' });
   const [kitItens, setKitItens] = useState<{ produto_id: string; quantidade: number }[]>([]);
 
   // Auto-calculate kit prices from products
@@ -353,14 +353,14 @@ export default function OrcamentoProdutos() {
   const openKitEdit = (k: Kit) => {
     setEditKit(k);
     const itens = k.itens?.map(i => ({ produto_id: i.produto_id, quantidade: i.quantidade })) || [];
-    setKForm({ nome: k.nome, descricao: k.descricao || '', categoria: k.categoria, preco_kit: formatBRL(k.preco_kit), valor_minimo: formatBRL(k.valor_minimo || 0), valor_locacao: formatBRL(k.valor_locacao || 0), valor_minimo_locacao: formatBRL(k.valor_minimo_locacao || 0), valor_instalacao: formatBRL(k.valor_instalacao || 0) });
+    setKForm({ nome: k.nome, descricao: k.descricao || '', categoria: k.categoria, codigo: (k as any).codigo || '', preco_kit: formatBRL(k.preco_kit), valor_minimo: formatBRL(k.valor_minimo || 0), valor_locacao: formatBRL(k.valor_locacao || 0), valor_minimo_locacao: formatBRL(k.valor_minimo_locacao || 0), valor_instalacao: formatBRL(k.valor_instalacao || 0) });
     setKitItens(itens);
     setShowKitForm(true);
   };
 
   const saveKit = async () => {
     if (!kForm.nome.trim()) { toast({ title: 'Informe o nome', variant: 'destructive' }); return; }
-    const payload = { nome: kForm.nome.trim(), descricao: kForm.descricao.trim() || null, categoria: kForm.categoria, preco_kit: parseFloat(parseBRL(kForm.preco_kit)) || 0, valor_minimo: parseFloat(parseBRL(kForm.valor_minimo)) || 0, valor_locacao: parseFloat(parseBRL(kForm.valor_locacao)) || 0, valor_minimo_locacao: parseFloat(parseBRL(kForm.valor_minimo_locacao)) || 0, valor_instalacao: parseFloat(parseBRL(kForm.valor_instalacao)) || 0 };
+    const payload = { nome: kForm.nome.trim(), descricao: kForm.descricao.trim() || null, categoria: kForm.categoria, codigo: kForm.codigo.trim() || null, preco_kit: parseFloat(parseBRL(kForm.preco_kit)) || 0, valor_minimo: parseFloat(parseBRL(kForm.valor_minimo)) || 0, valor_locacao: parseFloat(parseBRL(kForm.valor_locacao)) || 0, valor_minimo_locacao: parseFloat(parseBRL(kForm.valor_minimo_locacao)) || 0, valor_instalacao: parseFloat(parseBRL(kForm.valor_instalacao)) || 0 };
 
     let kitId = editKit?.id;
     if (editKit) {
@@ -379,7 +379,7 @@ export default function OrcamentoProdutos() {
 
     setShowKitForm(false);
     setEditKit(null);
-    setKForm({ nome: '', descricao: '', categoria: 'Smartportaria', preco_kit: '', valor_minimo: '', valor_locacao: '', valor_minimo_locacao: '', valor_instalacao: '' });
+    setKForm({ nome: '', descricao: '', categoria: 'Smartportaria', codigo: '', preco_kit: '', valor_minimo: '', valor_locacao: '', valor_minimo_locacao: '', valor_instalacao: '' });
     setKitItens([]);
     fetchAll();
     toast({ title: editKit ? 'Kit atualizado' : 'Kit criado' });
@@ -567,7 +567,7 @@ export default function OrcamentoProdutos() {
           {/* KITS TAB */}
           <TabsContent value="kits" className="space-y-4">
             <div className="flex justify-end">
-              <Button onClick={() => { setEditKit(null); setKForm({ nome: '', descricao: '', categoria: 'Smartportaria', preco_kit: '', valor_minimo: '', valor_locacao: '', valor_minimo_locacao: '', valor_instalacao: '' }); setKitItens([]); setShowKitForm(true); }}>
+              <Button onClick={() => { setEditKit(null); setKForm({ nome: '', descricao: '', categoria: 'Smartportaria', codigo: '', preco_kit: '', valor_minimo: '', valor_locacao: '', valor_minimo_locacao: '', valor_instalacao: '' }); setKitItens([]); setShowKitForm(true); }}>
                 <Plus className="mr-2 h-4 w-4" />Novo Kit
               </Button>
             </div>
@@ -738,7 +738,10 @@ export default function OrcamentoProdutos() {
         <DialogContent className="max-w-lg">
           <DialogHeader><DialogTitle>{editKit ? 'Editar Kit' : 'Novo Kit'}</DialogTitle></DialogHeader>
           <div className="space-y-4">
-            <div><Label>Nome *</Label><Input value={kForm.nome} onChange={e => setKForm(k => ({ ...k, nome: e.target.value }))} /></div>
+            <div className="grid grid-cols-2 gap-4">
+              <div><Label>Nome *</Label><Input value={kForm.nome} onChange={e => setKForm(k => ({ ...k, nome: e.target.value }))} /></div>
+              <div><Label>ID do Kit</Label><Input value={kForm.codigo} onChange={e => setKForm(k => ({ ...k, codigo: e.target.value }))} placeholder="Ex: KIT-001" /></div>
+            </div>
             <div><Label>Descrição</Label><Textarea value={kForm.descricao} onChange={e => setKForm(k => ({ ...k, descricao: e.target.value }))} rows={2} /></div>
             <div>
               <Label>Categoria</Label>

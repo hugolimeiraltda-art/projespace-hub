@@ -15,6 +15,7 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useNavigate } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
+import { useIsMobile } from '@/hooks/use-mobile';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
@@ -44,6 +45,8 @@ export default function Orcamentos() {
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
+
   const [sessoes, setSessoes] = useState<Sessao[]>([]);
   const [vendedores, setVendedores] = useState<Vendedor[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -88,6 +91,12 @@ export default function Orcamentos() {
   };
 
   useEffect(() => { fetchData(); fetchTokens(); }, []);
+
+  useEffect(() => {
+    if (isMobile) {
+      navigate('/orcar', { replace: true });
+    }
+  }, [isMobile, navigate]);
 
   const fetchTokens = async () => {
     if (user?.role !== 'admin' && user?.role !== 'gerente_comercial') return;

@@ -4,7 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { NotificationsSidebarItem } from '@/components/NotificationsSidebarItem';
 import { cn } from '@/lib/utils';
-import { LayoutDashboard, FolderPlus, List, Settings, LogOut, User, ClipboardList, Users, Briefcase, ShoppingCart, Package, Heart, Wrench, ChevronDown, ChevronRight, AlertTriangle, Calendar, Bot, Boxes, Percent, Brain } from 'lucide-react';
+import { LayoutDashboard, FolderPlus, List, Settings, LogOut, User, ClipboardList, Users, Briefcase, ShoppingCart, Package, Heart, Wrench, ChevronDown, ChevronRight, AlertTriangle, Calendar, Bot, Boxes, Percent, Brain, BookOpen } from 'lucide-react';
 import emiveLogo from '@/assets/emive-logo.png';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
@@ -129,6 +129,7 @@ export function Layout({ children }: LayoutProps) {
         { path: '/orcamentos', label: 'Sessões', icon: Bot },
         { path: '/orcamentos/produtos', label: 'Produtos e Kits', icon: Boxes },
         { path: '/orcamentos/regras', label: 'Regras de Preço', icon: Percent },
+        { path: '/orcamentos/kit-regras', label: 'Regras de Kits (IA)', icon: BookOpen },
       ]
     },
     // Vendedores acessam suas sessões de visita

@@ -101,6 +101,10 @@ interface Kit {
   descricao: string | null;
   categoria: string;
   preco_kit: number;
+  valor_minimo: number;
+  valor_locacao: number;
+  valor_minimo_locacao: number;
+  valor_instalacao: number;
   ativo: boolean;
   itens?: { id: string; produto_id: string; quantidade: number; produto?: Produto }[];
 }
@@ -197,8 +201,31 @@ export default function OrcamentoProdutos() {
   // Kit form
   const [showKitForm, setShowKitForm] = useState(false);
   const [editKit, setEditKit] = useState<Kit | null>(null);
-  const [kForm, setKForm] = useState({ nome: '', descricao: '', categoria: 'Smartportaria', preco_kit: '' });
+  const [kForm, setKForm] = useState({ nome: '', descricao: '', categoria: 'Smartportaria', preco_kit: '', valor_minimo: '', valor_locacao: '', valor_minimo_locacao: '', valor_instalacao: '' });
   const [kitItens, setKitItens] = useState<{ produto_id: string; quantidade: number }[]>([]);
+
+  // Auto-calculate kit prices from products
+  const recalcKitPrices = (itens: { produto_id: string; quantidade: number }[]) => {
+    let totalAtual = 0, totalMinimo = 0, totalLocacao = 0, totalMinLocacao = 0, totalInstalacao = 0;
+    itens.forEach(item => {
+      const prod = produtos.find(p => p.id === item.produto_id);
+      if (prod) {
+        totalAtual += (prod.preco_unitario || 0) * item.quantidade;
+        totalMinimo += (prod.valor_minimo || 0) * item.quantidade;
+        totalLocacao += (prod.valor_locacao || 0) * item.quantidade;
+        totalMinLocacao += (prod.valor_minimo_locacao || 0) * item.quantidade;
+        totalInstalacao += (prod.valor_instalacao || 0) * item.quantidade;
+      }
+    });
+    setKForm(prev => ({
+      ...prev,
+      preco_kit: formatBRL(totalAtual),
+      valor_minimo: formatBRL(totalMinimo),
+      valor_locacao: formatBRL(totalLocacao),
+      valor_minimo_locacao: formatBRL(totalMinLocacao),
+      valor_instalacao: formatBRL(totalInstalacao),
+    }));
+  };
 
   const [deleteTarget, setDeleteTarget] = useState<{ type: 'produto' | 'kit'; id: string } | null>(null);
 
@@ -325,14 +352,15 @@ export default function OrcamentoProdutos() {
   // ---- Kit CRUD ----
   const openKitEdit = (k: Kit) => {
     setEditKit(k);
-    setKForm({ nome: k.nome, descricao: k.descricao || '', categoria: k.categoria, preco_kit: String(k.preco_kit) });
-    setKitItens(k.itens?.map(i => ({ produto_id: i.produto_id, quantidade: i.quantidade })) || []);
+    const itens = k.itens?.map(i => ({ produto_id: i.produto_id, quantidade: i.quantidade })) || [];
+    setKForm({ nome: k.nome, descricao: k.descricao || '', categoria: k.categoria, preco_kit: formatBRL(k.preco_kit), valor_minimo: formatBRL(k.valor_minimo || 0), valor_locacao: formatBRL(k.valor_locacao || 0), valor_minimo_locacao: formatBRL(k.valor_minimo_locacao || 0), valor_instalacao: formatBRL(k.valor_instalacao || 0) });
+    setKitItens(itens);
     setShowKitForm(true);
   };
 
   const saveKit = async () => {
     if (!kForm.nome.trim()) { toast({ title: 'Informe o nome', variant: 'destructive' }); return; }
-    const payload = { nome: kForm.nome.trim(), descricao: kForm.descricao.trim() || null, categoria: kForm.categoria, preco_kit: parseFloat(kForm.preco_kit) || 0 };
+    const payload = { nome: kForm.nome.trim(), descricao: kForm.descricao.trim() || null, categoria: kForm.categoria, preco_kit: parseFloat(parseBRL(kForm.preco_kit)) || 0, valor_minimo: parseFloat(parseBRL(kForm.valor_minimo)) || 0, valor_locacao: parseFloat(parseBRL(kForm.valor_locacao)) || 0, valor_minimo_locacao: parseFloat(parseBRL(kForm.valor_minimo_locacao)) || 0, valor_instalacao: parseFloat(parseBRL(kForm.valor_instalacao)) || 0 };
 
     let kitId = editKit?.id;
     if (editKit) {
@@ -351,7 +379,7 @@ export default function OrcamentoProdutos() {
 
     setShowKitForm(false);
     setEditKit(null);
-    setKForm({ nome: '', descricao: '', categoria: 'Smartportaria', preco_kit: '' });
+    setKForm({ nome: '', descricao: '', categoria: 'Smartportaria', preco_kit: '', valor_minimo: '', valor_locacao: '', valor_minimo_locacao: '', valor_instalacao: '' });
     setKitItens([]);
     fetchAll();
     toast({ title: editKit ? 'Kit atualizado' : 'Kit criado' });
@@ -539,7 +567,7 @@ export default function OrcamentoProdutos() {
           {/* KITS TAB */}
           <TabsContent value="kits" className="space-y-4">
             <div className="flex justify-end">
-              <Button onClick={() => { setEditKit(null); setKForm({ nome: '', descricao: '', categoria: 'central', preco_kit: '' }); setKitItens([]); setShowKitForm(true); }}>
+              <Button onClick={() => { setEditKit(null); setKForm({ nome: '', descricao: '', categoria: 'Smartportaria', preco_kit: '', valor_minimo: '', valor_locacao: '', valor_minimo_locacao: '', valor_instalacao: '' }); setKitItens([]); setShowKitForm(true); }}>
                 <Plus className="mr-2 h-4 w-4" />Novo Kit
               </Button>
             </div>
@@ -569,8 +597,14 @@ export default function OrcamentoProdutos() {
                             </div>
                           )}
                         </div>
-                        <div className="flex items-center gap-3">
-                          <span className="font-semibold text-foreground">R$ {k.preco_kit.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                        <div className="flex items-center gap-3 flex-wrap justify-end">
+                          <div className="text-right text-xs space-y-0.5">
+                            <div><span className="text-muted-foreground">Atual:</span> <span className="font-semibold text-foreground">R$ {k.preco_kit.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span></div>
+                            <div><span className="text-muted-foreground">Mínimo:</span> R$ {(k.valor_minimo || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
+                            <div><span className="text-muted-foreground">Locação:</span> R$ {(k.valor_locacao || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
+                            <div><span className="text-muted-foreground">Mín. Loc.:</span> R$ {(k.valor_minimo_locacao || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
+                            <div><span className="text-muted-foreground">Instalação:</span> R$ {(k.valor_instalacao || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
+                          </div>
                           <Switch checked={k.ativo} onCheckedChange={v => toggleAtivo('kit', k.id, v)} />
                           <Button size="icon" variant="ghost" onClick={() => openKitEdit(k)}><Pencil className="h-4 w-4" /></Button>
                           <Button size="icon" variant="ghost" className="text-destructive" onClick={() => setDeleteTarget({ type: 'kit', id: k.id })}><Trash2 className="h-4 w-4" /></Button>
@@ -681,15 +715,22 @@ export default function OrcamentoProdutos() {
           <div className="space-y-4">
             <div><Label>Nome *</Label><Input value={kForm.nome} onChange={e => setKForm(k => ({ ...k, nome: e.target.value }))} /></div>
             <div><Label>Descrição</Label><Textarea value={kForm.descricao} onChange={e => setKForm(k => ({ ...k, descricao: e.target.value }))} rows={2} /></div>
+            <div>
+              <Label>Categoria</Label>
+              <Select value={kForm.categoria} onValueChange={v => setKForm(k => ({ ...k, categoria: v }))}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>{GRUPOS.map(c => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+
             <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label>Categoria</Label>
-                <Select value={kForm.categoria} onValueChange={v => setKForm(k => ({ ...k, categoria: v }))}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>{GRUPOS.map(c => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}</SelectContent>
-                </Select>
-              </div>
-              <div><Label>Preço do Kit (R$)</Label><Input type="number" step="0.01" value={kForm.preco_kit} onChange={e => setKForm(k => ({ ...k, preco_kit: e.target.value }))} /></div>
+              <div><Label>Valor Atual (R$)</Label><Input value={kForm.preco_kit} readOnly className="bg-muted" /></div>
+              <div><Label>Valor Mínimo (R$)</Label><Input value={kForm.valor_minimo} readOnly className="bg-muted" /></div>
+            </div>
+            <div className="grid grid-cols-3 gap-4">
+              <div><Label>Valor Locação (R$)</Label><Input value={kForm.valor_locacao} readOnly className="bg-muted" /></div>
+              <div><Label>Valor Mín. Locação (R$)</Label><Input value={kForm.valor_minimo_locacao} readOnly className="bg-muted" /></div>
+              <div><Label>Valor Instalação (R$)</Label><Input value={kForm.valor_instalacao} readOnly className="bg-muted" /></div>
             </div>
 
             <div>
@@ -697,12 +738,12 @@ export default function OrcamentoProdutos() {
               <div className="space-y-2 mt-2">
                 {kitItens.map((item, idx) => (
                   <div key={idx} className="flex gap-2 items-center">
-                    <Select value={item.produto_id} onValueChange={v => setKitItens(prev => prev.map((it, i) => i === idx ? { ...it, produto_id: v } : it))}>
+                    <Select value={item.produto_id} onValueChange={v => { const updated = kitItens.map((it, i) => i === idx ? { ...it, produto_id: v } : it); setKitItens(updated); recalcKitPrices(updated); }}>
                       <SelectTrigger className="flex-1"><SelectValue placeholder="Selecione um produto" /></SelectTrigger>
                       <SelectContent>{produtos.filter(p => p.ativo).map(p => <SelectItem key={p.id} value={p.id}>{p.nome}</SelectItem>)}</SelectContent>
                     </Select>
-                    <Input type="number" min="1" className="w-20" value={item.quantidade} onChange={e => setKitItens(prev => prev.map((it, i) => i === idx ? { ...it, quantidade: parseInt(e.target.value) || 1 } : it))} />
-                    <Button size="icon" variant="ghost" className="text-destructive" onClick={() => setKitItens(prev => prev.filter((_, i) => i !== idx))}><Trash2 className="h-4 w-4" /></Button>
+                    <Input type="number" min="1" className="w-20" value={item.quantidade} onChange={e => { const updated = kitItens.map((it, i) => i === idx ? { ...it, quantidade: parseInt(e.target.value) || 1 } : it); setKitItens(updated); recalcKitPrices(updated); }} />
+                    <Button size="icon" variant="ghost" className="text-destructive" onClick={() => { const updated = kitItens.filter((_, i) => i !== idx); setKitItens(updated); recalcKitPrices(updated); }}><Trash2 className="h-4 w-4" /></Button>
                   </div>
                 ))}
                 <Button variant="outline" size="sm" onClick={() => setKitItens(prev => [...prev, { produto_id: '', quantidade: 1 }])}>

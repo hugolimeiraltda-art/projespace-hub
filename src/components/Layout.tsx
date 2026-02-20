@@ -138,13 +138,12 @@ export function Layout({ children }: LayoutProps) {
       icon: Bot,
       roles: ['vendedor', 'gerente_comercial', 'supervisor_operacoes']
     },
-    // 11. Painel de IA
-    {
+    // 11. Painel de IA - acesso restrito por email
+    ...(user?.email && ['hugo.santos@emive.com.br', 'stenio.santos@emive.com.br'].includes(user.email) ? [{
       path: '/painel-ia',
       label: 'Painel de IA',
       icon: Brain,
-      roles: ['admin']
-    },
+    }] : []),
     // 12. Configurações (inclui Gestão de Usuários)
     {
       path: '/configuracoes',

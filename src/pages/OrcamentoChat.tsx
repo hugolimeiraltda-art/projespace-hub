@@ -1,10 +1,10 @@
 import { useState, useRef, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Send, FileText, Loader2, Bot, User, Paperclip, Image, Video, Mic, MicOff } from 'lucide-react';
+import { Send, FileText, Loader2, Bot, User, Paperclip, Image, Video, Mic, MicOff, ArrowLeft } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import emiveLogo from '@/assets/emive-logo.png';
 import jsPDF from 'jspdf';
@@ -19,6 +19,7 @@ const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/orcamento-ch
 
 export default function OrcamentoChat() {
   const { token } = useParams<{ token: string }>();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
   const [messages, setMessages] = useState<Msg[]>([]);
@@ -370,6 +371,9 @@ export default function OrcamentoChat() {
       {/* Header */}
       <header className="border-b bg-card px-6 py-4 flex items-center justify-between shrink-0">
         <div className="flex items-center gap-3">
+          <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
           <img src={emiveLogo} alt="Emive" className="h-8" />
           <div>
             <h1 className="text-lg font-semibold text-foreground">Visita Técnica - Orçamento</h1>

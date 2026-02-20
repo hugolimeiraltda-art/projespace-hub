@@ -586,45 +586,84 @@ export default function OrcamentoProdutos() {
               <Card><CardContent className="py-12 text-center text-muted-foreground">Nenhum kit cadastrado.</CardContent></Card>
             ) : (
               <div className="grid gap-3">
-                {kits.map(k => (
-                  <Card key={k.id} className={!k.ativo ? 'opacity-50' : ''}>
-                    <CardContent className="py-3 px-4">
-                      <div className="flex items-center justify-between">
-                        <div className="flex-1">
+                {kits.map(k => {
+                  // Calculate totals from products
+                  const totals = { atual: 0, minimo: 0, locacao: 0, minLocacao: 0, instalacao: 0 };
+                  k.itens?.forEach(i => {
+                    if (i.produto) {
+                      totals.atual += (i.produto.preco_unitario || 0) * i.quantidade;
+                      totals.minimo += (i.produto.valor_minimo || 0) * i.quantidade;
+                      totals.locacao += (i.produto.valor_locacao || 0) * i.quantidade;
+                      totals.minLocacao += (i.produto.valor_minimo_locacao || 0) * i.quantidade;
+                      totals.instalacao += (i.produto.valor_instalacao || 0) * i.quantidade;
+                    }
+                  });
+
+                  return (
+                    <Card key={k.id} className={!k.ativo ? 'opacity-50' : ''}>
+                      <CardContent className="py-3 px-4">
+                        <div className="flex items-center justify-between mb-2">
                           <div className="flex items-center gap-2">
+                            {(k as any).id_kit && <span className="text-xs font-mono text-muted-foreground">#{(k as any).id_kit}</span>}
                             {k.codigo && <span className="text-xs font-mono text-muted-foreground">{k.codigo}</span>}
                             <span className="font-medium text-foreground">{k.nome}</span>
                             <Badge variant="outline" className="text-xs">{catLabel(k.categoria)}</Badge>
                             {!k.ativo && <Badge variant="secondary">Inativo</Badge>}
                           </div>
-                          {k.descricao && <p className="text-xs text-muted-foreground mt-1">{k.descricao}</p>}
-                          {k.itens && k.itens.length > 0 && (
-                            <div className="mt-2 text-xs text-muted-foreground">
-                              {k.itens.map(i => (
-                                <span key={i.id} className="mr-3">
-                                  {i.produto?.codigo && <span className="font-mono text-muted-foreground/70">{i.produto.codigo} - </span>}
-                                  {i.quantidade}x {i.produto?.nome || 'Produto removido'}
-                                </span>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-3 flex-wrap justify-end">
-                          <div className="text-right text-xs space-y-0.5">
-                            <div><span className="text-muted-foreground">Atual:</span> <span className="font-semibold text-foreground">R$ {k.preco_kit.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span></div>
-                            <div><span className="text-muted-foreground">Mínimo:</span> R$ {(k.valor_minimo || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
-                            <div><span className="text-muted-foreground">Locação:</span> R$ {(k.valor_locacao || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
-                            <div><span className="text-muted-foreground">Mín. Loc.:</span> R$ {(k.valor_minimo_locacao || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
-                            <div><span className="text-muted-foreground">Instalação:</span> R$ {(k.valor_instalacao || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
+                          <div className="flex items-center gap-2">
+                            <Switch checked={k.ativo} onCheckedChange={v => toggleAtivo('kit', k.id, v)} />
+                            <Button size="icon" variant="ghost" onClick={() => openKitEdit(k)}><Pencil className="h-4 w-4" /></Button>
+                            <Button size="icon" variant="ghost" className="text-destructive" onClick={() => setDeleteTarget({ type: 'kit', id: k.id })}><Trash2 className="h-4 w-4" /></Button>
                           </div>
-                          <Switch checked={k.ativo} onCheckedChange={v => toggleAtivo('kit', k.id, v)} />
-                          <Button size="icon" variant="ghost" onClick={() => openKitEdit(k)}><Pencil className="h-4 w-4" /></Button>
-                          <Button size="icon" variant="ghost" className="text-destructive" onClick={() => setDeleteTarget({ type: 'kit', id: k.id })}><Trash2 className="h-4 w-4" /></Button>
                         </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+                        {k.descricao && <p className="text-xs text-muted-foreground mb-2">{k.descricao}</p>}
+                        
+                        {k.itens && k.itens.length > 0 && (
+                          <div className="border rounded-lg overflow-x-auto mt-1">
+                            <table className="w-full text-xs">
+                              <thead>
+                                <tr className="border-b bg-muted/50">
+                                  <th className="px-2 py-1.5 text-left">Código</th>
+                                  <th className="px-2 py-1.5 text-left">Produto</th>
+                                  <th className="px-2 py-1.5 text-center">Qtd</th>
+                                  <th className="px-2 py-1.5 text-right">Val. Atual</th>
+                                  <th className="px-2 py-1.5 text-right">Val. Mínimo</th>
+                                  <th className="px-2 py-1.5 text-right">Val. Locação</th>
+                                  <th className="px-2 py-1.5 text-right">Mín. Locação</th>
+                                  <th className="px-2 py-1.5 text-right">Instalação</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {k.itens.map(i => (
+                                  <tr key={i.id} className="border-b last:border-0 hover:bg-muted/30">
+                                    <td className="px-2 py-1.5 font-mono text-muted-foreground">{i.produto?.codigo || '-'}</td>
+                                    <td className="px-2 py-1.5 text-foreground max-w-[200px] truncate">{i.produto?.nome || 'Produto removido'}</td>
+                                    <td className="px-2 py-1.5 text-center">{i.quantidade}</td>
+                                    <td className="px-2 py-1.5 text-right">R$ {((i.produto?.preco_unitario || 0) * i.quantidade).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                                    <td className="px-2 py-1.5 text-right">R$ {((i.produto?.valor_minimo || 0) * i.quantidade).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                                    <td className="px-2 py-1.5 text-right">R$ {((i.produto?.valor_locacao || 0) * i.quantidade).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                                    <td className="px-2 py-1.5 text-right">R$ {((i.produto?.valor_minimo_locacao || 0) * i.quantidade).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                                    <td className="px-2 py-1.5 text-right">R$ {((i.produto?.valor_instalacao || 0) * i.quantidade).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                              <tfoot>
+                                <tr className="bg-muted/30 font-semibold">
+                                  <td className="px-2 py-1.5" colSpan={3}>Total do Kit</td>
+                                  <td className="px-2 py-1.5 text-right">R$ {totals.atual.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                                  <td className="px-2 py-1.5 text-right">R$ {totals.minimo.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                                  <td className="px-2 py-1.5 text-right">R$ {totals.locacao.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                                  <td className="px-2 py-1.5 text-right">R$ {totals.minLocacao.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                                  <td className="px-2 py-1.5 text-right">R$ {totals.instalacao.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                                </tr>
+                              </tfoot>
+                            </table>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  );
+                })}
               </div>
             )}
           </TabsContent>

@@ -424,9 +424,10 @@ export default function OrcamentoChat() {
 
       {/* Input */}
       <div className="border-t bg-card p-4 shrink-0">
-        <form
+      <form
           className="max-w-3xl mx-auto flex gap-2"
-          onSubmit={e => { e.preventDefault(); sendMessage(input); }}
+          action="#"
+          onSubmit={e => { e.preventDefault(); e.stopPropagation(); sendMessage(input); return false; }}
         >
           {/* File upload */}
           {sessaoId && (

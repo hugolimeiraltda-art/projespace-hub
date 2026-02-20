@@ -395,7 +395,7 @@ export default function VendedorChat() {
   // Chat view
   return (
     <VendedorLayout vendedorNome={user?.nome}>
-      <div className="flex-1 flex flex-col">
+        <div className="flex-1 flex flex-col min-h-0">
         <div className="border-b bg-card px-4 py-3 flex items-center justify-between shrink-0">
           <Button variant="ghost" size="sm" onClick={() => navigate('/orcar')}>
             <ArrowLeft className="mr-1 h-4 w-4" />Voltar
@@ -407,7 +407,7 @@ export default function VendedorChat() {
           )}
         </div>
 
-        <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-4 max-w-3xl mx-auto w-full">
+        <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-4 max-w-3xl mx-auto w-full min-h-0">
           {messages.map((msg, i) => (
             <div key={i} className={`flex gap-3 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
               {msg.role === 'assistant' && (

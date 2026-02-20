@@ -73,8 +73,9 @@ export default function OrcamentoRegras() {
     try {
       for (const regra of regrasList) {
         const newPercentual = parseFloat(editValues[regra.id] || '0');
-        if (isNaN(newPercentual) || newPercentual <= 0) {
-          toast({ title: 'Valor inválido', description: `Percentual de ${CAMPO_LABELS[regra.campo]} deve ser maior que zero.`, variant: 'destructive' });
+        const minValue = tipo === 'servicos' ? 0 : 0.01;
+        if (isNaN(newPercentual) || newPercentual < minValue || (tipo === 'produtos' && newPercentual <= 0)) {
+          toast({ title: 'Valor inválido', description: `Percentual de ${CAMPO_LABELS[regra.campo]} deve ser ${tipo === 'servicos' ? 'zero ou maior' : 'maior que zero'}.`, variant: 'destructive' });
           setterSaving(false);
           return;
         }

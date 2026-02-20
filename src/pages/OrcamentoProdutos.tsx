@@ -146,12 +146,11 @@ export default function OrcamentoProdutos() {
   ];
   const [visibleCols, setVisibleCols] = useState<Set<ColKey>>(new Set(['id_produto', 'codigo', 'nome', 'grupo', 'subgrupo', 'unidade', 'valor_atual', 'valor_minimo', 'adicional', 'ativo']));
 
-  // Kit filters & sorting
-  const [kitSearch, setKitSearch] = useState('');
-  const [kitFilterCategoria, setKitFilterCategoria] = useState<string[]>([]);
-  const [kitFilterAtivo, setKitFilterAtivo] = useState<string>('all');
+  // Kit filters & sorting (Excel-style per-column)
+  const [kitColumnFilters, setKitColumnFilters] = useState<Record<string, string>>({});
   const [kitSortField, setKitSortField] = useState<string>('nome');
   const [kitSortDir, setKitSortDir] = useState<'asc' | 'desc'>('asc');
+  const [kitActiveFilterCol, setKitActiveFilterCol] = useState<string | null>(null);
 
   const toggleKitSort = (field: string) => {
     if (kitSortField === field) setKitSortDir(d => d === 'asc' ? 'desc' : 'asc');
@@ -163,25 +162,52 @@ export default function OrcamentoProdutos() {
     return kitSortDir === 'asc' ? <ArrowUp className="h-3 w-3 text-primary" /> : <ArrowDown className="h-3 w-3 text-primary" />;
   };
 
-  const toggleKitCategoria = (cat: string) => {
-    setKitFilterCategoria(prev => prev.includes(cat) ? prev.filter(c => c !== cat) : [...prev, cat]);
+  const setKitFilter = (col: string, value: string) => {
+    setKitColumnFilters(prev => {
+      const next = { ...prev };
+      if (!value || value === 'all') delete next[col];
+      else next[col] = value;
+      return next;
+    });
+    setKitActiveFilterCol(null);
+  };
+
+  const getKitTotals = (k: Kit) => {
+    const t = { atual: 0, minimo: 0, locacao: 0, minLocacao: 0, instalacao: 0 };
+    k.itens?.forEach(i => { if (i.produto) { t.atual += (i.produto.preco_unitario || 0) * i.quantidade; t.minimo += (i.produto.valor_minimo || 0) * i.quantidade; t.locacao += (i.produto.valor_locacao || 0) * i.quantidade; t.minLocacao += (i.produto.valor_minimo_locacao || 0) * i.quantidade; t.instalacao += (i.produto.valor_instalacao || 0) * i.quantidade; } });
+    return t;
+  };
+
+  const getKitUniqueValues = (col: string) => {
+    const values = kits.map(k => {
+      if (col === 'categoria') return catLabel(k.categoria);
+      if (col === 'ativo') return k.ativo ? 'Ativo' : 'Inativo';
+      return '';
+    });
+    return [...new Set(values)].filter(Boolean).sort();
   };
 
   const filteredKits = useMemo(() => {
     let result = [...kits];
-    if (kitSearch) {
-      const term = kitSearch.toLowerCase();
-      result = result.filter(k => k.nome.toLowerCase().includes(term) || (k.codigo && k.codigo.toLowerCase().includes(term)));
-    }
-    if (kitFilterCategoria.length > 0) result = result.filter(k => kitFilterCategoria.includes(k.categoria));
-    if (kitFilterAtivo !== 'all') result = result.filter(k => kitFilterAtivo === 'sim' ? k.ativo : !k.ativo);
 
-    // Compute totals for sorting
-    const getKitTotals = (k: Kit) => {
-      const t = { atual: 0, minimo: 0, locacao: 0, minLocacao: 0, instalacao: 0 };
-      k.itens?.forEach(i => { if (i.produto) { t.atual += (i.produto.preco_unitario || 0) * i.quantidade; t.minimo += (i.produto.valor_minimo || 0) * i.quantidade; t.locacao += (i.produto.valor_locacao || 0) * i.quantidade; t.minLocacao += (i.produto.valor_minimo_locacao || 0) * i.quantidade; t.instalacao += (i.produto.valor_instalacao || 0) * i.quantidade; } });
-      return t;
-    };
+    Object.entries(kitColumnFilters).forEach(([col, val]) => {
+      const lower = val.toLowerCase();
+      result = result.filter(k => {
+        const t = getKitTotals(k);
+        switch (col) {
+          case 'nome': return k.nome.toLowerCase().includes(lower) || ((k as any).id_kit?.toString() || '').includes(lower);
+          case 'categoria': return catLabel(k.categoria).toLowerCase().includes(lower);
+          case 'itens': return (k.itens?.length || 0).toString().includes(val);
+          case 'atual': return t.atual.toLocaleString('pt-BR', { minimumFractionDigits: 2 }).includes(val);
+          case 'minimo': return t.minimo.toLocaleString('pt-BR', { minimumFractionDigits: 2 }).includes(val);
+          case 'locacao': return t.locacao.toLocaleString('pt-BR', { minimumFractionDigits: 2 }).includes(val);
+          case 'minLocacao': return t.minLocacao.toLocaleString('pt-BR', { minimumFractionDigits: 2 }).includes(val);
+          case 'instalacao': return t.instalacao.toLocaleString('pt-BR', { minimumFractionDigits: 2 }).includes(val);
+          case 'ativo': return (k.ativo ? 'Ativo' : 'Inativo').toLowerCase().includes(lower);
+          default: return true;
+        }
+      });
+    });
 
     result.sort((a, b) => {
       let va: any, vb: any;
@@ -202,10 +228,46 @@ export default function OrcamentoProdutos() {
       return 0;
     });
     return result;
-  }, [kits, kitSearch, kitFilterCategoria, kitFilterAtivo, kitSortField, kitSortDir]);
+  }, [kits, kitColumnFilters, kitSortField, kitSortDir]);
 
-  const hasKitFilters = kitSearch || kitFilterCategoria.length > 0 || kitFilterAtivo !== 'all';
-  const clearKitFilters = () => { setKitSearch(''); setKitFilterCategoria([]); setKitFilterAtivo('all'); };
+  const hasKitFilters = Object.keys(kitColumnFilters).length > 0;
+  const clearKitFilters = () => { setKitColumnFilters({}); };
+
+  const renderKitColHeader = (col: string, label: string, align: 'left' | 'right' | 'center' = 'left') => {
+    const hasFilter = !!kitColumnFilters[col];
+    const isSelect = col === 'categoria' || col === 'ativo';
+    return (
+      <div className={`flex items-center gap-1 ${align === 'right' ? 'justify-end' : align === 'center' ? 'justify-center' : ''}`}>
+        <button onClick={() => toggleKitSort(col)} className="flex items-center gap-1 hover:text-foreground transition-colors">
+          {label} {kitSortIcon(col)}
+        </button>
+        <Popover open={kitActiveFilterCol === col} onOpenChange={open => setKitActiveFilterCol(open ? col : null)}>
+          <PopoverTrigger asChild>
+            <button className={`p-1 rounded hover:bg-accent transition-colors ${hasFilter ? 'text-primary' : 'text-muted-foreground'}`}>
+              <Filter className={`h-3 w-3 ${hasFilter ? 'fill-current' : ''}`} />
+            </button>
+          </PopoverTrigger>
+          <PopoverContent className="w-56 p-3" align="start">
+            <div className="space-y-3">
+              <div className="font-medium text-sm">Filtrar {label}</div>
+              {isSelect ? (
+                <Select value={kitColumnFilters[col] || ''} onValueChange={v => setKitFilter(col, v)}>
+                  <SelectTrigger className="w-full"><SelectValue placeholder="Todos" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos</SelectItem>
+                    {getKitUniqueValues(col).map(v => <SelectItem key={v} value={v}>{v}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <Input placeholder={`Buscar ${label.toLowerCase()}...`} value={kitColumnFilters[col] || ''} onChange={e => setKitFilter(col, e.target.value)} className="w-full" />
+              )}
+              {hasFilter && <Button variant="ghost" size="sm" className="w-full" onClick={() => setKitFilter(col, '')}>Limpar filtro</Button>}
+            </div>
+          </PopoverContent>
+        </Popover>
+      </div>
+    );
+  };
 
   const toggleCol = (key: ColKey) => {
     setVisibleCols(prev => {
@@ -666,41 +728,20 @@ export default function OrcamentoProdutos() {
 
           {/* KITS TAB */}
           <TabsContent value="kits" className="space-y-4">
-            {/* Kit Filters */}
-            <div className="flex flex-wrap items-center gap-3">
-              <div className="relative flex-1 min-w-[200px] max-w-sm">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input placeholder="Buscar kit..." value={kitSearch} onChange={e => setKitSearch(e.target.value)} className="pl-9" />
-              </div>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" size="sm" className={kitFilterCategoria.length > 0 ? 'border-primary text-primary' : ''}>
-                    <Filter className="mr-1 h-3 w-3" />Categoria {kitFilterCategoria.length > 0 && `(${kitFilterCategoria.length})`}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-48 p-3">
-                  <div className="space-y-2">
-                    {GRUPOS.map(g => (
-                      <label key={g.value} className="flex items-center gap-2 text-sm cursor-pointer">
-                        <Checkbox checked={kitFilterCategoria.includes(g.value)} onCheckedChange={() => toggleKitCategoria(g.value)} />
-                        {g.label}
-                      </label>
-                    ))}
-                  </div>
-                </PopoverContent>
-              </Popover>
-              <Select value={kitFilterAtivo} onValueChange={setKitFilterAtivo}>
-                <SelectTrigger className="w-[120px]"><SelectValue placeholder="Ativo" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos</SelectItem>
-                  <SelectItem value="sim">Ativo</SelectItem>
-                  <SelectItem value="nao">Inativo</SelectItem>
-                </SelectContent>
-              </Select>
+            <div className="flex items-center justify-between">
               {hasKitFilters && (
-                <Button variant="ghost" size="sm" onClick={clearKitFilters}><X className="mr-1 h-3 w-3" />Limpar</Button>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-sm text-muted-foreground">Filtros:</span>
+                  {Object.entries(kitColumnFilters).map(([col, val]) => (
+                    <span key={col} className="inline-flex items-center gap-1 px-2 py-1 bg-muted rounded text-sm">
+                      {col}: {val}
+                      <button onClick={() => setKitFilter(col, '')} className="hover:text-destructive"><X className="h-3 w-3" /></button>
+                    </span>
+                  ))}
+                  <Button variant="ghost" size="sm" onClick={clearKitFilters}>Limpar todos</Button>
+                </div>
               )}
-              <div className="ml-auto">
+              <div className={!hasKitFilters ? 'ml-auto' : ''}>
                 <Button onClick={() => { setEditKit(null); setKForm({ nome: '', descricao: '', categoria: 'Smartportaria', codigo: '', preco_kit: '', valor_minimo: '', valor_locacao: '', valor_minimo_locacao: '', valor_instalacao: '' }); setKitItens([]); setShowKitForm(true); }}>
                   <Plus className="mr-2 h-4 w-4" />Novo Kit
                 </Button>
@@ -722,15 +763,15 @@ export default function OrcamentoProdutos() {
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b bg-muted/50">
-                      <th className="px-3 py-2 text-left cursor-pointer select-none" onClick={() => toggleKitSort('nome')}><div className="flex items-center gap-1">Kit {kitSortIcon('nome')}</div></th>
-                      <th className="px-3 py-2 text-left cursor-pointer select-none" onClick={() => toggleKitSort('categoria')}><div className="flex items-center gap-1">Categoria {kitSortIcon('categoria')}</div></th>
-                      <th className="px-3 py-2 text-center cursor-pointer select-none" onClick={() => toggleKitSort('itens')}><div className="flex items-center justify-center gap-1">Itens {kitSortIcon('itens')}</div></th>
-                      <th className="px-3 py-2 text-right cursor-pointer select-none" onClick={() => toggleKitSort('atual')}><div className="flex items-center justify-end gap-1">Val. Atual {kitSortIcon('atual')}</div></th>
-                      <th className="px-3 py-2 text-right cursor-pointer select-none" onClick={() => toggleKitSort('minimo')}><div className="flex items-center justify-end gap-1">Val. Mínimo {kitSortIcon('minimo')}</div></th>
-                      <th className="px-3 py-2 text-right cursor-pointer select-none" onClick={() => toggleKitSort('locacao')}><div className="flex items-center justify-end gap-1">Val. Locação {kitSortIcon('locacao')}</div></th>
-                      <th className="px-3 py-2 text-right cursor-pointer select-none" onClick={() => toggleKitSort('minLocacao')}><div className="flex items-center justify-end gap-1">Mín. Locação {kitSortIcon('minLocacao')}</div></th>
-                      <th className="px-3 py-2 text-right cursor-pointer select-none" onClick={() => toggleKitSort('instalacao')}><div className="flex items-center justify-end gap-1">Instalação {kitSortIcon('instalacao')}</div></th>
-                      <th className="px-3 py-2 text-center">Ativo</th>
+                      <th className="px-3 py-2 text-left">{renderKitColHeader('nome', 'Kit')}</th>
+                      <th className="px-3 py-2 text-left">{renderKitColHeader('categoria', 'Categoria')}</th>
+                      <th className="px-3 py-2 text-center">{renderKitColHeader('itens', 'Itens', 'center')}</th>
+                      <th className="px-3 py-2 text-right">{renderKitColHeader('atual', 'Val. Atual', 'right')}</th>
+                      <th className="px-3 py-2 text-right">{renderKitColHeader('minimo', 'Val. Mínimo', 'right')}</th>
+                      <th className="px-3 py-2 text-right">{renderKitColHeader('locacao', 'Val. Locação', 'right')}</th>
+                      <th className="px-3 py-2 text-right">{renderKitColHeader('minLocacao', 'Mín. Locação', 'right')}</th>
+                      <th className="px-3 py-2 text-right">{renderKitColHeader('instalacao', 'Instalação', 'right')}</th>
+                      <th className="px-3 py-2 text-center">{renderKitColHeader('ativo', 'Ativo', 'center')}</th>
                       <th className="px-3 py-2 text-right">Ações</th>
                     </tr>
                   </thead>

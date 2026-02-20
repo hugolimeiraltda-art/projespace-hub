@@ -100,6 +100,7 @@ interface Kit {
   nome: string;
   descricao: string | null;
   categoria: string;
+  codigo: string | null;
   preco_kit: number;
   valor_minimo: number;
   valor_locacao: number;
@@ -584,6 +585,7 @@ export default function OrcamentoProdutos() {
                       <div className="flex items-center justify-between">
                         <div className="flex-1">
                           <div className="flex items-center gap-2">
+                            {k.codigo && <span className="text-xs font-mono text-muted-foreground">{k.codigo}</span>}
                             <span className="font-medium text-foreground">{k.nome}</span>
                             <Badge variant="outline" className="text-xs">{catLabel(k.categoria)}</Badge>
                             {!k.ativo && <Badge variant="secondary">Inativo</Badge>}

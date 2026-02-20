@@ -201,8 +201,7 @@ export function Layout({ children }: LayoutProps) {
               const isAnySubActive = item.subItems.some(sub => location.pathname === sub.path);
               const isParentActive = location.pathname === item.path;
               
-              // Keep menu expanded if any subitem is active
-              const shouldBeExpanded = isExpanded || isAnySubActive;
+              const shouldBeExpanded = isExpanded;
               
               return (
                 <div key={`${item.path}-${item.label}`}>

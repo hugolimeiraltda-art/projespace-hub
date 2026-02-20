@@ -1250,6 +1250,10 @@ export type Database = {
           nome: string
           preco_kit: number
           updated_at: string
+          valor_instalacao: number | null
+          valor_locacao: number | null
+          valor_minimo: number | null
+          valor_minimo_locacao: number | null
         }
         Insert: {
           ativo?: boolean
@@ -1260,6 +1264,10 @@ export type Database = {
           nome: string
           preco_kit?: number
           updated_at?: string
+          valor_instalacao?: number | null
+          valor_locacao?: number | null
+          valor_minimo?: number | null
+          valor_minimo_locacao?: number | null
         }
         Update: {
           ativo?: boolean
@@ -1270,6 +1278,10 @@ export type Database = {
           nome?: string
           preco_kit?: number
           updated_at?: string
+          valor_instalacao?: number | null
+          valor_locacao?: number | null
+          valor_minimo?: number | null
+          valor_minimo_locacao?: number | null
         }
         Relationships: []
       }

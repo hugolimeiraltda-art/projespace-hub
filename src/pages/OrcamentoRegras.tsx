@@ -241,6 +241,17 @@ export default function OrcamentoRegras() {
               </Card>
             )}
 
+            <div className="flex flex-wrap gap-3">
+              <Button onClick={() => saveRegrasPorTipo('produtos')} disabled={savingProdutos}>
+                <Save className="w-4 h-4 mr-2" />
+                {savingProdutos ? 'Salvando...' : 'Salvar Regras Produtos'}
+              </Button>
+              <Button variant="outline" onClick={() => aplicarRegrasPorTipo('produtos')} disabled={applyingProdutos}>
+                <RefreshCw className={cn('w-4 h-4 mr-2', applyingProdutos && 'animate-spin')} />
+                {applyingProdutos ? 'Aplicando...' : 'Recalcular Produtos'}
+              </Button>
+            </div>
+
             {renderRegrasSection(
               'Percentuais — Serviços',
               <Wrench className="w-5 h-5" />,
@@ -265,17 +276,9 @@ export default function OrcamentoRegras() {
             )}
 
             <div className="flex flex-wrap gap-3">
-              <Button onClick={() => saveRegrasPorTipo('produtos')} disabled={savingProdutos}>
-                <Save className="w-4 h-4 mr-2" />
-                {savingProdutos ? 'Salvando...' : 'Salvar Regras Produtos'}
-              </Button>
               <Button onClick={() => saveRegrasPorTipo('servicos')} disabled={savingServicos}>
                 <Save className="w-4 h-4 mr-2" />
                 {savingServicos ? 'Salvando...' : 'Salvar Regras Serviços'}
-              </Button>
-              <Button variant="outline" onClick={() => aplicarRegrasPorTipo('produtos')} disabled={applyingProdutos}>
-                <RefreshCw className={cn('w-4 h-4 mr-2', applyingProdutos && 'animate-spin')} />
-                {applyingProdutos ? 'Aplicando...' : 'Recalcular Produtos'}
               </Button>
               <Button variant="outline" onClick={() => aplicarRegrasPorTipo('servicos')} disabled={applyingServicos}>
                 <RefreshCw className={cn('w-4 h-4 mr-2', applyingServicos && 'animate-spin')} />

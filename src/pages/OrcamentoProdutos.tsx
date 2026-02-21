@@ -261,7 +261,7 @@ export default function OrcamentoProdutos() {
                   </SelectContent>
                 </Select>
               ) : (
-                <Input placeholder={`Buscar ${label.toLowerCase()}...`} value={kitColumnFilters[col] || ''} onChange={e => setKitFilter(col, e.target.value)} className="w-full" />
+                <Input placeholder={`Buscar ${label.toLowerCase()}...`} value={kitColumnFilters[col] || ''} onChange={e => setKitFilter(col, e.target.value)} onKeyDown={e => { if (e.key === 'Enter') e.preventDefault(); }} className="w-full" />
               )}
               {hasFilter && <Button variant="ghost" size="sm" className="w-full" onClick={() => setKitFilter(col, '')}>Limpar filtro</Button>}
             </div>

@@ -973,7 +973,7 @@ export default function OrcamentoProdutos() {
               <div>
                 <Label>Valor Instalação (R$)</Label>
                 <Input value={pForm.valor_instalacao} onChange={e => setPForm(p => ({ ...p, valor_instalacao: e.target.value }))} onBlur={e => { const v = parseFloat(parseBRL(e.target.value)); if (!isNaN(v)) setPForm(p => ({ ...p, valor_instalacao: formatBRL(v) })); }} placeholder={pForm.subgrupo === 'Serviço' ? '0,00 (Serviço)' : '0,00'} />
-                {pForm.subgrupo === 'Serviço' && <p className="text-xs text-warning mt-1">Subgrupo Serviço: instalação zerada. Edite manualmente se necessário.</p>}
+                
               </div>
             </div>
             <div className="flex items-center gap-3">

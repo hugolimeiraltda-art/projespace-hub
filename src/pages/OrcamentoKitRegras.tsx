@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { Save, Search, X, Tag, FileText, Cog, ChevronDown, ChevronRight } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 interface KitRegra {
   id: string;
@@ -184,17 +185,16 @@ export default function OrcamentoKitRegras() {
                 </h2>
                 <div className="space-y-2">
                   {kitsGrupo.map(kit => {
-                    const isEditing = editingId === kit.id;
                     const isExpanded = expandedKits.has(kit.id);
 
                     return (
-                      <Card key={kit.id} className={isEditing ? 'border-primary' : ''}>
+                      <Card key={kit.id}>
                         <div
                           className="flex items-center justify-between px-4 py-3 cursor-pointer hover:bg-muted/50 transition-colors"
-                          onClick={() => !isEditing && toggleExpand(kit.id)}
+                          onClick={() => toggleExpand(kit.id)}
                         >
                           <div className="flex items-center gap-3 min-w-0">
-                            {isExpanded || isEditing ? (
+                            {isExpanded ? (
                               <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
                             ) : (
                               <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
@@ -205,7 +205,7 @@ export default function OrcamentoKitRegras() {
                                 {kit.codigo && <Badge variant="secondary" className="text-xs shrink-0">{kit.codigo}</Badge>}
                                 <span className="font-medium truncate">{kit.nome}</span>
                               </div>
-                              {!isExpanded && !isEditing && hasRules(kit) && (
+                              {!isExpanded && hasRules(kit) && (
                                 <div className="flex items-center gap-1 mt-1">
                                   {kit.descricao_uso && <FileText className="h-3 w-3 text-green-500" />}
                                   {kit.palavras_chave && kit.palavras_chave.length > 0 && <Tag className="h-3 w-3 text-blue-500" />}
@@ -216,141 +216,48 @@ export default function OrcamentoKitRegras() {
                             </div>
                           </div>
                           <div className="flex items-center gap-2 shrink-0">
-                            {!isEditing && (
-                              <Button
-                                size="sm"
-                                variant={hasRules(kit) ? 'outline' : 'default'}
-                                onClick={e => { e.stopPropagation(); startEdit(kit); }}
-                              >
-                                {hasRules(kit) ? 'Editar' : 'Configurar'}
-                              </Button>
-                            )}
+                            <Button
+                              size="sm"
+                              variant={hasRules(kit) ? 'outline' : 'default'}
+                              onClick={e => { e.stopPropagation(); startEdit(kit); }}
+                            >
+                              {hasRules(kit) ? 'Editar' : 'Configurar'}
+                            </Button>
                           </div>
                         </div>
 
-                        {(isExpanded || isEditing) && (
+                        {isExpanded && (
                           <CardContent className="pt-0 pb-4 space-y-4">
-                            {/* Descrição de uso */}
                             <div>
                               <label className="text-sm font-medium flex items-center gap-1.5 mb-1.5">
                                 <FileText className="h-4 w-4 text-green-600" />
                                 Descrição de Uso / Cenário
                               </label>
-                              {isEditing ? (
-                                <Textarea
-                                  value={(editData.descricao_uso as string) || ''}
-                                  onChange={e => setEditData({ ...editData, descricao_uso: e.target.value })}
-                                  placeholder="Ex: Usar quando o condomínio tem portão pivotante simples (1 folha). Inclui motor, placa, controles e instalação."
-                                  rows={3}
-                                />
-                              ) : (
-                                <p className="text-sm text-muted-foreground">{kit.descricao_uso || 'Não configurado'}</p>
-                              )}
+                              <p className="text-sm text-muted-foreground">{kit.descricao_uso || 'Não configurado'}</p>
                             </div>
-
-                            {/* Palavras-chave */}
                             <div>
                               <label className="text-sm font-medium flex items-center gap-1.5 mb-1.5">
                                 <Tag className="h-4 w-4 text-blue-600" />
-                                Palavras-chave (match automático)
+                                Palavras-chave
                               </label>
-                              <div className="flex flex-wrap gap-1.5 mb-2">
-                                {(isEditing ? (editData.palavras_chave as string[]) : kit.palavras_chave)?.map(tag => (
-                                  <Badge key={tag} variant="secondary" className="gap-1">
-                                    {tag}
-                                    {isEditing && (
-                                      <X className="h-3 w-3 cursor-pointer" onClick={() => removeTag(tag)} />
-                                    )}
-                                  </Badge>
-                                ))}
-                                {!isEditing && (!kit.palavras_chave || kit.palavras_chave.length === 0) && (
-                                  <span className="text-sm text-muted-foreground">Nenhuma</span>
-                                )}
+                              <div className="flex flex-wrap gap-1.5">
+                                {kit.palavras_chave && kit.palavras_chave.length > 0 ? kit.palavras_chave.map(tag => (
+                                  <Badge key={tag} variant="secondary">{tag}</Badge>
+                                )) : <span className="text-sm text-muted-foreground">Nenhuma</span>}
                               </div>
-                              {isEditing && (
-                                <div className="flex gap-2">
-                                  <Input
-                                    value={newTag}
-                                    onChange={e => setNewTag(e.target.value)}
-                                    placeholder="Adicionar tag..."
-                                    className="max-w-xs"
-                                    onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addTag())}
-                                  />
-                                  <Button size="sm" variant="outline" onClick={addTag}>Adicionar</Button>
-                                </div>
-                              )}
                             </div>
-
-                            {/* Regras condicionais */}
                             <div>
                               <label className="text-sm font-medium flex items-center gap-1.5 mb-1.5">
                                 <Cog className="h-4 w-4 text-orange-600" />
                                 Regras Condicionais
                               </label>
-                              {isEditing ? (
-                                <div className="space-y-2">
-                                  {((editData.regras_condicionais as any[]) || []).map((regra, i) => {
-                                    const campoConfig = CAMPOS_CONDICIONAIS.find(c => c.value === regra.campo);
-                                    return (
-                                      <div key={i} className="flex items-center gap-2 flex-wrap bg-muted/50 p-2 rounded-md">
-                                        <span className="text-sm">Se</span>
-                                        <select
-                                          className="border rounded px-2 py-1 text-sm bg-background"
-                                          value={regra.campo}
-                                          onChange={e => updateRegra(i, 'campo', e.target.value)}
-                                        >
-                                          {CAMPOS_CONDICIONAIS.map(c => (
-                                            <option key={c.value} value={c.value}>{c.label}</option>
-                                          ))}
-                                        </select>
-                                        <span className="text-sm">=</span>
-                                        <select
-                                          className="border rounded px-2 py-1 text-sm bg-background"
-                                          value={regra.valor}
-                                          onChange={e => updateRegra(i, 'valor', e.target.value)}
-                                        >
-                                          <option value="">Selecione...</option>
-                                          {campoConfig?.opcoes.map(o => (
-                                            <option key={o} value={o}>{o}</option>
-                                          ))}
-                                        </select>
-                                        <Button size="sm" variant="ghost" onClick={() => removeRegra(i)}>
-                                          <X className="h-4 w-4" />
-                                        </Button>
-                                      </div>
-                                    );
-                                  })}
-                                  <Button size="sm" variant="outline" onClick={addRegra}>+ Adicionar Regra</Button>
-                                </div>
-                              ) : (
-                                <div className="space-y-1">
-                                  {kit.regras_condicionais && (kit.regras_condicionais as any[]).length > 0 ? (
-                                    (kit.regras_condicionais as any[]).map((r: any, i: number) => {
-                                      const campoLabel = CAMPOS_CONDICIONAIS.find(c => c.value === r.campo)?.label || r.campo;
-                                      return (
-                                        <p key={i} className="text-sm text-muted-foreground">
-                                          Se <strong>{campoLabel}</strong> = <strong>{r.valor}</strong>
-                                        </p>
-                                      );
-                                    })
-                                  ) : (
-                                    <span className="text-sm text-muted-foreground">Nenhuma</span>
-                                  )}
-                                </div>
-                              )}
+                              {kit.regras_condicionais && (kit.regras_condicionais as any[]).length > 0 ? (
+                                (kit.regras_condicionais as any[]).map((r: any, i: number) => {
+                                  const campoLabel = CAMPOS_CONDICIONAIS.find(c => c.value === r.campo)?.label || r.campo;
+                                  return <p key={i} className="text-sm text-muted-foreground">Se <strong>{campoLabel}</strong> = <strong>{r.valor}</strong></p>;
+                                })
+                              ) : <span className="text-sm text-muted-foreground">Nenhuma</span>}
                             </div>
-
-                            {isEditing && (
-                              <div className="flex gap-2 pt-2 border-t">
-                                <Button onClick={saveEdit} disabled={updateMutation.isPending}>
-                                  <Save className="h-4 w-4 mr-1.5" />
-                                  Salvar
-                                </Button>
-                                <Button variant="outline" onClick={() => { setEditingId(null); setEditData({}); }}>
-                                  Cancelar
-                                </Button>
-                              </div>
-                            )}
                           </CardContent>
                         )}
                       </Card>
@@ -361,6 +268,111 @@ export default function OrcamentoKitRegras() {
             ))}
           </div>
         )}
+
+        {/* Dialog de edição */}
+        <Dialog open={!!editingId} onOpenChange={open => { if (!open) { setEditingId(null); setEditData({}); } }}>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                {(() => { const kit = kits?.find(k => k.id === editingId); return kit ? <>{kit.id_kit && <Badge variant="outline">#{kit.id_kit}</Badge>}{kit.nome}</> : 'Editar Kit'; })()}
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-6 pt-2">
+              {/* Descrição de uso */}
+              <div>
+                <label className="text-sm font-medium flex items-center gap-1.5 mb-2">
+                  <FileText className="h-4 w-4 text-green-600" />
+                  Descrição de Uso / Cenário
+                </label>
+                <Textarea
+                  value={(editData.descricao_uso as string) || ''}
+                  onChange={e => setEditData({ ...editData, descricao_uso: e.target.value })}
+                  placeholder="Ex: Usar quando o condomínio tem portão pivotante simples (1 folha). Inclui motor, placa, controles e instalação."
+                  rows={12}
+                  className="min-h-[250px]"
+                />
+              </div>
+
+              {/* Palavras-chave */}
+              <div>
+                <label className="text-sm font-medium flex items-center gap-1.5 mb-2">
+                  <Tag className="h-4 w-4 text-blue-600" />
+                  Palavras-chave (match automático)
+                </label>
+                <div className="flex flex-wrap gap-1.5 mb-2">
+                  {(editData.palavras_chave as string[])?.map(tag => (
+                    <Badge key={tag} variant="secondary" className="gap-1">
+                      {tag}
+                      <X className="h-3 w-3 cursor-pointer" onClick={() => removeTag(tag)} />
+                    </Badge>
+                  ))}
+                </div>
+                <div className="flex gap-2">
+                  <Input
+                    value={newTag}
+                    onChange={e => setNewTag(e.target.value)}
+                    placeholder="Adicionar tag..."
+                    className="max-w-xs"
+                    onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addTag())}
+                  />
+                  <Button size="sm" variant="outline" onClick={addTag}>Adicionar</Button>
+                </div>
+              </div>
+
+              {/* Regras condicionais */}
+              <div>
+                <label className="text-sm font-medium flex items-center gap-1.5 mb-2">
+                  <Cog className="h-4 w-4 text-orange-600" />
+                  Regras Condicionais
+                </label>
+                <div className="space-y-2">
+                  {((editData.regras_condicionais as any[]) || []).map((regra, i) => {
+                    const campoConfig = CAMPOS_CONDICIONAIS.find(c => c.value === regra.campo);
+                    return (
+                      <div key={i} className="flex items-center gap-2 flex-wrap bg-muted/50 p-2 rounded-md">
+                        <span className="text-sm">Se</span>
+                        <select
+                          className="border rounded px-2 py-1 text-sm bg-background"
+                          value={regra.campo}
+                          onChange={e => updateRegra(i, 'campo', e.target.value)}
+                        >
+                          {CAMPOS_CONDICIONAIS.map(c => (
+                            <option key={c.value} value={c.value}>{c.label}</option>
+                          ))}
+                        </select>
+                        <span className="text-sm">=</span>
+                        <select
+                          className="border rounded px-2 py-1 text-sm bg-background"
+                          value={regra.valor}
+                          onChange={e => updateRegra(i, 'valor', e.target.value)}
+                        >
+                          <option value="">Selecione...</option>
+                          {campoConfig?.opcoes.map(o => (
+                            <option key={o} value={o}>{o}</option>
+                          ))}
+                        </select>
+                        <Button size="sm" variant="ghost" onClick={() => removeRegra(i)}>
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    );
+                  })}
+                  <Button size="sm" variant="outline" onClick={addRegra}>+ Adicionar Regra</Button>
+                </div>
+              </div>
+
+              <div className="flex gap-2 pt-2 border-t">
+                <Button onClick={saveEdit} disabled={updateMutation.isPending}>
+                  <Save className="h-4 w-4 mr-1.5" />
+                  Salvar
+                </Button>
+                <Button variant="outline" onClick={() => { setEditingId(null); setEditData({}); }}>
+                  Cancelar
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </Layout>
   );

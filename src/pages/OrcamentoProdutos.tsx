@@ -197,7 +197,8 @@ export default function OrcamentoProdutos() {
       result = result.filter(k => {
         const t = getKitTotals(k);
         switch (col) {
-          case 'nome': return k.nome.toLowerCase().includes(lower) || ((k as any).id_kit?.toString() || '').includes(lower);
+          case 'id_kit': return ((k as any).id_kit?.toString() || '').includes(lower);
+          case 'nome': return k.nome.toLowerCase().includes(lower);
           case 'categoria': return catLabel(k.categoria).toLowerCase().includes(lower);
           case 'itens': return (k.itens?.length || 0).toString().includes(val);
           case 'atual': return t.atual.toLocaleString('pt-BR', { minimumFractionDigits: 2 }).includes(val);
@@ -215,6 +216,7 @@ export default function OrcamentoProdutos() {
       let va: any, vb: any;
       const ta = getKitTotals(a), tb = getKitTotals(b);
       switch (kitSortField) {
+        case 'id_kit': va = (a as any).id_kit || 0; vb = (b as any).id_kit || 0; break;
         case 'nome': va = a.nome.toLowerCase(); vb = b.nome.toLowerCase(); break;
         case 'categoria': va = a.categoria; vb = b.categoria; break;
         case 'itens': va = a.itens?.length || 0; vb = b.itens?.length || 0; break;
@@ -800,6 +802,7 @@ export default function OrcamentoProdutos() {
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b bg-muted/50">
+                      <th className="px-3 py-2 text-center w-16">{renderKitColHeader('id_kit', 'ID')}</th>
                       <th className="px-3 py-2 text-left">{renderKitColHeader('nome', 'Kit')}</th>
                       <th className="px-3 py-2 text-left">{renderKitColHeader('categoria', 'Categoria')}</th>
                       <th className="px-3 py-2 text-center">{renderKitColHeader('itens', 'Itens', 'center')}</th>
@@ -826,11 +829,11 @@ export default function OrcamentoProdutos() {
                       });
                       return (
                         <tr key={k.id} className={`border-b hover:bg-muted/30 cursor-pointer ${!k.ativo ? 'opacity-50' : ''}`} onClick={() => setViewKit(k)}>
+                          <td className="px-3 py-2 text-center">
+                            <span className="text-xs font-mono text-muted-foreground">{(k as any).id_kit ? `#${(k as any).id_kit}` : '—'}</span>
+                          </td>
                           <td className="px-3 py-2">
-                            <div className="flex items-center gap-2">
-                              {(k as any).id_kit && <span className="text-xs font-mono text-muted-foreground">#{(k as any).id_kit}</span>}
-                              <span className="font-medium text-foreground">{k.nome}</span>
-                            </div>
+                            <span className="font-medium text-foreground">{k.nome}</span>
                           </td>
                           <td className="px-3 py-2"><Badge variant="outline" className="text-xs">{catLabel(k.categoria)}</Badge></td>
                           <td className="px-3 py-2 text-center text-xs">{k.itens?.length || 0}</td>

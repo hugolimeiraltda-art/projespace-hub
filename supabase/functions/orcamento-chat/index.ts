@@ -10,7 +10,7 @@ const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
 async function fetchContextData(supabase: any) {
-  const [{ data: projects }, { data: portfolio }, { data: produtos }, { data: kits }] = await Promise.all([
+  const [{ data: projects }, { data: portfolio }, { data: produtos }, { data: kits }, { data: feedbacks }] = await Promise.all([
     supabase.from("projects").select(`
       cliente_condominio_nome, cliente_cidade, cliente_estado, numero_unidades,
       sale_forms (
@@ -28,8 +28,9 @@ async function fetchContextData(supabase: any) {
       .not("mensalidade", "is", null).order("created_at", { ascending: false }).limit(30),
     supabase.from("orcamento_produtos").select("*").eq("ativo", true).order("categoria").order("nome"),
     supabase.from("orcamento_kits").select("*, descricao_uso, palavras_chave, regras_condicionais, orcamento_kit_itens(*, orcamento_produtos(*))").eq("ativo", true).order("categoria").order("nome"),
+    supabase.from("orcamento_proposta_feedbacks").select("acertos, erros, sugestoes, proposta_adequada, nota_precisao").order("created_at", { ascending: false }).limit(20),
   ]);
-  return { projects: projects || [], portfolio: portfolio || [], produtos: produtos || [], kits: kits || [] };
+  return { projects: projects || [], portfolio: portfolio || [], produtos: produtos || [], kits: kits || [], feedbacks: feedbacks || [] };
 }
 
 function buildVisitSystemPrompt(ctx: any, sessao: any) {
@@ -255,7 +256,10 @@ ${JSON.stringify(ctx.portfolio.slice(0, 15).map((c: any) => ({ razao: c.razao_so
 - NÃO invente produtos, marcas ou modelos que não estejam no catálogo
 - NÃO invente dados que não foram coletados na visita
 - Se faltar informação, omita o campo ou coloque "A definir"
-- Responda em português brasileiro`;
+- Responda em português brasileiro
+
+## APRENDIZADO COM FEEDBACKS ANTERIORES (aplique estas correções):
+${ctx.feedbacks && ctx.feedbacks.length > 0 ? ctx.feedbacks.map((f: any) => `- ${f.proposta_adequada === 'sim' ? '✅' : f.proposta_adequada === 'parcialmente' ? '⚠️' : '❌'} Nota ${f.nota_precisao || '?'}/5${f.acertos ? ` | Acertos: ${f.acertos}` : ''}${f.erros ? ` | Erros: ${f.erros}` : ''}${f.sugestoes ? ` | Sugestão: ${f.sugestoes}` : ''}`).join('\n') : 'Nenhum feedback registrado ainda.'}`;
 }
 
 serve(async (req) => {

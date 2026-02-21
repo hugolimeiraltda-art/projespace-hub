@@ -21,28 +21,58 @@ serve(async (req) => {
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-    // Fetch context data for the AI to answer questions
+    // Fetch ALL context data for the AI - comprehensive learning from platform sources
     const [
       { data: produtos },
       { data: kits },
       { data: portfolio },
       { data: regras },
+      { data: recentSessoes },
+      { data: recentMensagens },
+      { count: totalSessoes },
+      { count: totalMensagens },
+      { count: totalMidias },
+      { count: propostasGeradas },
     ] = await Promise.all([
-      supabase.from("orcamento_produtos").select("id_produto, codigo, nome, categoria, subgrupo, unidade, preco_unitario, valor_minimo, valor_locacao, valor_minimo_locacao, valor_instalacao").eq("ativo", true).order("categoria").order("nome"),
-      supabase.from("orcamento_kits").select("id_kit, codigo, nome, categoria, preco_kit, valor_minimo, valor_locacao, valor_minimo_locacao, valor_instalacao, orcamento_kit_itens(quantidade, orcamento_produtos(codigo, nome, preco_unitario))").eq("ativo", true).order("categoria").order("nome"),
-      supabase.from("customer_portfolio").select("razao_social, unidades, mensalidade, taxa_ativacao, cameras, portoes, portas, cancelas, catracas, totem_simples, totem_duplo, tipo, sistema").not("mensalidade", "is", null).order("created_at", { ascending: false }).limit(20),
+      supabase.from("orcamento_produtos").select("id_produto, codigo, nome, categoria, subgrupo, unidade, preco_unitario, valor_minimo, valor_locacao, valor_minimo_locacao, valor_instalacao, descricao, adicional, qtd_max").eq("ativo", true).order("categoria").order("nome"),
+      supabase.from("orcamento_kits").select("id_kit, codigo, nome, categoria, preco_kit, valor_minimo, valor_locacao, valor_minimo_locacao, valor_instalacao, descricao, descricao_uso, palavras_chave, regras_condicionais, orcamento_kit_itens(quantidade, orcamento_produtos(codigo, nome, preco_unitario))").eq("ativo", true).order("categoria").order("nome"),
+      supabase.from("customer_portfolio").select("razao_social, contrato, unidades, mensalidade, taxa_ativacao, cameras, portoes, portas, cancelas, catracas, totem_simples, totem_duplo, faciais_hik, faciais_avicam, dvr_nvr, tipo, sistema, filial, praca, status_implantacao, data_ativacao").order("created_at", { ascending: false }).limit(50),
       supabase.from("orcamento_regras_precificacao").select("*"),
+      supabase.from("orcamento_sessoes").select("id, nome_cliente, vendedor_nome, status, proposta_gerada_at, created_at, endereco_condominio").order("created_at", { ascending: false }).limit(15),
+      supabase.from("orcamento_mensagens").select("role, content, created_at, sessao_id").order("created_at", { ascending: false }).limit(50),
+      supabase.from("orcamento_sessoes").select("*", { count: "exact", head: true }),
+      supabase.from("orcamento_mensagens").select("*", { count: "exact", head: true }),
+      supabase.from("orcamento_midias").select("*", { count: "exact", head: true }),
+      supabase.from("orcamento_sessoes").select("*", { count: "exact", head: true }).not("proposta_gerada", "is", null),
     ]);
 
-    const systemPrompt = `Você é a IA da Emive, especialista em portaria digital e segurança condominial. Responda às perguntas do administrador sobre produtos, preços, kits, regras de precificação, carteira de clientes e qualquer assunto técnico da empresa.
+    const systemPrompt = `Você é a IA da Emive, especialista em portaria digital e segurança condominial. Você tem acesso TOTAL e em tempo real a todas as fontes de dados da plataforma Emive. Responda com base EXCLUSIVAMENTE nos dados reais abaixo — nunca invente dados.
+
+## SEU APRENDIZADO — FONTES DE DADOS ATIVAS
+
+Você aprendeu e está aprendendo continuamente com estas fontes:
+1. **Catálogo de Produtos**: ${(produtos || []).length} produtos ativos (preços, categorias, subgrupos, limites)
+2. **Kits de Equipamentos**: ${(kits || []).length} kits ativos (composição, regras de uso, palavras-chave, regras condicionais)
+3. **Carteira de Clientes**: ${(portfolio || []).length} clientes carregados (equipamentos instalados, mensalidades, praças)
+4. **Regras de Precificação**: ${(regras || []).length} regras ativas (percentuais, campos base)
+5. **Histórico de Sessões**: ${totalSessoes || 0} sessões de orçamento realizadas
+6. **Mensagens do Chat**: ${totalMensagens || 0} mensagens trocadas (vendedor ↔ IA)
+7. **Mídias**: ${totalMidias || 0} fotos/vídeos de visitas
+8. **Propostas Geradas**: ${propostasGeradas || 0} propostas comerciais finalizadas
+9. **Treinamento Técnico**: 9 documentos PDF sobre modalidades de portaria, equipamentos e vocabulário comercial
+
+Quando perguntado sobre seu aprendizado, DETALHE exatamente o que você sabe de cada fonte, quantos registros, exemplos concretos de dados e como eles ajudam nas respostas.
 
 ## CONHECIMENTO DOS PRODUTOS EMIVE
 
-### TIPOS DE PRODUTO:
-1. **PORTARIA REMOTA** – Sem porteiro físico. Central Emive/Graber atende via câmeras e interfone (leitor facial SIP). Operadores humanos monitoram e controlam acessos.
-2. **PORTARIA DIGITAL** – Autônoma. Visitante toca interfone → chamada vai ao App do morador via vídeo. Não passa pela central. Sistema inteligente de controle de acesso.
+### TIPOS DE PRODUTO (ordem de prioridade obrigatória):
+1. **PORTARIA DIGITAL** – Autônoma. Visitante toca interfone → chamada vai ao App do morador via vídeo. Não passa pela central. Sistema inteligente de controle de acesso.
+2. **PORTARIA REMOTA** – Sem porteiro físico. Central Emive/Graber atende via câmeras e interfone (leitor facial SIP). Operadores humanos monitoram e controlam acessos.
 3. **PORTARIA ASSISTIDA** – Porteiro físico + software Emive. Porteiro usa sistema para atender interfones, registrar encomendas, cadastrar visitantes. Pode incluir Kit Estação de Trabalho.
 4. **PORTARIA EXPRESSA** – Limitada: até 20 aptos, máximo 2 portas, sem CFTV, sem portão. Apenas alarme.
+
+### CHECKLIST DE LEVANTAMENTO (7 etapas obrigatórias):
+1. Informações Gerais → 2. Acesso de Pedestres → 3. Acesso de Veículos → 4. CFTV → 5. Perímetro → 6. Interfonia → 7. Infraestrutura
 
 ### TECNOLOGIAS:
 - **CFTV**: Analógico ou digital (câmeras, DVR/NVR)
@@ -55,33 +85,47 @@ serve(async (req) => {
 
 ### INTERFONIA:
 - **Híbrida**: Central analógica (Comunic 16/48/80, CP92/112/192 Intelbras) + ATA KHOMP KAP 311-X + TDMI 300
-  - Placa 8 ramais Comunic 48R → Comunic 16/48/80
-  - Placa 16 ramais CP48/112 → CP112/192/198
 - **Digital**: TDMI 400 + ATA KHOMP 311x. Monitores SIP: AV701 (AVICAM), DS-KH6320 (Hikvision), TVIP 300 (Intelbras)
 
 ### TOTEM EMIVE IA VISION:
 Poste com até 4 câmeras + vídeo analítico + gravação nuvem 7 dias + IA (detecção aglomeração/perambulação) + App Emive + monitoramento 24h.
 
-## CATÁLOGO ATUAL:
+### VOCABULÁRIO COMERCIAL OBRIGATÓRIO:
+- Use "iremos controlar" em vez de "existem" ou "possui"
+- Linguagem profissional e consultiva
 
-**Produtos (${(produtos || []).length} ativos):**
-${JSON.stringify((produtos || []).map((p: any) => ({ codigo: p.codigo, nome: p.nome, categoria: p.categoria, preco: p.preco_unitario, minimo: p.valor_minimo, locacao: p.valor_locacao })), null, 2)}
+## CATÁLOGO COMPLETO DE PRODUTOS (${(produtos || []).length} ativos):
 
-**Kits (${(kits || []).length} ativos):**
-${JSON.stringify((kits || []).map((k: any) => ({ codigo: k.codigo, nome: k.nome, categoria: k.categoria, preco: k.preco_kit, itens: (k.orcamento_kit_itens || []).map((i: any) => ({ produto: i.orcamento_produtos?.nome, qtd: i.quantidade })) })), null, 2)}
+${JSON.stringify((produtos || []).map((p: any) => ({ codigo: p.codigo, nome: p.nome, categoria: p.categoria, subgrupo: p.subgrupo, preco: p.preco_unitario, minimo: p.valor_minimo, locacao: p.valor_locacao, min_locacao: p.valor_minimo_locacao, instalacao: p.valor_instalacao, unidade: p.unidade, descricao: p.descricao, adicional: p.adicional, qtd_max: p.qtd_max })), null, 2)}
 
-**Regras de Precificação:**
+## KITS DE EQUIPAMENTOS (${(kits || []).length} ativos) — COM REGRAS DE USO:
+
+${JSON.stringify((kits || []).map((k: any) => ({ codigo: k.codigo, nome: k.nome, categoria: k.categoria, preco: k.preco_kit, minimo: k.valor_minimo, locacao: k.valor_locacao, instalacao: k.valor_instalacao, descricao: k.descricao, descricao_uso: k.descricao_uso, palavras_chave: k.palavras_chave, regras_condicionais: k.regras_condicionais, itens: (k.orcamento_kit_itens || []).map((i: any) => ({ produto: i.orcamento_produtos?.nome, codigo: i.orcamento_produtos?.codigo, qtd: i.quantidade, preco_un: i.orcamento_produtos?.preco_unitario })) })), null, 2)}
+
+## REGRAS DE PRECIFICAÇÃO:
+
 ${JSON.stringify(regras || [], null, 2)}
 
-**Carteira de Clientes (amostra):**
-${JSON.stringify((portfolio || []).slice(0, 10).map((c: any) => ({ razao: c.razao_social, unidades: c.unidades, mensalidade: c.mensalidade, taxa: c.taxa_ativacao, tipo: c.tipo })), null, 2)}
+## CARTEIRA DE CLIENTES (${(portfolio || []).length} clientes):
 
-## REGRAS:
+${JSON.stringify((portfolio || []).map((c: any) => ({ razao: c.razao_social, contrato: c.contrato, unidades: c.unidades, mensalidade: c.mensalidade, taxa: c.taxa_ativacao, tipo: c.tipo, sistema: c.sistema, filial: c.filial, praca: c.praca, cameras: c.cameras, portoes: c.portoes, portas: c.portas, cancelas: c.cancelas, catracas: c.catracas, totem_s: c.totem_simples, totem_d: c.totem_duplo, faciais_hik: c.faciais_hik, faciais_avicam: c.faciais_avicam, dvr_nvr: c.dvr_nvr, status: c.status_implantacao, ativacao: c.data_ativacao })), null, 2)}
+
+## SESSÕES RECENTES DE ORÇAMENTO (últimas ${(recentSessoes || []).length}):
+
+${JSON.stringify((recentSessoes || []).map((s: any) => ({ cliente: s.nome_cliente, vendedor: s.vendedor_nome, status: s.status, endereco: s.endereco_condominio, proposta: s.proposta_gerada_at ? 'Sim' : 'Não', data: s.created_at })), null, 2)}
+
+## EXEMPLOS DE CONVERSAS RECENTES (aprendizado contínuo):
+
+${JSON.stringify((recentMensagens || []).slice(0, 30).map((m: any) => ({ role: m.role, content: m.content?.substring(0, 200), data: m.created_at })), null, 2)}
+
+## REGRAS DE RESPOSTA:
 - Responda em português brasileiro
-- Seja preciso com preços e dados do catálogo
-- Se não souber, diga que não tem essa informação
+- Seja preciso com preços e dados do catálogo — use EXATAMENTE os valores acima
+- Se não souber, diga que não tem essa informação nas fontes de dados
 - Formate usando markdown quando necessário
-- Respostas diretas e objetivas`;
+- Respostas diretas e objetivas
+- Quando perguntado sobre seu aprendizado, mostre estatísticas reais e exemplos concretos dos dados que você tem acesso
+- Sempre mencione de qual fonte de dados veio a informação (ex: "De acordo com o catálogo de produtos...", "Na carteira de clientes...")`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",

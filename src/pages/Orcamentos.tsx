@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { Plus, ExternalLink, FileText, Trash2, Eye, MessageSquare, Link2, Copy, Check } from 'lucide-react';
+import { Plus, ExternalLink, FileText, Trash2, Eye, MessageSquare } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useNavigate } from 'react-router-dom';
@@ -60,12 +60,6 @@ export default function Orcamentos() {
   const [creating, setCreating] = useState(false);
   const [viewProposta, setViewProposta] = useState<Sessao | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
-  const [showTokenDialog, setShowTokenDialog] = useState(false);
-  const [tokenVendedorId, setTokenVendedorId] = useState('');
-  const [generatedLink, setGeneratedLink] = useState('');
-  const [copiedLink, setCopiedLink] = useState(false);
-  const [generatingToken, setGeneratingToken] = useState(false);
-  const [accessTokens, setAccessTokens] = useState<any[]>([]);
   const [viewReport, setViewReport] = useState<string | null>(null);
   const [reportHtml, setReportHtml] = useState('');
   const [loadingReport, setLoadingReport] = useState(false);
@@ -91,7 +85,7 @@ export default function Orcamentos() {
     setIsLoading(false);
   };
 
-  useEffect(() => { fetchData(); fetchTokens(); }, []);
+  useEffect(() => { fetchData(); }, []);
 
   useEffect(() => {
     if (isMobile) {
@@ -99,54 +93,6 @@ export default function Orcamentos() {
     }
   }, [isMobile, navigate]);
 
-  const fetchTokens = async () => {
-    if (user?.role !== 'admin' && user?.role !== 'gerente_comercial') return;
-    const { data } = await supabase
-      .from('vendedor_acesso_tokens' as any)
-      .select('*')
-      .eq('ativo', true)
-      .order('created_at', { ascending: false });
-    if (data) setAccessTokens(data);
-  };
-
-  const handleGenerateToken = async () => {
-    if (!tokenVendedorId) { toast({ title: 'Selecione o vendedor', variant: 'destructive' }); return; }
-    setGeneratingToken(true);
-    const vendedorNome = vendedores.find(v => v.id === tokenVendedorId)?.nome || '';
-
-    const { data, error } = await supabase
-      .from('vendedor_acesso_tokens' as any)
-      .insert({
-        vendedor_id: tokenVendedorId,
-        vendedor_nome: vendedorNome,
-        created_by: user!.id,
-        created_by_name: user!.nome,
-      } as any)
-      .select('token')
-      .single();
-
-    if (error) {
-      toast({ title: 'Erro ao gerar token', description: error.message, variant: 'destructive' });
-    } else {
-      const link = `${window.location.origin}/vendedor/${(data as any).token}`;
-      setGeneratedLink(link);
-      fetchTokens();
-    }
-    setGeneratingToken(false);
-  };
-
-  const copyLink = () => {
-    navigator.clipboard.writeText(generatedLink);
-    setCopiedLink(true);
-    setTimeout(() => setCopiedLink(false), 2000);
-    toast({ title: 'Link copiado!' });
-  };
-
-  const revokeToken = async (id: string) => {
-    await supabase.from('vendedor_acesso_tokens' as any).update({ ativo: false } as any).eq('id', id);
-    fetchTokens();
-    toast({ title: 'Token revogado' });
-  };
 
   const handleCreate = async () => {
     if (!newNome.trim()) { toast({ title: 'Informe o nome do cliente', variant: 'destructive' }); return; }
@@ -229,11 +175,6 @@ export default function Orcamentos() {
             <p className="text-muted-foreground">{isAdmin ? 'Gerencie visitas técnicas guiadas por IA' : 'Sessões de visita técnica atribuídas a você'}</p>
           </div>
           <div className="flex gap-2">
-            {isAdmin && (
-              <Button variant="outline" onClick={() => { setShowTokenDialog(true); setGeneratedLink(''); setTokenVendedorId(''); }}>
-                <Link2 className="mr-2 h-4 w-4" />Gerar Token de Acesso
-              </Button>
-            )}
             <Dialog open={showNew} onOpenChange={setShowNew}>
               <DialogTrigger asChild>
                 <Button><Plus className="mr-2 h-4 w-4" />Nova Sessão</Button>
@@ -364,66 +305,6 @@ export default function Orcamentos() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Token generation dialog */}
-      <Dialog open={showTokenDialog} onOpenChange={setShowTokenDialog}>
-        <DialogContent>
-          <DialogHeader><DialogTitle>Gerar Token de Acesso para Vendedor</DialogTitle></DialogHeader>
-          <div className="space-y-4">
-            {!generatedLink ? (
-              <>
-                <div>
-                  <Label>Vendedor *</Label>
-                  <Select value={tokenVendedorId} onValueChange={setTokenVendedorId}>
-                    <SelectTrigger><SelectValue placeholder="Selecione o vendedor" /></SelectTrigger>
-                    <SelectContent>
-                      {vendedores.map(v => <SelectItem key={v.id} value={v.id}>{v.nome}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  O vendedor receberá um link de acesso ao app de visita técnica, onde poderá criar e gerenciar sessões de orçamento.
-                </p>
-                <Button onClick={handleGenerateToken} disabled={generatingToken} className="w-full">
-                  {generatingToken ? 'Gerando...' : 'Gerar Link de Acesso'}
-                </Button>
-              </>
-            ) : (
-              <>
-                <div className="space-y-2">
-                  <Label>Link de Acesso</Label>
-                  <div className="flex gap-2">
-                    <Input value={generatedLink} readOnly className="text-xs" />
-                    <Button size="icon" variant="outline" onClick={copyLink}>
-                      {copiedLink ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
-                    </Button>
-                  </div>
-                  <p className="text-xs text-muted-foreground">Envie este link ao vendedor. Ele terá acesso ao app de visita técnica.</p>
-                </div>
-              </>
-            )}
-
-            {/* Active tokens */}
-            {accessTokens.length > 0 && (
-              <div className="border-t pt-4 space-y-2">
-                <Label className="text-xs text-muted-foreground">Tokens Ativos</Label>
-                {accessTokens.map((t: any) => (
-                  <div key={t.id} className="flex items-center justify-between text-sm bg-muted rounded-lg px-3 py-2">
-                    <div>
-                      <span className="font-medium">{t.vendedor_nome}</span>
-                      <span className="text-xs text-muted-foreground ml-2">
-                        {format(new Date(t.created_at), "dd/MM/yy", { locale: ptBR })}
-                      </span>
-                    </div>
-                    <Button size="sm" variant="ghost" className="text-destructive h-7" onClick={() => revokeToken(t.id)}>
-                      Revogar
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
     </Layout>
   );
 }

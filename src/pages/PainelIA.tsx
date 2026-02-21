@@ -44,6 +44,7 @@ export default function PainelIA() {
         { count: clientesCarteira },
         { count: projetos },
         { count: regrasPreco },
+        { count: totalFeedbacks },
       ] = await Promise.all([
         supabase.from('orcamento_sessoes').select('*', { count: 'exact', head: true }),
         supabase.from('orcamento_mensagens').select('*', { count: 'exact', head: true }),
@@ -58,6 +59,7 @@ export default function PainelIA() {
         supabase.from('customer_portfolio').select('*', { count: 'exact', head: true }),
         supabase.from('projects').select('*', { count: 'exact', head: true }),
         supabase.from('orcamento_regras_precificacao').select('*', { count: 'exact', head: true }),
+        supabase.from('orcamento_proposta_feedbacks').select('*', { count: 'exact', head: true }),
       ]);
 
       return {
@@ -74,6 +76,7 @@ export default function PainelIA() {
         clientesCarteira: clientesCarteira || 0,
         projetos: projetos || 0,
         regrasPreco: regrasPreco || 0,
+        totalFeedbacks: totalFeedbacks || 0,
       };
     },
   });
@@ -195,6 +198,7 @@ export default function PainelIA() {
     { name: 'projects + sale_forms', desc: 'Projetos e Formulários', count: stats?.projetos || 0, icon: Database, status: 'active' as const },
     { name: 'orcamento_regras_precificacao', desc: 'Regras de Precificação', count: stats?.regrasPreco || 0, icon: DollarSign, status: 'active' as const },
     { name: 'orcamento_sessoes', desc: 'Histórico de Sessões', count: stats?.totalSessoes || 0, icon: MessageSquare, status: 'active' as const },
+    { name: 'orcamento_proposta_feedbacks', desc: 'Feedbacks de Propostas Geradas', count: stats?.totalFeedbacks || 0, icon: MessageSquare, status: 'active' as const },
     { name: 'orcamento_midias', desc: 'Fotos e Vídeos das Visitas', count: stats?.totalMidias || 0, icon: Image, status: 'active' as const },
     { name: 'Treinamento PDF', desc: 'Conhecimento de Produtos Emive', count: 9, icon: Brain, status: 'trained' as const },
   ];

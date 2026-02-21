@@ -616,7 +616,7 @@ export default function OrcamentoProdutos() {
       <div className="space-y-6">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Produtos e Kits</h1>
-          <p className="text-muted-foreground">Gerencie produtos e kits para orçamentos</p>
+          <p className="text-muted-foreground">Gerencie produtos e kits para orçamentos — {produtos.length} produtos e {kits.length} kits cadastrados</p>
         </div>
 
         <Tabs defaultValue="produtos">

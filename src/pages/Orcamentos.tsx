@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import DOMPurify from 'dompurify';
 import { Layout } from '@/components/Layout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -343,7 +344,7 @@ export default function Orcamentos() {
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
             </div>
           ) : reportHtml ? (
-            <div dangerouslySetInnerHTML={{ __html: reportHtml }} />
+            <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(reportHtml) }} />
           ) : (
             <p className="text-muted-foreground text-center py-8">Erro ao carregar relatório.</p>
           )}

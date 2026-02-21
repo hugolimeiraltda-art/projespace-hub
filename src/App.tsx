@@ -41,6 +41,7 @@ import OrcamentoChat from "./pages/OrcamentoChat";
 import OrcamentoProdutos from "./pages/OrcamentoProdutos";
 import OrcamentoRegras from "./pages/OrcamentoRegras";
 import OrcamentoKitRegras from "./pages/OrcamentoKitRegras";
+import OrcamentoPropostas from "./pages/OrcamentoPropostas";
 import VendedorHome from "./pages/VendedorHome";
 import VendedorChat from "./pages/VendedorChat";
 import PainelIA from "./pages/PainelIA";
@@ -216,6 +217,10 @@ function AppRoutes() {
       <Route 
         path="/orcamentos/kit-regras" 
         element={<ProtectedRoute><OrcamentoKitRegras /></ProtectedRoute>} 
+      />
+      <Route 
+        path="/orcamentos/propostas" 
+        element={<ProtectedRoute><OrcamentoPropostas /></ProtectedRoute>} 
       />
       <Route 
         path="/orcamento/:token" 

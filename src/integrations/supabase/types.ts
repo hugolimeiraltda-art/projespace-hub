@@ -1458,6 +1458,56 @@ export type Database = {
         }
         Relationships: []
       }
+      orcamento_proposta_feedbacks: {
+        Row: {
+          acertos: string | null
+          created_at: string
+          created_by: string
+          created_by_name: string
+          erros: string | null
+          id: string
+          nota_precisao: number | null
+          proposta_adequada: string
+          sessao_id: string
+          sugestoes: string | null
+          updated_at: string
+        }
+        Insert: {
+          acertos?: string | null
+          created_at?: string
+          created_by: string
+          created_by_name: string
+          erros?: string | null
+          id?: string
+          nota_precisao?: number | null
+          proposta_adequada: string
+          sessao_id: string
+          sugestoes?: string | null
+          updated_at?: string
+        }
+        Update: {
+          acertos?: string | null
+          created_at?: string
+          created_by?: string
+          created_by_name?: string
+          erros?: string | null
+          id?: string
+          nota_precisao?: number | null
+          proposta_adequada?: string
+          sessao_id?: string
+          sugestoes?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orcamento_proposta_feedbacks_sessao_id_fkey"
+            columns: ["sessao_id"]
+            isOneToOne: false
+            referencedRelation: "orcamento_sessoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       orcamento_regras_precificacao: {
         Row: {
           base_campo: string

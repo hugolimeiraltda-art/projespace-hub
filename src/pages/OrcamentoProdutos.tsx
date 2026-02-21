@@ -484,14 +484,24 @@ export default function OrcamentoProdutos() {
         payload.historico_alteracoes = historico.slice(0, 50);
       }
 
-      await supabase.from('orcamento_produtos').update(payload).eq('id', editProduto.id);
+      const { error } = await supabase.from('orcamento_produtos').update(payload).eq('id', editProduto.id);
+      if (error) {
+        console.error('Erro ao atualizar produto:', error);
+        toast({ title: 'Erro ao salvar produto', description: error.message, variant: 'destructive' });
+        return;
+      }
     } else {
       payload.historico_alteracoes = [{
         user_name: user?.nome || 'Desconhecido',
         alteracao: 'Produto criado',
         data: new Date().toISOString(),
       }];
-      await supabase.from('orcamento_produtos').insert(payload);
+      const { error } = await supabase.from('orcamento_produtos').insert(payload);
+      if (error) {
+        console.error('Erro ao criar produto:', error);
+        toast({ title: 'Erro ao criar produto', description: error.message, variant: 'destructive' });
+        return;
+      }
     }
     // Recalculate kit prices if editing a product (price may have changed)
     if (editProduto) {

@@ -321,9 +321,15 @@ export default function OrcamentoProdutos() {
         case 'nome': va = a.nome; vb = b.nome; break;
         case 'grupo': va = a.categoria; vb = b.categoria; break;
         case 'subgrupo': va = a.subgrupo || ''; vb = b.subgrupo || ''; break;
+        case 'unidade': va = a.unidade || ''; vb = b.unidade || ''; break;
+        case 'qtd_max': va = a.qtd_max || 0; vb = b.qtd_max || 0; break;
         case 'valor_atual': va = a.preco_unitario; vb = b.preco_unitario; break;
         case 'valor_minimo': va = a.valor_minimo; vb = b.valor_minimo; break;
-        case 'valor_instalacao': va = a.valor_instalacao; vb = b.valor_instalacao; break;
+        case 'valor_locacao': va = a.valor_locacao || 0; vb = b.valor_locacao || 0; break;
+        case 'valor_min_locacao': va = a.valor_minimo_locacao || 0; vb = b.valor_minimo_locacao || 0; break;
+        case 'valor_instalacao': va = a.valor_instalacao || 0; vb = b.valor_instalacao || 0; break;
+        case 'adicional': va = a.adicional ? 1 : 0; vb = b.adicional ? 1 : 0; break;
+        case 'ativo': va = a.ativo ? 1 : 0; vb = b.ativo ? 1 : 0; break;
         default: va = a.nome; vb = b.nome;
       }
       if (typeof va === 'string') { va = va.toLowerCase(); vb = (vb as string).toLowerCase(); }
@@ -734,15 +740,15 @@ export default function OrcamentoProdutos() {
                       {visibleCols.has('nome') && <th className="px-3 py-2 text-left cursor-pointer hover:bg-muted" onClick={() => toggleSort('nome')}><div className="flex items-center gap-1">Nome {sortField === 'nome' ? (sortDir === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />) : <ArrowUpDown className="h-3 w-3 opacity-30" />}</div></th>}
                       {visibleCols.has('grupo') && <th className="px-3 py-2 text-left cursor-pointer hover:bg-muted" onClick={() => toggleSort('grupo')}><div className="flex items-center gap-1">Grupo {sortField === 'grupo' ? (sortDir === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />) : <ArrowUpDown className="h-3 w-3 opacity-30" />}</div></th>}
                       {visibleCols.has('subgrupo') && <th className="px-3 py-2 text-left cursor-pointer hover:bg-muted" onClick={() => toggleSort('subgrupo')}><div className="flex items-center gap-1">Subgrupo {sortField === 'subgrupo' ? (sortDir === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />) : <ArrowUpDown className="h-3 w-3 opacity-30" />}</div></th>}
-                      {visibleCols.has('unidade') && <th className="px-3 py-2 text-left">Unidade</th>}
-                      {visibleCols.has('qtd_max') && <th className="px-3 py-2 text-right">Qtd Máx</th>}
+                      {visibleCols.has('unidade') && <th className="px-3 py-2 text-left cursor-pointer hover:bg-muted" onClick={() => toggleSort('unidade')}><div className="flex items-center gap-1">Unidade {sortField === 'unidade' ? (sortDir === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />) : <ArrowUpDown className="h-3 w-3 opacity-30" />}</div></th>}
+                      {visibleCols.has('qtd_max') && <th className="px-3 py-2 text-right cursor-pointer hover:bg-muted" onClick={() => toggleSort('qtd_max')}><div className="flex items-center justify-end gap-1">Qtd Máx {sortField === 'qtd_max' ? (sortDir === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />) : <ArrowUpDown className="h-3 w-3 opacity-30" />}</div></th>}
                       {visibleCols.has('valor_atual') && <th className="px-3 py-2 text-right cursor-pointer hover:bg-muted" onClick={() => toggleSort('valor_atual')}><div className="flex items-center justify-end gap-1">Valor Atual {sortField === 'valor_atual' ? (sortDir === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />) : <ArrowUpDown className="h-3 w-3 opacity-30" />}</div></th>}
                       {visibleCols.has('valor_minimo') && <th className="px-3 py-2 text-right cursor-pointer hover:bg-muted" onClick={() => toggleSort('valor_minimo')}><div className="flex items-center justify-end gap-1">Val. Mín {sortField === 'valor_minimo' ? (sortDir === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />) : <ArrowUpDown className="h-3 w-3 opacity-30" />}</div></th>}
-                      {visibleCols.has('valor_locacao') && <th className="px-3 py-2 text-right">Val. Loc.</th>}
-                      {visibleCols.has('valor_min_locacao') && <th className="px-3 py-2 text-right">Mín. Loc.</th>}
+                      {visibleCols.has('valor_locacao') && <th className="px-3 py-2 text-right cursor-pointer hover:bg-muted" onClick={() => toggleSort('valor_locacao')}><div className="flex items-center justify-end gap-1">Val. Loc. {sortField === 'valor_locacao' ? (sortDir === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />) : <ArrowUpDown className="h-3 w-3 opacity-30" />}</div></th>}
+                      {visibleCols.has('valor_min_locacao') && <th className="px-3 py-2 text-right cursor-pointer hover:bg-muted" onClick={() => toggleSort('valor_min_locacao')}><div className="flex items-center justify-end gap-1">Mín. Loc. {sortField === 'valor_min_locacao' ? (sortDir === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />) : <ArrowUpDown className="h-3 w-3 opacity-30" />}</div></th>}
                       {visibleCols.has('valor_instalacao') && <th className="px-3 py-2 text-right cursor-pointer hover:bg-muted" onClick={() => toggleSort('valor_instalacao')}><div className="flex items-center justify-end gap-1">Instalação {sortField === 'valor_instalacao' ? (sortDir === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />) : <ArrowUpDown className="h-3 w-3 opacity-30" />}</div></th>}
-                      {visibleCols.has('adicional') && <th className="px-3 py-2 text-center">Adic.</th>}
-                      {visibleCols.has('ativo') && <th className="px-3 py-2 text-center">Ativo</th>}
+                      {visibleCols.has('adicional') && <th className="px-3 py-2 text-center cursor-pointer hover:bg-muted" onClick={() => toggleSort('adicional')}><div className="flex items-center justify-center gap-1">Adic. {sortField === 'adicional' ? (sortDir === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />) : <ArrowUpDown className="h-3 w-3 opacity-30" />}</div></th>}
+                      {visibleCols.has('ativo') && <th className="px-3 py-2 text-center cursor-pointer hover:bg-muted" onClick={() => toggleSort('ativo')}><div className="flex items-center justify-center gap-1">Ativo {sortField === 'ativo' ? (sortDir === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />) : <ArrowUpDown className="h-3 w-3 opacity-30" />}</div></th>}
                       <th className="px-3 py-2 text-right">Ações</th>
                     </tr>
                   </thead>

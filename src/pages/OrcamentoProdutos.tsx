@@ -150,6 +150,7 @@ export default function OrcamentoProdutos() {
 
   // Kit filters & sorting (Excel-style per-column)
   const [kitColumnFilters, setKitColumnFilters] = useState<Record<string, string>>({});
+  const [kitSearchTerm, setKitSearchTerm] = useState('');
   const [kitSortField, setKitSortField] = useState<string>('nome');
   const [kitSortDir, setKitSortDir] = useState<'asc' | 'desc'>('asc');
   const [kitActiveFilterCol, setKitActiveFilterCol] = useState<string | null>(null);
@@ -192,6 +193,17 @@ export default function OrcamentoProdutos() {
   const filteredKits = useMemo(() => {
     let result = [...kits];
 
+    // Global search filter
+    if (kitSearchTerm.trim()) {
+      const lower = kitSearchTerm.toLowerCase();
+      result = result.filter(k =>
+        k.nome.toLowerCase().includes(lower) ||
+        ((k as any).id_kit?.toString() || '').includes(lower) ||
+        (k.codigo || '').toLowerCase().includes(lower) ||
+        catLabel(k.categoria).toLowerCase().includes(lower)
+      );
+    }
+
     Object.entries(kitColumnFilters).forEach(([col, val]) => {
       const lower = val.toLowerCase();
       result = result.filter(k => {
@@ -232,10 +244,10 @@ export default function OrcamentoProdutos() {
       return 0;
     });
     return result;
-  }, [kits, kitColumnFilters, kitSortField, kitSortDir]);
+  }, [kits, kitColumnFilters, kitSearchTerm, kitSortField, kitSortDir]);
 
-  const hasKitFilters = Object.keys(kitColumnFilters).length > 0;
-  const clearKitFilters = () => { setKitColumnFilters({}); };
+  const hasKitFilters = Object.keys(kitColumnFilters).length > 0 || kitSearchTerm.trim() !== '';
+  const clearKitFilters = () => { setKitColumnFilters({}); setKitSearchTerm(''); };
 
   const renderKitColHeader = (col: string, label: string, align: 'left' | 'right' | 'center' = 'left') => {
     const hasFilter = !!kitColumnFilters[col];
@@ -767,7 +779,15 @@ export default function OrcamentoProdutos() {
 
           {/* KITS TAB */}
           <TabsContent value="kits" className="space-y-4">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3 flex-wrap justify-between">
+              <div className="flex items-center gap-2 flex-1 min-w-[200px] max-w-sm">
+                <Input
+                  placeholder="Pesquisar kit por nome, ID ou código..."
+                  value={kitSearchTerm}
+                  onChange={e => setKitSearchTerm(e.target.value)}
+                  className="w-full"
+                />
+              </div>
               {hasKitFilters && (
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="text-sm text-muted-foreground">Filtros:</span>

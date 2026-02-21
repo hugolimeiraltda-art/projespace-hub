@@ -252,35 +252,39 @@ export default function OrcamentoProdutos() {
   const renderKitColHeader = (col: string, label: string, align: 'left' | 'right' | 'center' = 'left') => {
     const hasFilter = !!kitColumnFilters[col];
     const isSelect = col === 'categoria' || col === 'ativo';
+    const searchCoveredCols = ['nome', 'id_kit'];
+    const hideFilter = searchCoveredCols.includes(col);
     return (
       <div className={`flex items-center gap-1 ${align === 'right' ? 'justify-end' : align === 'center' ? 'justify-center' : ''}`}>
         <button onClick={() => toggleKitSort(col)} className="flex items-center gap-1 hover:text-foreground transition-colors">
           {label} {kitSortIcon(col)}
         </button>
-        <Popover open={kitActiveFilterCol === col} onOpenChange={open => setKitActiveFilterCol(open ? col : null)}>
-          <PopoverTrigger asChild>
-            <button className={`p-1 rounded hover:bg-accent transition-colors ${hasFilter ? 'text-primary' : 'text-muted-foreground'}`}>
-              <Filter className={`h-3 w-3 ${hasFilter ? 'fill-current' : ''}`} />
-            </button>
-          </PopoverTrigger>
-          <PopoverContent className="w-56 p-3" align="start">
-            <div className="space-y-3">
-              <div className="font-medium text-sm">Filtrar {label}</div>
-              {isSelect ? (
-                <Select value={kitColumnFilters[col] || ''} onValueChange={v => setKitFilter(col, v)}>
-                  <SelectTrigger className="w-full"><SelectValue placeholder="Todos" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todos</SelectItem>
-                    {getKitUniqueValues(col).map(v => <SelectItem key={v} value={v}>{v}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              ) : (
-                <Input placeholder={`Buscar ${label.toLowerCase()}...`} value={kitColumnFilters[col] || ''} onChange={e => setKitFilter(col, e.target.value)} onKeyDown={e => { if (e.key === 'Enter') e.preventDefault(); }} className="w-full" />
-              )}
-              {hasFilter && <Button variant="ghost" size="sm" className="w-full" onClick={() => setKitFilter(col, '')}>Limpar filtro</Button>}
-            </div>
-          </PopoverContent>
-        </Popover>
+        {!hideFilter && (
+          <Popover open={kitActiveFilterCol === col} onOpenChange={open => setKitActiveFilterCol(open ? col : null)}>
+            <PopoverTrigger asChild>
+              <button className={`p-1 rounded hover:bg-accent transition-colors ${hasFilter ? 'text-primary' : 'text-muted-foreground'}`}>
+                <Filter className={`h-3 w-3 ${hasFilter ? 'fill-current' : ''}`} />
+              </button>
+            </PopoverTrigger>
+            <PopoverContent className="w-56 p-3" align="start">
+              <div className="space-y-3">
+                <div className="font-medium text-sm">Filtrar {label}</div>
+                {isSelect ? (
+                  <Select value={kitColumnFilters[col] || ''} onValueChange={v => setKitFilter(col, v)}>
+                    <SelectTrigger className="w-full"><SelectValue placeholder="Todos" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todos</SelectItem>
+                      {getKitUniqueValues(col).map(v => <SelectItem key={v} value={v}>{v}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <Input placeholder={`Buscar ${label.toLowerCase()}...`} value={kitColumnFilters[col] || ''} onChange={e => setKitFilter(col, e.target.value)} onKeyDown={e => { if (e.key === 'Enter') e.preventDefault(); }} className="w-full" />
+                )}
+                {hasFilter && <Button variant="ghost" size="sm" className="w-full" onClick={() => setKitFilter(col, '')}>Limpar filtro</Button>}
+              </div>
+            </PopoverContent>
+          </Popover>
+        )}
       </div>
     );
   };

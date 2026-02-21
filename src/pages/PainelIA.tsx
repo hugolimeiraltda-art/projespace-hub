@@ -12,6 +12,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Bot, MessageSquare, Image, Video, FileText, Send, Database, Brain, DollarSign, TrendingUp, Loader2, CheckCircle2, Clock, Sparkles } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { toast } from 'sonner';
+import { AILearningActivity } from '@/components/AILearningActivity';
 
 interface AIMessage {
   role: 'user' | 'assistant';
@@ -328,6 +329,9 @@ export default function PainelIA() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Learning Activity */}
+        <AILearningActivity />
 
         {/* Main Content Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

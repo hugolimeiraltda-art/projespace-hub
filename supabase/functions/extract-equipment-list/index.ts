@@ -41,7 +41,10 @@ serve(async (req) => {
       });
     }
 
-    const systemPrompt = `Você é um especialista em análise de documentos técnicos de projetos de portaria digital e segurança condominial.
+    const systemPrompt = `Você é um especialista em análise de documentos técnicos de projetos de portaria digital e segurança condominial da empresa Emive.
+
+## PRINCÍPIO FUNDAMENTAL: DADOS INTERNOS PRIMEIRO — SEMPRE
+🔴 Extraia os dados EXATAMENTE como constam nos documentos fornecidos. NUNCA invente equipamentos ou quantidades que não estejam nos documentos. Se reconhecer equipamentos do catálogo Emive, use os nomes padronizados do catálogo.
 
 Sua tarefa é extrair a LISTA DE EQUIPAMENTOS de documentos PDF fornecidos e retornar em formato JSON estruturado.
 

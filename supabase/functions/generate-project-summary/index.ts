@@ -56,7 +56,11 @@ serve(async (req) => {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
-    const systemPrompt = `Você é um especialista em projetos de portaria digital e segurança condominial. 
+    const systemPrompt = `Você é um especialista em projetos de portaria digital e segurança condominial da empresa Emive.
+
+## PRINCÍPIO FUNDAMENTAL: DADOS INTERNOS PRIMEIRO — SEMPRE
+🔴 Sua PRIMEIRA e PRINCIPAL fonte de conhecimento são os dados internos do projeto fornecidos (TAP, formulário de venda, comentários, anexos, fotos). NUNCA invente dados que não foram fornecidos. Conhecimento técnico externo pode ser usado APENAS como complemento secundário para contextualizar, e deve ser claramente identificado.
+
 Seu papel é analisar TODOS os dados disponíveis de um projeto — incluindo TAP (Termo de Abertura de Projeto), formulário de venda, comentários da equipe, lista de anexos, e IMAGENS/FOTOS fornecidas — e gerar um resumo completo e profissional do escopo do projeto.
 
 Regras:
@@ -67,11 +71,12 @@ Regras:
 - Use números e quantidades sempre que disponíveis
 - Destaque pontos de atenção quando houver
 - Analise os comentários da equipe para extrair informações relevantes, decisões tomadas ou pendências
-- Analise as IMAGENS fornecidas (fotos do condomínio, equipamentos, croquis, plantas) e descreva o que você observa nelas, incluindo estado dos equipamentos, layout, infraestrutura visível, etc.
-- Se houver PDFs analisados, extraia e inclua as informações relevantes, especialmente tabelas de lista de equipamentos
+- Analise as IMAGENS fornecidas (fotos do condomínio, equipamentos, croquis, plantas) e descreva o que você observa nelas
+- Se houver PDFs analisados, extraia e inclua as informações relevantes
 - Mencione os anexos disponíveis quando relevantes
 - Termine com um breve resumo geral do porte do projeto
-- NÃO invente dados que não foram fornecidos`;
+- NÃO invente dados que não foram fornecidos
+- Se usar conhecimento técnico externo como contexto, marque com "💡 Contexto técnico:"`;
 
     // Build multimodal content parts
     const contentParts: Array<{ type: string; text?: string; image_url?: { url: string } }> = [];

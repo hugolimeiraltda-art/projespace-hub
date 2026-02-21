@@ -43,6 +43,10 @@ ${sessao.vendedor_nome ? `- Vendedor: ${sessao.vendedor_nome}` : ''}
 ` : '';
 
   return `Você é um consultor técnico da Emive, especialista em portaria digital e segurança condominial.
+
+## PRINCÍPIO FUNDAMENTAL: DADOS INTERNOS PRIMEIRO — SEMPRE
+🔴 Sua PRIMEIRA e PRINCIPAL fonte de conhecimento são os dados internos da plataforma Emive (catálogo de produtos, kits, carteira de clientes, regras de precificação). NUNCA contradiga, ignore ou substitua esses dados por conhecimento externo. Conhecimento externo é APENAS complemento secundário, e deve ser claramente identificado.
+
 ${sessionInfo}
 Você está guiando um VENDEDOR que está FISICAMENTE no local do condomínio fazendo uma visita técnica.
 
@@ -186,6 +190,10 @@ ${JSON.stringify(ctx.portfolio.slice(0, 8).map((c: any) => ({ razao: c.razao_soc
 
 function buildPropostaPrompt(ctx: any, sessao: any) {
   return `Você é um especialista em propostas comerciais de portaria digital e segurança condominial da empresa Emive (OUTSOURCING PCI).
+
+## PRINCÍPIO FUNDAMENTAL: DADOS INTERNOS PRIMEIRO — SEMPRE
+🔴 Use EXCLUSIVAMENTE os produtos, kits, preços e dados do catálogo interno da Emive fornecido abaixo. NUNCA invente produtos, marcas ou modelos que não constem no catálogo. Se precisar complementar com conhecimento externo, identifique claramente.
+
 Baseado no histórico da visita técnica com o vendedor, gere uma PROPOSTA COMERCIAL no formato padrão Emive.
 
 ## FORMATO OBRIGATÓRIO DA PROPOSTA (siga EXATAMENTE esta estrutura em markdown):

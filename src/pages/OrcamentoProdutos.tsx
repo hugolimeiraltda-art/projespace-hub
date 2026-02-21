@@ -146,7 +146,7 @@ export default function OrcamentoProdutos() {
     { key: 'adicional', label: 'Adicional' },
     { key: 'ativo', label: 'Ativo' },
   ];
-  const [visibleCols, setVisibleCols] = useState<Set<ColKey>>(new Set(['id_produto', 'codigo', 'nome', 'grupo', 'subgrupo', 'unidade', 'valor_atual', 'valor_minimo', 'adicional', 'ativo']));
+  const [visibleCols, setVisibleCols] = useState<Set<ColKey>>(new Set(['id_produto', 'codigo', 'nome', 'grupo', 'subgrupo', 'unidade', 'valor_atual', 'valor_minimo', 'valor_locacao', 'valor_min_locacao', 'valor_instalacao', 'adicional', 'ativo']));
 
   // Kit filters & sorting (Excel-style per-column)
   const [kitColumnFilters, setKitColumnFilters] = useState<Record<string, string>>({});
@@ -237,6 +237,7 @@ export default function OrcamentoProdutos() {
         case 'locacao': va = ta.locacao; vb = tb.locacao; break;
         case 'minLocacao': va = ta.minLocacao; vb = tb.minLocacao; break;
         case 'instalacao': va = ta.instalacao; vb = tb.instalacao; break;
+        case 'ativo': va = a.ativo ? 1 : 0; vb = b.ativo ? 1 : 0; break;
         default: va = a.nome.toLowerCase(); vb = b.nome.toLowerCase();
       }
       if (va < vb) return kitSortDir === 'asc' ? -1 : 1;

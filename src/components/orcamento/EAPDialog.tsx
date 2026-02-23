@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
 import {
-  Loader2, MapPin, FileText, Table2, Image as ImageIcon, ChevronDown, ChevronRight,
+  Loader2, MapPin, FileText, Table2, Image as ImageIcon, ChevronRight,
   DoorOpen, Car, Shield, Camera, Waves, PartyPopper,
   UtensilsCrossed, Baby, Dumbbell, Flame, Laptop, TreePine, Trophy, LayoutGrid, Building
 } from 'lucide-react';
@@ -13,6 +13,7 @@ import { generatePropostaPDF } from '@/lib/propostaPdf';
 import { generateEquipamentosExcel } from '@/lib/propostaExcel';
 import { useToast } from '@/hooks/use-toast';
 import type { PropostaData, AmbienteItem } from '@/components/orcamento/PropostaView';
+import { AmbienteDetailDialog } from './AmbienteDetailDialog';
 
 interface EAPDialogProps {
   open: boolean;
@@ -51,16 +52,7 @@ export function EAPDialog({ open, onOpenChange, sessaoId, nomeCliente }: EAPDial
   const [ambientes, setAmbientes] = useState<AmbienteItem[]>([]);
   const [fotos, setFotos] = useState<{ arquivo_url: string; nome_arquivo: string; descricao: string | null }[]>([]);
   const [gerando, setGerando] = useState<string | null>(null);
-  const [expandedAmbientes, setExpandedAmbientes] = useState<Set<number>>(new Set());
-
-  const toggleAmbiente = (index: number) => {
-    setExpandedAmbientes(prev => {
-      const next = new Set(prev);
-      if (next.has(index)) next.delete(index);
-      else next.add(index);
-      return next;
-    });
-  };
+  const [selectedAmbiente, setSelectedAmbiente] = useState<AmbienteItem | null>(null);
 
   useEffect(() => {
     if (!open) return;

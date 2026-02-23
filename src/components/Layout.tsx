@@ -143,7 +143,7 @@ export function Layout({ children }: LayoutProps) {
     // Vendedores acessam suas sessões de visita
     {
       path: '/orcamentos',
-      label: 'Visitas Técnicas',
+      label: 'Orçamentos IA',
       icon: Bot,
       roles: ['vendedor', 'gerente_comercial', 'supervisor_operacoes']
     },

@@ -106,22 +106,16 @@ export default function PropostaView({ data, onVoltar }: PropostaViewProps) {
   };
 
   const itens = data.itens;
-  const totalLocacao = itens
-    ? [
-        ...(itens.kits || []),
-        ...(itens.avulsos || []),
-        ...(itens.aproveitados || []),
-        ...(itens.servicos || []),
-      ].reduce((sum, i) => sum + (i.valor_locacao || 0) * i.qtd, 0)
-    : 0;
-  const totalInstalacao = itens
-    ? [
-        ...(itens.kits || []),
-        ...(itens.avulsos || []),
-        ...(itens.aproveitados || []),
-        ...(itens.servicos || []),
-      ].reduce((sum, i) => sum + (i.valor_instalacao || 0) * i.qtd, 0)
-    : 0;
+  const allItems = itens ? [
+    ...(itens.kits || []),
+    ...(itens.avulsos || []),
+    ...(itens.aproveitados || []),
+    ...(itens.servicos || []),
+  ] : [];
+  const totalMensalidade = allItems.reduce((sum, i) => sum + (i.valor_locacao || 0) * i.qtd, 0);
+  const totalInstalacao = allItems.reduce((sum, i) => sum + (i.valor_instalacao || 0) * i.qtd, 0);
+
+  const formatBRL = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
   return (
     <div className="min-h-screen bg-background">
@@ -182,7 +176,7 @@ export default function PropostaView({ data, onVoltar }: PropostaViewProps) {
                           <th className="text-left py-2 pr-2">Descrição</th>
                           <th className="text-left py-2 pr-2">Código</th>
                           <th className="text-right py-2">Locação (un)</th>
-                          <th className="text-right py-2">Locação (total)</th>
+                          <th className="text-right py-2">Total</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -191,8 +185,8 @@ export default function PropostaView({ data, onVoltar }: PropostaViewProps) {
                             <td className="py-2 pr-2">{item.qtd}</td>
                             <td className="py-2 pr-2 font-medium">{item.nome}</td>
                             <td className="py-2 pr-2 text-muted-foreground">{item.codigo || '-'}</td>
-                            <td className="py-2 text-right">R$ {(item.valor_locacao || 0).toFixed(2)}</td>
-                            <td className="py-2 text-right font-medium">R$ {((item.valor_locacao || 0) * item.qtd).toFixed(2)}</td>
+                            <td className="py-2 text-right">{formatBRL(item.valor_locacao || 0)}</td>
+                            <td className="py-2 text-right font-medium">{formatBRL((item.valor_locacao || 0) * item.qtd)}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -217,7 +211,7 @@ export default function PropostaView({ data, onVoltar }: PropostaViewProps) {
                           <th className="text-left py-2 pr-2">Descrição</th>
                           <th className="text-left py-2 pr-2">Código</th>
                           <th className="text-right py-2">Locação (un)</th>
-                          <th className="text-right py-2">Locação (total)</th>
+                          <th className="text-right py-2">Total</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -226,8 +220,8 @@ export default function PropostaView({ data, onVoltar }: PropostaViewProps) {
                             <td className="py-2 pr-2">{item.qtd}</td>
                             <td className="py-2 pr-2 font-medium">{item.nome}</td>
                             <td className="py-2 pr-2 text-muted-foreground">{item.codigo || '-'}</td>
-                            <td className="py-2 text-right">R$ {(item.valor_locacao || 0).toFixed(2)}</td>
-                            <td className="py-2 text-right font-medium">R$ {((item.valor_locacao || 0) * item.qtd).toFixed(2)}</td>
+                            <td className="py-2 text-right">{formatBRL(item.valor_locacao || 0)}</td>
+                            <td className="py-2 text-right font-medium">{formatBRL((item.valor_locacao || 0) * item.qtd)}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -252,7 +246,7 @@ export default function PropostaView({ data, onVoltar }: PropostaViewProps) {
                           <th className="text-left py-2 pr-2">Descrição</th>
                           <th className="text-left py-2 pr-2">Código</th>
                           <th className="text-right py-2">Locação (un) c/ desc.</th>
-                          <th className="text-right py-2">Locação (total)</th>
+                          <th className="text-right py-2">Total</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -261,8 +255,8 @@ export default function PropostaView({ data, onVoltar }: PropostaViewProps) {
                             <td className="py-2 pr-2">{item.qtd}</td>
                             <td className="py-2 pr-2 font-medium">{item.nome}</td>
                             <td className="py-2 pr-2 text-muted-foreground">{item.codigo || '-'}</td>
-                            <td className="py-2 text-right">R$ {(item.valor_locacao || 0).toFixed(2)}</td>
-                            <td className="py-2 text-right font-medium">R$ {((item.valor_locacao || 0) * item.qtd).toFixed(2)}</td>
+                            <td className="py-2 text-right">{formatBRL(item.valor_locacao || 0)}</td>
+                            <td className="py-2 text-right font-medium">{formatBRL((item.valor_locacao || 0) * item.qtd)}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -286,8 +280,8 @@ export default function PropostaView({ data, onVoltar }: PropostaViewProps) {
                           <th className="text-left py-2 pr-2">Qtd</th>
                           <th className="text-left py-2 pr-2">Descrição</th>
                           <th className="text-left py-2 pr-2">Código</th>
-                          <th className="text-right py-2">Valor (un)</th>
-                          <th className="text-right py-2">Valor (total)</th>
+                          <th className="text-right py-2">Locação (un)</th>
+                          <th className="text-right py-2">Total</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -296,8 +290,8 @@ export default function PropostaView({ data, onVoltar }: PropostaViewProps) {
                             <td className="py-2 pr-2">{item.qtd}</td>
                             <td className="py-2 pr-2 font-medium">{item.nome}</td>
                             <td className="py-2 pr-2 text-muted-foreground">{item.codigo || '-'}</td>
-                            <td className="py-2 text-right">R$ {(item.valor_instalacao || 0).toFixed(2)}</td>
-                            <td className="py-2 text-right font-medium">R$ {((item.valor_instalacao || 0) * item.qtd).toFixed(2)}</td>
+                            <td className="py-2 text-right">{formatBRL(item.valor_locacao || 0)}</td>
+                            <td className="py-2 text-right font-medium">{formatBRL((item.valor_locacao || 0) * item.qtd)}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -312,17 +306,18 @@ export default function PropostaView({ data, onVoltar }: PropostaViewProps) {
               <CardContent className="p-4">
                 <div className="flex flex-col sm:flex-row justify-between gap-4">
                   <div>
-                    <p className="text-sm text-muted-foreground">Mensalidade Estimada</p>
+                    <p className="text-sm text-muted-foreground">Mensalidade</p>
                     <p className="text-2xl font-bold text-foreground">
-                      R$ {(itens.mensalidade_total || totalLocacao).toFixed(2)}<span className="text-sm font-normal text-muted-foreground">/mês</span>
+                      {formatBRL(itens.mensalidade_total || totalMensalidade)}<span className="text-sm font-normal text-muted-foreground">/mês</span>
                     </p>
                   </div>
                   <Separator orientation="vertical" className="hidden sm:block" />
                   <div>
-                    <p className="text-sm text-muted-foreground">Taxa de Conexão</p>
+                    <p className="text-sm text-muted-foreground">Taxa de Instalação</p>
                     <p className="text-2xl font-bold text-foreground">
-                      R$ {(itens.taxa_conexao_total || totalInstalacao).toFixed(2)}
+                      {formatBRL(itens.taxa_conexao_total || totalInstalacao)}
                     </p>
+                    <p className="text-xs text-muted-foreground">Parcela em até 10x de {formatBRL((itens.taxa_conexao_total || totalInstalacao) / 10)}</p>
                   </div>
                 </div>
               </CardContent>

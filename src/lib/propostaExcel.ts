@@ -15,11 +15,10 @@ export function generateEquipamentosExcel(data: PropostaData) {
         'Categoria': item.categoria || item.origem || '',
         'Origem': item.origem || '',
         'Qtd': item.qtd || 0,
-        'Valor Unitário (R$)': item.valor_unitario || item.valor_locacao || 0,
-        'Valor Locação (R$)': (item.valor_locacao || 0),
-        'Valor Instalação (R$)': (item.valor_instalacao || 0),
-        'Total Locação (R$)': (item.valor_locacao || 0) * (item.qtd || 0),
-        'Total Instalação (R$)': (item.valor_instalacao || 0) * (item.qtd || 0),
+        'Locação Unitária (R$)': item.valor_locacao || 0,
+        'Locação Total (R$)': (item.valor_locacao || 0) * (item.qtd || 0),
+        'Instalação Unitária (R$)': item.valor_instalacao || 0,
+        'Instalação Total (R$)': (item.valor_instalacao || 0) * (item.qtd || 0),
       });
     }
   }
@@ -33,11 +32,10 @@ export function generateEquipamentosExcel(data: PropostaData) {
       'Categoria': '',
       'Origem': '',
       'Qtd': rows.slice(0, -1).reduce((s, r) => s + (r['Qtd'] || 0), 0),
-      'Valor Unitário (R$)': '',
-      'Valor Locação (R$)': '',
-      'Valor Instalação (R$)': '',
-      'Total Locação (R$)': rows.slice(0, -1).reduce((s, r) => s + (r['Total Locação (R$)'] || 0), 0),
-      'Total Instalação (R$)': rows.slice(0, -1).reduce((s, r) => s + (r['Total Instalação (R$)'] || 0), 0),
+      'Locação Unitária (R$)': '',
+      'Locação Total (R$)': rows.slice(0, -1).reduce((s, r) => s + (r['Locação Total (R$)'] || 0), 0),
+      'Instalação Unitária (R$)': '',
+      'Instalação Total (R$)': rows.slice(0, -1).reduce((s, r) => s + (r['Instalação Total (R$)'] || 0), 0),
     });
   }
 
@@ -50,11 +48,10 @@ export function generateEquipamentosExcel(data: PropostaData) {
     { wch: 15 }, // Categoria
     { wch: 20 }, // Origem
     { wch: 6 },  // Qtd
-    { wch: 16 }, // Valor Unitário
-    { wch: 16 }, // Valor Locação
-    { wch: 16 }, // Valor Instalação
-    { wch: 16 }, // Total Locação
-    { wch: 16 }, // Total Instalação
+    { wch: 18 }, // Locação Unitária
+    { wch: 18 }, // Locação Total
+    { wch: 18 }, // Instalação Unitária
+    { wch: 18 }, // Instalação Total
   ];
 
   XLSX.utils.book_append_sheet(wb, ws, 'Equipamentos');
@@ -67,8 +64,9 @@ export function generateEquipamentosExcel(data: PropostaData) {
   summaryRows.push({ 'Campo': 'Data', 'Valor': new Date().toLocaleDateString('pt-BR') });
   if (data.itens) {
     summaryRows.push({ 'Campo': '', 'Valor': '' });
-    summaryRows.push({ 'Campo': 'Mensalidade', 'Valor': `R$ ${(data.itens.mensalidade_total || 0).toFixed(2)}` });
-    summaryRows.push({ 'Campo': 'Taxa de Conexão', 'Valor': `R$ ${(data.itens.taxa_conexao_total || 0).toFixed(2)}` });
+    summaryRows.push({ 'Campo': 'Mensalidade (Locação)', 'Valor': `R$ ${(data.itens.mensalidade_total || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` });
+    summaryRows.push({ 'Campo': 'Taxa de Instalação', 'Valor': `R$ ${(data.itens.taxa_conexao_total || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` });
+    summaryRows.push({ 'Campo': 'Parcela (até 10x)', 'Valor': `R$ ${((data.itens.taxa_conexao_total || 0) / 10).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` });
   }
   const ws2 = XLSX.utils.json_to_sheet(summaryRows);
   ws2['!cols'] = [{ wch: 20 }, { wch: 40 }];

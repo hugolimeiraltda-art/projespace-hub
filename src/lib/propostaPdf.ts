@@ -90,7 +90,7 @@ export async function generatePropostaPDF(data: PropostaData) {
     { label: 'Descrição', x: 35 },
     { label: 'Código', x: 140 },
     { label: 'Locação (un)', x: pageWidth - 55, align: 'right' },
-    { label: 'Locação (total)', x: pageWidth - 17, align: 'right' },
+    { label: 'Total', x: pageWidth - 17, align: 'right' },
   ];
 
   const itens = data.itens;
@@ -150,8 +150,8 @@ export async function generatePropostaPDF(data: PropostaData) {
         { label: 'Qtd', x: 17 },
         { label: 'Descrição', x: 35 },
         { label: 'Código', x: 140 },
-        { label: 'Valor (un)', x: pageWidth - 55, align: 'right' },
-        { label: 'Valor (total)', x: pageWidth - 17, align: 'right' },
+        { label: 'Locação (un)', x: pageWidth - 55, align: 'right' },
+        { label: 'Total', x: pageWidth - 17, align: 'right' },
       ];
       y = drawTableHeader(doc, y, servicoCols);
       doc.setFontSize(8);
@@ -160,8 +160,8 @@ export async function generatePropostaPDF(data: PropostaData) {
         doc.text(String(item.qtd), 17, y);
         doc.text(item.nome.length > 50 ? item.nome.substring(0, 50) + '...' : item.nome, 35, y);
         doc.text(item.codigo || '-', 140, y);
-        doc.text(`R$ ${(item.valor_instalacao || 0).toFixed(2)}`, pageWidth - 55, y, { align: 'right' });
-        doc.text(`R$ ${((item.valor_instalacao || 0) * item.qtd).toFixed(2)}`, pageWidth - 17, y, { align: 'right' });
+        doc.text(`R$ ${(item.valor_locacao || 0).toFixed(2)}`, pageWidth - 55, y, { align: 'right' });
+        doc.text(`R$ ${((item.valor_locacao || 0) * item.qtd).toFixed(2)}`, pageWidth - 17, y, { align: 'right' });
         doc.setDrawColor(230, 230, 230);
         doc.line(15, y + 2, pageWidth - 15, y + 2);
         y += 6;
@@ -175,10 +175,13 @@ export async function generatePropostaPDF(data: PropostaData) {
     doc.rect(margin, y - 4, pageWidth - margin * 2, 18, 'F');
     doc.setFontSize(11);
     doc.setFont('helvetica', 'bold');
-    doc.text('MONITORAMENTO 24H COM UNIDADE VOLANTE:', margin + 5, y + 2);
+    doc.text('MENSALIDADE:', margin + 5, y + 2);
     doc.text(`R$ ${(itens.mensalidade_total || 0).toFixed(2)}/mês`, pageWidth - margin - 5, y + 2, { align: 'right' });
-    doc.text('TAXA DE CONEXÃO:', margin + 5, y + 10);
+    doc.text('TAXA DE INSTALAÇÃO:', margin + 5, y + 10);
     doc.text(`R$ ${(itens.taxa_conexao_total || 0).toFixed(2)}`, pageWidth - margin - 5, y + 10, { align: 'right' });
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`(parcela em até 10x de R$ ${((itens.taxa_conexao_total || 0) / 10).toFixed(2)})`, pageWidth - margin - 5, y + 16, { align: 'right' });
     y += 22;
   }
 

@@ -4,13 +4,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Send, FileText, Loader2, Bot, User, Paperclip, Image, Video, Mic, MicOff, ArrowLeft } from 'lucide-react';
+import { Send, FileText, Loader2, Bot, User, Paperclip, Mic, MicOff, ArrowLeft } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import emiveLogo from '@/assets/emive-logo.png';
-import jsPDF from 'jspdf';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Layout } from '@/components/Layout';
+import PropostaView, { type PropostaData } from '@/components/orcamento/PropostaView';
 
 type Msg = { role: 'user' | 'assistant'; content: string; midias?: MidiaRef[] };
 type MidiaRef = { url: string; tipo: string; nome: string };
@@ -25,7 +25,7 @@ export default function OrcamentoChat() {
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [proposta, setProposta] = useState<string | null>(null);
+  const [proposta, setProposta] = useState<PropostaData | null>(null);
   const [gerandoProposta, setGerandoProposta] = useState(false);
   const [sessionValid, setSessionValid] = useState<boolean | null>(null);
   const [sessaoId, setSessaoId] = useState<string | null>(null);
@@ -298,33 +298,12 @@ export default function OrcamentoChat() {
       }
 
       const data = await resp.json();
-      setProposta(data.proposta);
+      setProposta(data as PropostaData);
     } catch (e) {
       console.error(e);
       toast({ title: 'Erro ao gerar proposta', variant: 'destructive' });
     }
     setGerandoProposta(false);
-  };
-
-  const exportPDF = () => {
-    if (!proposta) return;
-    const doc = new jsPDF();
-    const pageWidth = doc.internal.pageSize.getWidth();
-    const margin = 20;
-    const maxWidth = pageWidth - margin * 2;
-    doc.setFontSize(18);
-    doc.text('Proposta Comercial - Emive', margin, 25);
-    doc.setFontSize(10);
-    doc.text(`Gerado em ${new Date().toLocaleDateString('pt-BR')}`, margin, 33);
-    doc.setFontSize(11);
-    const lines = doc.splitTextToSize(proposta.replace(/[#*`]/g, ''), maxWidth);
-    let y = 45;
-    for (const line of lines) {
-      if (y > 280) { doc.addPage(); y = 20; }
-      doc.text(line, margin, y);
-      y += 6;
-    }
-    doc.save('proposta-emive.pdf');
   };
 
   if (sessionValid === false) {
@@ -343,25 +322,7 @@ export default function OrcamentoChat() {
 
   if (proposta) {
     const propostaContent = (
-      <div className="min-h-screen bg-background">
-        <header className="border-b bg-card px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <img src={emiveLogo} alt="Emive" className="h-8" />
-            <h1 className="text-lg font-semibold text-foreground">Proposta Comercial</h1>
-          </div>
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={() => setProposta(null)}>Voltar ao Chat</Button>
-            <Button onClick={exportPDF}><FileText className="mr-2 h-4 w-4" />Baixar PDF</Button>
-          </div>
-        </header>
-        <div className="max-w-4xl mx-auto p-6">
-          <Card>
-            <CardContent className="p-8 prose prose-sm max-w-none dark:prose-invert">
-              <ReactMarkdown>{proposta}</ReactMarkdown>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+      <PropostaView data={proposta} onVoltar={() => setProposta(null)} />
     );
     return user ? <Layout>{propostaContent}</Layout> : propostaContent;
   }

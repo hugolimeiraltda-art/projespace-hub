@@ -16,7 +16,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useToast } from '@/hooks/use-toast';
-import { FileText, MessageSquare, Star, CheckCircle2, XCircle, AlertCircle, Eye, FolderPlus, Clock, ClipboardCheck, Download, Table2, MapPin, Loader2 } from 'lucide-react';
+import { FileText, MessageSquare, Star, CheckCircle2, XCircle, AlertCircle, Eye, FolderPlus, Clock, ClipboardCheck, Download, Table2, MapPin, Loader2, LayoutGrid } from 'lucide-react';
+import { EAPDialog } from '@/components/orcamento/EAPDialog';
 import { format, addDays, isPast } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -72,6 +73,7 @@ export default function OrcamentoPropostas() {
   const [selectedSessao, setSelectedSessao] = useState<Sessao | null>(null);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [projetoOpen, setProjetoOpen] = useState(false);
+  const [eapSessao, setEapSessao] = useState<Sessao | null>(null);
   const [projetoSessao, setProjetoSessao] = useState<Sessao | null>(null);
   const [projetoCriando, setProjetoCriando] = useState(false);
 
@@ -404,6 +406,10 @@ export default function OrcamentoPropostas() {
                           <Eye className="w-4 h-4 mr-1" />
                           Ver Proposta
                         </Button>
+                        <Button variant="outline" size="sm" onClick={() => setEapSessao(sessao)}>
+                          <LayoutGrid className="w-4 h-4 mr-1" />
+                          Ver EAP
+                        </Button>
                         {isAdmin && (
                           <>
                             <Button
@@ -617,6 +623,15 @@ export default function OrcamentoPropostas() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {eapSessao && (
+        <EAPDialog
+          open={!!eapSessao}
+          onOpenChange={(open) => { if (!open) setEapSessao(null); }}
+          sessaoId={eapSessao.id}
+          nomeCliente={eapSessao.nome_cliente}
+        />
+      )}
     </Layout>
   );
 }

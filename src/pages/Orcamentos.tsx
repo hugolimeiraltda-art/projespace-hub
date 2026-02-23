@@ -16,6 +16,7 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useNavigate } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { useIsMobile } from '@/hooks/use-mobile';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -268,10 +269,20 @@ export default function Orcamentos() {
       </div>
 
       <Dialog open={!!viewProposta} onOpenChange={() => setViewProposta(null)}>
-        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+        <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto">
           <DialogHeader><DialogTitle>Proposta - {viewProposta?.nome_cliente}</DialogTitle></DialogHeader>
-          <div className="prose prose-sm max-w-none dark:prose-invert">
-            <ReactMarkdown>{viewProposta?.proposta_gerada || ''}</ReactMarkdown>
+          <div className="prose prose-sm max-w-none dark:prose-invert
+            [&_table]:w-full [&_table]:border-collapse [&_table]:text-sm
+            [&_th]:border [&_th]:border-border [&_th]:bg-muted [&_th]:px-3 [&_th]:py-2 [&_th]:text-left [&_th]:font-semibold
+            [&_td]:border [&_td]:border-border [&_td]:px-3 [&_td]:py-2
+            [&_tr:nth-child(even)]:bg-muted/30
+            [&_h1]:text-xl [&_h1]:font-bold [&_h1]:border-b [&_h1]:border-border [&_h1]:pb-2 [&_h1]:mb-4
+            [&_h2]:text-lg [&_h2]:font-semibold [&_h2]:mt-6 [&_h2]:mb-3
+            [&_h3]:text-base [&_h3]:font-semibold [&_h3]:mt-4 [&_h3]:mb-2
+            [&_strong]:text-foreground
+            [&_hr]:my-4 [&_hr]:border-border
+          ">
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>{viewProposta?.proposta_gerada || ''}</ReactMarkdown>
           </div>
         </DialogContent>
       </Dialog>

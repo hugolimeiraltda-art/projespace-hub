@@ -201,6 +201,7 @@ ${JSON.stringify(ctx.portfolio.slice(0, 5).map((c: any) => ({ r: c.razao_social,
 - Use linguagem informal e técnica (é um profissional, não um cliente)
 - Ao receber dados, confirme o entendimento e passe para o próximo item
 - Quando tiver informações suficientes de todas as seções, avise que pode gerar a proposta
+- **RESUMO DA PROPOSTA**: Ao exibir o resumo parcial ou final da proposta, SEMPRE separe os itens em 3 categorias: **Kits**, **Itens avulsos** e **Itens aproveitados** (com 50% de desconto). Os itens aproveitados devem aparecer numa seção própria chamada "Itens aproveitados (50% do valor)" listando cada item com a indicação de que é aproveitamento.
 - Na primeira mensagem, cumprimente o vendedor PELO NOME se disponível, confirme o nome do condomínio e endereço (se disponíveis), e faça APENAS a primeira pergunta do checklist (qual produto quer orçar)
 - NUNCA pergunte informações que já estão listadas em "DADOS JÁ COLETADOS DA SESSÃO"
 - Mensagens curtas e diretas, máximo 2-3 linhas por mensagem

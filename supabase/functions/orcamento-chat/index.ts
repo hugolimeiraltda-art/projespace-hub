@@ -327,15 +327,56 @@ serve(async (req) => {
         .from("orcamento_mensagens").select("role, content")
         .eq("sessao_id", sessao.id).order("created_at", { ascending: true });
 
+      // Fetch session photos
+      const { data: midias } = await supabase
+        .from("orcamento_midias").select("arquivo_url, nome_arquivo, tipo")
+        .eq("sessao_id", sessao.id).eq("tipo", "foto");
+
+      // Generate signed URLs for photos
+      const fotoUrls: { url: string; nome: string }[] = [];
+      if (midias && midias.length > 0) {
+        for (const m of midias) {
+          const { data: signedData } = await supabase.storage.from("orcamento-midias").createSignedUrl(m.arquivo_url, 3600);
+          if (signedData?.signedUrl) {
+            fotoUrls.push({ url: signedData.signedUrl, nome: m.nome_arquivo });
+          }
+        }
+      }
+
+      // Ask AI to generate proposal + structured JSON
+      const structuredPrompt = `${buildPropostaPrompt(ctx, sessao)}
+
+## INSTRUÇÃO ADICIONAL OBRIGATÓRIA:
+Além da proposta em markdown, você DEVE retornar ao final um bloco JSON delimitado por \`\`\`json e \`\`\` contendo os itens estruturados da proposta.
+
+O JSON deve seguir este formato EXATO:
+{
+  "kits": [{"nome": "NOME DO KIT", "codigo": "CÓD", "id_kit": 123, "qtd": 1, "valor_locacao": 100.00, "valor_instalacao": 50.00}],
+  "avulsos": [{"nome": "NOME DO PRODUTO", "codigo": "CÓD", "id_produto": 456, "qtd": 2, "valor_locacao": 30.00, "valor_instalacao": 20.00}],
+  "aproveitados": [{"nome": "NOME DO PRODUTO", "codigo": "CÓD", "id_produto": 789, "qtd": 5, "valor_locacao": 15.00, "valor_instalacao": 10.00, "desconto": 50}],
+  "servicos": [{"nome": "NOME DO SERVIÇO", "codigo": "CÓD", "id_produto": 101, "qtd": 1, "valor_locacao": 0, "valor_instalacao": 80.00}],
+  "mensalidade_total": 999.00,
+  "taxa_conexao_total": 999.00
+}
+
+REGRAS para o JSON:
+- "kits": todos os kits incluídos na proposta
+- "avulsos": produtos individuais que NÃO são kits nem serviços nem aproveitados
+- "aproveitados": itens que foram marcados como aproveitados (50% do valor)
+- "servicos": produtos da categoria/subgrupo "Serviço" (ex: instalação, manutenção)
+- valor_locacao e valor_instalacao devem ser os valores UNITÁRIOS (já com desconto se aproveitado)
+- Para itens aproveitados, os valores já devem estar com 50% aplicado
+- Use os preços EXATOS do catálogo`;
+
       const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
         method: "POST",
         headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
         body: JSON.stringify({
           model: "google/gemini-2.5-flash",
           messages: [
-            { role: "system", content: buildPropostaPrompt(ctx, sessao) },
+            { role: "system", content: structuredPrompt },
             ...(allMsgs || []).map((m: any) => ({ role: m.role, content: m.content })),
-            { role: "user", content: "Agora gere a proposta comercial completa baseada em tudo que coletamos na visita." },
+            { role: "user", content: "Agora gere a proposta comercial completa baseada em tudo que coletamos na visita. Inclua o bloco JSON estruturado ao final." },
           ],
         }),
       });
@@ -348,13 +389,89 @@ serve(async (req) => {
       }
 
       const data = await response.json();
-      const proposta = data.choices?.[0]?.message?.content || "Não foi possível gerar a proposta.";
+      const fullContent = data.choices?.[0]?.message?.content || "Não foi possível gerar a proposta.";
+
+      // Extract JSON block from response
+      let itensEstruturados = null;
+      let proposta = fullContent;
+      const jsonMatch = fullContent.match(/```json\s*([\s\S]*?)```/);
+      if (jsonMatch) {
+        try {
+          itensEstruturados = JSON.parse(jsonMatch[1].trim());
+          proposta = fullContent.replace(/```json\s*[\s\S]*?```/, '').trim();
+        } catch (e) {
+          console.error("Failed to parse structured items JSON:", e);
+        }
+      }
+
+      // Expand kits into individual items for Excel
+      let itensExpandidos: any[] = [];
+      if (itensEstruturados) {
+        // Expand kit items
+        for (const kit of (itensEstruturados.kits || [])) {
+          const kitData = ctx.kits.find((k: any) => k.id_kit === kit.id_kit || k.codigo === kit.codigo);
+          if (kitData?.orcamento_kit_itens) {
+            for (const ki of kitData.orcamento_kit_itens) {
+              const prod = ki.orcamento_produtos;
+              if (prod) {
+                itensExpandidos.push({
+                  nome: prod.nome,
+                  codigo: prod.codigo,
+                  categoria: prod.categoria,
+                  qtd: ki.quantidade * kit.qtd,
+                  valor_unitario: prod.preco_unitario,
+                  valor_locacao: prod.valor_locacao || 0,
+                  valor_instalacao: prod.valor_instalacao || 0,
+                  origem: `Kit: ${kit.nome}`,
+                });
+              }
+            }
+          }
+        }
+        // Add avulsos
+        for (const item of (itensEstruturados.avulsos || [])) {
+          itensExpandidos.push({ ...item, origem: 'Avulso' });
+        }
+        // Add aproveitados
+        for (const item of (itensEstruturados.aproveitados || [])) {
+          itensExpandidos.push({ ...item, origem: 'Aproveitado (50%)' });
+        }
+        // Add servicos
+        for (const item of (itensEstruturados.servicos || [])) {
+          itensExpandidos.push({ ...item, origem: 'Serviço' });
+        }
+
+        // Merge duplicates
+        const merged = new Map<string, any>();
+        for (const item of itensExpandidos) {
+          const key = `${item.codigo || item.nome}_${item.origem}`;
+          if (merged.has(key)) {
+            const existing = merged.get(key);
+            existing.qtd += item.qtd;
+          } else {
+            merged.set(key, { ...item });
+          }
+        }
+        itensExpandidos = Array.from(merged.values());
+      }
 
       await supabase.from("orcamento_sessoes")
         .update({ proposta_gerada: proposta, proposta_gerada_at: new Date().toISOString(), status: "proposta_gerada" })
         .eq("id", sessao.id);
 
-      return new Response(JSON.stringify({ proposta }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      return new Response(JSON.stringify({ 
+        proposta, 
+        itens: itensEstruturados,
+        itensExpandidos,
+        fotos: fotoUrls,
+        sessao: {
+          nome_cliente: sessao.nome_cliente,
+          endereco: sessao.endereco_condominio,
+          vendedor: sessao.vendedor_nome,
+          email: sessao.email_cliente,
+          telefone: sessao.telefone_cliente,
+        }
+      }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     // Regular chat - stream response

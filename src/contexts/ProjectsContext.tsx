@@ -228,6 +228,7 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
           prazo_entrega_projeto: p.prazo_entrega_projeto || undefined,
           data_assembleia: p.data_assembleia || undefined,
           email_padrao_gerado: p.email_padrao_gerado || undefined,
+          observacoes_gerais: (p as Record<string, unknown>).observacoes as string | undefined,
           engineering_status: p.engineering_status as EngineeringStatus | undefined,
           engineering_received_at: p.engineering_received_at || undefined,
           engineering_production_at: p.engineering_production_at || undefined,
@@ -357,6 +358,7 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
           prazo_entrega_projeto: project.prazo_entrega_projeto || null,
           data_assembleia: project.data_assembleia || null,
           email_padrao_gerado: project.email_padrao_gerado || null,
+          observacoes: project.observacoes_gerais || null,
           engineering_status: project.status === 'ENVIADO' ? 'EM_RECEBIMENTO' : null,
           engineering_received_at: project.status === 'ENVIADO' ? new Date().toISOString() : null,
         })

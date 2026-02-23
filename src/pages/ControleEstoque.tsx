@@ -351,8 +351,8 @@ export default function ControleEstoque() {
         return;
       }
 
-      // Process in batches to avoid timeout
-      const BATCH_SIZE = 200;
+      // Process in batches - server handles bulk operations efficiently
+      const BATCH_SIZE = 1000;
       const batches = [];
       for (let i = 0; i < stockRows.length; i += BATCH_SIZE) {
         batches.push(stockRows.slice(i, i + BATCH_SIZE));

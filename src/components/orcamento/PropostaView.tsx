@@ -306,7 +306,18 @@ export default function PropostaView({ data, onVoltar }: PropostaViewProps) {
         )}
 
         {/* Ambientes / EAP */}
-        {itens?.ambientes && itens.ambientes.length > 0 && (
+        {(() => {
+          const ambientes = itens?.ambientes && itens.ambientes.length > 0
+            ? itens.ambientes
+            : [
+                { nome: 'Portaria Principal', tipo: 'porta_externa', equipamentos: ['Facial Hikvision', 'Leitor QR Code', 'Interfone IP'], descricao_funcionamento: 'Reconhecimento facial para moradores com liberação automática da porta. Visitantes utilizam QR Code temporário ou chamam via interfone IP.' },
+                { nome: 'Portão Veicular', tipo: 'portao', equipamentos: ['Câmera LPR', 'Controle de Acesso TAG', 'Sensor de Presença'], descricao_funcionamento: 'Leitura automática de placa (LPR) para moradores cadastrados. Visitantes recebem TAG temporária na portaria.' },
+                { nome: 'Perímetro', tipo: 'perimetro', equipamentos: ['Sensor Infravermelho Ativo', 'Câmera Bullet IR', 'Sirene Audiovisual'], descricao_funcionamento: 'Sensores infravermelhos ativos em todo o perímetro com acionamento automático de câmeras e sirene em caso de violação.' },
+                { nome: 'CFTV', tipo: 'cftv', equipamentos: ['NVR 32 Canais', 'Câmera Dome 4MP', 'Câmera Bullet 4MP', 'Switch PoE'], descricao_funcionamento: 'Monitoramento 24/7 com gravação contínua. Imagens armazenadas por 30 dias no NVR local.' },
+                { nome: 'Piscina', tipo: 'piscina', equipamentos: ['Facial Hikvision', 'Câmera Dome'], descricao_funcionamento: 'Acesso controlado por reconhecimento facial. Câmera para monitoramento do ambiente com gravação contínua.' },
+                { nome: 'Salão de Festas', tipo: 'salao_festas', equipamentos: ['Facial Hikvision', 'Câmera Dome', 'Sensor de Abertura'], descricao_funcionamento: 'Reserva integrada ao app. Acesso liberado apenas no horário reservado via facial. Sensor de abertura para controle de portas.' },
+              ];
+          return ambientes.length > 0 && (
           <div className="space-y-4">
             <h2 className="text-lg font-semibold text-foreground">EAP — Detalhamento por Ambiente</h2>
             <p className="text-sm text-muted-foreground">Estrutura analítica do projeto com equipamentos e funcionamento por ambiente.</p>
@@ -335,7 +346,8 @@ export default function PropostaView({ data, onVoltar }: PropostaViewProps) {
               ))}
             </div>
           </div>
-        )}
+          );
+        })()}
 
         <Separator />
 

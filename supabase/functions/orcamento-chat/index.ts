@@ -118,7 +118,7 @@ Poste exclusivo com até 4 câmeras com vídeo analítico conectadas à Central 
     1. Chamada de vídeo no App + 3 números de ligação (o sistema liga para os telefones cadastrados pelo morador no app)
     2. Chamada de vídeo no App + transbordo para o apartamento (neste caso é OBRIGATÓRIO orçar um ATA e o serviço de manutenção de interfonia) + 2 números de telefone
   - Se **Portaria Remota** ou **Portaria Assistida**, a telefonia é via central SIP (perguntar sobre interfonia na seção 6)
-  - Se **Portaria Expressa**, não se aplica
+  - Se **Portaria Expressa**, a chamada é SOMENTE via App (chamada de vídeo no App). Não há opção de transbordo, números de telefone ou interfonia.
 - Solicitar planta baixa ao síndico
 - **FOTOS**: Fachada do condomínio
 

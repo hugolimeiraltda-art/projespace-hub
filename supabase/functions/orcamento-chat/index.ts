@@ -410,7 +410,15 @@ REGRAS para o JSON:
       if (itensEstruturados) {
         // Expand kit items
         for (const kit of (itensEstruturados.kits || [])) {
-          const kitData = ctx.kits.find((k: any) => k.id_kit === kit.id_kit || k.codigo === kit.codigo);
+          // Match by id_kit first, then by nome (normalized), then by codigo as last resort
+          let kitData = kit.id_kit ? ctx.kits.find((k: any) => k.id_kit === kit.id_kit) : null;
+          if (!kitData && kit.nome) {
+            const normalizedName = kit.nome.trim().toLowerCase();
+            kitData = ctx.kits.find((k: any) => k.nome?.trim().toLowerCase() === normalizedName);
+          }
+          if (!kitData && kit.codigo) {
+            kitData = ctx.kits.find((k: any) => k.codigo === kit.codigo);
+          }
           if (kitData?.orcamento_kit_itens) {
             for (const ki of kitData.orcamento_kit_itens) {
               const prod = ki.orcamento_produtos;

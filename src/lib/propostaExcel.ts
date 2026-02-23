@@ -54,7 +54,64 @@ export function generateEquipamentosExcel(data: PropostaData) {
     { wch: 18 }, // Instalação Total
   ];
 
-  XLSX.utils.book_append_sheet(wb, ws, 'Equipamentos');
+  XLSX.utils.book_append_sheet(wb, ws, 'Detalhado');
+
+  // Sheet 2: Grouped/consolidated items (same product = single row, summed qty)
+  const groupedMap = new Map<string, { nome: string; codigo: string; categoria: string; qtd: number; valor_locacao: number; valor_instalacao: number }>();
+  
+  if (data.itensExpandidos && data.itensExpandidos.length > 0) {
+    for (const item of data.itensExpandidos) {
+      const key = (item.codigo || item.nome || '').toLowerCase().trim();
+      const existing = groupedMap.get(key);
+      if (existing) {
+        existing.qtd += (item.qtd || 0);
+      } else {
+        groupedMap.set(key, {
+          nome: item.nome || '',
+          codigo: item.codigo || '',
+          categoria: item.categoria || '',
+          qtd: item.qtd || 0,
+          valor_locacao: item.valor_locacao || 0,
+          valor_instalacao: item.valor_instalacao || 0,
+        });
+      }
+    }
+  }
+
+  const groupedRows: any[] = [];
+  for (const g of groupedMap.values()) {
+    groupedRows.push({
+      'Descrição': g.nome,
+      'Código': g.codigo,
+      'Categoria': g.categoria,
+      'Qtd': g.qtd,
+      'Locação Unitária (R$)': g.valor_locacao,
+      'Locação Total (R$)': g.valor_locacao * g.qtd,
+      'Instalação Unitária (R$)': g.valor_instalacao,
+      'Instalação Total (R$)': g.valor_instalacao * g.qtd,
+    });
+  }
+
+  if (groupedRows.length > 0) {
+    groupedRows.push({});
+    groupedRows.push({
+      'Descrição': 'TOTAL',
+      'Código': '',
+      'Categoria': '',
+      'Qtd': groupedRows.slice(0, -1).reduce((s, r) => s + (r['Qtd'] || 0), 0),
+      'Locação Unitária (R$)': '',
+      'Locação Total (R$)': groupedRows.slice(0, -1).reduce((s, r) => s + (r['Locação Total (R$)'] || 0), 0),
+      'Instalação Unitária (R$)': '',
+      'Instalação Total (R$)': groupedRows.slice(0, -1).reduce((s, r) => s + (r['Instalação Total (R$)'] || 0), 0),
+    });
+  }
+
+  const wsGrouped = XLSX.utils.json_to_sheet(groupedRows);
+  wsGrouped['!cols'] = [
+    { wch: 45 }, { wch: 12 }, { wch: 15 }, { wch: 6 },
+    { wch: 18 }, { wch: 18 }, { wch: 18 }, { wch: 18 },
+  ];
+  XLSX.utils.book_append_sheet(wb, wsGrouped, 'Agrupado');
 
   // Summary sheet
   const summaryRows = [];

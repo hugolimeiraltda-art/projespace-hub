@@ -1971,6 +1971,33 @@ export type Database = {
         }
         Relationships: []
       }
+      role_menu_permissions: {
+        Row: {
+          access_level: Database["public"]["Enums"]["access_level"]
+          created_at: string
+          id: string
+          menu_key: string
+          role: Database["public"]["Enums"]["app_role"]
+          updated_at: string
+        }
+        Insert: {
+          access_level?: Database["public"]["Enums"]["access_level"]
+          created_at?: string
+          id?: string
+          menu_key: string
+          role: Database["public"]["Enums"]["app_role"]
+          updated_at?: string
+        }
+        Update: {
+          access_level?: Database["public"]["Enums"]["access_level"]
+          created_at?: string
+          id?: string
+          menu_key?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
       sale_form_attachments: {
         Row: {
           arquivo_url: string
@@ -2301,6 +2328,33 @@ export type Database = {
           },
         ]
       }
+      user_menu_overrides: {
+        Row: {
+          access_level: Database["public"]["Enums"]["access_level"]
+          created_at: string
+          id: string
+          menu_key: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          access_level?: Database["public"]["Enums"]["access_level"]
+          created_at?: string
+          id?: string
+          menu_key: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          access_level?: Database["public"]["Enums"]["access_level"]
+          created_at?: string
+          id?: string
+          menu_key?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -2374,6 +2428,7 @@ export type Database = {
       sync_estoque_alertas: { Args: never; Returns: undefined }
     }
     Enums: {
+      access_level: "completo" | "visualizacao" | "nenhum"
       administrador_tipo:
         | "sindico_profissional"
         | "sindico_organico"
@@ -2573,6 +2628,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      access_level: ["completo", "visualizacao", "nenhum"],
       administrador_tipo: [
         "sindico_profissional",
         "sindico_organico",

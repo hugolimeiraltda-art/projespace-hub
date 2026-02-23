@@ -173,11 +173,13 @@ Poste exclusivo com até 4 câmeras com vídeo analítico conectadas à Central 
 
 ## CATÁLOGO DE PRODUTOS E KITS (use para dimensionar e precificar):
 
+**Legenda dos campos:** nome=nome do produto/kit, preco_venda=preço de venda unitário, valor_locacao=valor da mensalidade/locação mensal, valor_minimo=preço mínimo de venda, valor_minimo_locacao=mínimo de locação, valor_instalacao=taxa de instalação/conexão, categoria=tipo de equipamento, unidade=unidade de medida
+
 **Produtos:**
-${JSON.stringify(ctx.produtos.map((p: any) => ({ id: p.id_produto, c: p.codigo, n: p.nome, cat: p.categoria, u: p.unidade, p: p.preco_unitario, min: p.valor_minimo, loc: p.valor_locacao, inst: p.valor_instalacao })))}
+${JSON.stringify(ctx.produtos.map((p: any) => ({ id: p.id_produto, codigo: p.codigo, nome: p.nome, categoria: p.categoria, unidade: p.unidade, preco_venda: p.preco_unitario, valor_minimo: p.valor_minimo, valor_locacao: p.valor_locacao, valor_minimo_locacao: p.valor_minimo_locacao, valor_instalacao: p.valor_instalacao })))}
 
 **Kits (PRIORIZE kits sobre produtos avulsos):**
-${JSON.stringify(ctx.kits.map((k: any) => ({ id: k.id_kit, c: k.codigo, n: k.nome, cat: k.categoria, p: k.preco_kit, min: k.valor_minimo, loc: k.valor_locacao, inst: k.valor_instalacao, uso: k.descricao_uso || null, kw: k.palavras_chave || [], regras: k.regras_condicionais || [], itens: (k.orcamento_kit_itens || []).map((i: any) => ({ n: i.orcamento_produtos?.nome, q: i.quantidade })) })))}
+${JSON.stringify(ctx.kits.map((k: any) => ({ id_kit: k.id_kit, codigo: k.codigo, nome: k.nome, categoria: k.categoria, preco_venda: k.preco_kit, valor_minimo: k.valor_minimo, valor_locacao: k.valor_locacao, valor_minimo_locacao: k.valor_minimo_locacao, valor_instalacao: k.valor_instalacao, quando_usar: k.descricao_uso || null, palavras_chave: k.palavras_chave || [], regras: k.regras_condicionais || [], itens: (k.orcamento_kit_itens || []).map((i: any) => ({ nome: i.orcamento_produtos?.nome, qtd: i.quantidade })) })))}
 
 ## REFERÊNCIAS DE PREÇOS DA CARTEIRA:
 ${JSON.stringify(ctx.portfolio.slice(0, 5).map((c: any) => ({ r: c.razao_social, u: c.unidades, m: c.mensalidade, t: c.taxa_ativacao })))}

@@ -8,12 +8,15 @@ import { Layout } from '@/components/Layout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Separator } from '@/components/ui/separator';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useToast } from '@/hooks/use-toast';
-import { FileText, MessageSquare, Star, CheckCircle2, XCircle, AlertCircle, Eye, FolderPlus, Clock, ClipboardCheck } from 'lucide-react';
+import { FileText, MessageSquare, Star, CheckCircle2, XCircle, AlertCircle, Eye, FolderPlus, Clock, ClipboardCheck, Download, Table2, MapPin, Loader2 } from 'lucide-react';
 import { format, addDays, isPast } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -68,6 +71,20 @@ export default function OrcamentoPropostas() {
 
   const [selectedSessao, setSelectedSessao] = useState<Sessao | null>(null);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
+  const [projetoOpen, setProjetoOpen] = useState(false);
+  const [projetoSessao, setProjetoSessao] = useState<Sessao | null>(null);
+  const [projetoCriando, setProjetoCriando] = useState(false);
+
+  // Project creation form state
+  const [projCidade, setProjCidade] = useState('');
+  const [projEstado, setProjEstado] = useState('');
+  const [projNome, setProjNome] = useState('');
+  const [projEndereco, setProjEndereco] = useState('');
+
+  const ESTADOS_BR = [
+    'AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MT', 'MS', 'MG',
+    'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN', 'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO'
+  ];
 
   // Feedback form state
   const [propostaAdequada, setPropostaAdequada] = useState('');
@@ -144,21 +161,39 @@ export default function OrcamentoPropostas() {
     navigate(`/orcamento-visita?sessao=${sessao.id}&ver=1`);
   };
 
-  const handleAbrirNovoProjeto = async (sessao: Sessao) => {
-    if (!user) return;
+  const openProjetoDialog = (sessao: Sessao) => {
+    setProjetoSessao(sessao);
+    setProjNome(sessao.nome_cliente);
+    setProjEndereco(sessao.endereco_condominio || '');
+    setProjCidade('');
+    setProjEstado('');
+    setProjetoOpen(true);
+  };
+
+  const handleCriarProjeto = async () => {
+    if (!user || !projetoSessao) return;
+    if (!projNome.trim() || !projCidade.trim() || !projEstado) {
+      toast({ title: 'Preencha todos os campos obrigatórios', variant: 'destructive' });
+      return;
+    }
+
+    setProjetoCriando(true);
     try {
+      const propostaResumo = projetoSessao.proposta_gerada || '';
+      const observacoes = `[PROJETO_IA:${projetoSessao.id}]\n\nProjeto originado da proposta IA.\nProposta gerada em: ${projetoSessao.proposta_gerada_at ? format(new Date(projetoSessao.proposta_gerada_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR }) : 'N/A'}\nVendedor: ${projetoSessao.vendedor_nome || ''}\n\n${propostaResumo}`;
+
       const projectId = await addProject(
         {
           created_by_user_id: user.id,
-          vendedor_nome: sessao.vendedor_nome || user.nome,
+          vendedor_nome: projetoSessao.vendedor_nome || user.nome,
           vendedor_email: user.email,
-          cliente_condominio_nome: sessao.nome_cliente,
-          cliente_cidade: '',
-          cliente_estado: '',
-          endereco_condominio: sessao.endereco_condominio || '',
-          status: 'RASCUNHO',
-          observacoes_gerais: `Projeto originado da proposta IA.\n\nProposta gerada em: ${sessao.proposta_gerada_at ? format(new Date(sessao.proposta_gerada_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR }) : 'N/A'}\n\nProposta:\n${sessao.proposta_gerada || ''}`,
-          email_padrao_gerado: sessao.proposta_gerada || '',
+          cliente_condominio_nome: projNome,
+          cliente_cidade: projCidade,
+          cliente_estado: projEstado,
+          endereco_condominio: projEndereco,
+          status: 'ENVIADO',
+          observacoes_gerais: observacoes,
+          email_padrao_gerado: propostaResumo,
         },
         {
           solicitacao_origem: 'EMAIL' as any,
@@ -174,8 +209,26 @@ export default function OrcamentoPropostas() {
       );
 
       if (projectId) {
-        toast({ title: 'Projeto criado!', description: 'Redirecionando para edição do projeto...' });
-        navigate(`/projetos/${projectId}/editar`);
+        // Notify projetistas
+        try {
+          await supabase.functions.invoke('notify-project-submitted', {
+            body: {
+              project_id: projectId,
+              project_name: projNome,
+              vendedor_name: projetoSessao.vendedor_nome || user.nome,
+              vendedorEmail: user.email,
+              cidade: projCidade,
+              estado: projEstado,
+              is_resubmission: false,
+            },
+          });
+        } catch (err) {
+          console.error('Error notifying team:', err);
+        }
+
+        toast({ title: 'Projeto criado e enviado!', description: 'O projetista foi notificado e já pode iniciar o trabalho.' });
+        setProjetoOpen(false);
+        navigate(`/projetos/${projectId}`);
       } else {
         throw new Error('Falha ao criar projeto');
       }
@@ -183,6 +236,7 @@ export default function OrcamentoPropostas() {
       console.error('Error creating project from proposal:', error);
       toast({ title: 'Erro', description: 'Não foi possível criar o projeto.', variant: 'destructive' });
     }
+    setProjetoCriando(false);
   };
 
   const getFeedbackForSessao = (sessaoId: string) => {
@@ -364,7 +418,7 @@ export default function OrcamentoPropostas() {
                               size="sm"
                               variant="outline"
                               className="border-primary text-primary hover:bg-primary/10"
-                              onClick={() => handleAbrirNovoProjeto(sessao)}
+                              onClick={() => openProjetoDialog(sessao)}
                             >
                               <FolderPlus className="w-4 h-4 mr-1" />
                               Abrir Novo Projeto
@@ -457,6 +511,108 @@ export default function OrcamentoPropostas() {
               disabled={!propostaAdequada || submitFeedback.isPending}
             >
               {submitFeedback.isPending ? 'Salvando...' : 'Enviar Avaliação'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Project Creation Dialog */}
+      <Dialog open={projetoOpen} onOpenChange={(open) => { if (!open) setProjetoOpen(false); }}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FolderPlus className="w-5 h-5 text-primary" />
+              Criar Projeto a partir da Proposta IA
+            </DialogTitle>
+            <DialogDescription>
+              O projeto será enviado diretamente para o projetista com todos os dados da proposta.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-5 py-2">
+            {/* Identificação */}
+            <div className="space-y-3">
+              <h3 className="text-sm font-semibold text-foreground">Identificação</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Nome do Condomínio *</Label>
+                  <Input value={projNome} onChange={e => setProjNome(e.target.value)} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Endereço</Label>
+                  <Input value={projEndereco} onChange={e => setProjEndereco(e.target.value)} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Cidade *</Label>
+                  <Input value={projCidade} onChange={e => setProjCidade(e.target.value)} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Estado *</Label>
+                  <Select value={projEstado} onValueChange={setProjEstado}>
+                    <SelectTrigger><SelectValue placeholder="UF" /></SelectTrigger>
+                    <SelectContent>
+                      {ESTADOS_BR.map(uf => <SelectItem key={uf} value={uf}>{uf}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* Projeto da IA */}
+            <div className="space-y-3">
+              <h3 className="text-sm font-semibold text-foreground">Projeto da IA</h3>
+              <p className="text-xs text-muted-foreground">
+                Os seguintes dados serão anexados ao projeto para o projetista:
+              </p>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                <div className="p-3 bg-muted/50 rounded-lg text-center">
+                  <FileText className="w-5 h-5 mx-auto mb-1 text-primary" />
+                  <p className="text-xs font-medium">Proposta Completa</p>
+                  <p className="text-[10px] text-muted-foreground">Texto detalhado</p>
+                </div>
+                <div className="p-3 bg-muted/50 rounded-lg text-center">
+                  <Download className="w-5 h-5 mx-auto mb-1 text-primary" />
+                  <p className="text-xs font-medium">PDF da Proposta</p>
+                  <p className="text-[10px] text-muted-foreground">Download disponível</p>
+                </div>
+                <div className="p-3 bg-muted/50 rounded-lg text-center">
+                  <Table2 className="w-5 h-5 mx-auto mb-1 text-primary" />
+                  <p className="text-xs font-medium">Planilha Excel</p>
+                  <p className="text-[10px] text-muted-foreground">Equipamentos detalhados</p>
+                </div>
+                <div className="p-3 bg-muted/50 rounded-lg text-center">
+                  <MapPin className="w-5 h-5 mx-auto mb-1 text-primary" />
+                  <p className="text-xs font-medium">EAP por Ambiente</p>
+                  <p className="text-[10px] text-muted-foreground">Estrutura analítica</p>
+                </div>
+              </div>
+
+              {projetoSessao?.proposta_gerada && (
+                <div className="p-3 bg-muted/30 rounded-lg border max-h-40 overflow-y-auto">
+                  <p className="text-xs text-muted-foreground whitespace-pre-line line-clamp-6">
+                    {projetoSessao.proposta_gerada.substring(0, 500)}...
+                  </p>
+                </div>
+              )}
+
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <span>Vendedor: {projetoSessao?.vendedor_nome || '—'}</span>
+                {projetoSessao?.proposta_gerada_at && (
+                  <>
+                    <span>•</span>
+                    <span>Proposta: {format(new Date(projetoSessao.proposta_gerada_at), "dd/MM/yyyy", { locale: ptBR })}</span>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setProjetoOpen(false)}>Cancelar</Button>
+            <Button onClick={handleCriarProjeto} disabled={projetoCriando}>
+              {projetoCriando ? <><Loader2 className="w-4 h-4 mr-1 animate-spin" />Criando...</> : 'Criar Projeto e Enviar ao Projetista'}
             </Button>
           </DialogFooter>
         </DialogContent>

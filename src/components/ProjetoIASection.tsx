@@ -6,13 +6,14 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import {
-  FileText, Download, Table2, Loader2, Bot, Image as ImageIcon, ChevronDown, ChevronRight,
+  FileText, Download, Table2, Loader2, Bot, Image as ImageIcon, ChevronRight,
   DoorOpen, Car, Shield, Camera, Waves, PartyPopper,
   UtensilsCrossed, Baby, Dumbbell, Flame, Laptop, TreePine, Trophy, LayoutGrid, MapPin, Building
 } from 'lucide-react';
 import { generatePropostaPDF } from '@/lib/propostaPdf';
 import { generateEquipamentosExcel } from '@/lib/propostaExcel';
 import type { PropostaData, AmbienteItem } from '@/components/orcamento/PropostaView';
+import { AmbienteDetailDialog } from '@/components/orcamento/AmbienteDetailDialog';
 
 interface ProjetoIASectionProps {
   sessaoId: string;
@@ -47,16 +48,7 @@ export function ProjetoIASection({ sessaoId }: ProjetoIASectionProps) {
   const [propostaData, setPropostaData] = useState<PropostaData | null>(null);
   const [allMidias, setAllMidias] = useState<{ arquivo_url: string; nome_arquivo: string; descricao: string | null; tipo: string }[]>([]);
   const [gerando, setGerando] = useState<string | null>(null);
-  const [expandedAmbientes, setExpandedAmbientes] = useState<Set<number>>(new Set());
-
-  const toggleAmbiente = (index: number) => {
-    setExpandedAmbientes(prev => {
-      const next = new Set(prev);
-      if (next.has(index)) next.delete(index);
-      else next.add(index);
-      return next;
-    });
-  };
+  const [selectedAmbiente, setSelectedAmbiente] = useState<AmbienteItem | null>(null);
   useEffect(() => {
     async function fetchPropostaData() {
       try {
@@ -292,6 +284,7 @@ export function ProjetoIASection({ sessaoId }: ProjetoIASectionProps) {
   })();
 
   return (
+    <>
     <Card className="shadow-card border-primary/20">
       <CardHeader>
         <CardTitle className="text-lg flex items-center gap-2">
@@ -350,62 +343,39 @@ export function ProjetoIASection({ sessaoId }: ProjetoIASectionProps) {
                 EAP — Detalhamento por Ambiente
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {ambientes.map((amb, i) => {
-                  const isExpanded = expandedAmbientes.has(i);
-                  const hasFotos = amb.fotos && amb.fotos.length > 0;
-                  return (
+                {ambientes.map((amb, i) => (
                     <div
                       key={i}
-                      className="border rounded-lg bg-card hover:shadow-sm transition-shadow cursor-pointer"
-                      onClick={() => toggleAmbiente(i)}
+                      className="border rounded-lg bg-card hover:shadow-md hover:border-primary/30 transition-all cursor-pointer"
+                      onClick={() => setSelectedAmbiente(amb)}
                     >
                       <div className="p-3">
                         <div className="flex items-center gap-2 mb-2">
                           <span className="text-primary">{getAmbienteIcon(amb.tipo)}</span>
                           <span className="font-medium text-sm text-foreground flex-1">{amb.nome}</span>
-                          {(hasFotos || amb.equipamentos.length > 0) && (
-                            isExpanded
-                              ? <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                              : <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                          )}
+                          <Badge variant="outline" className="text-[10px]">
+                            {amb.equipamentos.length} equip.
+                          </Badge>
+                          <ChevronRight className="h-4 w-4 text-muted-foreground" />
                         </div>
                         <div className="flex flex-wrap gap-1 mb-2">
-                          {amb.equipamentos.map((eq, j) => (
+                          {amb.equipamentos.slice(0, 3).map((eq, j) => (
                             <Badge key={j} variant="secondary" className="text-[10px] px-1.5 py-0">
                               {eq}
                             </Badge>
                           ))}
-                        </div>
-                        {!isExpanded && (
-                          <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">
-                            {amb.descricao_funcionamento}
-                          </p>
-                        )}
-                      </div>
-                      {isExpanded && (
-                        <div className="px-3 pb-3 space-y-2 border-t pt-2">
-                          <p className="text-xs text-muted-foreground leading-relaxed">
-                            {amb.descricao_funcionamento}
-                          </p>
-                          {hasFotos && (
-                            <div className="grid grid-cols-2 gap-2 mt-2">
-                              {amb.fotos!.map((fotoUrl, fi) => (
-                                <a key={fi} href={fotoUrl} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}>
-                                  <img
-                                    src={fotoUrl}
-                                    alt={`${amb.nome} - foto ${fi + 1}`}
-                                    className="w-full h-24 object-cover rounded border hover:opacity-80 transition-opacity"
-                                    loading="lazy"
-                                  />
-                                </a>
-                              ))}
-                            </div>
+                          {amb.equipamentos.length > 3 && (
+                            <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
+                              +{amb.equipamentos.length - 3}
+                            </Badge>
                           )}
                         </div>
-                      )}
+                        <p className="text-xs text-muted-foreground leading-relaxed line-clamp-1">
+                          {amb.descricao_funcionamento}
+                        </p>
+                      </div>
                     </div>
-                  );
-                })}
+                  ))}
               </div>
             </div>
           </>
@@ -444,5 +414,11 @@ export function ProjetoIASection({ sessaoId }: ProjetoIASectionProps) {
         )}
       </CardContent>
     </Card>
+    <AmbienteDetailDialog
+      open={!!selectedAmbiente}
+      onOpenChange={(open) => { if (!open) setSelectedAmbiente(null); }}
+      ambiente={selectedAmbiente}
+    />
+    </>
   );
 }

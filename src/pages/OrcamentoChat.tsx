@@ -36,15 +36,25 @@ export default function OrcamentoChat() {
   const inputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const recognitionRef = useRef<any>(null);
+  const autoShowPropostaRef = useRef(false);
 
   useEffect(() => {
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
   }, [messages]);
 
+  // Auto-show proposal when navigated with ver=1
+  useEffect(() => {
+    if (autoShowPropostaRef.current && messages.length > 0 && !proposta && !gerandoProposta) {
+      autoShowPropostaRef.current = false;
+      gerarProposta();
+    }
+  }, [messages, propostaJaGerada]);
+
   // Resolve session from URL params or query string
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const sid = params.get('sessao');
+    const autoVer = params.get('ver') === '1';
     if (sid) {
       setSessaoId(sid);
       // Load existing messages first
@@ -57,6 +67,10 @@ export default function OrcamentoChat() {
           .single();
         if (sessaoData?.proposta_gerada) {
           setPropostaJaGerada(true);
+          // Auto-show proposal if ver=1
+          if (autoVer) {
+            autoShowPropostaRef.current = true;
+          }
         }
 
         const { data: existingMsgs } = await supabase

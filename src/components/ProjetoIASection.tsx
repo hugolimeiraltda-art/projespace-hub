@@ -76,8 +76,18 @@ export function ProjetoIASection({ sessaoId }: ProjetoIASectionProps) {
           .eq('sessao_id', sessaoId)
           .order('created_at', { ascending: true });
 
-        const fotos = (midias || []).filter(m => m.tipo === 'foto').map(m => ({ url: m.arquivo_url, nome: m.nome_arquivo }));
-        const todasMidias = midias || [];
+        // Generate signed URLs for private bucket
+        const midiasWithUrls = await Promise.all(
+          (midias || []).map(async (m) => {
+            const { data: signedData } = await supabase.storage
+              .from('orcamento-midias')
+              .createSignedUrl(m.arquivo_url, 3600);
+            return { ...m, arquivo_url: signedData?.signedUrl || m.arquivo_url };
+          })
+        );
+
+        const fotos = midiasWithUrls.filter(m => m.tipo === 'foto').map(m => ({ url: m.arquivo_url, nome: m.nome_arquivo }));
+        const todasMidias = midiasWithUrls;
 
         const data: PropostaData = {
           proposta: parsed.proposta || '',

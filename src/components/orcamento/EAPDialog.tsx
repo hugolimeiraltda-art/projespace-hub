@@ -74,7 +74,17 @@ export function EAPDialog({ open, onOpenChange, sessaoId, nomeCliente }: EAPDial
           .eq('sessao_id', sessaoId)
           .order('created_at', { ascending: true });
 
-        const fotosData = (midias || []).filter(m => m.tipo === 'foto');
+        // Generate signed URLs for private bucket
+        const midiasWithUrls = await Promise.all(
+          (midias || []).map(async (m) => {
+            const { data: signedData } = await supabase.storage
+              .from('orcamento-midias')
+              .createSignedUrl(m.arquivo_url, 3600);
+            return { ...m, arquivo_url: signedData?.signedUrl || m.arquivo_url };
+          })
+        );
+
+        const fotosData = midiasWithUrls.filter(m => m.tipo === 'foto');
         setFotos(fotosData);
 
         const data: PropostaData = {

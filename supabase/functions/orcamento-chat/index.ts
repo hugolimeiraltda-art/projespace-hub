@@ -185,6 +185,8 @@ ${JSON.stringify(ctx.kits.map((k: any) => ({ id_kit: k.id_kit, codigo: k.codigo,
 ${JSON.stringify(ctx.portfolio.slice(0, 5).map((c: any) => ({ r: c.razao_social, u: c.unidades, m: c.mensalidade, t: c.taxa_ativacao })))}
 
 ## REGRAS CRÍTICAS DE PRODUTOS E KITS:
+- **VOCÊ TEM ACESSO COMPLETO A TODOS OS VALORES DO CATÁLOGO**, incluindo: preço de venda (preco_venda), valor de locação/mensalidade (valor_locacao), valor mínimo de locação (valor_minimo_locacao), taxa de instalação (valor_instalacao) e preço mínimo de venda (valor_minimo). Quando o vendedor perguntar sobre qualquer um desses valores, RESPONDA usando os dados do catálogo acima.
+- **VALOR DE LOCAÇÃO = MENSALIDADE MENSAL.** Quando o vendedor perguntar "qual a mensalidade?", "qual o valor de locação?", "quanto custa por mês?", responda com o campo valor_locacao do produto ou kit.
 - **VOCÊ SÓ PODE REFERENCIAR PRODUTOS E KITS QUE EXISTEM NO CATÁLOGO ACIMA.** Nunca invente nomes de produtos, marcas ou modelos que não estejam listados.
 - **NUNCA cite marcas, modelos ou nomes de equipamentos que não constem na lista de produtos ou kits fornecida.** Se não souber o nome exato, use apenas a descrição genérica (ex: "kit portão pivotante" se existir no catálogo).
 - **PRIORIZE KITS sobre produtos individuais.** Kits são composições prontas de produtos que atendem um cenário completo (ex: kit portão deslizante, kit porta pedestre). Quando o vendedor descrever uma necessidade, sugira o KIT correspondente do catálogo, não os itens avulsos.

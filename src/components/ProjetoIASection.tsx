@@ -6,9 +6,9 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import {
-  FileText, Download, Table2, Loader2, Bot, Image as ImageIcon,
+  FileText, Download, Table2, Loader2, Bot, Image as ImageIcon, ChevronDown, ChevronRight,
   DoorOpen, Car, Shield, Camera, Waves, PartyPopper,
-  UtensilsCrossed, Baby, Dumbbell, Flame, Laptop, TreePine, Trophy, LayoutGrid, MapPin
+  UtensilsCrossed, Baby, Dumbbell, Flame, Laptop, TreePine, Trophy, LayoutGrid, MapPin, Building
 } from 'lucide-react';
 import { generatePropostaPDF } from '@/lib/propostaPdf';
 import { generateEquipamentosExcel } from '@/lib/propostaExcel';
@@ -34,6 +34,9 @@ const getAmbienteIcon = (tipo: string) => {
     jardim: <TreePine className="h-4 w-4" />,
     quadra: <Trophy className="h-4 w-4" />,
     gourmet: <UtensilsCrossed className="h-4 w-4" />,
+    fachada: <Building className="h-4 w-4" />,
+    estacionamento: <Car className="h-4 w-4" />,
+    guarita: <Shield className="h-4 w-4" />,
   };
   return icons[tipo] || <LayoutGrid className="h-4 w-4" />;
 };
@@ -44,7 +47,16 @@ export function ProjetoIASection({ sessaoId }: ProjetoIASectionProps) {
   const [propostaData, setPropostaData] = useState<PropostaData | null>(null);
   const [allMidias, setAllMidias] = useState<{ arquivo_url: string; nome_arquivo: string; descricao: string | null; tipo: string }[]>([]);
   const [gerando, setGerando] = useState<string | null>(null);
+  const [expandedAmbientes, setExpandedAmbientes] = useState<Set<number>>(new Set());
 
+  const toggleAmbiente = (index: number) => {
+    setExpandedAmbientes(prev => {
+      const next = new Set(prev);
+      if (next.has(index)) next.delete(index);
+      else next.add(index);
+      return next;
+    });
+  };
   useEffect(() => {
     async function fetchPropostaData() {
       try {
@@ -89,9 +101,33 @@ export function ProjetoIASection({ sessaoId }: ProjetoIASectionProps) {
         const fotos = midiasWithUrls.filter(m => m.tipo === 'foto').map(m => ({ url: m.arquivo_url, nome: m.nome_arquivo }));
         const todasMidias = midiasWithUrls;
 
+        // Build filename-to-signedURL map for resolving ambiente fotos
+        const fotoSignedMap: Record<string, string> = {};
+        for (const m of midiasWithUrls) {
+          if (m.tipo === 'foto') {
+            fotoSignedMap[m.nome_arquivo] = m.arquivo_url;
+          }
+        }
+
+        // Resolve filenames in ambientes to signed URLs
+        const itens = parsed.itens;
+        if (itens?.ambientes) {
+          for (const amb of itens.ambientes) {
+            if (amb.fotos && Array.isArray(amb.fotos)) {
+              amb.fotos = amb.fotos.map((f: string) => {
+                // If it's a filename (not a URL), resolve it
+                if (!f.startsWith('http')) {
+                  return fotoSignedMap[f] || null;
+                }
+                return f;
+              }).filter(Boolean);
+            }
+          }
+        }
+
         const data: PropostaData = {
           proposta: parsed.proposta || '',
-          itens: parsed.itens || null,
+          itens: itens || null,
           itensExpandidos: parsed.itensExpandidos || [],
           fotos,
           sessao: {
@@ -314,24 +350,62 @@ export function ProjetoIASection({ sessaoId }: ProjetoIASectionProps) {
                 EAP — Detalhamento por Ambiente
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {ambientes.map((amb, i) => (
-                  <div key={i} className="border rounded-lg p-3 bg-card hover:shadow-sm transition-shadow">
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="text-primary">{getAmbienteIcon(amb.tipo)}</span>
-                      <span className="font-medium text-sm text-foreground">{amb.nome}</span>
+                {ambientes.map((amb, i) => {
+                  const isExpanded = expandedAmbientes.has(i);
+                  const hasFotos = amb.fotos && amb.fotos.length > 0;
+                  return (
+                    <div
+                      key={i}
+                      className="border rounded-lg bg-card hover:shadow-sm transition-shadow cursor-pointer"
+                      onClick={() => toggleAmbiente(i)}
+                    >
+                      <div className="p-3">
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="text-primary">{getAmbienteIcon(amb.tipo)}</span>
+                          <span className="font-medium text-sm text-foreground flex-1">{amb.nome}</span>
+                          {(hasFotos || amb.equipamentos.length > 0) && (
+                            isExpanded
+                              ? <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                              : <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                          )}
+                        </div>
+                        <div className="flex flex-wrap gap-1 mb-2">
+                          {amb.equipamentos.map((eq, j) => (
+                            <Badge key={j} variant="secondary" className="text-[10px] px-1.5 py-0">
+                              {eq}
+                            </Badge>
+                          ))}
+                        </div>
+                        {!isExpanded && (
+                          <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">
+                            {amb.descricao_funcionamento}
+                          </p>
+                        )}
+                      </div>
+                      {isExpanded && (
+                        <div className="px-3 pb-3 space-y-2 border-t pt-2">
+                          <p className="text-xs text-muted-foreground leading-relaxed">
+                            {amb.descricao_funcionamento}
+                          </p>
+                          {hasFotos && (
+                            <div className="grid grid-cols-2 gap-2 mt-2">
+                              {amb.fotos!.map((fotoUrl, fi) => (
+                                <a key={fi} href={fotoUrl} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}>
+                                  <img
+                                    src={fotoUrl}
+                                    alt={`${amb.nome} - foto ${fi + 1}`}
+                                    className="w-full h-24 object-cover rounded border hover:opacity-80 transition-opacity"
+                                    loading="lazy"
+                                  />
+                                </a>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
-                    <div className="flex flex-wrap gap-1 mb-2">
-                      {amb.equipamentos.map((eq, j) => (
-                        <Badge key={j} variant="secondary" className="text-[10px] px-1.5 py-0">
-                          {eq}
-                        </Badge>
-                      ))}
-                    </div>
-                    <p className="text-xs text-muted-foreground leading-relaxed">
-                      {amb.descricao_funcionamento}
-                    </p>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           </>

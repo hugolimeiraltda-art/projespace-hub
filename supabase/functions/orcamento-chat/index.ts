@@ -124,9 +124,13 @@ Poste exclusivo com até 4 câmeras com vídeo analítico conectadas à Central 
 
 ### 2. ACESSO DE PEDESTRES
 - Quantas portas de pedestre para a rua iremos CONTROLAR?
+- **Para CADA porta de pedestre, pergunte: a saída será autenticada ou não?**
+  - Se **saída autenticada** → usar o kit "Porta Pedestre facial com saída autenticada"
+  - Se **saída NÃO autenticada** → usar o kit "Porta Pedestre" (padrão)
 - Alguma dessas portas possui ECLUSA?
 - Se sim, quantas eclusas iremos controlar?
 - Quantas portas de pedestre nos blocos iremos controlar?
+- Para portas dos blocos, também pergunte se terá saída autenticada ou não (mesma lógica de kits acima)
 - **FOTOS**: Por dentro e por fora de cada porta (e das eclusas, se houver)
 
 ### 3. ACESSO DE VEÍCULOS

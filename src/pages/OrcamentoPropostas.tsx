@@ -1,9 +1,11 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useProjects } from '@/contexts/ProjectsContext';
 import { Layout } from '@/components/Layout';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
@@ -11,8 +13,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useToast } from '@/hooks/use-toast';
-import { FileText, MessageSquare, Star, CheckCircle2, XCircle, AlertCircle, Eye } from 'lucide-react';
-import { format } from 'date-fns';
+import { FileText, MessageSquare, Star, CheckCircle2, XCircle, AlertCircle, Eye, FolderPlus, Clock, ClipboardCheck } from 'lucide-react';
+import { format, addDays, isPast } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 interface Sessao {
@@ -38,13 +40,33 @@ interface Feedback {
   created_at: string;
 }
 
+const StarRating = ({ value, onChange }: { value: number; onChange: (v: number) => void }) => (
+  <div className="flex gap-1">
+    {[1, 2, 3, 4, 5].map(star => (
+      <button key={star} type="button" onClick={() => onChange(star)} className="p-0.5 transition-colors">
+        <Star className={`w-6 h-6 ${star <= value ? 'fill-primary text-primary' : 'text-muted-foreground/30'}`} />
+      </button>
+    ))}
+  </div>
+);
+
+const getAdequacyBadge = (value: string) => {
+  switch (value) {
+    case 'sim': return <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"><CheckCircle2 className="w-3 h-3 mr-1" />Adequada</Badge>;
+    case 'parcialmente': return <Badge className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400"><AlertCircle className="w-3 h-3 mr-1" />Parcial</Badge>;
+    case 'nao': return <Badge className="bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"><XCircle className="w-3 h-3 mr-1" />Inadequada</Badge>;
+    default: return null;
+  }
+};
+
 export default function OrcamentoPropostas() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { addProject } = useProjects();
 
   const [selectedSessao, setSelectedSessao] = useState<Sessao | null>(null);
-  const [viewPropostaOpen, setViewPropostaOpen] = useState(false);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
 
   // Feedback form state
@@ -95,12 +117,12 @@ export default function OrcamentoPropostas() {
       if (error) throw error;
     },
     onSuccess: () => {
-      toast({ title: 'Feedback registrado!', description: 'Suas informações serão usadas para melhorar as propostas futuras.' });
+      toast({ title: 'Avaliação registrada!', description: 'Suas informações serão usadas para melhorar as propostas futuras.' });
       queryClient.invalidateQueries({ queryKey: ['proposta-feedbacks'] });
       closeFeedbackDialog();
     },
     onError: () => {
-      toast({ title: 'Erro', description: 'Não foi possível salvar o feedback.', variant: 'destructive' });
+      toast({ title: 'Erro', description: 'Não foi possível salvar a avaliação.', variant: 'destructive' });
     },
   });
 
@@ -118,33 +140,66 @@ export default function OrcamentoPropostas() {
     setFeedbackOpen(true);
   };
 
-  const openProposta = (sessao: Sessao) => {
-    setSelectedSessao(sessao);
-    setViewPropostaOpen(true);
+  const handleVerProposta = (sessao: Sessao) => {
+    navigate(`/orcamento-visita?sessao=${sessao.id}&ver=1`);
+  };
+
+  const handleAbrirNovoProjeto = async (sessao: Sessao) => {
+    if (!user) return;
+    try {
+      const projectId = await addProject(
+        {
+          created_by_user_id: user.id,
+          vendedor_nome: sessao.vendedor_nome || user.nome,
+          vendedor_email: user.email,
+          cliente_condominio_nome: sessao.nome_cliente,
+          cliente_cidade: '',
+          cliente_estado: '',
+          endereco_condominio: sessao.endereco_condominio || '',
+          status: 'RASCUNHO',
+          observacoes_gerais: `Projeto originado da proposta IA.\n\nProposta gerada em: ${sessao.proposta_gerada_at ? format(new Date(sessao.proposta_gerada_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR }) : 'N/A'}\n\nProposta:\n${sessao.proposta_gerada || ''}`,
+          email_padrao_gerado: sessao.proposta_gerada || '',
+        },
+        {
+          solicitacao_origem: 'EMAIL' as any,
+          modalidade_portaria: 'VIRTUAL' as any,
+          portaria_virtual_atendimento_app: 'NAO' as any,
+          numero_blocos: 1,
+          interfonia: false,
+          observacao_nao_assumir_cameras: false,
+          marcacao_croqui_confirmada: false,
+          marcacao_croqui_itens: [],
+          cftv_elevador_possui: 'NAO_INFORMADO' as any,
+        }
+      );
+
+      if (projectId) {
+        toast({ title: 'Projeto criado!', description: 'Redirecionando para edição do projeto...' });
+        navigate(`/projetos/${projectId}/editar`);
+      } else {
+        throw new Error('Falha ao criar projeto');
+      }
+    } catch (error) {
+      console.error('Error creating project from proposal:', error);
+      toast({ title: 'Erro', description: 'Não foi possível criar o projeto.', variant: 'destructive' });
+    }
   };
 
   const getFeedbackForSessao = (sessaoId: string) => {
     return feedbacks?.filter(f => f.sessao_id === sessaoId) || [];
   };
 
-  const getAdequacyBadge = (value: string) => {
-    switch (value) {
-      case 'sim': return <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"><CheckCircle2 className="w-3 h-3 mr-1" />Adequada</Badge>;
-      case 'parcialmente': return <Badge className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400"><AlertCircle className="w-3 h-3 mr-1" />Parcial</Badge>;
-      case 'nao': return <Badge className="bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"><XCircle className="w-3 h-3 mr-1" />Inadequada</Badge>;
-      default: return null;
+  const getAvaliacaoStatus = (sessao: Sessao) => {
+    const sessFeedbacks = getFeedbackForSessao(sessao.id);
+    if (sessFeedbacks.length > 0) {
+      return { avaliada: true, feedbacks: sessFeedbacks };
     }
+    // SLA: 1 day from proposal generation
+    const baseDate = sessao.proposta_gerada_at ? new Date(sessao.proposta_gerada_at) : new Date(sessao.created_at);
+    const slaDeadline = addDays(baseDate, 1);
+    const slaExpirado = isPast(slaDeadline);
+    return { avaliada: false, slaExpirado, slaDeadline };
   };
-
-  const StarRating = ({ value, onChange }: { value: number; onChange: (v: number) => void }) => (
-    <div className="flex gap-1">
-      {[1, 2, 3, 4, 5].map(star => (
-        <button key={star} type="button" onClick={() => onChange(star)} className="p-0.5 transition-colors">
-          <Star className={`w-6 h-6 ${star <= value ? 'fill-primary text-primary' : 'text-muted-foreground/30'}`} />
-        </button>
-      ))}
-    </div>
-  );
 
   const isAdmin = user?.role === 'admin';
 
@@ -174,10 +229,10 @@ export default function OrcamentoPropostas() {
           <Card>
             <CardContent className="pt-4 pb-3">
               <div className="flex items-center gap-3">
-                <MessageSquare className="w-8 h-8 text-blue-500" />
+                <ClipboardCheck className="w-8 h-8 text-blue-500" />
                 <div>
                   <p className="text-2xl font-bold text-foreground">{feedbacks?.length || 0}</p>
-                  <p className="text-xs text-muted-foreground">Feedbacks Recebidos</p>
+                  <p className="text-xs text-muted-foreground">Avaliações Realizadas</p>
                 </div>
               </div>
             </CardContent>
@@ -224,8 +279,9 @@ export default function OrcamentoPropostas() {
         ) : (
           <div className="space-y-3">
             {sessoes.map(sessao => {
-              const sessFeedbacks = getFeedbackForSessao(sessao.id);
-              const hasFeedback = sessFeedbacks.length > 0;
+              const avaliacaoStatus = getAvaliacaoStatus(sessao);
+              const hasFeedback = avaliacaoStatus.avaliada;
+              const sessFeedbacks = hasFeedback ? (avaliacaoStatus as any).feedbacks as Feedback[] : [];
 
               return (
                 <Card key={sessao.id} className="hover:shadow-md transition-shadow">
@@ -234,9 +290,21 @@ export default function OrcamentoPropostas() {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
                           <h3 className="font-semibold text-foreground">{sessao.nome_cliente}</h3>
-                          {hasFeedback && (
-                            <Badge variant="outline" className="text-[10px]">
-                              {sessFeedbacks.length} feedback{sessFeedbacks.length > 1 ? 's' : ''}
+                          {/* Avaliação status badge */}
+                          {hasFeedback ? (
+                            <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 text-[10px]">
+                              <CheckCircle2 className="w-3 h-3 mr-1" />
+                              Avaliada
+                            </Badge>
+                          ) : (avaliacaoStatus as any).slaExpirado ? (
+                            <Badge className="bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400 text-[10px]">
+                              <AlertCircle className="w-3 h-3 mr-1" />
+                              SLA Vencido
+                            </Badge>
+                          ) : (
+                            <Badge className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400 text-[10px]">
+                              <Clock className="w-3 h-3 mr-1" />
+                              Pendente até {format((avaliacaoStatus as any).slaDeadline, "dd/MM HH:mm", { locale: ptBR })}
                             </Badge>
                           )}
                         </div>
@@ -277,16 +345,31 @@ export default function OrcamentoPropostas() {
                         )}
                       </div>
 
-                      <div className="flex gap-2 shrink-0">
-                        <Button variant="outline" size="sm" onClick={() => openProposta(sessao)}>
+                      <div className="flex flex-col gap-2 shrink-0">
+                        <Button variant="outline" size="sm" onClick={() => handleVerProposta(sessao)}>
                           <Eye className="w-4 h-4 mr-1" />
-                          Ver
+                          Ver Proposta
                         </Button>
                         {isAdmin && (
-                          <Button size="sm" onClick={() => openFeedback(sessao)}>
-                            <MessageSquare className="w-4 h-4 mr-1" />
-                            Feedback
-                          </Button>
+                          <>
+                            <Button
+                              size="sm"
+                              variant={hasFeedback ? 'outline' : 'default'}
+                              onClick={() => openFeedback(sessao)}
+                            >
+                              <ClipboardCheck className="w-4 h-4 mr-1" />
+                              {hasFeedback ? 'Nova Avaliação' : 'Avaliação de Proposta'}
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="border-primary text-primary hover:bg-primary/10"
+                              onClick={() => handleAbrirNovoProjeto(sessao)}
+                            >
+                              <FolderPlus className="w-4 h-4 mr-1" />
+                              Abrir Novo Projeto
+                            </Button>
+                          </>
                         )}
                       </div>
                     </div>
@@ -298,25 +381,13 @@ export default function OrcamentoPropostas() {
         )}
       </div>
 
-      {/* View Proposal Dialog */}
-      <Dialog open={viewPropostaOpen} onOpenChange={setViewPropostaOpen}>
-        <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Proposta - {selectedSessao?.nome_cliente}</DialogTitle>
-          </DialogHeader>
-          <div className="prose prose-sm dark:prose-invert max-w-none whitespace-pre-wrap text-sm">
-            {selectedSessao?.proposta_gerada || 'Proposta não disponível.'}
-          </div>
-        </DialogContent>
-      </Dialog>
-
       {/* Feedback Dialog */}
       <Dialog open={feedbackOpen} onOpenChange={(open) => { if (!open) closeFeedbackDialog(); else setFeedbackOpen(true); }}>
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <MessageSquare className="w-5 h-5 text-primary" />
-              Feedback da Proposta
+              <ClipboardCheck className="w-5 h-5 text-primary" />
+              Avaliação de Proposta
             </DialogTitle>
             <DialogDescription>
               Avalie a proposta gerada pela IA para "{selectedSessao?.nome_cliente}".
@@ -385,7 +456,7 @@ export default function OrcamentoPropostas() {
               onClick={() => submitFeedback.mutate()}
               disabled={!propostaAdequada || submitFeedback.isPending}
             >
-              {submitFeedback.isPending ? 'Salvando...' : 'Enviar Feedback'}
+              {submitFeedback.isPending ? 'Salvando...' : 'Enviar Avaliação'}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -393,4 +464,3 @@ export default function OrcamentoPropostas() {
     </Layout>
   );
 }
-

@@ -65,20 +65,20 @@ export default function Orcamentos() {
   const [reportHtml, setReportHtml] = useState('');
   const [loadingReport, setLoadingReport] = useState(false);
   const fetchData = async () => {
-    const isAdmin = user?.role === 'admin';
+    const canSeeAll = user?.role === 'admin' || user?.role === 'projetos';
     let query = supabase.from('orcamento_sessoes').select('*').order('created_at', { ascending: false });
-    if (!isAdmin) {
+    if (!canSeeAll) {
       query = query.eq('vendedor_id', user!.id);
     }
     const [{ data: sessoesData }, { data: rolesData }] = await Promise.all([
       query,
-      isAdmin
-        ? supabase.from('user_roles').select('user_id, role').in('role', ['vendedor', 'admin', 'gerente_comercial'])
+      canSeeAll
+        ? supabase.from('user_roles').select('user_id, role').in('role', ['vendedor', 'admin', 'gerente_comercial', 'projetos'])
         : Promise.resolve({ data: [] }),
     ]);
     if (sessoesData) setSessoes(sessoesData as Sessao[]);
 
-    if (isAdmin && rolesData && rolesData.length > 0) {
+    if (canSeeAll && rolesData && rolesData.length > 0) {
       const userIds = rolesData.map((r: any) => r.user_id);
       const { data: profilesData } = await supabase.from('profiles').select('id, nome').in('id', userIds);
       if (profilesData) setVendedores(profilesData as Vendedor[]);

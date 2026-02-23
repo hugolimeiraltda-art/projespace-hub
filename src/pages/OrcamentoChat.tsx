@@ -46,7 +46,7 @@ export default function OrcamentoChat() {
   useEffect(() => {
     if (autoShowPropostaRef.current && messages.length > 0 && !proposta && !gerandoProposta) {
       autoShowPropostaRef.current = false;
-      gerarProposta();
+      carregarPropostaExistente();
     }
   }, [messages, propostaJaGerada]);
 
@@ -299,6 +299,79 @@ export default function OrcamentoChat() {
     setIsRecording(true);
   };
 
+  const carregarPropostaExistente = async () => {
+    if (!sessaoId) return;
+    setGerandoProposta(true);
+    try {
+      const { data: sessao } = await supabase
+        .from('orcamento_sessoes')
+        .select('id, nome_cliente, vendedor_nome, proposta_gerada, endereco_condominio, email_cliente, telefone_cliente')
+        .eq('id', sessaoId)
+        .single();
+
+      if (!sessao?.proposta_gerada) {
+        // Fallback: generate if no saved proposal
+        await gerarProposta();
+        return;
+      }
+
+      let parsed: any = null;
+      try { parsed = JSON.parse(sessao.proposta_gerada); } catch {
+        parsed = { proposta: sessao.proposta_gerada, itens: null, itensExpandidos: [] };
+      }
+
+      const { data: midias } = await supabase
+        .from('orcamento_midias')
+        .select('arquivo_url, nome_arquivo, descricao, tipo')
+        .eq('sessao_id', sessaoId)
+        .order('created_at', { ascending: true });
+
+      const midiasWithUrls = await Promise.all(
+        (midias || []).map(async (m) => {
+          const { data: signedData } = await supabase.storage
+            .from('orcamento-midias')
+            .createSignedUrl(m.arquivo_url, 3600);
+          return { ...m, arquivo_url: signedData?.signedUrl || m.arquivo_url };
+        })
+      );
+
+      const fotosData = midiasWithUrls.filter(m => m.tipo === 'foto');
+
+      // Resolve ambient photos
+      const fotoSignedMap: Record<string, string> = {};
+      for (const m of midiasWithUrls) {
+        if (m.tipo === 'foto') fotoSignedMap[m.nome_arquivo] = m.arquivo_url;
+      }
+      if (parsed.itens?.ambientes) {
+        for (const amb of parsed.itens.ambientes) {
+          if (amb.fotos && Array.isArray(amb.fotos)) {
+            amb.fotos = amb.fotos.map((f: string) => !f.startsWith('http') ? fotoSignedMap[f] || null : f).filter(Boolean);
+          }
+        }
+      }
+
+      const propostaData: PropostaData = {
+        proposta: parsed.proposta || '',
+        itens: parsed.itens || null,
+        itensExpandidos: parsed.itensExpandidos || [],
+        fotos: fotosData.map(m => ({ url: m.arquivo_url, nome: m.nome_arquivo })),
+        sessao: {
+          nome_cliente: sessao.nome_cliente,
+          endereco: sessao.endereco_condominio || '',
+          vendedor: sessao.vendedor_nome || '',
+          email: sessao.email_cliente || '',
+          telefone: sessao.telefone_cliente || '',
+        },
+      };
+
+      setProposta(propostaData);
+    } catch (e) {
+      console.error(e);
+      toast({ title: 'Erro ao carregar proposta', variant: 'destructive' });
+    }
+    setGerandoProposta(false);
+  };
+
   const gerarProposta = async () => {
     setGerandoProposta(true);
     try {
@@ -368,7 +441,7 @@ export default function OrcamentoChat() {
           </div>
         </div>
         {propostaJaGerada ? (
-          <Button onClick={gerarProposta} disabled={gerandoProposta} variant="outline">
+          <Button onClick={carregarPropostaExistente} disabled={gerandoProposta} variant="outline">
             {gerandoProposta ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Carregando...</> : <><FileText className="mr-2 h-4 w-4" />Ver Proposta</>}
           </Button>
         ) : messages.length >= 6 ? (

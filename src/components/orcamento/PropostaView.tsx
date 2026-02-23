@@ -6,7 +6,7 @@ import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import {
   FileText, Download, Mail, Share2, ArrowLeft, Table2, Loader2, MessageSquare, ChevronDown, ChevronUp, ChevronRight,
-  MapPin, DoorOpen, Car, Shield, Camera, Waves, PartyPopper, UtensilsCrossed, Baby, Dumbbell, Flame, Laptop, TreePine, Trophy, LayoutGrid
+  MapPin, DoorOpen, Car, Shield, Camera, Waves, PartyPopper, UtensilsCrossed, Baby, Dumbbell, Flame, Laptop, TreePine, Trophy, LayoutGrid, Building
 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -30,6 +30,7 @@ export type AmbienteItem = {
   tipo: string;
   equipamentos: string[];
   descricao_funcionamento: string;
+  fotos?: string[];
 };
 
 export type PropostaData = {
@@ -91,6 +92,9 @@ export default function PropostaView({ data, onVoltar }: PropostaViewProps) {
       coworking: <Laptop className="h-4 w-4" />,
       playground: <TreePine className="h-4 w-4" />,
       quadra: <Trophy className="h-4 w-4" />,
+      fachada: <Building className="h-4 w-4" />,
+      estacionamento: <Car className="h-4 w-4" />,
+      guarita: <Shield className="h-4 w-4" />,
     };
     return icons[tipo] || <MapPin className="h-4 w-4" />;
   };

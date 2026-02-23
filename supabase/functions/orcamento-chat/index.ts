@@ -330,19 +330,26 @@ serve(async (req) => {
 
       // Fetch session photos
       const { data: midias } = await supabase
-        .from("orcamento_midias").select("arquivo_url, nome_arquivo, tipo")
+        .from("orcamento_midias").select("arquivo_url, nome_arquivo, tipo, descricao")
         .eq("sessao_id", sessao.id).eq("tipo", "foto");
 
-      // Generate signed URLs for photos
+      // Generate signed URLs for photos and build filename-to-URL map
       const fotoUrls: { url: string; nome: string }[] = [];
+      const fotoMap: Record<string, string> = {};
       if (midias && midias.length > 0) {
         for (const m of midias) {
           const { data: signedData } = await supabase.storage.from("orcamento-midias").createSignedUrl(m.arquivo_url, 3600);
           if (signedData?.signedUrl) {
             fotoUrls.push({ url: signedData.signedUrl, nome: m.nome_arquivo });
+            fotoMap[m.nome_arquivo] = signedData.signedUrl;
           }
         }
       }
+
+      // Build photo list for AI prompt
+      const fotoListStr = midias && midias.length > 0
+        ? midias.map(m => `- "${m.nome_arquivo}"${m.descricao ? ` (${m.descricao})` : ''}`).join('\n')
+        : '(nenhuma foto enviada)';
 
       // Ask AI to generate proposal + structured JSON
       const structuredPrompt = `${buildPropostaPrompt(ctx, sessao)}
@@ -363,13 +370,15 @@ O JSON deve seguir este formato EXATO:
       "nome": "Porta Externa (Eclusa)",
       "tipo": "porta_externa",
       "equipamentos": ["KIT PORTA PEDESTRE FACIAL COM SAÍDA AUTENTICADA", "CAMERA BULLET TURBO HD 2.0MP"],
-      "descricao_funcionamento": "O pedestre se posiciona frente ao leitor facial externo. Após reconhecimento, a porta externa abre. O pedestre entra na eclusa e aguarda a porta externa fechar. Em seguida, o leitor facial interno libera a porta interna. A câmera registra todo o fluxo."
+      "descricao_funcionamento": "O pedestre se posiciona frente ao leitor facial externo. Após reconhecimento, a porta externa abre...",
+      "fotos": ["foto_porta_externa.png", "foto_eclusa_dentro.png"]
     },
     {
-      "nome": "Portão Deslizante - Entrada Principal",
-      "tipo": "portao",
-      "equipamentos": ["KIT PORTÃO DE GARAGEM DESLIZANTE", "CAMERA BULLET TURBO HD 2.0MP"],
-      "descricao_funcionamento": "Veículo se aproxima e é identificado por tag veicular ou leitor facial no totem. O portão deslizante abre automaticamente. Câmera registra placa e motorista. Após passagem, portão fecha automaticamente com sensor de presença."
+      "nome": "Fachada",
+      "tipo": "fachada",
+      "equipamentos": [],
+      "descricao_funcionamento": "Vista externa do condomínio para referência do projetista.",
+      "fotos": ["foto_fachada.png"]
     }
   ]
 }
@@ -385,9 +394,14 @@ REGRAS para o JSON:
 - "ambientes": OBRIGATÓRIO. Liste TODOS os ambientes do condomínio onde haverá equipamentos instalados. Os tipos possíveis são:
   - **Áreas comuns**: porta_externa, porta_interna, portao, central, perimetro, cftv
   - **Ambientes reserváveis**: piscina, salao_festas, area_gourmet, brinquedoteca, academia, churrasqueira, coworking, playground, quadra, outros
+  - **Fachada e áreas externas**: fachada, estacionamento, guarita, jardim
   - Para cada ambiente, liste os equipamentos que serão instalados ali (nomes exatos do catálogo) e descreva em 2-4 frases como o sistema vai funcionar naquele ambiente (fluxo operacional para o projetista entender)
   - Agrupe por ambiente físico real (ex: se há 2 portões, crie 2 entradas separadas)
   - Esta seção serve como EAP (Estrutura Analítica do Projeto) para o projetista
+  - **FOTOS**: Para cada ambiente, inclua um array "fotos" com os NOMES EXATOS dos arquivos de foto que correspondem àquele ambiente (use os nomes da lista de fotos abaixo). Se uma foto mostra a fachada, crie um ambiente "Fachada" do tipo "fachada". TODA foto deve ser associada a pelo menos um ambiente. Se não souber onde encaixar, crie um ambiente "Registro Geral" do tipo "outros".
+
+## FOTOS DA VISITA TÉCNICA (associe cada foto ao ambiente correspondente):
+${fotoListStr}
 
       const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
         method: "POST",
@@ -484,8 +498,26 @@ REGRAS para o JSON:
         itensExpandidos = Array.from(merged.values());
       }
 
+      // Save structured JSON with photo FILENAMES (not signed URLs) for persistence
+      const propostaStore = JSON.stringify({
+        proposta,
+        itens: itensEstruturados,
+        itensExpandidos,
+      });
+
+      // Map photo filenames to signed URLs in ambientes for the RESPONSE only
+      if (itensEstruturados?.ambientes) {
+        for (const amb of itensEstruturados.ambientes) {
+          if (amb.fotos && Array.isArray(amb.fotos)) {
+            amb.fotos = amb.fotos
+              .map((f: string) => fotoMap[f] || null)
+              .filter(Boolean);
+          }
+        }
+      }
+
       await supabase.from("orcamento_sessoes")
-        .update({ proposta_gerada: proposta, proposta_gerada_at: new Date().toISOString(), status: "proposta_gerada" })
+        .update({ proposta_gerada: propostaStore, proposta_gerada_at: new Date().toISOString(), status: "proposta_gerada" })
         .eq("id", sessao.id);
 
       return new Response(JSON.stringify({ 

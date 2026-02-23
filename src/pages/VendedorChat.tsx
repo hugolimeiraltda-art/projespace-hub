@@ -446,11 +446,15 @@ export default function VendedorChat() {
           <Button variant="ghost" size="sm" onClick={() => navigate('/orcar')}>
             <ArrowLeft className="mr-1 h-4 w-4" />Voltar
           </Button>
-          {messages.length >= 6 && (
+          {proposta ? (
+            <Button size="sm" onClick={gerarProposta} disabled={gerandoProposta} variant="outline">
+              {gerandoProposta ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Carregando...</> : <><FileText className="mr-2 h-4 w-4" />Ver Proposta</>}
+            </Button>
+          ) : messages.length >= 6 ? (
             <Button size="sm" onClick={gerarProposta} disabled={gerandoProposta}>
               {gerandoProposta ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Gerando...</> : <><FileText className="mr-2 h-4 w-4" />Gerar Proposta</>}
             </Button>
-          )}
+          ) : null}
         </div>
 
         <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-4 max-w-3xl mx-auto w-full min-h-0">

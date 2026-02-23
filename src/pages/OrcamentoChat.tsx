@@ -31,6 +31,7 @@ export default function OrcamentoChat() {
   const [sessaoId, setSessaoId] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
+  const [propostaJaGerada, setPropostaJaGerada] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -48,6 +49,16 @@ export default function OrcamentoChat() {
       setSessaoId(sid);
       // Load existing messages first
       (async () => {
+        // Check if proposal already generated
+        const { data: sessaoData } = await supabase
+          .from('orcamento_sessoes')
+          .select('status, proposta_gerada')
+          .eq('id', sid)
+          .single();
+        if (sessaoData?.proposta_gerada) {
+          setPropostaJaGerada(true);
+        }
+
         const { data: existingMsgs } = await supabase
           .from('orcamento_mensagens')
           .select('role, content')
@@ -299,6 +310,7 @@ export default function OrcamentoChat() {
 
       const data = await resp.json();
       setProposta(data as PropostaData);
+      setPropostaJaGerada(true);
     } catch (e) {
       console.error(e);
       toast({ title: 'Erro ao gerar proposta', variant: 'destructive' });
@@ -341,11 +353,15 @@ export default function OrcamentoChat() {
             <p className="text-xs text-muted-foreground">IA guiando a coleta de dados para proposta</p>
           </div>
         </div>
-        {messages.length >= 6 && (
+        {propostaJaGerada ? (
+          <Button onClick={gerarProposta} disabled={gerandoProposta} variant="outline">
+            {gerandoProposta ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Carregando...</> : <><FileText className="mr-2 h-4 w-4" />Ver Proposta</>}
+          </Button>
+        ) : messages.length >= 6 ? (
           <Button onClick={gerarProposta} disabled={gerandoProposta}>
             {gerandoProposta ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Gerando...</> : <><FileText className="mr-2 h-4 w-4" />Gerar Proposta</>}
           </Button>
-        )}
+        ) : null}
       </header>
 
       {/* Messages */}

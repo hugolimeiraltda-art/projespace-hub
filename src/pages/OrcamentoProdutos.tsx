@@ -75,6 +75,10 @@ const UNIDADES = [
   { value: 'metro_linear', label: 'Metro Linear' },
 ];
 
+const catLabel = (cat: string) => GRUPOS.find(c => c.value === cat)?.label || cat;
+const subLabel = (sub: string) => SUBGRUPOS.find(s => s.value === sub)?.label || sub;
+const unLabel = (un: string) => UNIDADES.find(u => u.value === un)?.label || un;
+
 interface Produto {
   id: string;
   id_produto: number | null;
@@ -191,60 +195,70 @@ export default function OrcamentoProdutos() {
   };
 
   const filteredKits = useMemo(() => {
-    let result = [...kits];
+    try {
+      let result = [...kits];
 
-    // Global search filter
-    if (kitSearchTerm.trim()) {
-      const lower = kitSearchTerm.toLowerCase();
-      result = result.filter(k =>
-        k.nome.toLowerCase().includes(lower) ||
-        ((k as any).id_kit?.toString() || '').includes(lower) ||
-        (k.codigo || '').toLowerCase().includes(lower) ||
-        catLabel(k.categoria).toLowerCase().includes(lower)
-      );
-    }
-
-    Object.entries(kitColumnFilters).forEach(([col, val]) => {
-      const lower = val.toLowerCase();
-      result = result.filter(k => {
-        const t = getKitTotals(k);
-        switch (col) {
-          case 'id_kit': return ((k as any).id_kit?.toString() || '').includes(lower);
-          case 'nome': return k.nome.toLowerCase().includes(lower);
-          case 'categoria': return catLabel(k.categoria).toLowerCase().includes(lower);
-          case 'itens': return (k.itens?.length || 0).toString().includes(val);
-          case 'atual': return t.atual.toLocaleString('pt-BR', { minimumFractionDigits: 2 }).includes(val);
-          case 'minimo': return t.minimo.toLocaleString('pt-BR', { minimumFractionDigits: 2 }).includes(val);
-          case 'locacao': return t.locacao.toLocaleString('pt-BR', { minimumFractionDigits: 2 }).includes(val);
-          case 'minLocacao': return t.minLocacao.toLocaleString('pt-BR', { minimumFractionDigits: 2 }).includes(val);
-          case 'instalacao': return t.instalacao.toLocaleString('pt-BR', { minimumFractionDigits: 2 }).includes(val);
-          case 'ativo': return (k.ativo ? 'Ativo' : 'Inativo').toLowerCase().includes(lower);
-          default: return true;
-        }
-      });
-    });
-
-    result.sort((a, b) => {
-      let va: any, vb: any;
-      const ta = getKitTotals(a), tb = getKitTotals(b);
-      switch (kitSortField) {
-        case 'id_kit': va = (a as any).id_kit || 0; vb = (b as any).id_kit || 0; break;
-        case 'nome': va = a.nome.toLowerCase(); vb = b.nome.toLowerCase(); break;
-        case 'categoria': va = a.categoria; vb = b.categoria; break;
-        case 'itens': va = a.itens?.length || 0; vb = b.itens?.length || 0; break;
-        case 'atual': va = ta.atual; vb = tb.atual; break;
-        case 'minimo': va = ta.minimo; vb = tb.minimo; break;
-        case 'locacao': va = ta.locacao; vb = tb.locacao; break;
-        case 'minLocacao': va = ta.minLocacao; vb = tb.minLocacao; break;
-        case 'instalacao': va = ta.instalacao; vb = tb.instalacao; break;
-        case 'ativo': va = a.ativo ? 1 : 0; vb = b.ativo ? 1 : 0; break;
-        default: va = a.nome.toLowerCase(); vb = b.nome.toLowerCase();
+      // Global search filter
+      if (kitSearchTerm.trim()) {
+        const lower = kitSearchTerm.toLowerCase();
+        result = result.filter(k =>
+          (k.nome || '').toLowerCase().includes(lower) ||
+          ((k as any).id_kit?.toString() || '').includes(lower) ||
+          (k.codigo || '').toLowerCase().includes(lower) ||
+          catLabel(k.categoria || '').toLowerCase().includes(lower)
+        );
       }
-      if (va < vb) return kitSortDir === 'asc' ? -1 : 1;
-      if (va > vb) return kitSortDir === 'asc' ? 1 : -1;
-      return 0;
-    });
-    return result;
+
+      Object.entries(kitColumnFilters).forEach(([col, val]) => {
+        if (!val) return;
+        const lower = val.toLowerCase();
+        result = result.filter(k => {
+          try {
+            const t = getKitTotals(k);
+            switch (col) {
+              case 'id_kit': return ((k as any).id_kit?.toString() || '').includes(lower);
+              case 'nome': return (k.nome || '').toLowerCase().includes(lower);
+              case 'categoria': return catLabel(k.categoria || '').toLowerCase().includes(lower);
+              case 'itens': return (k.itens?.length || 0).toString().includes(val);
+              case 'atual': return t.atual.toLocaleString('pt-BR', { minimumFractionDigits: 2 }).includes(val);
+              case 'minimo': return t.minimo.toLocaleString('pt-BR', { minimumFractionDigits: 2 }).includes(val);
+              case 'locacao': return t.locacao.toLocaleString('pt-BR', { minimumFractionDigits: 2 }).includes(val);
+              case 'minLocacao': return t.minLocacao.toLocaleString('pt-BR', { minimumFractionDigits: 2 }).includes(val);
+              case 'instalacao': return t.instalacao.toLocaleString('pt-BR', { minimumFractionDigits: 2 }).includes(val);
+              case 'ativo': return (k.ativo ? 'Ativo' : 'Inativo').toLowerCase().includes(lower);
+              default: return true;
+            }
+          } catch { return true; }
+        });
+      });
+
+      result.sort((a, b) => {
+        try {
+          let va: any, vb: any;
+          const ta = getKitTotals(a), tb = getKitTotals(b);
+          switch (kitSortField) {
+            case 'id_kit': va = (a as any).id_kit || 0; vb = (b as any).id_kit || 0; break;
+            case 'nome': va = (a.nome || '').toLowerCase(); vb = (b.nome || '').toLowerCase(); break;
+            case 'categoria': va = a.categoria || ''; vb = b.categoria || ''; break;
+            case 'itens': va = a.itens?.length || 0; vb = b.itens?.length || 0; break;
+            case 'atual': va = ta.atual; vb = tb.atual; break;
+            case 'minimo': va = ta.minimo; vb = tb.minimo; break;
+            case 'locacao': va = ta.locacao; vb = tb.locacao; break;
+            case 'minLocacao': va = ta.minLocacao; vb = tb.minLocacao; break;
+            case 'instalacao': va = ta.instalacao; vb = tb.instalacao; break;
+            case 'ativo': va = a.ativo ? 1 : 0; vb = b.ativo ? 1 : 0; break;
+            default: va = (a.nome || '').toLowerCase(); vb = (b.nome || '').toLowerCase();
+          }
+          if (va < vb) return kitSortDir === 'asc' ? -1 : 1;
+          if (va > vb) return kitSortDir === 'asc' ? 1 : -1;
+          return 0;
+        } catch { return 0; }
+      });
+      return result;
+    } catch (e) {
+      console.error('Error filtering kits:', e);
+      return kits;
+    }
   }, [kits, kitColumnFilters, kitSearchTerm, kitSortField, kitSortDir]);
 
   const hasKitFilters = Object.keys(kitColumnFilters).length > 0 || kitSearchTerm.trim() !== '';
@@ -638,9 +652,6 @@ export default function OrcamentoProdutos() {
     fetchAll();
   };
 
-  const catLabel = (cat: string) => GRUPOS.find(c => c.value === cat)?.label || cat;
-  const subLabel = (sub: string) => SUBGRUPOS.find(s => s.value === sub)?.label || sub;
-  const unLabel = (un: string) => UNIDADES.find(u => u.value === un)?.label || un;
 
   if (user?.role !== 'admin') {
     return <Layout><div className="p-8 text-center text-muted-foreground">Acesso restrito a administradores.</div></Layout>;

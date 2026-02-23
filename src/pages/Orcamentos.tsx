@@ -65,7 +65,7 @@ export default function Orcamentos() {
   const [reportHtml, setReportHtml] = useState('');
   const [loadingReport, setLoadingReport] = useState(false);
   const fetchData = async () => {
-    const canSeeAll = user?.role === 'admin' || user?.role === 'projetos';
+    const canSeeAll = user?.role === 'admin' || user?.role === 'projetos' || user?.role === 'gerente_comercial';
     let query = supabase.from('orcamento_sessoes').select('*').order('created_at', { ascending: false });
     if (!canSeeAll) {
       query = query.eq('vendedor_id', user!.id);
@@ -161,7 +161,7 @@ export default function Orcamentos() {
     }
   };
 
-  const isAdmin = user?.role === 'admin' || user?.role === 'projetos';
+  const isAdmin = user?.role === 'admin' || user?.role === 'projetos' || user?.role === 'gerente_comercial';
   const allowedRoles = ['admin', 'vendedor', 'gerente_comercial', 'supervisor_operacoes', 'projetos', 'implantacao'];
   if (!user || !allowedRoles.includes(user.role)) {
     return <Layout><div className="p-8 text-center text-muted-foreground">Acesso restrito.</div></Layout>;

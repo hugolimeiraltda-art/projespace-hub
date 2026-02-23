@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { SaleFormSummary } from '@/components/SaleFormSummary';
 import { AIFeedbackDialog } from '@/components/AIFeedbackDialog';
+import { ProjetoIASection } from '@/components/ProjetoIASection';
 import jsPDF from 'jspdf';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -841,6 +842,12 @@ export default function ProjectDetail() {
                 </CardContent>
               </Card>
             )}
+
+            {/* AI Proposal Section - for projects from AI chat */}
+            {(() => {
+              const match = project.observacoes_gerais?.match(/\[PROJETO_IA:([^\]]+)\]/);
+              return match ? <ProjetoIASection sessaoId={match[1]} /> : null;
+            })()}
 
             {/* AI Summary + Sale Form Summary */}
             <SaleFormSummary 

@@ -58,7 +58,7 @@ export default function OrcamentoChat() {
           setMessages(existingMsgs.map(m => ({ role: m.role as 'user' | 'assistant', content: m.content })));
           setSessionValid(true);
         } else {
-          sendMessage('Olá, estou no local para a visita técnica.', true, sid);
+          sendMessage('Olá, estou no local para realizar o orçamento.', true, sid);
         }
       })();
     } else if (token) {
@@ -376,7 +376,7 @@ export default function OrcamentoChat() {
           </Button>
           <img src={emiveLogo} alt="Emive" className="h-8" />
           <div>
-            <h1 className="text-lg font-semibold text-foreground">Visita Técnica - Orçamento</h1>
+            <h1 className="text-lg font-semibold text-foreground">Orçamento IA</h1>
             <p className="text-xs text-muted-foreground">IA guiando a coleta de dados para proposta</p>
           </div>
         </div>

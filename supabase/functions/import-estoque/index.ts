@@ -6,7 +6,6 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Mapeamento de códigos de local de estoque para cidade e tipo
 const LOCATION_CODE_MAP: Record<string, { cidade: string; tipo: string }> = {
   '135000': { cidade: 'BH', tipo: 'INSTALACAO' },
   '139000': { cidade: 'BH', tipo: 'MANUTENCAO' },
@@ -23,7 +22,6 @@ interface StockRow {
 }
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -33,7 +31,6 @@ serve(async (req) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Verify authentication
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
       return new Response(
@@ -52,7 +49,6 @@ serve(async (req) => {
       );
     }
 
-    // Check user role
     const { data: roleData, error: roleError } = await supabaseAdmin
       .from('user_roles')
       .select('role')
@@ -66,7 +62,6 @@ serve(async (req) => {
       );
     }
 
-    // Parse request body
     const { stockRows, fileName } = await req.json() as { stockRows: StockRow[]; fileName: string };
 
     if (!stockRows || !Array.isArray(stockRows) || stockRows.length === 0) {
@@ -84,14 +79,12 @@ serve(async (req) => {
       .select('*');
 
     if (locError || !locations) {
-      console.error('Error fetching locations:', locError);
       return new Response(
         JSON.stringify({ error: 'Erro ao buscar locais de estoque' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Create a map of cidade+tipo to location id
     const locationMap = new Map<string, string>();
     for (const loc of locations) {
       locationMap.set(`${loc.cidade}_${loc.tipo}`, loc.id);
@@ -100,89 +93,113 @@ serve(async (req) => {
     // Group stock by item code
     const itemMap = new Map<string, { 
       modelo: string; 
-      estoques: Map<string, number>; // localId -> quantidade
+      estoques: Map<string, number>;
     }>();
 
     for (const row of stockRows) {
       const codigo = String(row.codigo).trim();
-      if (!codigo || codigo === 'undefined' || codigo === 'null') {
-        continue;
-      }
+      if (!codigo || codigo === 'undefined' || codigo === 'null') continue;
 
-      // Get location info from code
       const locationInfo = LOCATION_CODE_MAP[row.localCode];
-      if (!locationInfo) {
-        console.log(`Código de local não mapeado: ${row.localCode}`);
-        continue;
-      }
+      if (!locationInfo) continue;
 
       const localId = locationMap.get(`${locationInfo.cidade}_${locationInfo.tipo}`);
-      if (!localId) {
-        console.log(`Local não encontrado para: ${locationInfo.cidade}_${locationInfo.tipo}`);
-        continue;
-      }
+      if (!localId) continue;
 
       if (!itemMap.has(codigo)) {
-        itemMap.set(codigo, { 
-          modelo: row.modelo || 'Sem modelo',
-          estoques: new Map()
-        });
+        itemMap.set(codigo, { modelo: row.modelo || 'Sem modelo', estoques: new Map() });
       }
 
       const item = itemMap.get(codigo)!;
-      // Accumulate stock if same item appears multiple times for same location
       const currentStock = item.estoques.get(localId) || 0;
       item.estoques.set(localId, currentStock + row.estoque);
     }
 
-    let itemsProcessed = 0;
-    let stockRecordsCreated = 0;
+    // BULK upsert all items at once
+    const itemsToUpsert = Array.from(itemMap.entries()).map(([codigo, data]) => ({
+      codigo,
+      modelo: data.modelo,
+    }));
+
+    // Upsert in chunks of 500 to avoid payload limits
+    const CHUNK_SIZE = 500;
+    for (let i = 0; i < itemsToUpsert.length; i += CHUNK_SIZE) {
+      const chunk = itemsToUpsert.slice(i, i + CHUNK_SIZE);
+      const { error: bulkItemError } = await supabaseAdmin
+        .from('estoque_itens')
+        .upsert(chunk, { onConflict: 'codigo', ignoreDuplicates: false });
+
+      if (bulkItemError) {
+        console.error('Error bulk upserting items:', bulkItemError);
+      }
+    }
+
+    // Fetch all items by their codes to get IDs
+    const allCodigos = Array.from(itemMap.keys());
+    const codigoToId = new Map<string, string>();
+    
+    for (let i = 0; i < allCodigos.length; i += 500) {
+      const chunk = allCodigos.slice(i, i + 500);
+      const { data: fetchedItems, error: fetchError } = await supabaseAdmin
+        .from('estoque_itens')
+        .select('id, codigo')
+        .in('codigo', chunk);
+
+      if (!fetchError && fetchedItems) {
+        for (const item of fetchedItems) {
+          codigoToId.set(item.codigo, item.id);
+        }
+      }
+    }
+
+    // Fetch ALL existing stock records to preserve estoque_minimo
+    const allItemIds = Array.from(codigoToId.values());
+    const existingStockMap = new Map<string, number>(); // "itemId_localId" -> estoque_minimo
+
+    for (let i = 0; i < allItemIds.length; i += 500) {
+      const chunk = allItemIds.slice(i, i + 500);
+      const { data: existingStocks } = await supabaseAdmin
+        .from('estoque')
+        .select('item_id, local_estoque_id, estoque_minimo')
+        .in('item_id', chunk);
+
+      if (existingStocks) {
+        for (const s of existingStocks) {
+          existingStockMap.set(`${s.item_id}_${s.local_estoque_id}`, s.estoque_minimo);
+        }
+      }
+    }
+
+    // Build bulk stock upsert
+    const stockToUpsert: { item_id: string; local_estoque_id: string; estoque_atual: number; estoque_minimo: number }[] = [];
 
     for (const [codigo, data] of itemMap) {
-      // Upsert item
-      const { data: existingItem, error: itemError } = await supabaseAdmin
-        .from('estoque_itens')
-        .upsert(
-          { codigo, modelo: data.modelo },
-          { onConflict: 'codigo', ignoreDuplicates: false }
-        )
-        .select()
-        .single();
+      const itemId = codigoToId.get(codigo);
+      if (!itemId) continue;
 
-      if (itemError) {
-        console.error(`Error upserting item ${codigo}:`, itemError);
-        continue;
-      }
-
-      itemsProcessed++;
-
-      // Process stock data for each location
       for (const [localId, estoqueAtual] of data.estoques) {
-        // Upsert stock record - only update estoque_atual, keep minimo as is or default to 0
-        const { data: existingStock } = await supabaseAdmin
-          .from('estoque')
-          .select('estoque_minimo')
-          .eq('item_id', existingItem.id)
-          .eq('local_estoque_id', localId)
-          .maybeSingle();
+        const key = `${itemId}_${localId}`;
+        const existingMinimo = existingStockMap.get(key) ?? 0;
+        stockToUpsert.push({
+          item_id: itemId,
+          local_estoque_id: localId,
+          estoque_atual: Math.floor(estoqueAtual),
+          estoque_minimo: existingMinimo,
+        });
+      }
+    }
 
-        const { error: stockError } = await supabaseAdmin
-          .from('estoque')
-          .upsert(
-            {
-              item_id: existingItem.id,
-              local_estoque_id: localId,
-              estoque_minimo: existingStock?.estoque_minimo ?? 0,
-              estoque_atual: Math.floor(estoqueAtual),
-            },
-            { onConflict: 'item_id,local_estoque_id', ignoreDuplicates: false }
-          );
+    let stockRecordsCreated = 0;
+    for (let i = 0; i < stockToUpsert.length; i += CHUNK_SIZE) {
+      const chunk = stockToUpsert.slice(i, i + CHUNK_SIZE);
+      const { error: stockError } = await supabaseAdmin
+        .from('estoque')
+        .upsert(chunk, { onConflict: 'item_id,local_estoque_id', ignoreDuplicates: false });
 
-        if (stockError) {
-          console.error(`Error upserting stock for ${codigo} at ${localId}:`, stockError);
-        } else {
-          stockRecordsCreated++;
-        }
+      if (stockError) {
+        console.error('Error bulk upserting stock:', stockError);
+      } else {
+        stockRecordsCreated += chunk.length;
       }
     }
 
@@ -191,17 +208,17 @@ serve(async (req) => {
       .from('estoque_importacoes')
       .insert({
         arquivo_nome: fileName,
-        itens_importados: itemsProcessed,
+        itens_importados: itemMap.size,
         importado_por: user.id,
       });
 
-    console.log(`Import completed: ${itemsProcessed} items, ${stockRecordsCreated} stock records`);
+    console.log(`Import completed: ${itemMap.size} items, ${stockRecordsCreated} stock records`);
 
     return new Response(
       JSON.stringify({
         success: true,
-        message: `Importação concluída: ${itemsProcessed} produtos processados, ${stockRecordsCreated} registros de estoque criados/atualizados.`,
-        itemsProcessed,
+        message: `Importação concluída: ${itemMap.size} produtos processados, ${stockRecordsCreated} registros de estoque criados/atualizados.`,
+        itemsProcessed: itemMap.size,
         stockRecordsCreated,
       }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

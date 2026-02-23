@@ -326,7 +326,7 @@ export default function PropostaView({ data, onVoltar }: PropostaViewProps) {
             <h2 className="text-lg font-semibold text-foreground">EAP — Detalhamento por Ambiente</h2>
             <p className="text-sm text-muted-foreground">Estrutura analítica do projeto com equipamentos e funcionamento por ambiente.</p>
             <div className="grid gap-3 md:grid-cols-2">
-              {itens.ambientes.map((amb, i) => (
+              {ambientes.map((amb, i) => (
                 <Card key={i} className="border-l-4 border-l-primary/60">
                   <CardContent className="p-4 space-y-3">
                     <div className="flex items-center gap-2">

@@ -24,10 +24,14 @@ function drawTableRows(doc: jsPDF, y: number, items: PropostaItem[], pageWidth: 
   for (const item of items) {
     if (y > 270) { doc.addPage(); y = 20; }
     doc.text(String(item.qtd), 17, y);
-    const nome = item.nome.length > 50 ? item.nome.substring(0, 50) + '...' : item.nome;
+    const maxNomeWidth = 90;
+    let nome = item.nome;
+    while (doc.getTextWidth(nome) > maxNomeWidth && nome.length > 3) {
+      nome = nome.substring(0, nome.length - 4) + '...';
+    }
     doc.text(nome, 35, y);
-    doc.text(item.codigo || '-', 140, y);
-    doc.text(`R$ ${(item.valor_locacao || 0).toFixed(2)}`, pageWidth - 55, y, { align: 'right' });
+    doc.text(item.codigo || '-', 130, y);
+    doc.text(`R$ ${(item.valor_locacao || 0).toFixed(2)}`, pageWidth - 50, y, { align: 'right' });
     doc.text(`R$ ${((item.valor_locacao || 0) * item.qtd).toFixed(2)}`, pageWidth - 17, y, { align: 'right' });
     // Light row separator
     doc.setDrawColor(230, 230, 230);
@@ -88,8 +92,8 @@ export async function generatePropostaPDF(data: PropostaData) {
   const cols = [
     { label: 'Qtd', x: 17 },
     { label: 'Descrição', x: 35 },
-    { label: 'Código', x: 140 },
-    { label: 'Locação (un)', x: pageWidth - 55, align: 'right' },
+    { label: 'Código', x: 130 },
+    { label: 'Locação (un)', x: pageWidth - 50, align: 'right' },
     { label: 'Total', x: pageWidth - 17, align: 'right' },
   ];
 
@@ -146,26 +150,8 @@ export async function generatePropostaPDF(data: PropostaData) {
       doc.text('SERVIÇOS', margin, y);
       doc.setTextColor(0, 0, 0);
       y += 6;
-      const servicoCols = [
-        { label: 'Qtd', x: 17 },
-        { label: 'Descrição', x: 35 },
-        { label: 'Código', x: 140 },
-        { label: 'Locação (un)', x: pageWidth - 55, align: 'right' },
-        { label: 'Total', x: pageWidth - 17, align: 'right' },
-      ];
-      y = drawTableHeader(doc, y, servicoCols);
-      doc.setFontSize(8);
-      for (const item of itens.servicos) {
-        if (y > 270) { doc.addPage(); y = 20; }
-        doc.text(String(item.qtd), 17, y);
-        doc.text(item.nome.length > 50 ? item.nome.substring(0, 50) + '...' : item.nome, 35, y);
-        doc.text(item.codigo || '-', 140, y);
-        doc.text(`R$ ${(item.valor_locacao || 0).toFixed(2)}`, pageWidth - 55, y, { align: 'right' });
-        doc.text(`R$ ${((item.valor_locacao || 0) * item.qtd).toFixed(2)}`, pageWidth - 17, y, { align: 'right' });
-        doc.setDrawColor(230, 230, 230);
-        doc.line(15, y + 2, pageWidth - 15, y + 2);
-        y += 6;
-      }
+      y = drawTableHeader(doc, y, cols);
+      y = drawTableRows(doc, y, itens.servicos, pageWidth);
       y += 4;
     }
 

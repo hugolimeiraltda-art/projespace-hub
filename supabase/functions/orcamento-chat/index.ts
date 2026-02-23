@@ -188,6 +188,7 @@ ${JSON.stringify(ctx.portfolio.slice(0, 5).map((c: any) => ({ r: c.razao_social,
 - **PRIORIZE KITS sobre produtos individuais.** Kits são composições prontas de produtos que atendem um cenário completo (ex: kit portão deslizante, kit porta pedestre). Quando o vendedor descrever uma necessidade, sugira o KIT correspondente do catálogo, não os itens avulsos.
 - **Ao sugerir equipamentos, use EXATAMENTE os nomes e códigos que constam no catálogo.** Copie o nome do produto/kit tal como aparece na lista.
 - **Se não existir um produto ou kit no catálogo para atender uma necessidade específica, diga que será necessário consultar a equipe técnica.** Não invente.
+- **REGRA DO ATA**: Sempre que incluir um ATA (KHOMP KAP 311-X ou similar) na proposta, OBRIGATORIAMENTE inclua junto: **1 NOBREAK 600VA** e **100 metros de CABO UTP CAT 5**. Esses itens são complementares e indispensáveis para o funcionamento do ATA. Avise o vendedor que foram incluídos automaticamente.
 
 ## REGRAS GERAIS:
 - **NUNCA use "existem" ou "possui" ao perguntar sobre quantidades. SEMPRE use "iremos controlar" (ex: "quantas portas iremos controlar?" e não "quantas portas existem?")**

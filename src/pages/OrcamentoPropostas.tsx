@@ -341,9 +341,9 @@ export default function OrcamentoPropostas() {
 
               return (
                 <Card key={sessao.id} className="hover:shadow-md transition-shadow">
-                  <CardContent className="py-4">
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex-1 min-w-0">
+                   <CardContent className="py-4">
+                    <div className="space-y-3">
+                      <div>
                         <div className="flex items-center gap-2 flex-wrap">
                           <h3 className="font-semibold text-foreground">{sessao.nome_cliente}</h3>
                           {/* Avaliação status badge */}
@@ -373,35 +373,36 @@ export default function OrcamentoPropostas() {
                             ? format(new Date(sessao.proposta_gerada_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })
                             : format(new Date(sessao.created_at), "dd/MM/yyyy", { locale: ptBR })}
                         </p>
-
-                        {/* Existing feedbacks */}
-                        {hasFeedback && (
-                          <div className="mt-3 space-y-2">
-                            {sessFeedbacks.map(fb => (
-                              <div key={fb.id} className="p-2 bg-muted/50 rounded-lg border text-sm">
-                                <div className="flex items-center gap-2 flex-wrap">
-                                  {getAdequacyBadge(fb.proposta_adequada)}
-                                  {fb.nota_precisao && (
-                                    <span className="flex items-center gap-0.5 text-xs text-muted-foreground">
-                                      {[1, 2, 3, 4, 5].map(s => (
-                                        <Star key={s} className={`w-3 h-3 ${s <= fb.nota_precisao! ? 'fill-primary text-primary' : 'text-muted-foreground/20'}`} />
-                                      ))}
-                                    </span>
-                                  )}
-                                  <span className="text-xs text-muted-foreground">
-                                    por {fb.created_by_name} em {format(new Date(fb.created_at), 'dd/MM/yy', { locale: ptBR })}
-                                  </span>
-                                </div>
-                                {fb.acertos && <p className="mt-1 text-xs"><span className="text-green-600 font-medium">Acertos:</span> {fb.acertos}</p>}
-                                {fb.erros && <p className="mt-0.5 text-xs"><span className="text-red-600 font-medium">Erros:</span> {fb.erros}</p>}
-                                {fb.sugestoes && <p className="mt-0.5 text-xs"><span className="text-blue-600 font-medium">Sugestões:</span> {fb.sugestoes}</p>}
-                              </div>
-                            ))}
-                          </div>
-                        )}
                       </div>
 
-                      <div className="flex flex-col gap-2 shrink-0">
+                      {/* Existing feedbacks */}
+                      {hasFeedback && (
+                        <div className="space-y-2">
+                          {sessFeedbacks.map(fb => (
+                            <div key={fb.id} className="p-2 bg-muted/50 rounded-lg border text-sm">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                {getAdequacyBadge(fb.proposta_adequada)}
+                                {fb.nota_precisao && (
+                                  <span className="flex items-center gap-0.5 text-xs text-muted-foreground">
+                                    {[1, 2, 3, 4, 5].map(s => (
+                                      <Star key={s} className={`w-3 h-3 ${s <= fb.nota_precisao! ? 'fill-primary text-primary' : 'text-muted-foreground/20'}`} />
+                                    ))}
+                                  </span>
+                                )}
+                                <span className="text-xs text-muted-foreground">
+                                  por {fb.created_by_name} em {format(new Date(fb.created_at), 'dd/MM/yy', { locale: ptBR })}
+                                </span>
+                              </div>
+                              {fb.acertos && <p className="mt-1 text-xs"><span className="text-green-600 font-medium">Acertos:</span> {fb.acertos}</p>}
+                              {fb.erros && <p className="mt-0.5 text-xs"><span className="text-red-600 font-medium">Erros:</span> {fb.erros}</p>}
+                              {fb.sugestoes && <p className="mt-0.5 text-xs"><span className="text-blue-600 font-medium">Sugestões:</span> {fb.sugestoes}</p>}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Buttons - horizontal */}
+                      <div className="flex flex-wrap gap-2">
                         <Button variant="outline" size="sm" onClick={() => handleVerProposta(sessao)}>
                           <Eye className="w-4 h-4 mr-1" />
                           Ver Proposta
@@ -418,7 +419,7 @@ export default function OrcamentoPropostas() {
                               onClick={() => openFeedback(sessao)}
                             >
                               <ClipboardCheck className="w-4 h-4 mr-1" />
-                              {hasFeedback ? 'Nova Avaliação' : 'Avaliação de Proposta'}
+                              {hasFeedback ? 'Nova Avaliação' : 'Avaliação'}
                             </Button>
                             <Button
                               size="sm"
@@ -427,7 +428,7 @@ export default function OrcamentoPropostas() {
                               onClick={() => openProjetoDialog(sessao)}
                             >
                               <FolderPlus className="w-4 h-4 mr-1" />
-                              Abrir Novo Projeto
+                              Abrir Projeto
                             </Button>
                           </>
                         )}

@@ -5,7 +5,8 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import {
-  FileText, Download, Mail, Share2, ArrowLeft, Table2, Loader2, MessageSquare, ChevronDown, ChevronUp, ChevronRight
+  FileText, Download, Mail, Share2, ArrowLeft, Table2, Loader2, MessageSquare, ChevronDown, ChevronUp, ChevronRight,
+  MapPin, DoorOpen, Car, Shield, Camera, Waves, PartyPopper, UtensilsCrossed, Baby, Dumbbell, Flame, Laptop, TreePine, Trophy, LayoutGrid
 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -24,6 +25,13 @@ export type PropostaItem = {
   desconto?: number;
 };
 
+export type AmbienteItem = {
+  nome: string;
+  tipo: string;
+  equipamentos: string[];
+  descricao_funcionamento: string;
+};
+
 export type PropostaData = {
   proposta: string;
   itens: {
@@ -33,6 +41,7 @@ export type PropostaData = {
     servicos: PropostaItem[];
     mensalidade_total: number;
     taxa_conexao_total: number;
+    ambientes?: AmbienteItem[];
   } | null;
   itensExpandidos: any[];
   fotos: { url: string; nome: string }[];
@@ -63,6 +72,27 @@ export default function PropostaView({ data, onVoltar }: PropostaViewProps) {
       else next.add(index);
       return next;
     });
+  };
+
+  const getAmbienteIcon = (tipo: string) => {
+    const icons: Record<string, React.ReactNode> = {
+      porta_externa: <DoorOpen className="h-4 w-4" />,
+      porta_interna: <DoorOpen className="h-4 w-4" />,
+      portao: <Car className="h-4 w-4" />,
+      central: <LayoutGrid className="h-4 w-4" />,
+      perimetro: <Shield className="h-4 w-4" />,
+      cftv: <Camera className="h-4 w-4" />,
+      piscina: <Waves className="h-4 w-4" />,
+      salao_festas: <PartyPopper className="h-4 w-4" />,
+      area_gourmet: <UtensilsCrossed className="h-4 w-4" />,
+      brinquedoteca: <Baby className="h-4 w-4" />,
+      academia: <Dumbbell className="h-4 w-4" />,
+      churrasqueira: <Flame className="h-4 w-4" />,
+      coworking: <Laptop className="h-4 w-4" />,
+      playground: <TreePine className="h-4 w-4" />,
+      quadra: <Trophy className="h-4 w-4" />,
+    };
+    return icons[tipo] || <MapPin className="h-4 w-4" />;
   };
 
   // Get kit component items from itensExpandidos
@@ -272,6 +302,38 @@ export default function PropostaView({ data, onVoltar }: PropostaViewProps) {
                 </div>
               </CardContent>
             </Card>
+          </div>
+        )}
+
+        {/* Ambientes / EAP */}
+        {itens?.ambientes && itens.ambientes.length > 0 && (
+          <div className="space-y-4">
+            <h2 className="text-lg font-semibold text-foreground">EAP — Detalhamento por Ambiente</h2>
+            <p className="text-sm text-muted-foreground">Estrutura analítica do projeto com equipamentos e funcionamento por ambiente.</p>
+            <div className="grid gap-3 md:grid-cols-2">
+              {itens.ambientes.map((amb, i) => (
+                <Card key={i} className="border-l-4 border-l-primary/60">
+                  <CardContent className="p-4 space-y-3">
+                    <div className="flex items-center gap-2">
+                      <span className="text-primary">{getAmbienteIcon(amb.tipo)}</span>
+                      <h3 className="font-semibold text-foreground">{amb.nome}</h3>
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium text-muted-foreground mb-1">Equipamentos:</p>
+                      <div className="flex flex-wrap gap-1">
+                        {amb.equipamentos.map((eq, j) => (
+                          <Badge key={j} variant="secondary" className="text-xs font-normal">{eq}</Badge>
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium text-muted-foreground mb-1">Funcionamento:</p>
+                      <p className="text-sm text-foreground leading-relaxed">{amb.descricao_funcionamento}</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
           </div>
         )}
 

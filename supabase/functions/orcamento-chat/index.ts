@@ -357,7 +357,21 @@ O JSON deve seguir este formato EXATO:
   "aproveitados": [{"nome": "NOME DO PRODUTO", "codigo": "CÓD", "id_produto": 789, "qtd": 5, "valor_locacao": 15.00, "valor_instalacao": 10.00, "desconto": 50}],
   "servicos": [{"nome": "NOME DO SERVIÇO", "codigo": "CÓD", "id_produto": 101, "qtd": 1, "valor_locacao": 0, "valor_instalacao": 80.00}],
   "mensalidade_total": 999.00,
-  "taxa_conexao_total": 999.00
+  "taxa_conexao_total": 999.00,
+  "ambientes": [
+    {
+      "nome": "Porta Externa (Eclusa)",
+      "tipo": "porta_externa",
+      "equipamentos": ["KIT PORTA PEDESTRE FACIAL COM SAÍDA AUTENTICADA", "CAMERA BULLET TURBO HD 2.0MP"],
+      "descricao_funcionamento": "O pedestre se posiciona frente ao leitor facial externo. Após reconhecimento, a porta externa abre. O pedestre entra na eclusa e aguarda a porta externa fechar. Em seguida, o leitor facial interno libera a porta interna. A câmera registra todo o fluxo."
+    },
+    {
+      "nome": "Portão Deslizante - Entrada Principal",
+      "tipo": "portao",
+      "equipamentos": ["KIT PORTÃO DE GARAGEM DESLIZANTE", "CAMERA BULLET TURBO HD 2.0MP"],
+      "descricao_funcionamento": "Veículo se aproxima e é identificado por tag veicular ou leitor facial no totem. O portão deslizante abre automaticamente. Câmera registra placa e motorista. Após passagem, portão fecha automaticamente com sensor de presença."
+    }
+  ]
 }
 
 REGRAS para o JSON:
@@ -367,7 +381,13 @@ REGRAS para o JSON:
 - "servicos": produtos da categoria/subgrupo "Serviço" (ex: instalação, manutenção)
 - valor_locacao e valor_instalacao devem ser os valores UNITÁRIOS (já com desconto se aproveitado)
 - Para itens aproveitados, os valores já devem estar com 50% aplicado
-- Use os preços EXATOS do catálogo`;
+- Use os preços EXATOS do catálogo
+- "ambientes": OBRIGATÓRIO. Liste TODOS os ambientes do condomínio onde haverá equipamentos instalados. Os tipos possíveis são:
+  - **Áreas comuns**: porta_externa, porta_interna, portao, central, perimetro, cftv
+  - **Ambientes reserváveis**: piscina, salao_festas, area_gourmet, brinquedoteca, academia, churrasqueira, coworking, playground, quadra, outros
+  - Para cada ambiente, liste os equipamentos que serão instalados ali (nomes exatos do catálogo) e descreva em 2-4 frases como o sistema vai funcionar naquele ambiente (fluxo operacional para o projetista entender)
+  - Agrupe por ambiente físico real (ex: se há 2 portões, crie 2 entradas separadas)
+  - Esta seção serve como EAP (Estrutura Analítica do Projeto) para o projetista
 
       const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
         method: "POST",

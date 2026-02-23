@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import {
-  FileText, Download, Table2, Loader2, Bot,
+  FileText, Download, Table2, Loader2, Bot, Image as ImageIcon,
   DoorOpen, Car, Shield, Camera, Waves, PartyPopper,
   UtensilsCrossed, Baby, Dumbbell, Flame, Laptop, TreePine, Trophy, LayoutGrid, MapPin
 } from 'lucide-react';
@@ -42,6 +42,7 @@ export function ProjetoIASection({ sessaoId }: ProjetoIASectionProps) {
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [propostaData, setPropostaData] = useState<PropostaData | null>(null);
+  const [allMidias, setAllMidias] = useState<{ arquivo_url: string; nome_arquivo: string; descricao: string | null; tipo: string }[]>([]);
   const [gerando, setGerando] = useState<string | null>(null);
 
   useEffect(() => {
@@ -68,14 +69,15 @@ export function ProjetoIASection({ sessaoId }: ProjetoIASectionProps) {
           parsed = { proposta: sessao.proposta_gerada, itens: null, itensExpandidos: [] };
         }
 
-        // Fetch photos
+        // Fetch all media (photos and others)
         const { data: midias } = await supabase
           .from('orcamento_midias')
-          .select('arquivo_url, nome_arquivo')
+          .select('arquivo_url, nome_arquivo, descricao, tipo')
           .eq('sessao_id', sessaoId)
-          .eq('tipo', 'foto');
+          .order('created_at', { ascending: true });
 
-        const fotos = (midias || []).map(m => ({ url: m.arquivo_url, nome: m.nome_arquivo }));
+        const fotos = (midias || []).filter(m => m.tipo === 'foto').map(m => ({ url: m.arquivo_url, nome: m.nome_arquivo }));
+        const todasMidias = midias || [];
 
         const data: PropostaData = {
           proposta: parsed.proposta || '',
@@ -92,6 +94,7 @@ export function ProjetoIASection({ sessaoId }: ProjetoIASectionProps) {
         };
 
         setPropostaData(data);
+        setAllMidias(todasMidias);
       } catch (err) {
         console.error('Error fetching AI proposal data:', err);
       }
@@ -317,6 +320,38 @@ export function ProjetoIASection({ sessaoId }: ProjetoIASectionProps) {
                     <p className="text-xs text-muted-foreground leading-relaxed">
                       {amb.descricao_funcionamento}
                     </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* Photos from visit */}
+        {allMidias.filter(m => m.tipo === 'foto').length > 0 && (
+          <>
+            <Separator />
+            <div>
+              <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+                <ImageIcon className="h-4 w-4 text-primary" />
+                Fotos da Visita Técnica
+              </h3>
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                {allMidias.filter(m => m.tipo === 'foto').map((foto, i) => (
+                  <div key={i} className="group relative border rounded-lg overflow-hidden bg-muted/30">
+                    <a href={foto.arquivo_url} target="_blank" rel="noopener noreferrer">
+                      <img
+                        src={foto.arquivo_url}
+                        alt={foto.descricao || foto.nome_arquivo}
+                        className="w-full h-32 object-cover group-hover:scale-105 transition-transform duration-200"
+                        loading="lazy"
+                      />
+                    </a>
+                    <div className="p-1.5">
+                      <p className="text-[10px] text-muted-foreground truncate" title={foto.descricao || foto.nome_arquivo}>
+                        {foto.descricao || foto.nome_arquivo}
+                      </p>
+                    </div>
                   </div>
                 ))}
               </div>

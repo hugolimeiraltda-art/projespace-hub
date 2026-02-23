@@ -59,14 +59,13 @@ export function ProjetoIASection({ sessaoId }: ProjetoIASectionProps) {
           return;
         }
 
-        // Parse proposta JSON
+        // Parse proposta - could be JSON or plain text
         let parsed: any = null;
         try {
           parsed = JSON.parse(sessao.proposta_gerada);
         } catch {
-          // proposta_gerada might be plain text
-          setLoading(false);
-          return;
+          // proposta_gerada is plain text markdown
+          parsed = { proposta: sessao.proposta_gerada, itens: null, itensExpandidos: [] };
         }
 
         // Fetch photos

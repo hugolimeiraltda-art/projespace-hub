@@ -1,0 +1,1 @@
+UPDATE projects SET observacoes = '[PROJETO_IA:734f94da-34b6-4028-b4ab-fbc1a74ce7fe]' WHERE id = 'd3803e5d-804c-4655-88ba-e2d955fa4c7d';

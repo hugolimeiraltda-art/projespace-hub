@@ -161,8 +161,8 @@ export default function Orcamentos() {
     }
   };
 
-  const isAdmin = user?.role === 'admin';
-  const allowedRoles = ['admin', 'vendedor', 'gerente_comercial', 'supervisor_operacoes'];
+  const isAdmin = user?.role === 'admin' || user?.role === 'projetos';
+  const allowedRoles = ['admin', 'vendedor', 'gerente_comercial', 'supervisor_operacoes', 'projetos', 'implantacao'];
   if (!user || !allowedRoles.includes(user.role)) {
     return <Layout><div className="p-8 text-center text-muted-foreground">Acesso restrito.</div></Layout>;
   }

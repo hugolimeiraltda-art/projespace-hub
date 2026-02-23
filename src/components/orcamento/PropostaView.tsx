@@ -161,32 +161,37 @@ export default function PropostaView({ data, onVoltar }: PropostaViewProps) {
           <div className="space-y-4">
             <h2 className="text-lg font-semibold text-foreground">Detalhamento de Equipamentos</h2>
 
-            {/* Kits */}
-            {itens.kits && itens.kits.length > 0 && (
-              <Card>
+            {/* Reusable table renderer */}
+            {[
+              { label: 'Kits', badge: <Badge variant="default" className="bg-primary">Kits</Badge>, items: itens.kits, valorLabel: 'Locação (un)' },
+              { label: 'Avulsos', badge: <Badge variant="secondary">Itens Avulsos</Badge>, items: itens.avulsos, valorLabel: 'Locação (un)' },
+              { label: 'Aproveitados', badge: <Badge className="bg-accent text-accent-foreground">Aproveitados (50%)</Badge>, items: itens.aproveitados, valorLabel: 'Locação c/ desc.', cardClass: 'border-accent/30' },
+              { label: 'Servicos', badge: <Badge variant="outline">Serviços</Badge>, items: itens.servicos, valorLabel: 'Locação (un)' },
+            ].filter(g => g.items && g.items.length > 0).map((group) => (
+              <Card key={group.label} className={group.cardClass}>
                 <CardContent className="p-4">
                   <div className="flex items-center gap-2 mb-3">
-                    <Badge variant="default" className="bg-primary">Kits</Badge>
+                    {group.badge}
                   </div>
                   <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
+                    <table className="w-full text-sm table-fixed">
                       <thead>
                         <tr className="border-b">
-                          <th className="text-left py-2 pr-2">Qtd</th>
+                          <th className="text-left py-2 pr-2 w-12">Qtd</th>
                           <th className="text-left py-2 pr-2">Descrição</th>
-                          <th className="text-left py-2 pr-2">Código</th>
-                          <th className="text-right py-2">Locação (un)</th>
-                          <th className="text-right py-2">Total</th>
+                          <th className="text-left py-2 pr-2 w-20">Código</th>
+                          <th className="text-right py-2 pl-2 w-28 whitespace-nowrap">{group.valorLabel}</th>
+                          <th className="text-right py-2 pl-2 w-28">Total</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {itens.kits.map((item, i) => (
+                        {group.items!.map((item, i) => (
                           <tr key={i} className="border-b last:border-0">
                             <td className="py-2 pr-2">{item.qtd}</td>
-                            <td className="py-2 pr-2 font-medium">{item.nome}</td>
+                            <td className="py-2 pr-2 font-medium truncate" title={item.nome}>{item.nome}</td>
                             <td className="py-2 pr-2 text-muted-foreground">{item.codigo || '-'}</td>
-                            <td className="py-2 text-right">{formatBRL(item.valor_locacao || 0)}</td>
-                            <td className="py-2 text-right font-medium">{formatBRL((item.valor_locacao || 0) * item.qtd)}</td>
+                            <td className="py-2 pl-2 text-right whitespace-nowrap">{formatBRL(item.valor_locacao || 0)}</td>
+                            <td className="py-2 pl-2 text-right font-medium whitespace-nowrap">{formatBRL((item.valor_locacao || 0) * item.qtd)}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -194,112 +199,7 @@ export default function PropostaView({ data, onVoltar }: PropostaViewProps) {
                   </div>
                 </CardContent>
               </Card>
-            )}
-
-            {/* Itens Avulsos */}
-            {itens.avulsos && itens.avulsos.length > 0 && (
-              <Card>
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-2 mb-3">
-                    <Badge variant="secondary">Itens Avulsos</Badge>
-                  </div>
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr className="border-b">
-                          <th className="text-left py-2 pr-2">Qtd</th>
-                          <th className="text-left py-2 pr-2">Descrição</th>
-                          <th className="text-left py-2 pr-2">Código</th>
-                          <th className="text-right py-2">Locação (un)</th>
-                          <th className="text-right py-2">Total</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {itens.avulsos.map((item, i) => (
-                          <tr key={i} className="border-b last:border-0">
-                            <td className="py-2 pr-2">{item.qtd}</td>
-                            <td className="py-2 pr-2 font-medium">{item.nome}</td>
-                            <td className="py-2 pr-2 text-muted-foreground">{item.codigo || '-'}</td>
-                            <td className="py-2 text-right">{formatBRL(item.valor_locacao || 0)}</td>
-                            <td className="py-2 text-right font-medium">{formatBRL((item.valor_locacao || 0) * item.qtd)}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Itens Aproveitados */}
-            {itens.aproveitados && itens.aproveitados.length > 0 && (
-              <Card className="border-accent/30">
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-2 mb-3">
-                    <Badge className="bg-accent text-accent-foreground">Itens Aproveitados (50%)</Badge>
-                  </div>
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr className="border-b">
-                          <th className="text-left py-2 pr-2">Qtd</th>
-                          <th className="text-left py-2 pr-2">Descrição</th>
-                          <th className="text-left py-2 pr-2">Código</th>
-                          <th className="text-right py-2">Locação (un) c/ desc.</th>
-                          <th className="text-right py-2">Total</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {itens.aproveitados.map((item, i) => (
-                          <tr key={i} className="border-b last:border-0">
-                            <td className="py-2 pr-2">{item.qtd}</td>
-                            <td className="py-2 pr-2 font-medium">{item.nome}</td>
-                            <td className="py-2 pr-2 text-muted-foreground">{item.codigo || '-'}</td>
-                            <td className="py-2 text-right">{formatBRL(item.valor_locacao || 0)}</td>
-                            <td className="py-2 text-right font-medium">{formatBRL((item.valor_locacao || 0) * item.qtd)}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Serviços */}
-            {itens.servicos && itens.servicos.length > 0 && (
-              <Card>
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-2 mb-3">
-                    <Badge variant="outline">Serviços</Badge>
-                  </div>
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr className="border-b">
-                          <th className="text-left py-2 pr-2">Qtd</th>
-                          <th className="text-left py-2 pr-2">Descrição</th>
-                          <th className="text-left py-2 pr-2">Código</th>
-                          <th className="text-right py-2">Locação (un)</th>
-                          <th className="text-right py-2">Total</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {itens.servicos.map((item, i) => (
-                          <tr key={i} className="border-b last:border-0">
-                            <td className="py-2 pr-2">{item.qtd}</td>
-                            <td className="py-2 pr-2 font-medium">{item.nome}</td>
-                            <td className="py-2 pr-2 text-muted-foreground">{item.codigo || '-'}</td>
-                            <td className="py-2 text-right">{formatBRL(item.valor_locacao || 0)}</td>
-                            <td className="py-2 text-right font-medium">{formatBRL((item.valor_locacao || 0) * item.qtd)}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
+            ))}
 
             {/* Totals */}
             <Card className="bg-muted/50">

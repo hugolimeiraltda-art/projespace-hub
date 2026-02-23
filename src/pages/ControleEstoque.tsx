@@ -339,100 +339,172 @@ export default function ControleEstoque() {
         return;
       }
 
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        setImportStatus({
-          stage: 'error',
-          progress: 100,
-          message: 'Sessão expirada',
-          details: 'Por favor, faça login novamente.',
-        });
-        setIsImporting(false);
-        return;
+      setImportStatus({
+        stage: 'uploading',
+        progress: 70,
+        message: 'Agrupando itens...',
+        details: `${stockRows.length} registros para processar`,
+      });
+
+      // Group stock by item code locally
+      const itemMap = new Map<string, { modelo: string; estoques: Map<string, number> }>();
+
+      // Get locations from DB
+      const { data: locations, error: locError } = await supabase
+        .from('locais_estoque')
+        .select('*');
+
+      if (locError || !locations) {
+        throw new Error('Erro ao buscar locais de estoque');
       }
 
-      // Process in batches - server handles bulk operations efficiently
-      const BATCH_SIZE = 1000;
-      const batches = [];
-      for (let i = 0; i < stockRows.length; i += BATCH_SIZE) {
-        batches.push(stockRows.slice(i, i + BATCH_SIZE));
+      const locationMap = new Map<string, string>();
+      for (const loc of locations) {
+        locationMap.set(`${loc.cidade}_${loc.tipo}`, loc.id);
       }
 
-      let totalItemsProcessed = 0;
-      let totalStockRecords = 0;
-      let hasError = false;
+      for (const row of stockRows) {
+        const codigo = String(row.codigo).trim();
+        if (!codigo || codigo === 'undefined' || codigo === 'null') continue;
 
-      for (let batchIndex = 0; batchIndex < batches.length; batchIndex++) {
-        const batch = batches[batchIndex];
-        const progressPercent = 75 + Math.round((batchIndex / batches.length) * 20);
+        const locationInfo = LOCATION_CODE_MAP[row.localCode];
+        if (!locationInfo) continue;
 
-        setImportStatus({
-          stage: 'uploading',
-          progress: progressPercent,
-          message: `Enviando lote ${batchIndex + 1} de ${batches.length}...`,
-          details: `${batch.length} registros neste lote`,
-          itemsProcessed: totalItemsProcessed,
-          totalItems: stockRows.length,
-        });
+        const localId = locationMap.get(`${locationInfo.cidade}_${locationInfo.tipo}`);
+        if (!localId) continue;
 
-        console.log(`Enviando lote ${batchIndex + 1}/${batches.length} com ${batch.length} registros`);
+        if (!itemMap.has(codigo)) {
+          itemMap.set(codigo, { modelo: row.modelo || 'Sem modelo', estoques: new Map() });
+        }
 
-        try {
-          const { data: result, error } = await supabase.functions.invoke('import-estoque', {
-            body: { stockRows: batch, fileName: file.name },
-          });
+        const item = itemMap.get(codigo)!;
+        const currentStock = item.estoques.get(localId) || 0;
+        item.estoques.set(localId, currentStock + row.estoque);
+      }
 
-          if (error) {
-            console.error('Import error on batch:', batchIndex + 1, error);
-            let errorMessage = error.message || 'Ocorreu um erro ao importar os dados.';
-            
-            if (errorMessage.includes('Failed to fetch') || errorMessage.includes('NetworkError')) {
-              errorMessage = 'Timeout ou erro de conexão. Tente novamente em alguns instantes.';
-            }
-            
-            setImportStatus({
-              stage: 'error',
-              progress: 100,
-              message: `Erro no lote ${batchIndex + 1}`,
-              details: errorMessage,
-            });
-            hasError = true;
-            break;
-          } else {
-            totalItemsProcessed += result.itemsProcessed || 0;
-            totalStockRecords += result.stockRecordsCreated || 0;
-          }
-        } catch (invokeError: any) {
-          console.error('Edge function invoke error on batch:', batchIndex + 1, invokeError);
-          let errorDetail = 'Falha ao comunicar com o servidor.';
-          
-          if (invokeError?.message?.includes('Failed to fetch')) {
-            errorDetail = 'Timeout ou erro de conexão. Tente novamente em alguns instantes.';
-          } else if (invokeError?.message) {
-            errorDetail = invokeError.message;
-          }
-          
-          setImportStatus({
-            stage: 'error',
-            progress: 100,
-            message: `Erro no lote ${batchIndex + 1}`,
-            details: errorDetail,
-          });
-          hasError = true;
-          break;
+      const totalItems = itemMap.size;
+      console.log(`Agrupados ${totalItems} itens únicos`);
+
+      setImportStatus({
+        stage: 'uploading',
+        progress: 75,
+        message: `Salvando ${totalItems} produtos...`,
+        details: 'Inserindo/atualizando itens no banco',
+      });
+
+      // Bulk upsert all items
+      const itemsToUpsert = Array.from(itemMap.entries()).map(([codigo, data]) => ({
+        codigo,
+        modelo: data.modelo,
+      }));
+
+      const CHUNK = 500;
+      for (let i = 0; i < itemsToUpsert.length; i += CHUNK) {
+        const chunk = itemsToUpsert.slice(i, i + CHUNK);
+        const { error } = await supabase
+          .from('estoque_itens')
+          .upsert(chunk, { onConflict: 'codigo', ignoreDuplicates: false });
+        if (error) console.error('Upsert items error:', error);
+      }
+
+      setImportStatus({
+        stage: 'uploading',
+        progress: 82,
+        message: 'Buscando IDs dos produtos...',
+      });
+
+      // Fetch all item IDs
+      const allCodigos = Array.from(itemMap.keys());
+      const codigoToId = new Map<string, string>();
+
+      for (let i = 0; i < allCodigos.length; i += CHUNK) {
+        const chunk = allCodigos.slice(i, i + CHUNK);
+        const { data: fetched } = await supabase
+          .from('estoque_itens')
+          .select('id, codigo')
+          .in('codigo', chunk);
+        if (fetched) {
+          for (const item of fetched) codigoToId.set(item.codigo, item.id);
         }
       }
 
-      if (!hasError) {
-        setImportStatus({
-          stage: 'success',
-          progress: 100,
-          message: 'Importação concluída com sucesso!',
-          details: `${totalItemsProcessed} produtos processados, ${totalStockRecords} registros de estoque atualizados.`,
-          itemsProcessed: totalItemsProcessed,
-        });
-        refresh();
+      setImportStatus({
+        stage: 'uploading',
+        progress: 87,
+        message: 'Carregando estoques mínimos...',
+      });
+
+      // Fetch existing stock to preserve estoque_minimo
+      const allItemIds = Array.from(codigoToId.values());
+      const existingMinMap = new Map<string, number>();
+
+      for (let i = 0; i < allItemIds.length; i += CHUNK) {
+        const chunk = allItemIds.slice(i, i + CHUNK);
+        const { data: existing } = await supabase
+          .from('estoque')
+          .select('item_id, local_estoque_id, estoque_minimo')
+          .in('item_id', chunk);
+        if (existing) {
+          for (const s of existing) {
+            existingMinMap.set(`${s.item_id}_${s.local_estoque_id}`, s.estoque_minimo);
+          }
+        }
       }
+
+      setImportStatus({
+        stage: 'uploading',
+        progress: 92,
+        message: 'Atualizando estoques...',
+      });
+
+      // Build and upsert stock records
+      const stockToUpsert: { item_id: string; local_estoque_id: string; estoque_atual: number; estoque_minimo: number }[] = [];
+
+      for (const [codigo, data] of itemMap) {
+        const itemId = codigoToId.get(codigo);
+        if (!itemId) continue;
+        for (const [localId, estoqueAtual] of data.estoques) {
+          const key = `${itemId}_${localId}`;
+          stockToUpsert.push({
+            item_id: itemId,
+            local_estoque_id: localId,
+            estoque_atual: Math.floor(estoqueAtual),
+            estoque_minimo: existingMinMap.get(key) ?? 0,
+          });
+        }
+      }
+
+      let stockRecordsCreated = 0;
+      for (let i = 0; i < stockToUpsert.length; i += CHUNK) {
+        const chunk = stockToUpsert.slice(i, i + CHUNK);
+        const { error } = await supabase
+          .from('estoque')
+          .upsert(chunk, { onConflict: 'item_id,local_estoque_id', ignoreDuplicates: false });
+        if (error) {
+          console.error('Upsert stock error:', error);
+        } else {
+          stockRecordsCreated += chunk.length;
+        }
+      }
+
+      // Record import
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        await supabase.from('estoque_importacoes').insert({
+          arquivo_nome: file.name,
+          itens_importados: totalItems,
+          importado_por: session.user.id,
+        });
+      }
+
+      setImportStatus({
+        stage: 'success',
+        progress: 100,
+        message: 'Importação concluída com sucesso!',
+        details: `${totalItems} produtos processados, ${stockRecordsCreated} registros de estoque atualizados.`,
+        itemsProcessed: totalItems,
+      });
+      refresh();
     } catch (error: any) {
       console.error('Error processing file:', error);
       setImportStatus({

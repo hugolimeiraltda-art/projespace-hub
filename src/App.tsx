@@ -45,6 +45,7 @@ import OrcamentoPropostas from "./pages/OrcamentoPropostas";
 import VendedorHome from "./pages/VendedorHome";
 import VendedorChat from "./pages/VendedorChat";
 import PainelIA from "./pages/PainelIA";
+import PermissoesAcesso from "./pages/PermissoesAcesso";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -156,6 +157,10 @@ function AppRoutes() {
       <Route 
         path="/configuracoes/usuarios" 
         element={<ProtectedRoute><GestaoUsuarios /></ProtectedRoute>} 
+      />
+      <Route 
+        path="/configuracoes/permissoes" 
+        element={<ProtectedRoute><PermissoesAcesso /></ProtectedRoute>} 
       />
       <Route 
         path="/controle-estoque" 

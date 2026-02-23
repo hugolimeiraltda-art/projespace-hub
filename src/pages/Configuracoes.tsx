@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Layout } from '@/components/Layout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Settings, Users, FileText, Bell, ChevronRight } from 'lucide-react';
+import { Settings, Users, FileText, Bell, ChevronRight, Shield } from 'lucide-react';
 
 export default function Configuracoes() {
   return (
@@ -32,6 +32,30 @@ export default function Configuracoes() {
               <CardContent>
                 <p className="text-sm text-muted-foreground">
                   Adicione, edite e remova usuários do sistema. Defina perfis e filiais.
+                </p>
+              </CardContent>
+            </Card>
+          </Link>
+
+          <Link to="/configuracoes/permissoes">
+            <Card className="shadow-card hover:shadow-lg transition-shadow cursor-pointer group">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-secondary rounded-lg">
+                      <Shield className="w-5 h-5 text-secondary-foreground" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-lg">Perfis de Acesso</CardTitle>
+                      <CardDescription>Gerenciar permissões de menu por perfil</CardDescription>
+                    </div>
+                  </div>
+                  <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-foreground transition-colors" />
+                </div>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground">
+                  Configure quais menus e submenus cada perfil pode acessar, com exceções por usuário.
                 </p>
               </CardContent>
             </Card>

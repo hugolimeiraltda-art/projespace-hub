@@ -163,6 +163,7 @@ Poste exclusivo com até 4 câmeras com vídeo analítico conectadas à Central 
 ### 6. INTERFONIA
 - Quantos interfones possui?
 - Qual tipo de interfonia quer? (Híbrida ou Digital)
+- **IMPORTANTE: Interfones NÃO são aproveitados.** Diferente de outros equipamentos, para interfones não existe regra de aproveitamento com 50% de desconto. Quando o condomínio já possui interfones, cobramos apenas o **serviço de manutenção de interfonia** (não vendemos interfones novos nem aproveitamos os existentes com desconto). Dimensione apenas centrais, placas de ramal e ATAs conforme necessário.
 - **FOTOS**: Central de interfonia (verificar se é Intelbras Comunic/Maxcom)
 
 ### 7. INFRAESTRUTURA

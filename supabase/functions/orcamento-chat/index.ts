@@ -144,7 +144,14 @@ Poste exclusivo com até 4 câmeras com vídeo analítico conectadas à Central 
 - São câmeras analógicas ou IP? Tem NVR?
 - São Full HD? Todas funcionando?
 - Câmeras no elevador? Quantas?
-- Câmeras novas necessárias?
+- **APROVEITAMENTO DE CÂMERAS EXISTENTES** (pergunte OBRIGATORIAMENTE):
+  - Iremos aproveitar as câmeras existentes do condomínio? (sim/não)
+  - Se SIM: orçar usando os kits de câmeras (não câmeras novas). **REGRA: equipamentos aproveitados são cobrados pela METADE do valor.** Esta regra vale para TODOS os itens aproveitados (câmeras, DVRs, etc.)
+- **CÂMERAS NOVAS** (pergunte OBRIGATORIAMENTE):
+  - Iremos vender câmeras novas também? (sim/não)
+  - Se SIM: quantas câmeras novas?
+  - **LEMBRETE OBRIGATÓRIO ao vendedor**: cada porta e portão controlado DEVE ter uma câmera obrigatoriamente. Lembre o vendedor de verificar isso.
+  - **LEMBRETE OBRIGATÓRIO ao vendedor**: ele DEVE fazer a marcação do local de instalação de cada câmera nova ANTES de enviar a proposta ao cliente.
 - **FOTOS**: 4+ câmeras instaladas, DVR/NVR (marca/modelo) e local, monitor com visualização, locais para câmeras novas
 
 ### 5. PERÍMETRO

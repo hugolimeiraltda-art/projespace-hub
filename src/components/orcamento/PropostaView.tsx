@@ -5,9 +5,10 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import {
-  FileText, Download, Mail, Share2, ArrowLeft, Table2, Loader2, MessageSquare
+  FileText, Download, Mail, Share2, ArrowLeft, Table2, Loader2, MessageSquare, ChevronDown, ChevronUp
 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import emiveLogo from '@/assets/emive-logo.png';
 import { generatePropostaPDF } from '@/lib/propostaPdf';
 import { generateEquipamentosExcel } from '@/lib/propostaExcel';
@@ -52,6 +53,7 @@ interface PropostaViewProps {
 export default function PropostaView({ data, onVoltar }: PropostaViewProps) {
   const { toast } = useToast();
   const [gerando, setGerando] = useState<string | null>(null);
+  const [showRawProposta, setShowRawProposta] = useState(false);
 
   const handleDownloadPDF = async () => {
     setGerando('pdf');
@@ -227,12 +229,34 @@ export default function PropostaView({ data, onVoltar }: PropostaViewProps) {
 
         <Separator />
 
-        {/* Markdown Proposal */}
-        <Card>
-          <CardContent className="p-6 md:p-8 prose prose-sm max-w-none dark:prose-invert">
-            <ReactMarkdown>{data.proposta}</ReactMarkdown>
-          </CardContent>
-        </Card>
+        {/* Collapsible Markdown Proposal */}
+        <div>
+          <Button
+            variant="ghost"
+            className="w-full flex items-center justify-between py-3 text-muted-foreground hover:text-foreground"
+            onClick={() => setShowRawProposta(!showRawProposta)}
+          >
+            <span className="text-sm font-medium">Texto completo da proposta gerada pela IA</span>
+            {showRawProposta ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+          </Button>
+          {showRawProposta && (
+            <Card className="mt-2">
+              <CardContent className="p-6 md:p-8 prose prose-sm max-w-none dark:prose-invert
+                [&_table]:w-full [&_table]:border-collapse [&_table]:text-sm
+                [&_th]:border [&_th]:border-border [&_th]:bg-muted [&_th]:px-3 [&_th]:py-2 [&_th]:text-left [&_th]:font-semibold
+                [&_td]:border [&_td]:border-border [&_td]:px-3 [&_td]:py-2
+                [&_tr:nth-child(even)]:bg-muted/30
+                [&_h1]:text-xl [&_h1]:font-bold [&_h1]:border-b [&_h1]:border-border [&_h1]:pb-2 [&_h1]:mb-4
+                [&_h2]:text-lg [&_h2]:font-semibold [&_h2]:mt-6 [&_h2]:mb-3
+                [&_h3]:text-base [&_h3]:font-semibold [&_h3]:mt-4 [&_h3]:mb-2
+                [&_strong]:text-foreground
+                [&_hr]:my-4 [&_hr]:border-border
+              ">
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>{data.proposta}</ReactMarkdown>
+              </CardContent>
+            </Card>
+          )}
+        </div>
 
         {/* Photos */}
         {data.fotos && data.fotos.length > 0 && (

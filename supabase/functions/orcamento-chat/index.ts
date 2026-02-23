@@ -113,6 +113,12 @@ Poste exclusivo com até 4 câmeras com vídeo analítico conectadas à Central 
 - Quantidade de unidades (apartamentos ou casas)
 - Quantos andares e apartamentos por andar
 - Tem portaria? (24h, somente dia, somente noite?)
+- **TIPO DE TELEFONIA** (pergunte APÓS confirmar portaria): Depende do produto escolhido:
+  - Se **Portaria Digital**, pergunte qual opção de telefonia:
+    1. Chamada de vídeo no App + 3 números de ligação (o sistema liga para os telefones cadastrados pelo morador no app)
+    2. Chamada de vídeo no App + transbordo para o apartamento (neste caso é OBRIGATÓRIO orçar um ATA e o serviço de manutenção de interfonia) + 2 números de telefone
+  - Se **Portaria Remota** ou **Portaria Assistida**, a telefonia é via central SIP (perguntar sobre interfonia na seção 6)
+  - Se **Portaria Expressa**, não se aplica
 - Solicitar planta baixa ao síndico
 - **FOTOS**: Fachada do condomínio
 

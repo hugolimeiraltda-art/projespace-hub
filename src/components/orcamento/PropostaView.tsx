@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import {
-  FileText, Download, Mail, Share2, ArrowLeft, Table2, Loader2, MessageSquare, ChevronDown, ChevronUp
+  FileText, Download, Mail, Share2, ArrowLeft, Table2, Loader2, MessageSquare, ChevronDown, ChevronUp, ChevronRight
 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -54,6 +54,24 @@ export default function PropostaView({ data, onVoltar }: PropostaViewProps) {
   const { toast } = useToast();
   const [gerando, setGerando] = useState<string | null>(null);
   const [showRawProposta, setShowRawProposta] = useState(false);
+  const [expandedKits, setExpandedKits] = useState<Set<number>>(new Set());
+
+  const toggleKit = (index: number) => {
+    setExpandedKits(prev => {
+      const next = new Set(prev);
+      if (next.has(index)) next.delete(index);
+      else next.add(index);
+      return next;
+    });
+  };
+
+  // Get kit component items from itensExpandidos
+  const getKitComponents = (kitNome: string) => {
+    if (!data.itensExpandidos) return [];
+    return data.itensExpandidos.filter(
+      (item: any) => item.origem === `Kit: ${kitNome}`
+    );
+  };
 
   const handleDownloadPDF = async () => {
     setGerando('pdf');
@@ -187,15 +205,45 @@ export default function PropostaView({ data, onVoltar }: PropostaViewProps) {
                         </tr>
                       </thead>
                       <tbody>
-                        {group.items!.map((item, i) => (
-                          <tr key={i} className="border-b last:border-0">
-                            <td className="py-2 pr-2">{item.qtd}</td>
-                            <td className="py-2 pr-2 font-medium truncate" title={item.nome}>{item.nome}</td>
-                            <td className="py-2 pr-2 text-muted-foreground">{item.codigo || '-'}</td>
-                            <td className="py-2 pl-2 text-right whitespace-nowrap">{formatBRL(item.valor_locacao || 0)}</td>
-                            <td className="py-2 pl-2 text-right font-medium whitespace-nowrap">{formatBRL((item.valor_locacao || 0) * item.qtd)}</td>
-                          </tr>
-                        ))}
+                        {group.items!.map((item, i) => {
+                          const isKit = group.label === 'Kits';
+                          const kitComponents = isKit ? getKitComponents(item.nome) : [];
+                          const hasComponents = kitComponents.length > 0;
+                          const isExpanded = expandedKits.has(i);
+                          return (
+                            <>
+                              <tr
+                                key={i}
+                                className={`border-b last:border-0 ${isKit && hasComponents ? 'cursor-pointer hover:bg-muted/50 transition-colors' : ''}`}
+                                onClick={() => isKit && hasComponents && toggleKit(i)}
+                              >
+                                <td className="py-2 pr-2">
+                                  <div className="flex items-center gap-1">
+                                    {isKit && hasComponents && (
+                                      isExpanded
+                                        ? <ChevronDown className="h-3 w-3 text-muted-foreground" />
+                                        : <ChevronRight className="h-3 w-3 text-muted-foreground" />
+                                    )}
+                                    {item.qtd}
+                                  </div>
+                                </td>
+                                <td className="py-2 pr-2 font-medium truncate" title={item.nome}>{item.nome}</td>
+                                <td className="py-2 pr-2 text-muted-foreground">{item.codigo || '-'}</td>
+                                <td className="py-2 pl-2 text-right whitespace-nowrap">{formatBRL(item.valor_locacao || 0)}</td>
+                                <td className="py-2 pl-2 text-right font-medium whitespace-nowrap">{formatBRL((item.valor_locacao || 0) * item.qtd)}</td>
+                              </tr>
+                              {isKit && isExpanded && kitComponents.map((comp: any, ci: number) => (
+                                <tr key={`${i}-comp-${ci}`} className="border-b last:border-0 bg-muted/30">
+                                  <td className="py-1.5 pr-2 pl-6 text-xs text-muted-foreground">{comp.qtd}</td>
+                                  <td className="py-1.5 pr-2 text-xs text-muted-foreground truncate" title={comp.nome}>↳ {comp.nome}</td>
+                                  <td className="py-1.5 pr-2 text-xs text-muted-foreground">{comp.codigo || '-'}</td>
+                                  <td className="py-1.5 pl-2 text-right text-xs text-muted-foreground whitespace-nowrap">{formatBRL(comp.valor_locacao || 0)}</td>
+                                  <td className="py-1.5 pl-2 text-right text-xs text-muted-foreground whitespace-nowrap">{formatBRL((comp.valor_locacao || 0) * comp.qtd)}</td>
+                                </tr>
+                              ))}
+                            </>
+                          );
+                        })}
                       </tbody>
                     </table>
                   </div>

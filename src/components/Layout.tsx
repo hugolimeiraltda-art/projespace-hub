@@ -161,28 +161,8 @@ export function Layout({ children }: LayoutProps) {
     return item;
   });
 
-  // Remove standalone configuracoes/usuarios if configuracoes parent is already showing
-  const uniqueNavItems = filteredNavItems.reduce((acc, item) => {
-    // Skip configuracoes/usuarios as standalone if configuracoes parent exists with subItems
-    if (item.menuKey === 'configuracoes/usuarios') {
-      const parent = acc.find(i => i.menuKey === 'configuracoes');
-      if (parent) return acc; // skip, will be a sub-item
-    }
-    // For configuracoes, add usuarios as sub-item if both are accessible
-    if (item.menuKey === 'configuracoes' && canAccess('configuracoes/usuarios')) {
-      const existing = filteredNavItems.find(i => i.menuKey === 'configuracoes/usuarios');
-      if (existing) {
-        return [...acc, {
-          ...item,
-          subItems: [
-            { path: '/configuracoes/usuarios', label: 'Gestão de Usuários', icon: Users, menuKey: 'configuracoes/usuarios' },
-          ]
-        }];
-      }
-    }
-    acc.push(item);
-    return acc;
-  }, [] as typeof filteredNavItems);
+  // Remove standalone configuracoes/usuarios - it's accessed via the Configurações page, not sidebar
+  const uniqueNavItems = filteredNavItems.filter(item => item.menuKey !== 'configuracoes/usuarios');
 
   const isPathActive = (path: string, exact?: boolean) => {
     if (exact) return location.pathname === path;

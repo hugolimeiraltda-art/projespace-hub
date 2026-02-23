@@ -165,14 +165,14 @@ Poste exclusivo com até 4 câmeras com vídeo analítico conectadas à Central 
 
 ## CATÁLOGO DE PRODUTOS E KITS (use para dimensionar e precificar):
 
-**Produtos (catálogo completo com preços):**
-${JSON.stringify(ctx.produtos.map((p: any) => ({ id: p.id_produto, codigo: p.codigo, nome: p.nome, categoria: p.categoria, subgrupo: p.subgrupo, unidade: p.unidade, preco_atual: p.preco_unitario, preco_minimo: p.valor_minimo, locacao: p.valor_locacao, locacao_minimo: p.valor_minimo_locacao, instalacao: p.valor_instalacao })), null, 2)}
+**Produtos:**
+${JSON.stringify(ctx.produtos.map((p: any) => ({ id: p.id_produto, c: p.codigo, n: p.nome, cat: p.categoria, u: p.unidade, p: p.preco_unitario, min: p.valor_minimo, loc: p.valor_locacao, inst: p.valor_instalacao })))}
 
-**Kits (composições com preços totais e REGRAS DE USO - use estas regras para saber QUANDO sugerir cada kit):**
-${JSON.stringify(ctx.kits.map((k: any) => ({ id_kit: k.id_kit, codigo: k.codigo, nome: k.nome, categoria: k.categoria, preco_total: k.preco_kit, minimo_total: k.valor_minimo, locacao_total: k.valor_locacao, locacao_minimo_total: k.valor_minimo_locacao, instalacao_total: k.valor_instalacao, quando_usar: k.descricao_uso || null, palavras_chave: k.palavras_chave || [], regras: k.regras_condicionais || [], itens: (k.orcamento_kit_itens || []).map((i: any) => ({ codigo: i.orcamento_produtos?.codigo, produto: i.orcamento_produtos?.nome, qtd: i.quantidade, preco_unit: i.orcamento_produtos?.preco_unitario })) })), null, 2)}
+**Kits (PRIORIZE kits sobre produtos avulsos):**
+${JSON.stringify(ctx.kits.map((k: any) => ({ id: k.id_kit, c: k.codigo, n: k.nome, cat: k.categoria, p: k.preco_kit, min: k.valor_minimo, loc: k.valor_locacao, inst: k.valor_instalacao, uso: k.descricao_uso || null, kw: k.palavras_chave || [], regras: k.regras_condicionais || [], itens: (k.orcamento_kit_itens || []).map((i: any) => ({ n: i.orcamento_produtos?.nome, q: i.quantidade })) })))}
 
-## REFERÊNCIAS DE PREÇOS DA CARTEIRA (resumo):
-${JSON.stringify(ctx.portfolio.slice(0, 8).map((c: any) => ({ razao: c.razao_social, unidades: c.unidades, mensalidade: c.mensalidade, taxa: c.taxa_ativacao, cameras: c.cameras, portoes: c.portoes, portas: c.portas })), null, 2)}
+## REFERÊNCIAS DE PREÇOS DA CARTEIRA:
+${JSON.stringify(ctx.portfolio.slice(0, 5).map((c: any) => ({ r: c.razao_social, u: c.unidades, m: c.mensalidade, t: c.taxa_ativacao })))}
 
 ## REGRAS CRÍTICAS DE PRODUTOS E KITS:
 - **VOCÊ SÓ PODE REFERENCIAR PRODUTOS E KITS QUE EXISTEM NO CATÁLOGO ACIMA.** Nunca invente nomes de produtos, marcas ou modelos que não estejam listados.
@@ -355,7 +355,7 @@ serve(async (req) => {
     }
 
     const requestBody = JSON.stringify({
-        model: "openai/gpt-5-mini",
+        model: "google/gemini-2.5-flash",
         messages: [
           { role: "system", content: buildVisitSystemPrompt(ctx, sessao) },
           ...messages,

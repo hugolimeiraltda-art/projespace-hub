@@ -222,6 +222,7 @@ export function EAPDialog({ open, onOpenChange, sessaoId, nomeCliente }: EAPDial
   };
 
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-6xl max-h-[85vh] overflow-y-auto">
         <DialogHeader>
@@ -277,14 +278,11 @@ export function EAPDialog({ open, onOpenChange, sessaoId, nomeCliente }: EAPDial
                   Detalhamento por Ambiente
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {ambientes.map((amb, i) => {
-                    const isExpanded = expandedAmbientes.has(i);
-                    const hasFotos = amb.fotos && amb.fotos.length > 0;
-                    return (
+                  {ambientes.map((amb, i) => (
                       <div
                         key={i}
-                        className={`border rounded-lg transition-all cursor-pointer ${isExpanded ? 'bg-primary/5 border-primary/30 shadow-md col-span-1 md:col-span-2' : 'bg-card hover:shadow-sm'}`}
-                        onClick={() => toggleAmbiente(i)}
+                        className="border rounded-lg bg-card hover:shadow-md hover:border-primary/30 transition-all cursor-pointer"
+                        onClick={() => setSelectedAmbiente(amb)}
                       >
                         <div className="p-3">
                           <div className="flex items-center gap-2 mb-2">
@@ -293,68 +291,26 @@ export function EAPDialog({ open, onOpenChange, sessaoId, nomeCliente }: EAPDial
                             <Badge variant="outline" className="text-[10px]">
                               {amb.equipamentos.length} equip.
                             </Badge>
-                            {isExpanded
-                              ? <ChevronDown className="h-4 w-4 text-primary" />
-                              : <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                            }
+                            <ChevronRight className="h-4 w-4 text-muted-foreground" />
                           </div>
-                          {!isExpanded && (
-                            <>
-                              <div className="flex flex-wrap gap-1 mb-2">
-                                {amb.equipamentos.slice(0, 3).map((eq, j) => (
-                                  <Badge key={j} variant="secondary" className="text-[10px] px-1.5 py-0">
-                                    {eq}
-                                  </Badge>
-                                ))}
-                                {amb.equipamentos.length > 3 && (
-                                  <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
-                                    +{amb.equipamentos.length - 3}
-                                  </Badge>
-                                )}
-                              </div>
-                              <p className="text-xs text-muted-foreground leading-relaxed line-clamp-1">
-                                {amb.descricao_funcionamento}
-                              </p>
-                            </>
-                          )}
-                        </div>
-                        {isExpanded && (
-                          <div className="px-3 pb-3 space-y-3 border-t border-primary/20 pt-3">
-                            <div className="flex flex-wrap gap-1">
-                              {amb.equipamentos.map((eq, j) => (
-                                <Badge key={j} variant="secondary" className="text-[10px] px-1.5 py-0.5">
-                                  {eq}
-                                </Badge>
-                              ))}
-                            </div>
-                            <div className="bg-muted/50 rounded-md p-2">
-                              <p className="text-xs font-medium text-foreground mb-1">Funcionamento:</p>
-                              <p className="text-xs text-muted-foreground leading-relaxed">
-                                {amb.descricao_funcionamento}
-                              </p>
-                            </div>
-                            {hasFotos && (
-                              <div>
-                                <p className="text-xs font-medium text-foreground mb-1.5">Fotos do local:</p>
-                                <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                                  {amb.fotos!.map((fotoUrl, fi) => (
-                                    <a key={fi} href={fotoUrl} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}>
-                                      <img
-                                        src={fotoUrl}
-                                        alt={`${amb.nome} - foto ${fi + 1}`}
-                                        className="w-full h-28 object-cover rounded border hover:opacity-80 transition-opacity"
-                                        loading="lazy"
-                                      />
-                                    </a>
-                                  ))}
-                                </div>
-                              </div>
+                          <div className="flex flex-wrap gap-1 mb-2">
+                            {amb.equipamentos.slice(0, 3).map((eq, j) => (
+                              <Badge key={j} variant="secondary" className="text-[10px] px-1.5 py-0">
+                                {eq}
+                              </Badge>
+                            ))}
+                            {amb.equipamentos.length > 3 && (
+                              <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
+                                +{amb.equipamentos.length - 3}
+                              </Badge>
                             )}
                           </div>
-                        )}
+                          <p className="text-xs text-muted-foreground leading-relaxed line-clamp-1">
+                            {amb.descricao_funcionamento}
+                          </p>
+                        </div>
                       </div>
-                    );
-                  })}
+                    ))}
                 </div>
               </>
             ) : (
@@ -396,5 +352,11 @@ export function EAPDialog({ open, onOpenChange, sessaoId, nomeCliente }: EAPDial
         )}
       </DialogContent>
     </Dialog>
+    <AmbienteDetailDialog
+      open={!!selectedAmbiente}
+      onOpenChange={(open) => { if (!open) setSelectedAmbiente(null); }}
+      ambiente={selectedAmbiente}
+    />
+    </>
   );
 }

@@ -1,5 +1,5 @@
 import jsPDF from 'jspdf';
-import type { PropostaData, PropostaItem } from '@/components/orcamento/PropostaView';
+import type { PropostaData, PropostaItem, AmbienteItem } from '@/components/orcamento/PropostaView';
 
 function drawTableHeader(doc: jsPDF, y: number, cols: { label: string; x: number; align?: string }[]) {
   doc.setFontSize(9);
@@ -43,6 +43,62 @@ function drawTableRows(doc: jsPDF, y: number, items: PropostaItem[], pageWidth: 
 
 function checkPage(doc: jsPDF, y: number, needed: number): number {
   if (y + needed > 275) { doc.addPage(); return 20; }
+  return y;
+}
+
+function drawAmbientes(doc: jsPDF, y: number, ambientes: AmbienteItem[], pageWidth: number, margin: number): number {
+  y = checkPage(doc, y, 30);
+  doc.setFontSize(14);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(232, 107, 36);
+  doc.text('EAP — DETALHAMENTO POR AMBIENTE', margin, y);
+  doc.setTextColor(0, 0, 0);
+  y += 8;
+
+  for (const amb of ambientes) {
+    y = checkPage(doc, y, 30);
+    // Ambiente name with colored bar
+    doc.setFillColor(232, 107, 36);
+    doc.rect(margin, y - 4, 3, 14, 'F');
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'bold');
+    doc.text(amb.nome.toUpperCase(), margin + 6, y);
+    y += 6;
+
+    // Equipamentos
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(100, 100, 100);
+    doc.text('Equipamentos:', margin + 6, y);
+    doc.setFont('helvetica', 'normal');
+    const equipText = amb.equipamentos.join(' | ');
+    const maxWidth = pageWidth - margin * 2 - 8;
+    const equipLines = doc.splitTextToSize(equipText, maxWidth);
+    y += 4;
+    doc.setTextColor(0, 0, 0);
+    for (const line of equipLines) {
+      y = checkPage(doc, y, 6);
+      doc.text(line, margin + 6, y);
+      y += 4;
+    }
+    y += 2;
+
+    // Funcionamento
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(100, 100, 100);
+    doc.text('Funcionamento:', margin + 6, y);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(0, 0, 0);
+    y += 4;
+    const funcLines = doc.splitTextToSize(amb.descricao_funcionamento, maxWidth);
+    for (const line of funcLines) {
+      y = checkPage(doc, y, 6);
+      doc.text(line, margin + 6, y);
+      y += 4;
+    }
+    y += 6;
+  }
   return y;
 }
 
@@ -169,6 +225,12 @@ export async function generatePropostaPDF(data: PropostaData) {
     doc.setFont('helvetica', 'normal');
     doc.text(`(parcela em até 10x de R$ ${((itens.taxa_conexao_total || 0) / 10).toFixed(2)})`, pageWidth - margin - 5, y + 16, { align: 'right' });
     y += 22;
+  }
+
+  // Ambientes / EAP
+  if (itens?.ambientes && itens.ambientes.length > 0) {
+    y += 4;
+    y = drawAmbientes(doc, y, itens.ambientes, pageWidth, margin);
   }
 
   // Photos

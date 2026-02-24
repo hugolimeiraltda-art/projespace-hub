@@ -98,6 +98,7 @@ export default function CustomerDetail() {
     noc: '',
     sistema: '',
     app: '',
+    empresa: '',
     transbordo: false,
     gateway: false,
     portoes: '0',
@@ -152,6 +153,7 @@ export default function CustomerDetail() {
         noc: data.noc || '',
         sistema: data.sistema || '',
         app: data.app || '',
+        empresa: (data as any).empresa || '',
         transbordo: data.transbordo,
         gateway: data.gateway,
         portoes: data.portoes?.toString() || '0',
@@ -219,6 +221,7 @@ export default function CustomerDetail() {
         noc: form.noc || null,
         sistema: form.sistema || null,
         app: form.app || null,
+        empresa: form.empresa || null,
         transbordo: form.transbordo,
         gateway: form.gateway,
         portoes: parseInt(form.portoes) || 0,
@@ -491,11 +494,22 @@ export default function CustomerDetail() {
                 </div>
                 <div>
                   <Label>APP</Label>
-                  <Select value={form.app} onValueChange={(v) => setForm({ ...form, app: v })} disabled={!canEdit}>
+                  <Select value={form.app || ''} onValueChange={(v) => setForm({ ...form, app: v })} disabled={!canEdit}>
                     <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="GEAR">GEAR</SelectItem>
                       <SelectItem value="WINKER">WINKER</SelectItem>
+                      <SelectItem value="Nenhum">Nenhum</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Empresa</Label>
+                  <Select value={form.empresa || ''} onValueChange={(v) => setForm({ ...form, empresa: v })} disabled={!canEdit}>
+                    <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Emive">Emive</SelectItem>
+                      <SelectItem value="Graber">Graber</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -553,21 +567,21 @@ export default function CustomerDetail() {
                   <Input type="number" value={form.unidades} onChange={(e) => setForm({ ...form, unidades: e.target.value })} disabled={!canEdit} />
                 </div>
                 <div>
-                  <Label>Tipo</Label>
+                  <Label>Produto</Label>
                   <Select value={form.tipo} onValueChange={(v) => setForm({ ...form, tipo: v })} disabled={!canEdit}>
                     <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="VIRTUAL">Virtual</SelectItem>
-                      <SelectItem value="PRESENCIAL">Presencial</SelectItem>
-                      <SelectItem value="CA MONITORADO">CA Monitorado</SelectItem>
-                      <SelectItem value="VIRTUAL + APOIO">Virtual + Apoio</SelectItem>
+                      <SelectItem value="Portaria Digital">Portaria Digital</SelectItem>
+                      <SelectItem value="Portaria Remota">Portaria Remota</SelectItem>
+                      <SelectItem value="Portaria Presencial">Portaria Presencial</SelectItem>
+                      <SelectItem value="Portaria Expressa">Portaria Expressa</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
               </div>
 
-              {/* Datas, NOC, App */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {/* Datas e NOC */}
+              <div className="grid grid-cols-3 gap-4">
                 <div>
                   <Label className="flex items-center gap-2"><Calendar className="w-4 h-4" /> Início (Ativação)</Label>
                   <Input type="date" value={form.data_ativacao} onChange={(e) => setForm({ ...form, data_ativacao: e.target.value })} disabled={!canEdit} />
@@ -592,17 +606,6 @@ export default function CustomerDetail() {
                       <SelectItem value="RETROFIT">RETROFIT</SelectItem>
                       <SelectItem value="FAZER">FAZER</SelectItem>
                       <SelectItem value="OBRA NOVA">OBRA NOVA</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label>App</Label>
-                  <Select value={form.app || ''} onValueChange={(v) => setForm({ ...form, app: v })} disabled={!canEdit}>
-                    <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Gear">Gear</SelectItem>
-                      <SelectItem value="Winker">Winker</SelectItem>
-                      <SelectItem value="Nenhum">Nenhum</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

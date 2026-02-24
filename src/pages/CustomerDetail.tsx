@@ -566,8 +566,8 @@ export default function CustomerDetail() {
                 </div>
               </div>
 
-              {/* Datas */}
-              <div className="grid grid-cols-3 gap-4">
+              {/* Datas, NOC, App */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div>
                   <Label className="flex items-center gap-2"><Calendar className="w-4 h-4" /> Início (Ativação)</Label>
                   <Input type="date" value={form.data_ativacao} onChange={(e) => setForm({ ...form, data_ativacao: e.target.value })} disabled={!canEdit} />
@@ -592,6 +592,17 @@ export default function CustomerDetail() {
                       <SelectItem value="RETROFIT">RETROFIT</SelectItem>
                       <SelectItem value="FAZER">FAZER</SelectItem>
                       <SelectItem value="OBRA NOVA">OBRA NOVA</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>App</Label>
+                  <Select value={form.app || ''} onValueChange={(v) => setForm({ ...form, app: v })} disabled={!canEdit}>
+                    <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Gear">Gear</SelectItem>
+                      <SelectItem value="Winker">Winker</SelectItem>
+                      <SelectItem value="Nenhum">Nenhum</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

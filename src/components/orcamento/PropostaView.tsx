@@ -119,10 +119,10 @@ export default function PropostaView({ data, onVoltar }: PropostaViewProps) {
     setGerando(null);
   };
 
-  const handleDownloadExcel = () => {
+  const handleDownloadExcel = async () => {
     setGerando('excel');
     try {
-      generateEquipamentosExcel(data);
+      await generateEquipamentosExcel(data);
       toast({ title: 'Planilha gerada com sucesso!' });
     } catch (e) {
       console.error(e);

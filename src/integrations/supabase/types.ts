@@ -287,6 +287,7 @@ export type Database = {
           data_ativacao: string | null
           data_termino: string | null
           dvr_nvr: number | null
+          empresa: string | null
           endereco: string | null
           faciais_avicam: number | null
           faciais_hik: number | null
@@ -328,6 +329,7 @@ export type Database = {
           data_ativacao?: string | null
           data_termino?: string | null
           dvr_nvr?: number | null
+          empresa?: string | null
           endereco?: string | null
           faciais_avicam?: number | null
           faciais_hik?: number | null
@@ -369,6 +371,7 @@ export type Database = {
           data_ativacao?: string | null
           data_termino?: string | null
           dvr_nvr?: number | null
+          empresa?: string | null
           endereco?: string | null
           faciais_avicam?: number | null
           faciais_hik?: number | null

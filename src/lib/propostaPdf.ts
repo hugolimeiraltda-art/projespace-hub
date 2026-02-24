@@ -23,16 +23,16 @@ function drawTableRows(doc: jsPDF, y: number, items: PropostaItem[], pageWidth: 
   doc.setFontSize(8);
   for (const item of items) {
     if (y > 270) { doc.addPage(); y = 20; }
-    doc.text(String(item.qtd), 17, y);
+    doc.text(String(item.qtd ?? ''), 17, y);
     const maxNomeWidth = 90;
-    let nome = item.nome;
+    let nome = String(item.nome || '');
     while (doc.getTextWidth(nome) > maxNomeWidth && nome.length > 3) {
       nome = nome.substring(0, nome.length - 4) + '...';
     }
     doc.text(nome, 35, y);
-    doc.text(item.codigo || '-', 130, y);
+    doc.text(String(item.codigo || '-'), 130, y);
     doc.text(`R$ ${(item.valor_locacao || 0).toFixed(2)}`, pageWidth - 50, y, { align: 'right' });
-    doc.text(`R$ ${((item.valor_locacao || 0) * item.qtd).toFixed(2)}`, pageWidth - 17, y, { align: 'right' });
+    doc.text(`R$ ${((item.valor_locacao || 0) * (item.qtd || 0)).toFixed(2)}`, pageWidth - 17, y, { align: 'right' });
     // Light row separator
     doc.setDrawColor(230, 230, 230);
     doc.line(15, y + 2, pageWidth - 15, y + 2);
@@ -62,7 +62,7 @@ function drawAmbientes(doc: jsPDF, y: number, ambientes: AmbienteItem[], pageWid
     doc.rect(margin, y - 4, 3, 14, 'F');
     doc.setFontSize(10);
     doc.setFont('helvetica', 'bold');
-    doc.text(amb.nome.toUpperCase(), margin + 6, y);
+    doc.text((amb.nome || '').toUpperCase(), margin + 6, y);
     y += 6;
 
     // Equipamentos
@@ -103,9 +103,14 @@ function drawAmbientes(doc: jsPDF, y: number, ambientes: AmbienteItem[], pageWid
 }
 
 export async function generatePropostaPDF(data: PropostaData) {
+  // Safety: ensure sessao exists
+  if (!data || !data.sessao) {
+    throw new Error('Dados da proposta incompletos');
+  }
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
   const margin = 15;
+  const safe = (v: any) => (v != null ? String(v) : '');
 
   // Header
   doc.setFillColor(232, 107, 36); // Orange brand color
@@ -127,20 +132,20 @@ export async function generatePropostaPDF(data: PropostaData) {
   doc.setFont('helvetica', 'bold');
   doc.text('Cliente:', margin, y);
   doc.setFont('helvetica', 'normal');
-  doc.text(data.sessao.nome_cliente || '', margin + 25, y);
+  doc.text(safe(data.sessao.nome_cliente), margin + 25, y);
   y += 6;
   if (data.sessao.endereco) {
     doc.setFont('helvetica', 'bold');
     doc.text('Endereço:', margin, y);
     doc.setFont('helvetica', 'normal');
-    doc.text(data.sessao.endereco, margin + 30, y);
+    doc.text(safe(data.sessao.endereco), margin + 30, y);
     y += 6;
   }
   if (data.sessao.vendedor) {
     doc.setFont('helvetica', 'bold');
     doc.text('Consultor:', margin, y);
     doc.setFont('helvetica', 'normal');
-    doc.text(data.sessao.vendedor, margin + 30, y);
+    doc.text(safe(data.sessao.vendedor), margin + 30, y);
     y += 6;
   }
   y += 4;
@@ -281,7 +286,7 @@ export async function generatePropostaPDF(data: PropostaData) {
           }
           doc.text(qtd, 17, y);
           doc.text(truncNome, 35, y);
-          doc.text(amb.nome, 140, y);
+          doc.text(amb.nome || '', 140, y);
           doc.setDrawColor(230, 230, 230);
           doc.line(15, y + 2, pageWidth - 15, y + 2);
           y += 6;
@@ -337,11 +342,12 @@ export async function generatePropostaPDF(data: PropostaData) {
     doc.setPage(p);
     doc.setFontSize(7);
     doc.setTextColor(150, 150, 150);
-    doc.text(`Emive - Outsourcing PCI | Proposta ${data.sessao.nome_cliente} | Página ${p}/${totalPages}`, pageWidth / 2, 290, { align: 'center' });
+    doc.text(`Emive - Outsourcing PCI | Proposta ${data.sessao.nome_cliente || 'Cliente'} | Página ${p}/${totalPages}`, pageWidth / 2, 290, { align: 'center' });
     doc.text('ESTA PROPOSTA TEM VALIDADE DE 5 DIAS ÚTEIS.', pageWidth / 2, 285, { align: 'center' });
   }
 
-  const fileName = `proposta-emive-${data.sessao.nome_cliente?.replace(/\s+/g, '-').toLowerCase() || 'cliente'}.pdf`;
+  const clienteName = data.sessao.nome_cliente || 'cliente';
+  const fileName = `proposta-emive-${clienteName.replace(/\s+/g, '-').toLowerCase()}.pdf`;
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
 
   if (isIOS && navigator.share && navigator.canShare) {

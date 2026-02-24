@@ -232,12 +232,13 @@ export function EAPDialog({ open, onOpenChange, sessaoId, nomeCliente }: EAPDial
 
   const handleDownloadPDF = async () => {
     const pData = getPropostaDataWithAmbientes();
-    if (!pData) return;
+    console.log('[EAP PDF] pData:', pData ? { itens: pData.itens ? { kits: pData.itens.kits?.length, avulsos: pData.itens.avulsos?.length, ambientes: pData.itens.ambientes?.length } : null, fotos: pData.fotos?.length } : 'NULL');
+    if (!pData) { console.error('[EAP PDF] pData is null, aborting'); return; }
     setGerando('pdf');
     try {
       await generatePropostaPDF(pData);
       toast({ title: 'PDF gerado!' });
-    } catch { toast({ title: 'Erro ao gerar PDF', variant: 'destructive' }); }
+    } catch (e) { console.error('[EAP PDF] Error:', e); toast({ title: 'Erro ao gerar PDF', variant: 'destructive' }); }
     setGerando(null);
   };
 

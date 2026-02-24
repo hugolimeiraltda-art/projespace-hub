@@ -284,26 +284,33 @@ export async function generatePropostaPDF(data: PropostaData) {
   }
 
   const fileName = `proposta-emive-${data.sessao.nome_cliente?.replace(/\s+/g, '-').toLowerCase() || 'cliente'}.pdf`;
-  const blob = doc.output('blob');
-  const blobUrl = URL.createObjectURL(blob);
-
-  // iOS Safari doesn't support blob download links well — open in new tab instead
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-  if (isIOS) {
-    // Open PDF in new tab — Safari will show native PDF viewer with share/save
-    const newWindow = window.open(blobUrl, '_blank');
-    if (!newWindow) {
-      // Fallback: use data URI
-      const dataUri = doc.output('datauristring');
-      window.open(dataUri, '_blank');
+
+  if (isIOS && navigator.share && navigator.canShare) {
+    // Best iOS approach: native share sheet with the actual file
+    const blob = doc.output('blob');
+    const file = new File([blob], fileName, { type: 'application/pdf' });
+    if (navigator.canShare({ files: [file] })) {
+      try {
+        await navigator.share({ files: [file], title: fileName });
+        return;
+      } catch (e) {
+        // User cancelled share — fall through to data URI
+      }
     }
-  } else {
+  }
+
+  if (isIOS) {
+    // Fallback: open as data URI — works reliably in Safari
+    const dataUri = doc.output('dataurlstring');
     const link = document.createElement('a');
-    link.href = blobUrl;
-    link.download = fileName;
+    link.href = dataUri;
+    link.target = '_blank';
+    link.rel = 'noopener';
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    setTimeout(() => URL.revokeObjectURL(blobUrl), 100);
+  } else {
+    doc.save(fileName);
   }
 }

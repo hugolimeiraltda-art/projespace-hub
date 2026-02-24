@@ -159,9 +159,14 @@ export function EAPDialog({ open, onOpenChange, sessaoId, nomeCliente }: EAPDial
 
           const inferredAmbientes: AmbienteItem[] = [];
 
-          const portariaItems = textItems.filter((i: any) => /portaria|facial|interfone|botoeira|leitor|ata kap/i.test(i.nome));
+          const portariaItems = textItems.filter((i: any) => /portaria|facial|botoeira|leitor/i.test(i.nome) && !/interfonia/i.test(i.nome));
           if (portariaItems.length > 0) {
-            inferredAmbientes.push({ nome: 'Portaria', tipo: 'porta_externa', equipamentos: portariaItems.map((i: any) => i.label), descricao_funcionamento: 'Central de portaria com controle de acesso de pedestres, interfonia e reconhecimento facial.' });
+            inferredAmbientes.push({ nome: 'Portaria', tipo: 'porta_externa', equipamentos: portariaItems.map((i: any) => i.label), descricao_funcionamento: 'Central de portaria com controle de acesso de pedestres e reconhecimento facial.' });
+          }
+
+          const interfoniaItems = textItems.filter((i: any) => /interfon|ata kap|ata khomp|transbordo|telefonia/i.test(i.nome));
+          if (interfoniaItems.length > 0) {
+            inferredAmbientes.push({ nome: 'Interfonia', tipo: 'porta_interna', equipamentos: interfoniaItems.map((i: any) => i.label), descricao_funcionamento: 'Sistema de interfonia para comunicação entre portaria e unidades, com transbordo de chamadas e integração telefônica.' });
           }
 
           const veicularItems = textItems.filter((i: any) => /portão|portao|controle remoto|cancela|acionamento/i.test(i.nome));

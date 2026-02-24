@@ -173,8 +173,11 @@ function inferAmbientes(data: PropostaData): AmbienteItem[] {
 
   const inferred: AmbienteItem[] = [];
 
-  const portaria = textItems.filter(i => /portaria|facial|interfone|botoeira|leitor|ata kap/i.test(i.nome));
-  if (portaria.length > 0) inferred.push({ nome: 'Portaria', tipo: 'porta_externa', equipamentos: portaria.map(i => i.label), descricao_funcionamento: 'Central de portaria com controle de acesso de pedestres, interfonia e reconhecimento facial.' });
+  const portaria = textItems.filter(i => /portaria|facial|botoeira|leitor/i.test(i.nome) && !/interfonia/i.test(i.nome));
+  if (portaria.length > 0) inferred.push({ nome: 'Portaria', tipo: 'porta_externa', equipamentos: portaria.map(i => i.label), descricao_funcionamento: 'Central de portaria com controle de acesso de pedestres e reconhecimento facial.' });
+
+  const interfonia = textItems.filter(i => /interfon|ata kap|ata khomp|transbordo|telefonia/i.test(i.nome));
+  if (interfonia.length > 0) inferred.push({ nome: 'Interfonia', tipo: 'porta_interna', equipamentos: interfonia.map(i => i.label), descricao_funcionamento: 'Sistema de interfonia para comunicação entre portaria e unidades, com transbordo de chamadas e integração telefônica.' });
 
   const veicular = textItems.filter(i => /portão|portao|controle remoto|cancela|acionamento/i.test(i.nome));
   if (veicular.length > 0) inferred.push({ nome: 'Acesso Veicular', tipo: 'portao', equipamentos: veicular.map(i => i.label), descricao_funcionamento: 'Acionamento de portões com controle remoto e/ou tag veicular.' });

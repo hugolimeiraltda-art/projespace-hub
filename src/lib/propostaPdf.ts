@@ -144,16 +144,74 @@ function drawAmbientes(doc: jsPDF, y: number, ambientes: AmbienteItem[], pageWid
   return y;
 }
 
+function inferAmbientes(data: PropostaData): AmbienteItem[] {
+  const itens = data.itens;
+  if (itens?.ambientes && itens.ambientes.length > 0) return itens.ambientes;
+
+  const allItems = [
+    ...(itens?.kits || []),
+    ...(itens?.avulsos || []),
+    ...(itens?.servicos || []),
+    ...(itens?.aproveitados || []),
+  ];
+
+  let textItems: { label: string; nome: string }[] = [];
+
+  if (allItems.length > 0) {
+    textItems = allItems.map(i => ({ label: `${i.qtd}x ${i.nome}`, nome: (i.nome || '').toLowerCase() }));
+  } else if (data.proposta) {
+    const lines = data.proposta.split('\n');
+    for (const line of lines) {
+      const match = line.match(/^\|\s*([\d.]+)\s*(?:un)?\s*\|\s*(.+?)\s*\|/);
+      if (match && match[2] && !match[2].includes('---') && !match[2].toLowerCase().includes('descrição')) {
+        textItems.push({ label: `${match[1]}x ${match[2].trim()}`, nome: match[2].trim().toLowerCase() });
+      }
+    }
+  }
+
+  if (textItems.length === 0) return [];
+
+  const inferred: AmbienteItem[] = [];
+
+  const portaria = textItems.filter(i => /portaria|facial|interfone|botoeira|leitor|ata kap/i.test(i.nome));
+  if (portaria.length > 0) inferred.push({ nome: 'Portaria', tipo: 'porta_externa', equipamentos: portaria.map(i => i.label), descricao_funcionamento: 'Central de portaria com controle de acesso de pedestres, interfonia e reconhecimento facial.' });
+
+  const veicular = textItems.filter(i => /portão|portao|controle remoto|cancela|acionamento/i.test(i.nome));
+  if (veicular.length > 0) inferred.push({ nome: 'Acesso Veicular', tipo: 'portao', equipamentos: veicular.map(i => i.label), descricao_funcionamento: 'Acionamento de portões com controle remoto e/ou tag veicular.' });
+
+  const cftv = textItems.filter(i => /camera|câmera|dvr|nvr|stand alone|hd.*tera|bullet|dome/i.test(i.nome) && !/elevador/i.test(i.nome));
+  if (cftv.length > 0) inferred.push({ nome: 'CFTV', tipo: 'cftv', equipamentos: cftv.map(i => i.label), descricao_funcionamento: 'Sistema de monitoramento por câmeras com gravação contínua.' });
+
+  const alarme = textItems.filter(i => /alarme|cerca|iva|sensor|infra|sirene|choque|zona/i.test(i.nome));
+  if (alarme.length > 0) inferred.push({ nome: 'Perímetro / Alarme', tipo: 'perimetro', equipamentos: alarme.map(i => i.label), descricao_funcionamento: 'Proteção perimetral com sensores e central de alarme.' });
+
+  const elevador = textItems.filter(i => /elevador/i.test(i.nome));
+  if (elevador.length > 0) inferred.push({ nome: 'Elevadores', tipo: 'cftv', equipamentos: elevador.map(i => i.label), descricao_funcionamento: 'Câmeras de monitoramento nos elevadores.' });
+
+  const infra = textItems.filter(i => /cabo|infra|nobreak|switch|rack|eletroduto/i.test(i.nome));
+  if (infra.length > 0) inferred.push({ nome: 'Infraestrutura', tipo: 'porta_interna', equipamentos: infra.map(i => i.label), descricao_funcionamento: 'Cabeamento, infraestrutura elétrica e equipamentos de suporte.' });
+
+  const bloco = textItems.filter(i => /bloco|torre|hall|corredor|pavimento|andar|lobby/i.test(i.nome));
+  if (bloco.length > 0) inferred.push({ nome: 'Blocos / Torres', tipo: 'fachada', equipamentos: bloco.map(i => i.label), descricao_funcionamento: 'Controle de acesso nos blocos e torres do condomínio.' });
+
+  return inferred.filter(a => a.equipamentos.length > 0);
+}
+
 export async function generatePropostaPDF(data: PropostaData) {
-  // Safety: ensure sessao exists
   if (!data || !data.sessao) {
     throw new Error('Dados da proposta incompletos');
   }
-  // Debug: log data shape to diagnose missing tables
-  console.log('[PDF] data.itens keys:', data.itens ? Object.keys(data.itens) : 'null');
-  console.log('[PDF] kits:', data.itens?.kits?.length ?? 0, 'avulsos:', data.itens?.avulsos?.length ?? 0, 'aproveitados:', data.itens?.aproveitados?.length ?? 0, 'servicos:', data.itens?.servicos?.length ?? 0);
-  console.log('[PDF] ambientes:', data.itens?.ambientes?.length ?? 0, 'fotos:', data.fotos?.length ?? 0);
-  console.log('[PDF] itensExpandidos:', data.itensExpandidos?.length ?? 0);
+
+  // Ensure ambientes are always available (infer if needed)
+  const resolvedAmbientes = inferAmbientes(data);
+  if (data.itens) {
+    data.itens.ambientes = resolvedAmbientes;
+  } else if (resolvedAmbientes.length > 0) {
+    data.itens = { kits: [], avulsos: [], aproveitados: [], servicos: [], mensalidade_total: 0, taxa_conexao_total: 0, ambientes: resolvedAmbientes };
+  }
+
+  console.log('[PDF] ambientes (after inference):', resolvedAmbientes.length, resolvedAmbientes.map(a => a.nome));
+  console.log('[PDF] kits:', data.itens?.kits?.length ?? 0, 'avulsos:', data.itens?.avulsos?.length ?? 0);
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
   const margin = 15;

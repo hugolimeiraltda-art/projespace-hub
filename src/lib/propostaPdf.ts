@@ -149,6 +149,11 @@ export async function generatePropostaPDF(data: PropostaData) {
   if (!data || !data.sessao) {
     throw new Error('Dados da proposta incompletos');
   }
+  // Debug: log data shape to diagnose missing tables
+  console.log('[PDF] data.itens keys:', data.itens ? Object.keys(data.itens) : 'null');
+  console.log('[PDF] kits:', data.itens?.kits?.length ?? 0, 'avulsos:', data.itens?.avulsos?.length ?? 0, 'aproveitados:', data.itens?.aproveitados?.length ?? 0, 'servicos:', data.itens?.servicos?.length ?? 0);
+  console.log('[PDF] ambientes:', data.itens?.ambientes?.length ?? 0, 'fotos:', data.fotos?.length ?? 0);
+  console.log('[PDF] itensExpandidos:', data.itensExpandidos?.length ?? 0);
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
   const margin = 15;

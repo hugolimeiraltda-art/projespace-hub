@@ -201,21 +201,46 @@ export function EAPDialog({ open, onOpenChange, sessaoId, nomeCliente }: EAPDial
     fetchData();
   }, [open, sessaoId]);
 
+  const getPropostaDataWithAmbientes = (): PropostaData | null => {
+    if (!propostaData) return null;
+    // Inject inferred ambientes into itens if missing
+    const enriched = { ...propostaData };
+    if (enriched.itens) {
+      if (!enriched.itens.ambientes || enriched.itens.ambientes.length === 0) {
+        enriched.itens = { ...enriched.itens, ambientes };
+      }
+    } else if (ambientes.length > 0) {
+      // No structured itens — build from ambientes
+      enriched.itens = {
+        kits: [],
+        avulsos: [],
+        aproveitados: [],
+        servicos: [],
+        mensalidade_total: 0,
+        taxa_conexao_total: 0,
+        ambientes,
+      };
+    }
+    return enriched;
+  };
+
   const handleDownloadPDF = async () => {
-    if (!propostaData) return;
+    const pData = getPropostaDataWithAmbientes();
+    if (!pData) return;
     setGerando('pdf');
     try {
-      await generatePropostaPDF(propostaData);
+      await generatePropostaPDF(pData);
       toast({ title: 'PDF gerado!' });
     } catch { toast({ title: 'Erro ao gerar PDF', variant: 'destructive' }); }
     setGerando(null);
   };
 
-  const handleDownloadExcel = () => {
-    if (!propostaData) return;
+  const handleDownloadExcel = async () => {
+    const pData = getPropostaDataWithAmbientes();
+    if (!pData) return;
     setGerando('excel');
     try {
-      generateEquipamentosExcel(propostaData);
+      await generateEquipamentosExcel(pData);
       toast({ title: 'Planilha gerada!' });
     } catch { toast({ title: 'Erro ao gerar planilha', variant: 'destructive' }); }
     setGerando(null);

@@ -429,26 +429,28 @@ export default function OrcamentoChat() {
   const chatContent = (
     <div className={`${user ? '' : 'min-h-screen'} bg-background flex flex-col h-full`}>
       {/* Header */}
-      <header className="border-b bg-card px-6 py-4 flex items-center justify-between shrink-0">
-        <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <img src={emiveLogo} alt="Emive" className="h-8" />
-          <div>
-            <h1 className="text-lg font-semibold text-foreground">Orçamento IA</h1>
-            <p className="text-xs text-muted-foreground">IA guiando a coleta de dados para proposta</p>
+      <header className="border-b bg-card px-4 sm:px-6 py-3 shrink-0">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+            <Button variant="ghost" size="icon" className="shrink-0" onClick={() => navigate(-1)}>
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+            <img src={emiveLogo} alt="Emive" className="h-7 sm:h-8 shrink-0" />
+            <div className="min-w-0">
+              <h1 className="text-base sm:text-lg font-semibold text-foreground truncate">Orçamento IA</h1>
+              <p className="text-xs text-muted-foreground hidden sm:block">IA guiando a coleta de dados para proposta</p>
+            </div>
           </div>
+          {propostaJaGerada ? (
+            <Button onClick={carregarPropostaExistente} disabled={gerandoProposta} variant="outline" size="sm" className="shrink-0">
+              {gerandoProposta ? <><Loader2 className="mr-1.5 h-4 w-4 animate-spin" /><span className="hidden sm:inline">Carregando...</span><span className="sm:hidden">...</span></> : <><FileText className="mr-1.5 h-4 w-4" /><span className="hidden sm:inline">Ver Proposta</span><span className="sm:hidden">Proposta</span></>}
+            </Button>
+          ) : messages.length >= 6 ? (
+            <Button onClick={gerarProposta} disabled={gerandoProposta} size="sm" className="shrink-0">
+              {gerandoProposta ? <><Loader2 className="mr-1.5 h-4 w-4 animate-spin" /><span className="hidden sm:inline">Gerando...</span><span className="sm:hidden">...</span></> : <><FileText className="mr-1.5 h-4 w-4" /><span className="hidden sm:inline">Gerar Proposta</span><span className="sm:hidden">Proposta</span></>}
+            </Button>
+          ) : null}
         </div>
-        {propostaJaGerada ? (
-          <Button onClick={carregarPropostaExistente} disabled={gerandoProposta} variant="outline">
-            {gerandoProposta ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Carregando...</> : <><FileText className="mr-2 h-4 w-4" />Ver Proposta</>}
-          </Button>
-        ) : messages.length >= 6 ? (
-          <Button onClick={gerarProposta} disabled={gerandoProposta}>
-            {gerandoProposta ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Gerando...</> : <><FileText className="mr-2 h-4 w-4" />Gerar Proposta</>}
-          </Button>
-        ) : null}
       </header>
 
       {/* Messages */}

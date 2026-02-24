@@ -489,6 +489,8 @@ export default function CustomerDetail() {
                     <SelectContent>
                       <SelectItem value="GEAR">GEAR</SelectItem>
                       <SelectItem value="SITUATOR">SITUATOR</SelectItem>
+                      <SelectItem value="Outro">Outro</SelectItem>
+                      <SelectItem value="Nenhum">Nenhum</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

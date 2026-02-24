@@ -283,5 +283,27 @@ export async function generatePropostaPDF(data: PropostaData) {
     doc.text('ESTA PROPOSTA TEM VALIDADE DE 5 DIAS ÚTEIS.', pageWidth / 2, 285, { align: 'center' });
   }
 
-  doc.save(`proposta-emive-${data.sessao.nome_cliente?.replace(/\s+/g, '-').toLowerCase() || 'cliente'}.pdf`);
+  const fileName = `proposta-emive-${data.sessao.nome_cliente?.replace(/\s+/g, '-').toLowerCase() || 'cliente'}.pdf`;
+  const blob = doc.output('blob');
+  const blobUrl = URL.createObjectURL(blob);
+
+  // iOS Safari doesn't support blob download links well — open in new tab instead
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+  if (isIOS) {
+    // Open PDF in new tab — Safari will show native PDF viewer with share/save
+    const newWindow = window.open(blobUrl, '_blank');
+    if (!newWindow) {
+      // Fallback: use data URI
+      const dataUri = doc.output('datauristring');
+      window.open(dataUri, '_blank');
+    }
+  } else {
+    const link = document.createElement('a');
+    link.href = blobUrl;
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    setTimeout(() => URL.revokeObjectURL(blobUrl), 100);
+  }
 }

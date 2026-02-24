@@ -42,6 +42,13 @@ export default function OrcamentoChat() {
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
   }, [messages]);
 
+  // Auto-focus input when loading finishes
+  useEffect(() => {
+    if (!isLoading) {
+      setTimeout(() => inputRef.current?.focus(), 50);
+    }
+  }, [isLoading]);
+
   // Auto-show proposal when navigated with ver=1
   useEffect(() => {
     if (autoShowPropostaRef.current && messages.length > 0 && !proposta && !gerandoProposta) {

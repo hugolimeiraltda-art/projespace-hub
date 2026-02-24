@@ -41,6 +41,7 @@ const getAmbienteIcon = (tipo: string) => {
     fachada: <Building className="h-4 w-4" />,
     estacionamento: <Car className="h-4 w-4" />,
     guarita: <Shield className="h-4 w-4" />,
+    blocos: <Building className="h-4 w-4" />,
   };
   return icons[tipo] || <LayoutGrid className="h-4 w-4" />;
 };
@@ -186,6 +187,11 @@ export function EAPDialog({ open, onOpenChange, sessaoId, nomeCliente }: EAPDial
           const infraItems = textItems.filter((i: any) => /cabo|infra|nobreak|switch|rack/i.test(i.nome));
           if (infraItems.length > 0) {
             inferredAmbientes.push({ nome: 'Infraestrutura', tipo: 'porta_interna', equipamentos: infraItems.map((i: any) => i.label), descricao_funcionamento: 'Cabeamento, infraestrutura elétrica e equipamentos de suporte.' });
+          }
+
+          const blocoItems = textItems.filter((i: any) => /bloco|torre|hall|corredor|pavimento|andar|lobby/i.test(i.nome));
+          if (blocoItems.length > 0) {
+            inferredAmbientes.push({ nome: 'Blocos / Torres', tipo: 'fachada', equipamentos: blocoItems.map((i: any) => i.label), descricao_funcionamento: 'Controle de acesso nos blocos e torres do condomínio, com leitores e câmeras nos halls e corredores.' });
           }
 
           return inferredAmbientes.filter(a => a.equipamentos.length > 0);

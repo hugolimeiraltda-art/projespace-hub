@@ -174,37 +174,63 @@ export default function PropostaView({ data, onVoltar }: PropostaViewProps) {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="border-b bg-card px-4 md:px-6 py-4 flex items-center justify-between sticky top-0 z-10">
-        <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={onVoltar}>
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <img src={emiveLogo} alt="Emive" className="h-8" />
-          <div className="hidden sm:block">
-            <h1 className="text-lg font-semibold text-foreground">Proposta Comercial</h1>
-            <p className="text-xs text-muted-foreground">{data.sessao.nome_cliente}</p>
+      <header className="border-b bg-card sticky top-0 z-10">
+        <div className="px-4 md:px-6 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+            <Button variant="ghost" size="icon" className="shrink-0" onClick={onVoltar}>
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+            <img src={emiveLogo} alt="Emive" className="h-7 sm:h-8 shrink-0 hidden sm:block" />
+            <div className="min-w-0">
+              <h1 className="text-base sm:text-lg font-semibold text-foreground truncate">Proposta Comercial</h1>
+              <p className="text-xs text-muted-foreground truncate">{data.sessao.nome_cliente}</p>
+            </div>
+          </div>
+          {/* Desktop buttons */}
+          <div className="hidden sm:flex gap-2 flex-wrap justify-end">
+            <Button variant="outline" size="sm" onClick={handleDownloadExcel} disabled={!!gerando}>
+              {gerando === 'excel' ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <Table2 className="mr-1 h-4 w-4" />}
+              Planilha
+            </Button>
+            <Button variant="outline" size="sm" onClick={handleDownloadPDF} disabled={!!gerando}>
+              {gerando === 'pdf' ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <Download className="mr-1 h-4 w-4" />}
+              PDF
+            </Button>
+            <Button variant="outline" size="sm" onClick={handleShareEmail}>
+              <Mail className="mr-1 h-4 w-4" />
+              Email
+            </Button>
+            <Button variant="outline" size="sm" onClick={handleShareWhatsApp}>
+              <MessageSquare className="mr-1 h-4 w-4" />
+              WhatsApp
+            </Button>
+            <Button variant="outline" size="sm" onClick={handleShareExternal}>
+              <Share2 className="mr-1 h-4 w-4" />
+              Compartilhar
+            </Button>
           </div>
         </div>
-        <div className="flex gap-2 flex-wrap justify-end">
-          <Button variant="outline" size="sm" onClick={handleDownloadExcel} disabled={!!gerando}>
-            {gerando === 'excel' ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <Table2 className="mr-1 h-4 w-4" />}
-            <span className="hidden sm:inline">Planilha</span>
-          </Button>
-          <Button variant="outline" size="sm" onClick={handleDownloadPDF} disabled={!!gerando}>
+        {/* Mobile action bar */}
+        <div className="flex sm:hidden gap-1.5 px-4 pb-3 overflow-x-auto">
+          <Button variant="outline" size="sm" className="shrink-0" onClick={handleDownloadPDF} disabled={!!gerando}>
             {gerando === 'pdf' ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <Download className="mr-1 h-4 w-4" />}
-            <span className="hidden sm:inline">PDF</span>
+            PDF
           </Button>
-          <Button variant="outline" size="sm" onClick={handleShareEmail}>
+          <Button variant="outline" size="sm" className="shrink-0" onClick={handleDownloadExcel} disabled={!!gerando}>
+            {gerando === 'excel' ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <Table2 className="mr-1 h-4 w-4" />}
+            Planilha
+          </Button>
+          <Button variant="outline" size="sm" className="shrink-0" onClick={handleShareEmail}>
             <Mail className="mr-1 h-4 w-4" />
-            <span className="hidden sm:inline">Email</span>
+            Email
           </Button>
-          <Button variant="outline" size="sm" onClick={handleShareWhatsApp}>
+          <Button variant="outline" size="sm" className="shrink-0" onClick={handleShareWhatsApp}>
             <MessageSquare className="mr-1 h-4 w-4" />
-            <span className="hidden sm:inline">WhatsApp</span>
+            WhatsApp
           </Button>
-          <Button variant="outline" size="sm" onClick={handleShareExternal}>
+          <Button variant="outline" size="sm" className="shrink-0" onClick={handleShareExternal}>
             <Share2 className="mr-1 h-4 w-4" />
-            <span className="hidden sm:inline">Compartilhar</span>
+            Compartilhar
           </Button>
         </div>
       </header>

@@ -46,7 +46,21 @@ function checkPage(doc: jsPDF, y: number, needed: number): number {
   return y;
 }
 
-function drawAmbientes(doc: jsPDF, y: number, ambientes: AmbienteItem[], pageWidth: number, margin: number): number {
+async function loadImageAsDataUrl(url: string): Promise<string | null> {
+  try {
+    const response = await fetch(url);
+    const blob = await response.blob();
+    const reader = new FileReader();
+    return await new Promise((resolve) => {
+      reader.onload = () => resolve(reader.result as string);
+      reader.readAsDataURL(blob);
+    });
+  } catch {
+    return null;
+  }
+}
+
+function drawAmbientes(doc: jsPDF, y: number, ambientes: AmbienteItem[], pageWidth: number, margin: number, fotoDataUrls?: Map<string, string>): number {
   y = checkPage(doc, y, 30);
   doc.setFontSize(14);
   doc.setFont('helvetica', 'bold');
@@ -97,7 +111,35 @@ function drawAmbientes(doc: jsPDF, y: number, ambientes: AmbienteItem[], pageWid
       doc.text(line, margin + 6, y);
       y += 4;
     }
-    y += 6;
+    y += 2;
+
+    // Photos for this ambiente
+    if (amb.fotos && amb.fotos.length > 0 && fotoDataUrls) {
+      const imgWidth = 55;
+      const imgHeight = 40;
+      let col = 0;
+      y = checkPage(doc, y, imgHeight + 10);
+      doc.setFontSize(7);
+      doc.setTextColor(100, 100, 100);
+      doc.text('Fotos:', margin + 6, y);
+      doc.setTextColor(0, 0, 0);
+      y += 4;
+
+      for (const fotoUrl of amb.fotos) {
+        const dataUrl = fotoDataUrls.get(fotoUrl);
+        if (!dataUrl) continue;
+        const x = margin + 6 + col * (imgWidth + 6);
+        if (y + imgHeight > 270) { doc.addPage(); y = 20; col = 0; }
+        try {
+          doc.addImage(dataUrl, 'JPEG', x, y, imgWidth, imgHeight);
+        } catch { /* skip broken image */ }
+        col++;
+        if (col >= 3) { col = 0; y += imgHeight + 4; }
+      }
+      if (col > 0) y += imgHeight + 4;
+    }
+
+    y += 4;
   }
   return y;
 }
@@ -239,11 +281,41 @@ export async function generatePropostaPDF(data: PropostaData) {
     y += 22;
   }
 
-  // Ambientes / EAP — always render if available
+  // Pre-load ALL photo data URLs (both from fotos and from ambientes)
+  const fotoDataUrls = new Map<string, string>();
+  const allFotoUrls = new Set<string>();
+
+  // Collect ambiente foto URLs
   const ambientes = itens?.ambientes;
+  if (ambientes) {
+    for (const amb of ambientes) {
+      if (amb.fotos) amb.fotos.forEach(u => allFotoUrls.add(u));
+    }
+  }
+  // Collect general foto URLs
+  if (data.fotos) {
+    for (const f of data.fotos) allFotoUrls.add(f.url);
+  }
+
+  // Load all in parallel
+  await Promise.all(
+    Array.from(allFotoUrls).map(async (url) => {
+      const dataUrl = await loadImageAsDataUrl(url);
+      if (dataUrl) fotoDataUrls.set(url, dataUrl);
+    })
+  );
+
+  // Track which foto URLs are used by ambientes
+  const usedFotoUrls = new Set<string>();
+
+  // Ambientes / EAP — always render if available
   if (ambientes && ambientes.length > 0) {
     y += 4;
-    y = drawAmbientes(doc, y, ambientes, pageWidth, margin);
+    // Mark ambiente fotos as used
+    for (const amb of ambientes) {
+      if (amb.fotos) amb.fotos.forEach(u => usedFotoUrls.add(u));
+    }
+    y = drawAmbientes(doc, y, ambientes, pageWidth, margin, fotoDataUrls);
 
     // If no structured tables above, build a consolidated table from ambientes
     if (!hasStructuredItems) {
@@ -276,7 +348,6 @@ export async function generatePropostaPDF(data: PropostaData) {
       for (const amb of ambientes) {
         for (const eq of amb.equipamentos) {
           y = checkPage(doc, y, 6);
-          // Parse "1.00x ITEM NAME" format
           const match = eq.match(/^([\d.]+)x?\s+(.+)$/i);
           const qtd = match ? match[1] : '1';
           const nome = match ? match[2] : eq;
@@ -296,8 +367,9 @@ export async function generatePropostaPDF(data: PropostaData) {
     }
   }
 
-  // Photos
-  if (data.fotos && data.fotos.length > 0) {
+  // Remaining photos not assigned to any ambiente
+  const remainingFotos = (data.fotos || []).filter(f => !usedFotoUrls.has(f.url));
+  if (remainingFotos.length > 0) {
     doc.addPage();
     y = 20;
     doc.setFontSize(14);
@@ -308,31 +380,24 @@ export async function generatePropostaPDF(data: PropostaData) {
     y += 10;
 
     let col = 0;
-    for (const foto of data.fotos) {
+    for (const foto of remainingFotos) {
+      const dataUrl = fotoDataUrls.get(foto.url);
+      if (!dataUrl) continue;
+
+      const imgWidth = 80;
+      const imgHeight = 60;
+      const x = margin + col * (imgWidth + 10);
+
+      if (y + imgHeight > 270) { doc.addPage(); y = 20; col = 0; }
+
       try {
-        const response = await fetch(foto.url);
-        const blob = await response.blob();
-        const reader = new FileReader();
-        const dataUrl: string = await new Promise((resolve) => {
-          reader.onload = () => resolve(reader.result as string);
-          reader.readAsDataURL(blob);
-        });
-        
-        const imgWidth = 80;
-        const imgHeight = 60;
-        const x = margin + col * (imgWidth + 10);
-        
-        if (y + imgHeight > 270) { doc.addPage(); y = 20; col = 0; }
-        
         doc.addImage(dataUrl, 'JPEG', x, y, imgWidth, imgHeight);
         doc.setFontSize(7);
         doc.text(foto.nome.substring(0, 25), x, y + imgHeight + 4);
-        
-        col++;
-        if (col >= 2) { col = 0; y += imgHeight + 10; }
-      } catch (e) {
-        console.error('Error loading photo for PDF:', e);
-      }
+      } catch { /* skip */ }
+
+      col++;
+      if (col >= 2) { col = 0; y += imgHeight + 10; }
     }
   }
 

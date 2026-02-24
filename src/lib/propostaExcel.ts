@@ -129,5 +129,25 @@ export function generateEquipamentosExcel(data: PropostaData) {
   ws2['!cols'] = [{ wch: 20 }, { wch: 40 }];
   XLSX.utils.book_append_sheet(wb, ws2, 'Resumo');
 
-  XLSX.writeFile(wb, `equipamentos-emive-${data.sessao.nome_cliente?.replace(/\s+/g, '-').toLowerCase() || 'cliente'}.xlsx`);
+  const fileName = `equipamentos-emive-${data.sessao.nome_cliente?.replace(/\s+/g, '-').toLowerCase() || 'cliente'}.xlsx`;
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+
+  if (isIOS) {
+    // iOS Safari: use blob + open in new tab
+    const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+    const blob = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const blobUrl = URL.createObjectURL(blob);
+    const newWindow = window.open(blobUrl, '_blank');
+    if (!newWindow) {
+      // Fallback to download link
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+  } else {
+    XLSX.writeFile(wb, fileName);
+  }
 }

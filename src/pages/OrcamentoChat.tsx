@@ -506,6 +506,12 @@ export default function OrcamentoChat() {
           console.error('Error notifying team:', err);
         }
 
+        // Update session status to hide from listings
+        await supabase
+          .from('orcamento_sessoes')
+          .update({ status: 'projeto_aberto' })
+          .eq('id', sessaoId);
+
         toast({ title: 'Projeto criado e enviado!', description: 'O projetista foi notificado e já pode iniciar o trabalho.' });
         setProjetoOpen(false);
         navigate(`/projetos/${projectId}`);

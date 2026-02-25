@@ -50,6 +50,7 @@ export default function VendedorHome() {
       .from('orcamento_sessoes')
       .select('*')
       .eq('vendedor_id', user.id)
+      .neq('status', 'projeto_aberto')
       .gte('created_at', thirtyDaysAgo)
       .order('created_at', { ascending: false });
 

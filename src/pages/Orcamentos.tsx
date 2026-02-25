@@ -64,7 +64,7 @@ export default function Orcamentos() {
   const [loadingReport, setLoadingReport] = useState(false);
   const fetchData = async () => {
     const canSeeAll = user?.role === 'admin' || user?.role === 'projetos' || user?.role === 'gerente_comercial';
-    let query = supabase.from('orcamento_sessoes').select('*').order('created_at', { ascending: false });
+    let query = supabase.from('orcamento_sessoes').select('*').neq('status', 'projeto_aberto').order('created_at', { ascending: false });
     if (!canSeeAll) {
       query = query.eq('vendedor_id', user!.id);
     }

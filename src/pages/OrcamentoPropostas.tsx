@@ -102,6 +102,7 @@ export default function OrcamentoPropostas() {
         .from('orcamento_sessoes')
         .select('id, nome_cliente, vendedor_nome, proposta_gerada, proposta_gerada_at, created_at, status, endereco_condominio')
         .not('proposta_gerada', 'is', null)
+        .neq('status', 'projeto_aberto')
         .order('proposta_gerada_at', { ascending: false });
       if (error) throw error;
       return data as Sessao[];
@@ -227,6 +228,12 @@ export default function OrcamentoPropostas() {
         } catch (err) {
           console.error('Error notifying team:', err);
         }
+
+        // Update session status to hide from listings
+        await supabase
+          .from('orcamento_sessoes')
+          .update({ status: 'projeto_aberto' })
+          .eq('id', projetoSessao.id);
 
         toast({ title: 'Projeto criado e enviado!', description: 'O projetista foi notificado e já pode iniciar o trabalho.' });
         setProjetoOpen(false);

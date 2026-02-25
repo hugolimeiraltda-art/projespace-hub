@@ -174,7 +174,7 @@ export default function PropostaView({ data, onVoltar }: PropostaViewProps) {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="border-b bg-card sticky top-0 z-10">
+      <header className="border-b bg-card sm:sticky sm:top-0 z-10">
         <div className="px-4 md:px-6 py-3 flex items-center justify-between">
           <div className="flex items-center gap-2 sm:gap-3 min-w-0">
             <Button variant="ghost" size="icon" className="shrink-0" onClick={onVoltar}>

@@ -257,7 +257,7 @@ export default function OrcamentoPropostas() {
     return { avaliada: false, slaExpirado, slaDeadline };
   };
 
-  const isAdmin = user?.role === 'admin';
+  const canSeeAll = user?.role === 'admin' || user?.role === 'projetos' || user?.role === 'gerente_comercial';
 
   return (
     <Layout>
@@ -411,7 +411,7 @@ export default function OrcamentoPropostas() {
                           <LayoutGrid className="w-4 h-4 mr-1" />
                           Ver EAP
                         </Button>
-                        {isAdmin && (
+                        {canSeeAll && (
                           <>
                             <Button
                               size="sm"

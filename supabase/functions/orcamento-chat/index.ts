@@ -452,11 +452,11 @@ ${fotoListStr}
       // Extract JSON block from response
       let itensEstruturados = null;
       let proposta = fullContent;
-      const jsonMatch = fullContent.match(/```json\s*([\s\S]*?)```/);
+      const jsonMatch = fullContent.match(new RegExp('```json\\s*([\\s\\S]*?)```'));
       if (jsonMatch) {
         try {
           itensEstruturados = JSON.parse(jsonMatch[1].trim());
-          proposta = fullContent.replace(/```json\s*[\s\S]*?```/, '').trim();
+          proposta = fullContent.replace(new RegExp('```json\\s*[\\s\\S]*?```'), '').trim();
         } catch (e) {
           console.error("Failed to parse structured items JSON:", e);
         }

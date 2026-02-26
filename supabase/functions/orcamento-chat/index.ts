@@ -129,6 +129,8 @@ Poste exclusivo com até 4 câmeras com vídeo analítico conectadas à Central 
   - Se **saída NÃO autenticada** → usar o kit "Porta Pedestre" (padrão)
 - Alguma dessas portas possui ECLUSA?
 - Se sim, quantas eclusas iremos controlar?
+- **REGRA DE ECLUSA EM PORTAS DE PEDESTRE**: Para eclusas em portas de pedestres, **NÃO é necessário adicionar módulo de intertravamento**, pois os leitores faciais já possuem esse recurso embutido. Avise o vendedor disso.
+- **REGRA DE ECLUSA EM PORTÕES/CANCELAS**: Para eclusas em portões de garagem ou cancelas, **É OBRIGATÓRIO incluir o item "Módulo de Intertravamento"** na proposta. Avise o vendedor que foi incluído automaticamente.
 - Quantas portas de pedestre nos blocos iremos controlar?
 - Para portas dos blocos, também pergunte se terá saída autenticada ou não (mesma lógica de kits acima)
 - **FOTOS**: Por dentro e por fora de cada porta (e das eclusas, se houver)

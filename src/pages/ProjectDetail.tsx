@@ -783,6 +783,7 @@ export default function ProjectDetail() {
                     projectCity={project.cliente_cidade}
                     projectState={project.cliente_estado}
                     numeroUnidades={project.numero_unidades}
+                    sessaoId={project.observacoes_gerais?.match(/\[PROJETO_IA:([^\]]+)\]/)?.[1] || null}
                   />
                 </CardContent>
               </Card>

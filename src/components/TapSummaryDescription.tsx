@@ -288,18 +288,24 @@ export function TapSummaryDescription({ tap, projectName, projectCity, projectSt
             <p><strong>Tipo de Produto:</strong> Portaria {modalidade}</p>
           )}
           <p>
-            <strong>Portaria Virtual (App):</strong> {portariaVirtual}
+            <strong>Atendimento ao Visitante:</strong>{' '}
             {tap.portaria_virtual_atendimento_app === 'SIM_COM_TRANSBORDO' && (
-              <span className="text-muted-foreground"> — chamadas redirecionam para o apartamento caso não atendidas no App.</span>
+              <span>Chamada de vídeo no App do morador + transbordo para o apartamento via interfone. Se não atender, redireciona para até 2 números de telefone.</span>
             )}
             {tap.portaria_virtual_atendimento_app === 'SIM_SEM_TRANSBORDO' && (
-              <span className="text-muted-foreground"> — chamadas seguem para até 3 números de telefone cadastrados.</span>
+              <span>Chamada de vídeo no App do morador. Se não atender, redireciona para até 3 números de telefone cadastrados. Sem transbordo para interfone.</span>
             )}
-            {tap.portaria_virtual_atendimento_app === 'NAO' && modalidade?.toLowerCase() === 'digital' && (
-              <span className="text-muted-foreground"> — sistema digital com chamada de vídeo via App.</span>
+            {tap.portaria_virtual_atendimento_app === 'NAO' && modalidade?.toLowerCase() === 'remota' && (
+              <span>Atendimento pela Central de Portaria Emive com operadores humanos monitorando câmeras e controlando acessos.</span>
             )}
-            {tap.portaria_virtual_atendimento_app === 'NAO' && modalidade?.toLowerCase() !== 'digital' && (
-              <span className="text-muted-foreground"> — atendimento será feito por central de portaria ou porteiro físico.</span>
+            {tap.portaria_virtual_atendimento_app === 'NAO' && modalidade?.toLowerCase() === 'assistida' && (
+              <span>Porteiro físico na guarita usando o software Emive para atender interfones, registrar encomendas e cadastrar visitantes.</span>
+            )}
+            {tap.portaria_virtual_atendimento_app === 'NAO' && modalidade?.toLowerCase() === 'expressa' && (
+              <span>Chamada via App do morador apenas. Limitada a 20 apartamentos e 2 portas.</span>
+            )}
+            {tap.portaria_virtual_atendimento_app === 'NAO' && (!modalidade || modalidade.toLowerCase() === 'digital') && (
+              <span>Chamada de vídeo no App do morador. Se não atender, redireciona para até 3 números de telefone cadastrados.</span>
             )}
           </p>
           {(tap.interfonia || interfoniaInfo) ? (

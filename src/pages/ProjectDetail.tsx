@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { SaleFormSummary } from '@/components/SaleFormSummary';
 import { AIFeedbackDialog } from '@/components/AIFeedbackDialog';
 import { ProjetoIASection } from '@/components/ProjetoIASection';
+import { TapSummaryDescription } from '@/components/TapSummaryDescription';
 import jsPDF from 'jspdf';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -775,70 +776,14 @@ export default function ProjectDetail() {
                 <CardHeader>
                   <CardTitle className="text-lg">Resumo do TAP</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                    <div className={cn("rounded p-2", changedStyle('portaria_virtual_atendimento_app'))}>
-                      <p className="text-xs text-muted-foreground uppercase">Portaria Virtual</p>
-                      <p className="font-medium">{PORTARIA_VIRTUAL_LABELS[tap.portaria_virtual_atendimento_app]}</p>
-                    </div>
-                    <div className={cn("rounded p-2", changedStyle('numero_blocos'))}>
-                      <p className="text-xs text-muted-foreground uppercase">Nº Blocos</p>
-                      <p className="font-medium">{tap.numero_blocos}</p>
-                    </div>
-                    <div className={cn("rounded p-2", changedStyle('interfonia'))}>
-                      <p className="text-xs text-muted-foreground uppercase">Interfonia</p>
-                      <p className="font-medium">{tap.interfonia ? 'Sim' : 'Não'}</p>
-                    </div>
-                    <div className={cn("rounded p-2", changedStyle('cftv_elevador_possui'))}>
-                      <p className="text-xs text-muted-foreground uppercase">CFTV Elevador</p>
-                      <p className="font-medium">{CFTV_ELEVADOR_LABELS[tap.cftv_elevador_possui]}</p>
-                    </div>
-                    <div className={cn("rounded p-2", changedStyle('marcacao_croqui_confirmada'))}>
-                      <p className="text-xs text-muted-foreground uppercase">Croqui Confirmado</p>
-                      <p className="font-medium flex items-center gap-1">
-                        {tap.marcacao_croqui_confirmada ? (
-                          <><Check className="w-4 h-4 text-status-approved" /> Sim</>
-                        ) : (
-                          <><AlertTriangle className="w-4 h-4 text-status-pending" /> Não</>
-                        )}
-                      </p>
-                    </div>
-                  </div>
-
-                  {tap.controle_acessos_pedestre_descricao && (
-                    <div className={cn("rounded p-2", changedStyle('controle_acessos_pedestre_descricao'))}>
-                      <p className="text-xs text-muted-foreground uppercase mb-1">Controle Pedestre</p>
-                      <p className="text-sm">{tap.controle_acessos_pedestre_descricao}</p>
-                    </div>
-                  )}
-
-                  {tap.controle_acessos_veiculo_descricao && (
-                    <div className={cn("rounded p-2", changedStyle('controle_acessos_veiculo_descricao'))}>
-                      <p className="text-xs text-muted-foreground uppercase mb-1">Controle Veículo</p>
-                      <p className="text-sm">{tap.controle_acessos_veiculo_descricao}</p>
-                    </div>
-                  )}
-
-                  {tap.alarme_descricao && (
-                    <div className={cn("rounded p-2", changedStyle('alarme_descricao'))}>
-                      <p className="text-xs text-muted-foreground uppercase mb-1">Alarme</p>
-                      <p className="text-sm">{tap.alarme_descricao}</p>
-                    </div>
-                  )}
-
-                  {tap.cftv_dvr_descricao && (
-                    <div className={cn("rounded p-2", changedStyle('cftv_dvr_descricao'))}>
-                      <p className="text-xs text-muted-foreground uppercase mb-1">CFTV/DVR</p>
-                      <p className="text-sm">{tap.cftv_dvr_descricao}</p>
-                    </div>
-                  )}
-
-                  <Alert className="bg-status-pending-bg border-status-pending/30">
-                    <AlertTriangle className="h-4 w-4 text-status-pending" />
-                    <AlertDescription className="text-foreground">
-                      <strong>Observação:</strong> Não vamos assumir as câmeras do prédio/condomínio.
-                    </AlertDescription>
-                  </Alert>
+                <CardContent>
+                  <TapSummaryDescription
+                    tap={tap}
+                    projectName={project.cliente_condominio_nome}
+                    projectCity={project.cliente_cidade}
+                    projectState={project.cliente_estado}
+                    numeroUnidades={project.numero_unidades}
+                  />
                 </CardContent>
               </Card>
             )}

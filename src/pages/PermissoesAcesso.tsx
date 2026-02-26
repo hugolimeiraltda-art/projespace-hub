@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Layout } from '@/components/Layout';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
@@ -9,7 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useAllPermissions, MENU_KEYS, AccessLevel } from '@/hooks/useMenuPermissions';
-import { ArrowLeft, Shield, UserCog, Check, Eye, X } from 'lucide-react';
+import { ArrowLeft, Shield, UserCog, Check, Eye, X, Save } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 
@@ -46,6 +46,14 @@ export default function PermissoesAcesso() {
   const [selectedUser, setSelectedUser] = useState<string>('');
   const [saving, setSaving] = useState(false);
 
+  // Pending changes for batch save
+  const [pendingRoleChanges, setPendingRoleChanges] = useState<Record<string, AccessLevel>>({});
+  const [pendingUserChanges, setPendingUserChanges] = useState<Record<string, AccessLevel | null>>({});
+
+  // Reset pending changes when switching role or user
+  useEffect(() => { setPendingRoleChanges({}); }, [selectedRole]);
+  useEffect(() => { setPendingUserChanges({}); }, [selectedUser]);
+
   useEffect(() => {
     const loadUsers = async () => {
       const { data: roles } = await supabase.from('user_roles').select('user_id, role');
@@ -75,25 +83,90 @@ export default function PermissoesAcesso() {
     return override ? override.access_level as AccessLevel : null;
   };
 
-  const handleRoleChange = async (role: string, menuKey: string, level: AccessLevel) => {
+  // Get effective role access considering pending changes
+  const getEffectiveRoleAccess = (role: string, menuKey: string): AccessLevel => {
+    const key = `${role}:${menuKey}`;
+    if (key in pendingRoleChanges) return pendingRoleChanges[key];
+    return getRoleAccess(role, menuKey);
+  };
+
+  // Get effective user override considering pending changes
+  const getEffectiveUserOverride = (userId: string, menuKey: string): AccessLevel | null => {
+    const key = `${userId}:${menuKey}`;
+    if (key in pendingUserChanges) return pendingUserChanges[key];
+    return getUserOverride(userId, menuKey);
+  };
+
+  const handleRoleChangeLocal = (role: string, menuKey: string, level: AccessLevel) => {
+    const key = `${role}:${menuKey}`;
+    const currentSaved = getRoleAccess(role, menuKey);
+    if (currentSaved === level) {
+      // Remove from pending if it matches saved state
+      setPendingRoleChanges(prev => {
+        const next = { ...prev };
+        delete next[key];
+        return next;
+      });
+    } else {
+      setPendingRoleChanges(prev => ({ ...prev, [key]: level }));
+    }
+  };
+
+  const handleUserOverrideLocal = (userId: string, menuKey: string, level: AccessLevel | null) => {
+    const key = `${userId}:${menuKey}`;
+    const currentSaved = getUserOverride(userId, menuKey);
+    if (currentSaved === level) {
+      setPendingUserChanges(prev => {
+        const next = { ...prev };
+        delete next[key];
+        return next;
+      });
+    } else {
+      setPendingUserChanges(prev => ({ ...prev, [key]: level }));
+    }
+  };
+
+  const pendingRoleCount = Object.keys(pendingRoleChanges).length;
+  const pendingUserCount = Object.keys(pendingUserChanges).length;
+
+  const saveRoleChanges = async () => {
     setSaving(true);
-    await updateRolePerm(role, menuKey, level);
-    toast({ title: 'Permissão atualizada' });
+    try {
+      for (const [key, level] of Object.entries(pendingRoleChanges)) {
+        const [role, menuKey] = key.split(':');
+        await updateRolePerm(role, menuKey, level);
+      }
+      setPendingRoleChanges({});
+      toast({ title: 'Permissões salvas', description: `${Object.keys(pendingRoleChanges).length} alteração(ões) aplicada(s).` });
+    } catch (e) {
+      toast({ title: 'Erro ao salvar', variant: 'destructive' });
+    }
     setSaving(false);
   };
 
-  const handleUserOverrideChange = async (userId: string, menuKey: string, level: AccessLevel | null) => {
+  const saveUserChanges = async () => {
     setSaving(true);
-    await updateUserOverride(userId, menuKey, level);
-    toast({ title: level === null ? 'Exceção removida' : 'Exceção aplicada' });
+    try {
+      for (const [key, level] of Object.entries(pendingUserChanges)) {
+        const [userId, menuKey] = key.split(':');
+        await updateUserOverride(userId, menuKey, level);
+      }
+      setPendingUserChanges({});
+      toast({ title: 'Exceções salvas', description: `${Object.keys(pendingUserChanges).length} alteração(ões) aplicada(s).` });
+    } catch (e) {
+      toast({ title: 'Erro ao salvar', variant: 'destructive' });
+    }
     setSaving(false);
   };
+
+  const discardRoleChanges = () => setPendingRoleChanges({});
+  const discardUserChanges = () => setPendingUserChanges({});
 
   const parentMenus = MENU_KEYS.filter(m => m.parent === null);
   const getChildren = (parentKey: string) => MENU_KEYS.filter(m => m.parent === parentKey);
 
-  const AccessCell = ({ value, onChange, disabled }: { value: AccessLevel; onChange: (v: AccessLevel) => void; disabled?: boolean }) => (
-    <div className="flex gap-1">
+  const AccessCell = ({ value, onChange, disabled, isChanged }: { value: AccessLevel; onChange: (v: AccessLevel) => void; disabled?: boolean; isChanged?: boolean }) => (
+    <div className={cn("flex gap-1 rounded-lg p-1", isChanged && "ring-2 ring-primary/50 bg-primary/5")}>
       {ACCESS_OPTIONS.map(opt => {
         const Icon = opt.icon;
         const isActive = value === opt.value;
@@ -121,6 +194,27 @@ export default function PermissoesAcesso() {
   );
 
   const selectedUserObj = users.find(u => u.id === selectedUser);
+
+  const SaveBar = ({ count, onSave, onDiscard }: { count: number; onSave: () => void; onDiscard: () => void }) => {
+    if (count === 0) return null;
+    return (
+      <div className="sticky bottom-4 z-10 flex items-center justify-between gap-3 rounded-xl border bg-card p-4 shadow-lg">
+        <span className="text-sm font-medium">
+          <Badge variant="default" className="mr-2">{count}</Badge>
+          alteração(ões) pendente(s)
+        </span>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={onDiscard} disabled={saving}>
+            Descartar
+          </Button>
+          <Button size="sm" onClick={onSave} disabled={saving}>
+            <Save className="w-4 h-4 mr-1" />
+            {saving ? 'Salvando...' : 'Salvar Alterações'}
+          </Button>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <Layout>
@@ -183,7 +277,8 @@ export default function PermissoesAcesso() {
                     <tbody>
                       {parentMenus.map(menu => {
                         const children = getChildren(menu.key);
-                        const access = getRoleAccess(selectedRole, menu.key);
+                        const access = getEffectiveRoleAccess(selectedRole, menu.key);
+                        const isChanged = `${selectedRole}:${menu.key}` in pendingRoleChanges;
                         return (
                           <> 
                             <tr key={menu.key} className="border-b bg-card">
@@ -192,14 +287,16 @@ export default function PermissoesAcesso() {
                                 <div className="flex justify-center">
                                   <AccessCell
                                     value={access}
-                                    onChange={(v) => handleRoleChange(selectedRole, menu.key, v)}
+                                    onChange={(v) => handleRoleChangeLocal(selectedRole, menu.key, v)}
                                     disabled={saving || selectedRole === 'admin'}
+                                    isChanged={isChanged}
                                   />
                                 </div>
                               </td>
                             </tr>
                             {children.map(child => {
-                              const childAccess = getRoleAccess(selectedRole, child.key);
+                              const childAccess = getEffectiveRoleAccess(selectedRole, child.key);
+                              const childChanged = `${selectedRole}:${child.key}` in pendingRoleChanges;
                               return (
                                 <tr key={child.key} className="border-b">
                                   <td className="py-2.5 px-4 pl-10 text-muted-foreground">{child.label}</td>
@@ -207,8 +304,9 @@ export default function PermissoesAcesso() {
                                     <div className="flex justify-center">
                                       <AccessCell
                                         value={childAccess}
-                                        onChange={(v) => handleRoleChange(selectedRole, child.key, v)}
+                                        onChange={(v) => handleRoleChangeLocal(selectedRole, child.key, v)}
                                         disabled={saving || selectedRole === 'admin'}
+                                        isChanged={childChanged}
                                       />
                                     </div>
                                   </td>
@@ -223,6 +321,8 @@ export default function PermissoesAcesso() {
                 </div>
               </CardContent>
             </Card>
+
+            <SaveBar count={pendingRoleCount} onSave={saveRoleChanges} onDiscard={discardRoleChanges} />
           </TabsContent>
 
           {/* User Overrides Tab */}
@@ -266,13 +366,15 @@ export default function PermissoesAcesso() {
                         {parentMenus.map(menu => {
                           const children = getChildren(menu.key);
                           const roleAccess = getRoleAccess(selectedUserObj?.role || '', menu.key);
-                          const userOverride = getUserOverride(selectedUser, menu.key);
+                          const userOvr = getEffectiveUserOverride(selectedUser, menu.key);
 
                           const renderRow = (m: typeof menu, isChild: boolean) => {
                             const ra = isChild ? getRoleAccess(selectedUserObj?.role || '', m.key) : roleAccess;
-                            const uo = isChild ? getUserOverride(selectedUser, m.key) : userOverride;
+                            const uo = isChild ? getEffectiveUserOverride(selectedUser, m.key) : userOvr;
                             const raOpt = ACCESS_OPTIONS.find(o => o.value === ra)!;
                             const RaIcon = raOpt.icon;
+                            const key = `${selectedUser}:${m.key}`;
+                            const isChanged = key in pendingUserChanges;
 
                             return (
                               <tr key={m.key} className={cn("border-b", !isChild && "bg-card")}>
@@ -289,18 +391,19 @@ export default function PermissoesAcesso() {
                                   <div className="flex justify-center">
                                     <AccessCell
                                       value={uo || ra}
-                                      onChange={(v) => handleUserOverrideChange(selectedUser, m.key, v)}
+                                      onChange={(v) => handleUserOverrideLocal(selectedUser, m.key, v)}
                                       disabled={saving}
+                                      isChanged={isChanged}
                                     />
                                   </div>
                                 </td>
                                 <td className="py-2.5 px-4 text-center">
-                                  {uo !== null && (
+                                  {(uo !== null || isChanged) && (
                                     <Button
                                       variant="ghost"
                                       size="sm"
                                       className="text-xs text-destructive"
-                                      onClick={() => handleUserOverrideChange(selectedUser, m.key, null)}
+                                      onClick={() => handleUserOverrideLocal(selectedUser, m.key, null)}
                                     >
                                       Remover
                                     </Button>
@@ -329,6 +432,8 @@ export default function PermissoesAcesso() {
                 </CardContent>
               </Card>
             )}
+
+            <SaveBar count={pendingUserCount} onSave={saveUserChanges} onDiscard={discardUserChanges} />
           </TabsContent>
         </Tabs>
       </div>

@@ -259,11 +259,11 @@ Baseado no histórico da visita técnica com o vendedor, gere uma PROPOSTA COMER
 
 ### PRODUTOS UTILIZADOS
 
-| Qtde | Descrição |
-|------|-----------|
-| [qtd][unidade] | [NOME EXATO DO PRODUTO OU KIT DO CATÁLOGO] |
+| Qtde | Código | Descrição |
+|------|--------|-----------|
+| [qtd][unidade] | [CÓDIGO do produto/kit do catálogo] | [NOME EXATO DO PRODUTO OU KIT DO CATÁLOGO] |
 
-(liste TODOS os produtos e kits necessários, um por linha, usando EXATAMENTE os nomes do catálogo)
+(liste TODOS os produtos e kits necessários, um por linha, usando EXATAMENTE os nomes e códigos do catálogo)
 
 | | |
 |---|---|

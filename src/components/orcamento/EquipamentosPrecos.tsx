@@ -25,17 +25,20 @@ type ItensData = {
 };
 
 interface Props {
-  sessaoId: string;
+  sessaoId?: string;
+  initialData?: ItensData | null;
+  initialItensExpandidos?: any[];
 }
 
-export default function EquipamentosPrecos({ sessaoId }: Props) {
-  const [itens, setItens] = useState<ItensData | null>(null);
-  const [itensExpandidos, setItensExpandidos] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+export default function EquipamentosPrecos({ sessaoId, initialData, initialItensExpandidos }: Props) {
+  const [itens, setItens] = useState<ItensData | null>(initialData || null);
+  const [itensExpandidos, setItensExpandidos] = useState<any[]>(initialItensExpandidos || []);
+  const [loading, setLoading] = useState(!initialData && !!sessaoId);
   const [open, setOpen] = useState(false);
   const [expandedKits, setExpandedKits] = useState<Set<string>>(new Set());
 
   useEffect(() => {
+    if (initialData || !sessaoId) return;
     (async () => {
       try {
         const { data: sessao } = await supabase
@@ -57,7 +60,7 @@ export default function EquipamentosPrecos({ sessaoId }: Props) {
       }
       setLoading(false);
     })();
-  }, [sessaoId]);
+  }, [sessaoId, initialData]);
 
   if (loading) {
     return (

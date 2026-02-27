@@ -16,6 +16,7 @@ import { useProjects } from '@/contexts/ProjectsContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Layout } from '@/components/Layout';
 import PropostaView, { type PropostaData } from '@/components/orcamento/PropostaView';
+import EquipamentosPrecos from '@/components/orcamento/EquipamentosPrecos';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -627,6 +628,11 @@ export default function OrcamentoChat() {
           </div>
         )}
       </div>
+
+      {/* Equipment List */}
+      {propostaJaGerada && sessaoId && (
+        <EquipamentosPrecos sessaoId={sessaoId} />
+      )}
 
       {/* Input */}
       <div className="border-t bg-card p-4 shrink-0">

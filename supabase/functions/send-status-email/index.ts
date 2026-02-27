@@ -1,7 +1,4 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { Resend } from "https://esm.sh/resend@2.0.0";
-
-const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -30,7 +27,7 @@ interface StatusEmailRequest {
   new_status: string;
   new_status_label: string;
   changed_by: string;
-  comment?: string; // Comentário obrigatório para PENDENTE_INFO
+  comment?: string;
 }
 
 const STATUS_LABELS: Record<string, string> = {
@@ -54,10 +51,112 @@ const getStatusColor = (status: string): string => {
   return colors[status] || '#6B7280';
 };
 
+async function sendSMTP(from: string, to: string, subject: string, htmlBody: string) {
+  const host = Deno.env.get("SMTP_HOST");
+  const user = Deno.env.get("SMTP_USER");
+  const password = Deno.env.get("SMTP_PASSWORD");
+  const port = parseInt(Deno.env.get("SMTP_PORT") || "587");
+
+  if (!host || !user || !password) {
+    throw new Error("SMTP credentials not configured (SMTP_HOST, SMTP_USER, SMTP_PASSWORD)");
+  }
+
+  const encoder = new TextEncoder();
+  const decoder = new TextDecoder();
+
+  const conn = await Deno.connect({ hostname: host, port });
+
+  async function read(): Promise<string> {
+    const buf = new Uint8Array(4096);
+    const n = await conn.read(buf);
+    if (n === null) throw new Error("Connection closed");
+    return decoder.decode(buf.subarray(0, n));
+  }
+
+  async function write(cmd: string) {
+    await conn.write(encoder.encode(cmd + "\r\n"));
+  }
+
+  async function command(cmd: string, expectedCode: string): Promise<string> {
+    await write(cmd);
+    const resp = await read();
+    if (!resp.startsWith(expectedCode)) {
+      throw new Error(`SMTP error on "${cmd}": ${resp}`);
+    }
+    return resp;
+  }
+
+  const greeting = await read();
+  if (!greeting.startsWith("220")) throw new Error("SMTP greeting failed: " + greeting);
+
+  await command("EHLO localhost", "250");
+  await command("STARTTLS", "220");
+
+  const tlsConn = await Deno.startTls(conn, { hostname: host });
+
+  async function tlsRead(): Promise<string> {
+    const buf = new Uint8Array(4096);
+    const n = await tlsConn.read(buf);
+    if (n === null) throw new Error("TLS Connection closed");
+    return decoder.decode(buf.subarray(0, n));
+  }
+
+  async function tlsWrite(cmd: string) {
+    await tlsConn.write(encoder.encode(cmd + "\r\n"));
+  }
+
+  async function tlsCommand(cmd: string, expectedCode: string): Promise<string> {
+    await tlsWrite(cmd);
+    const resp = await tlsRead();
+    if (!resp.startsWith(expectedCode)) {
+      throw new Error(`SMTP TLS error on "${cmd}": ${resp}`);
+    }
+    return resp;
+  }
+
+  await tlsCommand("EHLO localhost", "250");
+  await tlsCommand("AUTH LOGIN", "334");
+  await tlsCommand(btoa(user), "334");
+  await tlsCommand(btoa(password), "235");
+
+  await tlsCommand(`MAIL FROM:<${user}>`, "250");
+  await tlsCommand(`RCPT TO:<${to}>`, "250");
+  await tlsCommand("DATA", "354");
+
+  const boundary = "boundary_" + crypto.randomUUID().replace(/-/g, "");
+  const message = [
+    `From: Eixo PCI <${user}>`,
+    `To: ${to}`,
+    `Subject: ${subject}`,
+    `MIME-Version: 1.0`,
+    `Content-Type: multipart/alternative; boundary="${boundary}"`,
+    ``,
+    `--${boundary}`,
+    `Content-Type: text/plain; charset=UTF-8`,
+    ``,
+    `Atualização de projeto`,
+    ``,
+    `--${boundary}`,
+    `Content-Type: text/html; charset=UTF-8`,
+    ``,
+    htmlBody,
+    ``,
+    `--${boundary}--`,
+    ``,
+    `.`,
+  ].join("\r\n");
+
+  await tlsConn.write(encoder.encode(message));
+  const dataResp = await tlsRead();
+  if (!dataResp.startsWith("250")) throw new Error("DATA send failed: " + dataResp);
+
+  await tlsCommand("QUIT", "221");
+  tlsConn.close();
+}
+
 const handler = async (req: Request): Promise<Response> => {
   console.log("send-status-email function called");
   
-  // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
@@ -90,37 +189,28 @@ const handler = async (req: Request): Promise<Response> => {
       </head>
       <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f4f4f5; margin: 0; padding: 20px;">
         <div style="max-width: 600px; margin: 0 auto; background-color: white; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
-          <!-- Header -->
           <div style="background-color: #1e40af; padding: 24px; text-align: center;">
             <h1 style="color: white; margin: 0; font-size: 24px;">Atualização de Projeto</h1>
           </div>
-          
-          <!-- Content -->
           <div style="padding: 32px;">
             <p style="color: #374151; font-size: 16px; margin-bottom: 24px;">
               Olá <strong>${escapeHtml(vendedor_nome)}</strong>,
             </p>
-            
             <p style="color: #374151; font-size: 16px; margin-bottom: 24px;">
               O projeto <strong>"${escapeHtml(projeto_nome)}"</strong> teve seu status alterado:
             </p>
-            
-            <!-- Status Badge -->
             <div style="text-align: center; margin-bottom: 24px;">
               <div style="display: inline-block; background-color: ${statusColor}; color: white; padding: 12px 24px; border-radius: 8px; font-size: 18px; font-weight: bold;">
                 ${escapeHtml(new_status_label)}
               </div>
             </div>
-            
             <p style="color: #6B7280; font-size: 14px; text-align: center; margin-bottom: 24px;">
               Alterado por: ${escapeHtml(changed_by)}
             </p>
     `;
 
-    // Se for PENDENTE_INFO e tiver comentário, adicionar ao email
     if (isPendingInfo && comment) {
       emailHtml += `
-            <!-- Pending Info Alert -->
             <div style="background-color: #FEF3C7; border: 1px solid #F59E0B; border-radius: 8px; padding: 16px; margin-bottom: 24px;">
               <p style="color: #92400E; font-weight: bold; margin: 0 0 8px 0; font-size: 14px;">
                 ⚠️ Informações Pendentes:
@@ -129,7 +219,6 @@ const handler = async (req: Request): Promise<Response> => {
                 ${escapeHtml(comment)}
               </p>
             </div>
-            
             <p style="color: #374151; font-size: 14px; margin-bottom: 24px;">
               Por favor, acesse o sistema para fornecer as informações solicitadas.
             </p>
@@ -137,16 +226,13 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     emailHtml += `
-            <!-- CTA Button -->
             <div style="text-align: center; margin-top: 32px;">
-              <a href="${Deno.env.get('FRONTEND_URL') || 'https://app.lovable.dev'}/projetos/${projeto_id}" 
+              <a href="${Deno.env.get('FRONTEND_URL') || 'https://eixopci.lovable.app'}/projetos/${projeto_id}" 
                  style="display: inline-block; background-color: #1e40af; color: white; padding: 12px 32px; border-radius: 6px; text-decoration: none; font-weight: bold;">
                 Ver Projeto
               </a>
             </div>
           </div>
-          
-          <!-- Footer -->
           <div style="background-color: #f9fafb; padding: 16px; text-align: center; border-top: 1px solid #e5e7eb;">
             <p style="color: #9CA3AF; font-size: 12px; margin: 0;">
               Este é um email automático do Sistema de Gestão de Projetos.
@@ -161,30 +247,20 @@ const handler = async (req: Request): Promise<Response> => {
       ? `⚠️ Ação Necessária: Projeto "${escapeHtml(projeto_nome)}" requer informações`
       : `Atualização: Projeto "${escapeHtml(projeto_nome)}" - ${escapeHtml(new_status_label)}`;
 
-    const emailResponse = await resend.emails.send({
-      from: "Projetos <onboarding@resend.dev>",
-      to: [vendedor_email],
-      subject: subject,
-      html: emailHtml,
-    });
+    const smtpUser = Deno.env.get("SMTP_USER") || "";
+    await sendSMTP(smtpUser, vendedor_email, subject, emailHtml);
 
-    console.log("Email sent successfully:", emailResponse);
+    console.log("Email sent successfully via SMTP");
 
-    return new Response(JSON.stringify({ success: true, data: emailResponse }), {
+    return new Response(JSON.stringify({ success: true }), {
       status: 200,
-      headers: {
-        "Content-Type": "application/json",
-        ...corsHeaders,
-      },
+      headers: { "Content-Type": "application/json", ...corsHeaders },
     });
   } catch (error: any) {
     console.error("Error in send-status-email function:", error);
     return new Response(
       JSON.stringify({ success: false, error: error.message }),
-      {
-        status: 500,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
-      }
+      { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
     );
   }
 };

@@ -1,13 +1,11 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.89.0";
-import { Resend } from "https://esm.sh/resend@4.0.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// HTML sanitization to prevent injection attacks
 function escapeHtml(text: string): string {
   const map: Record<string, string> = {
     '&': '&amp;',
@@ -17,6 +15,111 @@ function escapeHtml(text: string): string {
     "'": '&#039;'
   };
   return text.replace(/[&<>"']/g, m => map[m]);
+}
+
+async function sendSMTP(from: string, to: string[], subject: string, htmlBody: string) {
+  const host = Deno.env.get("SMTP_HOST");
+  const user = Deno.env.get("SMTP_USER");
+  const password = Deno.env.get("SMTP_PASSWORD");
+  const port = parseInt(Deno.env.get("SMTP_PORT") || "587");
+
+  if (!host || !user || !password) {
+    throw new Error("SMTP credentials not configured");
+  }
+
+  const encoder = new TextEncoder();
+  const decoder = new TextDecoder();
+
+  const conn = await Deno.connect({ hostname: host, port });
+
+  async function read(): Promise<string> {
+    const buf = new Uint8Array(4096);
+    const n = await conn.read(buf);
+    if (n === null) throw new Error("Connection closed");
+    return decoder.decode(buf.subarray(0, n));
+  }
+
+  async function write(cmd: string) {
+    await conn.write(encoder.encode(cmd + "\r\n"));
+  }
+
+  async function command(cmd: string, expectedCode: string): Promise<string> {
+    await write(cmd);
+    const resp = await read();
+    if (!resp.startsWith(expectedCode)) {
+      throw new Error(`SMTP error on "${cmd}": ${resp}`);
+    }
+    return resp;
+  }
+
+  const greeting = await read();
+  if (!greeting.startsWith("220")) throw new Error("SMTP greeting failed: " + greeting);
+
+  await command("EHLO localhost", "250");
+  await command("STARTTLS", "220");
+
+  const tlsConn = await Deno.startTls(conn, { hostname: host });
+
+  async function tlsRead(): Promise<string> {
+    const buf = new Uint8Array(4096);
+    const n = await tlsConn.read(buf);
+    if (n === null) throw new Error("TLS Connection closed");
+    return decoder.decode(buf.subarray(0, n));
+  }
+
+  async function tlsWrite(cmd: string) {
+    await tlsConn.write(encoder.encode(cmd + "\r\n"));
+  }
+
+  async function tlsCommand(cmd: string, expectedCode: string): Promise<string> {
+    await tlsWrite(cmd);
+    const resp = await tlsRead();
+    if (!resp.startsWith(expectedCode)) {
+      throw new Error(`SMTP TLS error on "${cmd}": ${resp}`);
+    }
+    return resp;
+  }
+
+  await tlsCommand("EHLO localhost", "250");
+  await tlsCommand("AUTH LOGIN", "334");
+  await tlsCommand(btoa(user), "334");
+  await tlsCommand(btoa(password), "235");
+
+  await tlsCommand(`MAIL FROM:<${user}>`, "250");
+  for (const recipient of to) {
+    await tlsCommand(`RCPT TO:<${recipient}>`, "250");
+  }
+  await tlsCommand("DATA", "354");
+
+  const boundary = "boundary_" + crypto.randomUUID().replace(/-/g, "");
+  const message = [
+    `From: Eixo PCI <${user}>`,
+    `To: ${to.join(", ")}`,
+    `Subject: ${subject}`,
+    `MIME-Version: 1.0`,
+    `Content-Type: multipart/alternative; boundary="${boundary}"`,
+    ``,
+    `--${boundary}`,
+    `Content-Type: text/plain; charset=UTF-8`,
+    ``,
+    `Notificação de projeto`,
+    ``,
+    `--${boundary}`,
+    `Content-Type: text/html; charset=UTF-8`,
+    ``,
+    htmlBody,
+    ``,
+    `--${boundary}--`,
+    ``,
+    `.`,
+  ].join("\r\n");
+
+  await tlsConn.write(encoder.encode(message));
+  const dataResp = await tlsRead();
+  if (!dataResp.startsWith("250")) throw new Error("DATA send failed: " + dataResp);
+
+  await tlsCommand("QUIT", "221");
+  tlsConn.close();
 }
 
 interface NotifyProjectRequest {
@@ -33,7 +136,6 @@ interface NotifyProjectRequest {
 }
 
 const handler = async (req: Request): Promise<Response> => {
-  // Handle CORS preflight
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
@@ -41,16 +143,11 @@ const handler = async (req: Request): Promise<Response> => {
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const resendApiKey = Deno.env.get("RESEND_API_KEY");
     
     const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey, {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false,
-      },
+      auth: { autoRefreshToken: false, persistSession: false },
     });
 
-    // Verify the requesting user is authenticated
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
       return new Response(
@@ -70,16 +167,14 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     const body: NotifyProjectRequest = await req.json();
-    // Support both camelCase and snake_case for flexibility
     const projectId = body.projectId || body.project_id || '';
     const projectName = body.projectName || body.project_name || '';
     const vendedorNome = body.vendedorNome || body.vendedor_name || '';
     const vendedorEmail = body.vendedorEmail || '';
     const { cidade, estado, is_resubmission } = body;
 
-    console.log("notify-project-submitted: Notifying about project", projectId, is_resubmission ? "(resubmission)" : "");
+    console.log("notify-project-submitted:", projectId, is_resubmission ? "(resubmission)" : "");
 
-    // Get all users with 'projetos' role
     const { data: projetosRoles, error: rolesError } = await supabaseAdmin
       .from("user_roles")
       .select("user_id")
@@ -94,14 +189,12 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     if (!projetosRoles || projetosRoles.length === 0) {
-      console.log("No users with 'projetos' role found");
       return new Response(
         JSON.stringify({ success: true, message: "No project team members to notify" }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // Get emails of all projetos users
     const userIds = projetosRoles.map(r => r.user_id);
     const { data: profiles, error: profilesError } = await supabaseAdmin
       .from("profiles")
@@ -119,7 +212,7 @@ const handler = async (req: Request): Promise<Response> => {
     const emails = profiles?.map(p => p.email).filter(Boolean) || [];
     console.log(`Found ${emails.length} projetos users to notify`);
 
-    // Create notifications for each projetos user
+    // Create notifications
     const notificationType = is_resubmission ? 'PROJECT_RESUBMITTED' : 'PROJECT_SUBMITTED';
     const notificationTitle = is_resubmission ? 'Projeto Reenviado' : 'Novo Projeto Enviado';
     const notificationMessage = is_resubmission 
@@ -143,11 +236,9 @@ const handler = async (req: Request): Promise<Response> => {
       console.error("Error creating notifications:", notifError);
     }
 
-    // Send emails if Resend is configured
-    if (resendApiKey && emails.length > 0) {
+    // Send emails via SMTP
+    if (emails.length > 0) {
       try {
-        const resend = new Resend(resendApiKey);
-        
         const location = cidade && estado ? `${cidade} - ${estado}` : cidade || estado || 'Não informado';
         
         const emailSubject = is_resubmission 
@@ -167,39 +258,35 @@ const handler = async (req: Request): Promise<Response> => {
         const safeVendedorEmail = vendedorEmail ? escapeHtml(vendedorEmail) : '';
         const safeLocation = escapeHtml(location);
         
-        const emailResponse = await resend.emails.send({
-          from: "Projetos PCI <onboarding@resend.dev>",
-          to: emails,
-          subject: emailSubject,
-          html: `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-              <h1 style="color: #1E40AF;">${escapeHtml(emailTitle)}</h1>
-              <p>Olá,</p>
-              <p>${escapeHtml(emailIntro)}</p>
-              
-              <div style="background-color: #F3F4F6; padding: 20px; border-radius: 8px; margin: 20px 0;">
-                <h2 style="color: #374151; margin-top: 0;">${safeProjectName}</h2>
-                <p><strong>Vendedor:</strong> ${safeVendedorNome}</p>
-                ${safeVendedorEmail ? `<p><strong>Email:</strong> ${safeVendedorEmail}</p>` : ''}
-                <p><strong>Localização:</strong> ${safeLocation}</p>
-              </div>
-              
-              <p>Acesse o sistema para visualizar os detalhes e ${is_resubmission ? 'continuar' : 'iniciar'} a análise.</p>
-              
-              <p style="color: #6B7280; font-size: 12px; margin-top: 30px;">
-                Este é um email automático enviado pelo sistema Projetos PCI.
-              </p>
+        const htmlContent = `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h1 style="color: #1E40AF;">${escapeHtml(emailTitle)}</h1>
+            <p>Olá,</p>
+            <p>${escapeHtml(emailIntro)}</p>
+            <div style="background-color: #F3F4F6; padding: 20px; border-radius: 8px; margin: 20px 0;">
+              <h2 style="color: #374151; margin-top: 0;">${safeProjectName}</h2>
+              <p><strong>Vendedor:</strong> ${safeVendedorNome}</p>
+              ${safeVendedorEmail ? `<p><strong>Email:</strong> ${safeVendedorEmail}</p>` : ''}
+              <p><strong>Localização:</strong> ${safeLocation}</p>
             </div>
-          `,
-        });
+            <p>Acesse o sistema para visualizar os detalhes e ${is_resubmission ? 'continuar' : 'iniciar'} a análise.</p>
+            <p style="color: #6B7280; font-size: 12px; margin-top: 30px;">
+              Este é um email automático enviado pelo sistema Eixo PCI.
+            </p>
+          </div>
+        `;
 
-        console.log("Emails sent successfully:", emailResponse);
+        await sendSMTP(
+          Deno.env.get("SMTP_USER") || "",
+          emails,
+          emailSubject,
+          htmlContent
+        );
+
+        console.log("Emails sent successfully via SMTP");
       } catch (emailError) {
         console.error("Error sending emails:", emailError);
-        // Don't fail the request if email fails, notifications were still created
       }
-    } else {
-      console.log("Resend not configured or no emails to send");
     }
 
     return new Response(

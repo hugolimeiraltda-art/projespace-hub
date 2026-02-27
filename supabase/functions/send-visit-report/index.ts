@@ -9,11 +9,21 @@ const corsHeaders = {
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
-async function sendGmailSMTP(from: string, to: string, subject: string, htmlBody: string, password: string) {
+async function sendSMTP(from: string, to: string, subject: string, htmlBody: string) {
+  const host = Deno.env.get("SMTP_HOST");
+  const user = Deno.env.get("SMTP_USER");
+  const password = Deno.env.get("SMTP_PASSWORD");
+  const port = parseInt(Deno.env.get("SMTP_PORT") || "587");
+
+  if (!host || !user || !password) {
+    throw new Error("SMTP credentials not configured (SMTP_HOST, SMTP_USER, SMTP_PASSWORD)");
+  }
+
   const encoder = new TextEncoder();
   const decoder = new TextDecoder();
 
-  const conn = await Deno.connectTls({ hostname: "smtp.gmail.com", port: 465 });
+  // Port 587 uses STARTTLS (connect plain, then upgrade)
+  const conn = await Deno.connect({ hostname: host, port });
 
   async function read(): Promise<string> {
     const buf = new Uint8Array(4096);
@@ -41,18 +51,48 @@ async function sendGmailSMTP(from: string, to: string, subject: string, htmlBody
 
   await command("EHLO localhost", "250");
 
-  // AUTH LOGIN
-  await command("AUTH LOGIN", "334");
-  await command(btoa(from), "334");
-  await command(btoa(password), "235");
+  // STARTTLS for port 587
+  await command("STARTTLS", "220");
 
-  await command(`MAIL FROM:<${from}>`, "250");
-  await command(`RCPT TO:<${to}>`, "250");
-  await command("DATA", "354");
+  // Upgrade to TLS
+  const tlsConn = await Deno.startTls(conn, { hostname: host });
+
+  // Redefine read/write for TLS connection
+  async function tlsRead(): Promise<string> {
+    const buf = new Uint8Array(4096);
+    const n = await tlsConn.read(buf);
+    if (n === null) throw new Error("TLS Connection closed");
+    return decoder.decode(buf.subarray(0, n));
+  }
+
+  async function tlsWrite(cmd: string) {
+    await tlsConn.write(encoder.encode(cmd + "\r\n"));
+  }
+
+  async function tlsCommand(cmd: string, expectedCode: string): Promise<string> {
+    await tlsWrite(cmd);
+    const resp = await tlsRead();
+    if (!resp.startsWith(expectedCode)) {
+      throw new Error(`SMTP TLS error on "${cmd}": ${resp}`);
+    }
+    return resp;
+  }
+
+  // Re-EHLO after TLS
+  await tlsCommand("EHLO localhost", "250");
+
+  // AUTH LOGIN
+  await tlsCommand("AUTH LOGIN", "334");
+  await tlsCommand(btoa(user), "334");
+  await tlsCommand(btoa(password), "235");
+
+  await tlsCommand(`MAIL FROM:<${user}>`, "250");
+  await tlsCommand(`RCPT TO:<${to}>`, "250");
+  await tlsCommand("DATA", "354");
 
   const boundary = "boundary_" + crypto.randomUUID().replace(/-/g, "");
   const message = [
-    `From: Emive Visitas <${from}>`,
+    `From: Emive Visitas <${user}>`,
     `To: ${to}`,
     `Subject: ${subject}`,
     `MIME-Version: 1.0`,
@@ -73,12 +113,12 @@ async function sendGmailSMTP(from: string, to: string, subject: string, htmlBody
     `.`,
   ].join("\r\n");
 
-  await conn.write(encoder.encode(message));
-  const dataResp = await read();
+  await tlsConn.write(encoder.encode(message));
+  const dataResp = await tlsRead();
   if (!dataResp.startsWith("250")) throw new Error("DATA send failed: " + dataResp);
 
-  await command("QUIT", "221");
-  conn.close();
+  await tlsCommand("QUIT", "221");
+  tlsConn.close();
 }
 
 serve(async (req) => {
@@ -89,11 +129,6 @@ serve(async (req) => {
   try {
     const { sessao_id, email_destino, html_content } = await req.json();
     if (!sessao_id) throw new Error("sessao_id is required");
-
-    const GMAIL_APP_PASSWORD = Deno.env.get("GMAIL_APP_PASSWORD");
-    if (!GMAIL_APP_PASSWORD) throw new Error("GMAIL_APP_PASSWORD not configured");
-
-    const GMAIL_USER = "hugolimeira@gmail.com";
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
@@ -119,13 +154,12 @@ serve(async (req) => {
 
     if (!targetEmail) throw new Error("Nenhum email de destino encontrado");
 
-    // Send email via Gmail SMTP
-    await sendGmailSMTP(
-      GMAIL_USER,
+    // Send email via corporate SMTP
+    await sendSMTP(
+      Deno.env.get("SMTP_USER") || "",
       targetEmail,
       `Relatório de Visita Técnica - ${sessao.nome_cliente}`,
-      html_content,
-      GMAIL_APP_PASSWORD
+      html_content
     );
 
     // Update session status

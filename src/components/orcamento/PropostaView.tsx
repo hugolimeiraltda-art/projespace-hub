@@ -13,6 +13,7 @@ import remarkGfm from 'remark-gfm';
 import emiveLogo from '@/assets/emive-logo.png';
 import { generatePropostaPDF } from '@/lib/propostaPdf';
 import { generateEquipamentosExcel } from '@/lib/propostaExcel';
+import EquipamentosPrecos from '@/components/orcamento/EquipamentosPrecos';
 
 export type PropostaItem = {
   nome: string;
@@ -58,9 +59,10 @@ export type PropostaData = {
 interface PropostaViewProps {
   data: PropostaData;
   onVoltar: () => void;
+  sessaoId?: string;
 }
 
-export default function PropostaView({ data, onVoltar }: PropostaViewProps) {
+export default function PropostaView({ data, onVoltar, sessaoId }: PropostaViewProps) {
   const { toast } = useToast();
   const [gerando, setGerando] = useState<string | null>(null);
   const [showRawProposta, setShowRawProposta] = useState(false);
@@ -378,6 +380,9 @@ export default function PropostaView({ data, onVoltar }: PropostaViewProps) {
           </div>
           );
         })()}
+
+        {/* Equipment & Prices */}
+        {sessaoId && <EquipamentosPrecos sessaoId={sessaoId} />}
 
         <Separator />
 

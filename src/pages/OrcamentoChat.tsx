@@ -542,7 +542,7 @@ export default function OrcamentoChat() {
 
   if (proposta) {
     const propostaContent = (
-      <PropostaView data={proposta} onVoltar={() => setProposta(null)} />
+      <PropostaView data={proposta} onVoltar={() => setProposta(null)} sessaoId={sessaoId || undefined} />
     );
     return user ? <Layout>{propostaContent}</Layout> : propostaContent;
   }

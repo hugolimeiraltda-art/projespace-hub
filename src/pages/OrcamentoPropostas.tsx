@@ -18,6 +18,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useToast } from '@/hooks/use-toast';
 import { FileText, MessageSquare, Star, CheckCircle2, XCircle, AlertCircle, Eye, FolderPlus, Clock, ClipboardCheck, Download, Table2, MapPin, Loader2, LayoutGrid } from 'lucide-react';
 import { EAPDialog } from '@/components/orcamento/EAPDialog';
+import EquipamentosPrecos from '@/components/orcamento/EquipamentosPrecos';
 import { format, addDays, isPast } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -407,6 +408,9 @@ export default function OrcamentoPropostas() {
                           ))}
                         </div>
                       )}
+
+                      {/* Equipment & Prices */}
+                      <EquipamentosPrecos sessaoId={sessao.id} />
 
                       {/* Buttons - horizontal */}
                       <div className="flex flex-wrap gap-2">

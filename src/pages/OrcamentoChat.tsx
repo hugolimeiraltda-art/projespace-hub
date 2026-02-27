@@ -17,6 +17,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Layout } from '@/components/Layout';
 import PropostaView, { type PropostaData } from '@/components/orcamento/PropostaView';
 import EquipamentosPrecos from '@/components/orcamento/EquipamentosPrecos';
+import PrePropostaModal, { type PrePropostaData } from '@/components/orcamento/PrePropostaModal';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -41,6 +42,10 @@ export default function OrcamentoChat() {
   const [uploading, setUploading] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [propostaJaGerada, setPropostaJaGerada] = useState(false);
+  const [prePropostaOpen, setPrePropostaOpen] = useState(false);
+  const [prePropostaData, setPrePropostaData] = useState<PrePropostaData | null>(null);
+  const [prePropostaGenerating, setPrePropostaGenerating] = useState(false);
+  const [prePropostaFullResponse, setPrePropostaFullResponse] = useState<any>(null);
   const [projetoOpen, setProjetoOpen] = useState(false);
   const [projetoCriando, setProjetoCriando] = useState(false);
   const [projNome, setProjNome] = useState('');
@@ -423,13 +428,61 @@ export default function OrcamentoChat() {
       }
 
       const data = await resp.json();
-      setProposta(data as PropostaData);
-      setPropostaJaGerada(true);
+
+      // Show pre-proposal modal for editing instead of directly showing final proposal
+      if (data.itens) {
+        setPrePropostaData(data.itens as PrePropostaData);
+        setPrePropostaFullResponse(data);
+        setPrePropostaOpen(true);
+      } else {
+        // Fallback: no structured items, show directly
+        setProposta(data as PropostaData);
+        setPropostaJaGerada(true);
+      }
     } catch (e) {
       console.error(e);
-      toast({ title: 'Erro ao gerar proposta', variant: 'destructive' });
+      toast({ title: 'Erro ao gerar pré-proposta', variant: 'destructive' });
     }
     setGerandoProposta(false);
+  };
+
+  const handlePrePropostaConfirm = async (editedData: PrePropostaData) => {
+    setPrePropostaGenerating(true);
+    try {
+      const body: any = {
+        action: 'gerar_proposta_final',
+        itens_editados: editedData,
+        messages,
+      };
+      if (sessaoId) body.sessao_id = sessaoId;
+      if (token) body.token = token;
+
+      const resp = await fetch(CHAT_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        },
+        body: JSON.stringify(body),
+      });
+
+      if (!resp.ok) {
+        const err = await resp.json();
+        toast({ title: 'Erro', description: err.error, variant: 'destructive' });
+        setPrePropostaGenerating(false);
+        return;
+      }
+
+      const data = await resp.json();
+      setProposta(data as PropostaData);
+      setPropostaJaGerada(true);
+      setPrePropostaOpen(false);
+      setPrePropostaData(null);
+    } catch (e) {
+      console.error(e);
+      toast({ title: 'Erro ao gerar proposta final', variant: 'destructive' });
+    }
+    setPrePropostaGenerating(false);
   };
 
   const openProjetoDialog = async () => {
@@ -583,7 +636,7 @@ export default function OrcamentoChat() {
               </>
             ) : messages.length >= 6 ? (
               <Button onClick={gerarProposta} disabled={gerandoProposta} size="sm" className="shrink-0">
-                {gerandoProposta ? <><Loader2 className="mr-1.5 h-4 w-4 animate-spin" /><span className="hidden sm:inline">Gerando...</span><span className="sm:hidden">...</span></> : <><FileText className="mr-1.5 h-4 w-4" /><span className="hidden sm:inline">Gerar Proposta</span><span className="sm:hidden">Proposta</span></>}
+                {gerandoProposta ? <><Loader2 className="mr-1.5 h-4 w-4 animate-spin" /><span className="hidden sm:inline">Gerando...</span><span className="sm:hidden">...</span></> : <><FileText className="mr-1.5 h-4 w-4" /><span className="hidden sm:inline">Gerar Pré-Proposta</span><span className="sm:hidden">Proposta</span></>}
               </Button>
             ) : null}
           </div>
@@ -768,6 +821,17 @@ export default function OrcamentoChat() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Pre-Proposal Modal */}
+      {prePropostaData && (
+        <PrePropostaModal
+          open={prePropostaOpen}
+          onClose={() => { setPrePropostaOpen(false); setPrePropostaData(null); }}
+          initialData={prePropostaData}
+          onConfirm={handlePrePropostaConfirm}
+          isGenerating={prePropostaGenerating}
+        />
+      )}
     </>
   );
 }

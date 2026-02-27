@@ -313,7 +313,7 @@ serve(async (req) => {
   }
 
   try {
-    const { token, sessao_id, messages, action } = await req.json();
+    const { token, sessao_id, messages, action, itens_editados } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
@@ -555,6 +555,153 @@ ${fotoListStr}
           email: sessao.email_cliente,
           telefone: sessao.telefone_cliente,
         }
+      }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    // Generate final proposal from edited pre-proposal items
+    if (action === "gerar_proposta_final") {
+      // itens_editados already destructured from req.json above
+      const { data: allMsgs } = await supabase
+        .from("orcamento_mensagens").select("role, content")
+        .eq("sessao_id", sessao.id).order("created_at", { ascending: true });
+
+      // Fetch session photos
+      const { data: midias } = await supabase
+        .from("orcamento_midias").select("arquivo_url, nome_arquivo, tipo, descricao")
+        .eq("sessao_id", sessao.id).eq("tipo", "foto");
+
+      const fotoUrls: { url: string; nome: string }[] = [];
+      const fotoMap: Record<string, string> = {};
+      if (midias && midias.length > 0) {
+        for (const m of midias) {
+          const { data: signedData } = await supabase.storage.from("orcamento-midias").createSignedUrl(m.arquivo_url, 3600);
+          if (signedData?.signedUrl) {
+            fotoUrls.push({ url: signedData.signedUrl, nome: m.nome_arquivo });
+            fotoMap[m.nome_arquivo] = signedData.signedUrl;
+          }
+        }
+      }
+
+      const fotoListStr = midias && midias.length > 0
+        ? midias.map(m => `- "${m.nome_arquivo}"${m.descricao ? ` (${m.descricao})` : ''}`).join('\n')
+        : '(nenhuma foto enviada)';
+
+      // Build prompt to generate markdown from edited items
+      const editedItemsJson = JSON.stringify(itens_editados, null, 2);
+      const finalPrompt = `${buildPropostaPrompt(ctx, sessao)}
+
+## INSTRUÇÃO ESPECIAL — PRÉ-PROPOSTA EDITADA:
+Os itens abaixo já foram REVISADOS E APROVADOS pela equipe comercial. Use EXATAMENTE estes itens, quantidades e valores na proposta.
+NÃO altere quantidades, NÃO adicione nem remova itens, NÃO mude valores. Gere a proposta markdown usando EXATAMENTE os dados fornecidos.
+
+## ITENS APROVADOS (use exatamente estes):
+${editedItemsJson}
+
+## INSTRUÇÃO ADICIONAL OBRIGATÓRIA:
+Além da proposta em markdown, retorne ao final um bloco JSON delimitado por \`\`\`json e \`\`\` com os mesmos itens estruturados (copie o JSON acima, mantendo a mesma estrutura).
+
+Adicione também o campo "ambientes" no JSON com o detalhamento EAP conforme as instruções padrão.
+
+## FOTOS DA VISITA TÉCNICA (associe cada foto ao ambiente correspondente):
+${fotoListStr}
+`;
+
+      const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "google/gemini-2.5-flash",
+          messages: [
+            { role: "system", content: finalPrompt },
+            ...(allMsgs || []).map((m: any) => ({ role: m.role, content: m.content })),
+            { role: "user", content: "Gere a proposta comercial FINAL usando EXATAMENTE os itens aprovados na pré-proposta. Inclua o bloco JSON ao final." },
+          ],
+        }),
+      });
+
+      if (!response.ok) {
+        const status = response.status;
+        if (status === 429) return new Response(JSON.stringify({ error: "Limite de requisições excedido." }), { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        if (status === 402) return new Response(JSON.stringify({ error: "Créditos insuficientes." }), { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        throw new Error("AI gateway error");
+      }
+
+      const data = await response.json();
+      const fullContent = data.choices?.[0]?.message?.content || "Não foi possível gerar a proposta.";
+
+      // Extract JSON block
+      let itensFinais = itens_editados; // fallback to edited items
+      let proposta = fullContent;
+      const jsonMatch = fullContent.match(new RegExp('```json\\s*([\\s\\S]*?)```'));
+      if (jsonMatch) {
+        try {
+          const parsed = JSON.parse(jsonMatch[1].trim());
+          // Merge: keep edited commercial values but add ambientes from AI
+          itensFinais = { ...itens_editados, ambientes: parsed.ambientes || itens_editados.ambientes };
+          proposta = fullContent.replace(new RegExp('```json\\s*[\\s\\S]*?```'), '').trim();
+        } catch (e) {
+          console.error("Failed to parse final JSON:", e);
+          proposta = fullContent.replace(new RegExp('```json\\s*[\\s\\S]*?```'), '').trim();
+        }
+      }
+
+      // Expand kits into individual items
+      let itensExpandidos: any[] = [];
+      for (const kit of (itensFinais.kits || [])) {
+        let kitData = kit.id_kit ? ctx.kits.find((k: any) => k.id_kit === kit.id_kit) : null;
+        if (!kitData && kit.nome) {
+          const normalizedName = kit.nome.trim().toLowerCase();
+          kitData = ctx.kits.find((k: any) => k.nome?.trim().toLowerCase() === normalizedName);
+        }
+        if (!kitData && kit.codigo) {
+          kitData = ctx.kits.find((k: any) => k.codigo === kit.codigo);
+        }
+        if (kitData?.orcamento_kit_itens) {
+          for (const ki of kitData.orcamento_kit_itens) {
+            const prod = ki.orcamento_produtos;
+            if (prod) {
+              itensExpandidos.push({
+                nome: prod.nome, codigo: prod.codigo, categoria: prod.categoria,
+                qtd: ki.quantidade * kit.qtd,
+                valor_unitario: prod.preco_unitario, valor_locacao: prod.valor_locacao || 0,
+                valor_instalacao: prod.valor_instalacao || 0, origem: `Kit: ${kit.nome}`,
+              });
+            }
+          }
+        }
+      }
+      for (const item of (itensFinais.avulsos || [])) itensExpandidos.push({ ...item, origem: 'Avulso' });
+      for (const item of (itensFinais.aproveitados || [])) itensExpandidos.push({ ...item, origem: 'Aproveitado (50%)' });
+      for (const item of (itensFinais.servicos || [])) itensExpandidos.push({ ...item, origem: 'Serviço' });
+
+      // Merge duplicates
+      const merged = new Map<string, any>();
+      for (const item of itensExpandidos) {
+        const key = `${item.codigo || item.nome}_${item.origem}`;
+        if (merged.has(key)) { merged.get(key).qtd += item.qtd; }
+        else { merged.set(key, { ...item }); }
+      }
+      itensExpandidos = Array.from(merged.values());
+
+      // Save
+      const propostaStore = JSON.stringify({ proposta, itens: itensFinais, itensExpandidos });
+
+      // Map photo filenames to signed URLs for response
+      if (itensFinais?.ambientes) {
+        for (const amb of itensFinais.ambientes) {
+          if (amb.fotos && Array.isArray(amb.fotos)) {
+            amb.fotos = amb.fotos.map((f: string) => fotoMap[f] || null).filter(Boolean);
+          }
+        }
+      }
+
+      await supabase.from("orcamento_sessoes")
+        .update({ proposta_gerada: propostaStore, proposta_gerada_at: new Date().toISOString(), status: "proposta_gerada" })
+        .eq("id", sessao.id);
+
+      return new Response(JSON.stringify({
+        proposta, itens: itensFinais, itensExpandidos, fotos: fotoUrls,
+        sessao: { nome_cliente: sessao.nome_cliente, endereco: sessao.endereco_condominio, vendedor: sessao.vendedor_nome, email: sessao.email_cliente, telefone: sessao.telefone_cliente }
       }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 

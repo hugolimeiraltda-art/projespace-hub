@@ -13,7 +13,7 @@ async function sendSMTP(from: string, to: string, subject: string, htmlBody: str
   const host = Deno.env.get("SMTP_HOST");
   const user = Deno.env.get("SMTP_USER");
   const password = Deno.env.get("SMTP_PASSWORD");
-  const port = parseInt(Deno.env.get("SMTP_PORT") || "587");
+  const port = parseInt(Deno.env.get("SMTP_PORT") || "465");
 
   if (!host || !user || !password) {
     throw new Error("SMTP credentials not configured (SMTP_HOST, SMTP_USER, SMTP_PASSWORD)");
@@ -22,42 +22,9 @@ async function sendSMTP(from: string, to: string, subject: string, htmlBody: str
   const encoder = new TextEncoder();
   const decoder = new TextDecoder();
 
-  // Port 587 uses STARTTLS (connect plain, then upgrade)
-  const conn = await Deno.connect({ hostname: host, port });
+  // Direct SSL connection on port 465
+  const tlsConn = await Deno.connectTls({ hostname: host, port });
 
-  async function read(): Promise<string> {
-    const buf = new Uint8Array(4096);
-    const n = await conn.read(buf);
-    if (n === null) throw new Error("Connection closed");
-    return decoder.decode(buf.subarray(0, n));
-  }
-
-  async function write(cmd: string) {
-    await conn.write(encoder.encode(cmd + "\r\n"));
-  }
-
-  async function command(cmd: string, expectedCode: string): Promise<string> {
-    await write(cmd);
-    const resp = await read();
-    if (!resp.startsWith(expectedCode)) {
-      throw new Error(`SMTP error on "${cmd}": ${resp}`);
-    }
-    return resp;
-  }
-
-  // Read greeting
-  const greeting = await read();
-  if (!greeting.startsWith("220")) throw new Error("SMTP greeting failed: " + greeting);
-
-  await command("EHLO localhost", "250");
-
-  // STARTTLS for port 587
-  await command("STARTTLS", "220");
-
-  // Upgrade to TLS
-  const tlsConn = await Deno.startTls(conn, { hostname: host });
-
-  // Redefine read/write for TLS connection
   async function tlsRead(): Promise<string> {
     const buf = new Uint8Array(4096);
     const n = await tlsConn.read(buf);
@@ -73,17 +40,21 @@ async function sendSMTP(from: string, to: string, subject: string, htmlBody: str
     await tlsWrite(cmd);
     const resp = await tlsRead();
     if (!resp.startsWith(expectedCode)) {
-      throw new Error(`SMTP TLS error on "${cmd}": ${resp}`);
+      throw new Error(`SMTP error on "${cmd}": ${resp}`);
     }
     return resp;
   }
 
-  // Re-EHLO after TLS
+  // Read greeting
+  const greeting = await tlsRead();
+  if (!greeting.startsWith("220")) throw new Error("SMTP greeting failed: " + greeting);
+
   await tlsCommand("EHLO localhost", "250");
 
-  // AUTH PLAIN: \0user\0password base64-encoded
-  const authPlain = btoa(`\0${user}\0${password}`);
-  await tlsCommand(`AUTH PLAIN ${authPlain}`, "235");
+  // AUTH LOGIN
+  await tlsCommand("AUTH LOGIN", "334");
+  await tlsCommand(btoa(user), "334");
+  await tlsCommand(btoa(password), "235");
 
   await tlsCommand(`MAIL FROM:<${user}>`, "250");
   await tlsCommand(`RCPT TO:<${to}>`, "250");

@@ -81,10 +81,9 @@ async function sendSMTP(from: string, to: string, subject: string, htmlBody: str
   // Re-EHLO after TLS
   await tlsCommand("EHLO localhost", "250");
 
-  // AUTH LOGIN
-  await tlsCommand("AUTH LOGIN", "334");
-  await tlsCommand(btoa(user), "334");
-  await tlsCommand(btoa(password), "235");
+  // AUTH PLAIN: \0user\0password base64-encoded
+  const authPlain = btoa(`\0${user}\0${password}`);
+  await tlsCommand(`AUTH PLAIN ${authPlain}`, "235");
 
   await tlsCommand(`MAIL FROM:<${user}>`, "250");
   await tlsCommand(`RCPT TO:<${to}>`, "250");

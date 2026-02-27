@@ -382,7 +382,11 @@ export default function PropostaView({ data, onVoltar, sessaoId }: PropostaViewP
         })()}
 
         {/* Equipment & Prices */}
-        {sessaoId && <EquipamentosPrecos sessaoId={sessaoId} />}
+        {sessaoId ? (
+          <EquipamentosPrecos sessaoId={sessaoId} initialData={data.itens} initialItensExpandidos={data.itensExpandidos} />
+        ) : data.itens ? (
+          <EquipamentosPrecos initialData={data.itens} initialItensExpandidos={data.itensExpandidos} />
+        ) : null}
 
         <Separator />
 

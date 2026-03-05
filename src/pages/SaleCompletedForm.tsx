@@ -70,13 +70,12 @@ export default function SaleCompletedForm() {
   const [formData, setFormData] = useState<Partial<SaleFormType>>({});
   const [attachments, setAttachments] = useState<Record<AttachmentType, string[]>>({} as Record<AttachmentType, string[]>);
 
+  const [formInitialized, setFormInitialized] = useState(false);
+
   useEffect(() => {
     const loadFormData = async () => {
       if (project && !project.sale_form) {
-        // Initialize the sale form - this will create it in the database with pre-filled data
-        await initSaleForm(project.id);
-        
-        // Set initial form data locally while waiting for refresh (including user's filial)
+        // Don't call initSaleForm yet - just pre-fill local form data
         const preFilledData: Partial<SaleFormType> = {
           nome_condominio: project.cliente_condominio_nome,
           vendedor_nome: project.vendedor_nome,
@@ -87,8 +86,8 @@ export default function SaleCompletedForm() {
         };
         setFormData(preFilledData);
       } else if (project?.sale_form) {
+        setFormInitialized(true);
         // If sale form exists, load it but ensure project data is up-to-date
-        // Also fill filial from user if not already set
         const updatedFormData = {
           ...project.sale_form,
           nome_condominio: project.sale_form.nome_condominio || project.cliente_condominio_nome,
@@ -108,7 +107,7 @@ export default function SaleCompletedForm() {
     };
     
     loadFormData();
-  }, [project, initSaleForm, user?.filial, updateSaleForm]);
+  }, [project, user?.filial, updateSaleForm]);
 
   if (!project) {
     return (
@@ -127,13 +126,23 @@ export default function SaleCompletedForm() {
   const isReadOnly = project.sale_status === 'CONCLUIDO';
   const isDisabled = isLocked || isReadOnly;
   
+  const ensureFormInitialized = async () => {
+    if (!formInitialized && project) {
+      setFormInitialized(true);
+      await initSaleForm(project.id);
+    }
+  };
+
   const updateField = <K extends keyof SaleFormType>(field: K, value: SaleFormType[K]) => {
     if (isLocked || isReadOnly) return;
     setFormData(prev => ({ ...prev, [field]: value }));
-    updateSaleForm(project.id, { [field]: value });
+    ensureFormInitialized().then(() => {
+      updateSaleForm(project.id, { [field]: value });
+    });
   };
 
-  const handleSaveDraft = () => {
+  const handleSaveDraft = async () => {
+    await ensureFormInitialized();
     toast({
       title: 'Rascunho salvo',
       description: 'Suas alterações foram salvas com sucesso.',
@@ -155,6 +164,7 @@ export default function SaleCompletedForm() {
       return;
     }
 
+    await ensureFormInitialized();
     const success = await submitSaleForm(project.id);
     
     if (success) {

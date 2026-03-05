@@ -48,6 +48,8 @@ export default function OrcamentoChat() {
   const [prePropostaFullResponse, setPrePropostaFullResponse] = useState<any>(null);
   const [projetoOpen, setProjetoOpen] = useState(false);
   const [projetoCriando, setProjetoCriando] = useState(false);
+  const [encaminhadoEngenharia, setEncaminhadoEngenharia] = useState(false);
+  const [gatilhosEngenharia, setGatilhosEngenharia] = useState<string[]>([]);
   const [projNome, setProjNome] = useState('');
   const [projEndereco, setProjEndereco] = useState('');
   const [projCidade, setProjCidade] = useState('');
@@ -337,7 +339,7 @@ export default function OrcamentoChat() {
     try {
       const { data: sessao } = await supabase
         .from('orcamento_sessoes')
-        .select('id, nome_cliente, vendedor_nome, proposta_gerada, endereco_condominio, email_cliente, telefone_cliente')
+        .select('id, nome_cliente, vendedor_nome, proposta_gerada, endereco_condominio, email_cliente, telefone_cliente, encaminhado_engenharia')
         .eq('id', sessaoId)
         .single();
 
@@ -397,6 +399,21 @@ export default function OrcamentoChat() {
       };
 
       setProposta(propostaData);
+      // Load engineering flag from session
+      if ((sessao as any)?.encaminhado_engenharia) {
+        setEncaminhadoEngenharia(true);
+        // Load gatilhos from audit table
+        const { data: encaminhamento } = await supabase
+          .from('orcamento_encaminhamentos_engenharia')
+          .select('gatilhos_disparados')
+          .eq('sessao_id', sessaoId)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        if (encaminhamento?.gatilhos_disparados) {
+          setGatilhosEngenharia(encaminhamento.gatilhos_disparados as string[]);
+        }
+      }
     } catch (e) {
       console.error(e);
       toast({ title: 'Erro ao carregar proposta', variant: 'destructive' });
@@ -434,6 +451,11 @@ export default function OrcamentoChat() {
         setPrePropostaData(data.itens as PrePropostaData);
         setPrePropostaFullResponse(data);
         setPrePropostaOpen(true);
+        // Store engineering flags from initial generation
+        if (data.encaminhado_engenharia) {
+          setEncaminhadoEngenharia(true);
+          setGatilhosEngenharia(data.gatilhos_engenharia || []);
+        }
       } else {
         // Fallback: no structured items, show directly
         setProposta(data as PropostaData);
@@ -476,6 +498,11 @@ export default function OrcamentoChat() {
       const data = await resp.json();
       setProposta(data as PropostaData);
       setPropostaJaGerada(true);
+      // Update engineering flags from final generation
+      if (data.encaminhado_engenharia) {
+        setEncaminhadoEngenharia(true);
+        setGatilhosEngenharia(data.gatilhos_engenharia || []);
+      }
       setPrePropostaOpen(false);
       setPrePropostaData(null);
     } catch (e) {
@@ -595,7 +622,7 @@ export default function OrcamentoChat() {
 
   if (proposta) {
     const propostaContent = (
-      <PropostaView data={proposta} onVoltar={() => setProposta(null)} sessaoId={sessaoId || undefined} />
+      <PropostaView data={proposta} onVoltar={() => setProposta(null)} sessaoId={sessaoId || undefined} encaminhadoEngenharia={encaminhadoEngenharia} gatilhosEngenharia={gatilhosEngenharia} />
     );
     return user ? <Layout>{propostaContent}</Layout> : propostaContent;
   }

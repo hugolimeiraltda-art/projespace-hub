@@ -6,7 +6,8 @@ import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import {
   FileText, Download, Mail, Share2, ArrowLeft, Table2, Loader2, MessageSquare, ChevronDown, ChevronUp, ChevronRight,
-  MapPin, DoorOpen, Car, Shield, Camera, Waves, PartyPopper, UtensilsCrossed, Baby, Dumbbell, Flame, Laptop, TreePine, Trophy, LayoutGrid, Building
+  MapPin, DoorOpen, Car, Shield, Camera, Waves, PartyPopper, UtensilsCrossed, Baby, Dumbbell, Flame, Laptop, TreePine, Trophy, LayoutGrid, Building,
+  AlertTriangle
 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -60,9 +61,11 @@ interface PropostaViewProps {
   data: PropostaData;
   onVoltar: () => void;
   sessaoId?: string;
+  encaminhadoEngenharia?: boolean;
+  gatilhosEngenharia?: string[];
 }
 
-export default function PropostaView({ data, onVoltar, sessaoId }: PropostaViewProps) {
+export default function PropostaView({ data, onVoltar, sessaoId, encaminhadoEngenharia, gatilhosEngenharia }: PropostaViewProps) {
   const { toast } = useToast();
   const [gerando, setGerando] = useState<string | null>(null);
   const [showRawProposta, setShowRawProposta] = useState(false);
@@ -175,6 +178,32 @@ export default function PropostaView({ data, onVoltar, sessaoId }: PropostaViewP
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Engineering referral banner */}
+      {encaminhadoEngenharia && (
+        <div className="bg-amber-50 dark:bg-amber-950/30 border-b border-amber-200 dark:border-amber-800 px-4 md:px-6 py-3">
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-amber-800 dark:text-amber-300">
+                ⚠️ Validação Técnica Obrigatória — Encaminhado para Engenharia
+              </p>
+              <p className="text-xs text-amber-700 dark:text-amber-400 mt-1">
+                A lista de materiais foi gerada e será encaminhada automaticamente ao setor de Engenharia para validação técnica. 
+                Nossos engenheiros irão revisar o projeto e retornar com ajustes ou aprovação em até <strong>4 dias úteis</strong>.
+              </p>
+              {gatilhosEngenharia && gatilhosEngenharia.length > 0 && (
+                <div className="mt-2 flex flex-wrap gap-1">
+                  {gatilhosEngenharia.map((g, i) => (
+                    <span key={i} className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-amber-100 dark:bg-amber-900/50 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-700">
+                      {g}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
       {/* Header */}
       <header className="border-b bg-card sm:sticky sm:top-0 z-10">
         <div className="px-4 md:px-6 py-3 flex items-center justify-between">

@@ -44,7 +44,7 @@ const ALL_NAV_ITEMS: NavItem[] = [
     icon: List,
     menuKey: 'projetos',
     subItems: [
-      { path: '/projetos/novo', label: 'Novo Projeto', icon: FolderPlus, menuKey: 'projetos/novo' },
+      
       { path: '/informar-venda', label: 'Informar Nova Venda', icon: ShoppingCart, menuKey: 'projetos/informar-venda' },
       { path: '/projetos', label: 'Projetos', icon: List, menuKey: 'projetos/lista' },
     ],

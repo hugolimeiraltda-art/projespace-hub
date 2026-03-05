@@ -91,8 +91,8 @@ export default function ProjectsList() {
 
   // Sync tab with URL search params
   useEffect(() => {
-    const tabParam = searchParams.get('tab');
-    if (tabParam && tabParam !== activeTab) {
+    const tabParam = searchParams.get('tab') || 'projetos';
+    if (tabParam !== activeTab) {
       setActiveTab(tabParam);
     }
   }, [searchParams]);

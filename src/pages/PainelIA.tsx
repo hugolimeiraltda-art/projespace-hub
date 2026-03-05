@@ -12,6 +12,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Bot, MessageSquare, Image, Video, FileText, Send, Database, Brain, DollarSign, TrendingUp, Loader2, CheckCircle2, Clock, Sparkles, AlertTriangle } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { toast } from 'sonner';
+import { useNavigate } from 'react-router-dom';
 import { AILearningActivity } from '@/components/AILearningActivity';
 
 interface AIMessage {
@@ -21,6 +22,7 @@ interface AIMessage {
 
 export default function PainelIA() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [messages, setMessages] = useState<AIMessage[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -195,16 +197,16 @@ export default function PainelIA() {
   };
 
   const dataSources = [
-    { name: 'orcamento_produtos', desc: 'Catálogo de Produtos', count: stats?.produtosAtivos || 0, icon: FileText, status: 'active' as const },
-    { name: 'orcamento_kits', desc: 'Kits de Equipamentos', count: stats?.kitsAtivos || 0, icon: FileText, status: 'active' as const },
-    { name: 'customer_portfolio', desc: 'Carteira de Clientes', count: stats?.clientesCarteira || 0, icon: Database, status: 'active' as const },
-    { name: 'projects + sale_forms', desc: 'Projetos e Formulários', count: stats?.projetos || 0, icon: Database, status: 'active' as const },
-    { name: 'orcamento_regras_precificacao', desc: 'Regras de Precificação', count: stats?.regrasPreco || 0, icon: DollarSign, status: 'active' as const },
-    { name: 'orcamento_sessoes', desc: 'Histórico de Sessões', count: stats?.totalSessoes || 0, icon: MessageSquare, status: 'active' as const },
-    { name: 'orcamento_proposta_feedbacks', desc: 'Feedbacks de Propostas Geradas', count: stats?.totalFeedbacks || 0, icon: MessageSquare, status: 'active' as const },
-    { name: 'orcamento_midias', desc: 'Fotos e Vídeos das Visitas', count: stats?.totalMidias || 0, icon: Image, status: 'active' as const },
-    { name: 'orcamento_encaminhamentos_engenharia', desc: 'Regras de Encaminhamento à Engenharia', count: stats?.totalEncaminhamentos || 0, icon: AlertTriangle, status: 'active' as const },
-    { name: 'Treinamento PDF', desc: 'Conhecimento de Produtos Emive', count: 9, icon: Brain, status: 'trained' as const },
+    { name: 'orcamento_produtos', desc: 'Catálogo de Produtos', count: stats?.produtosAtivos || 0, icon: FileText, status: 'active' as const, route: '/orcamentos/produtos' },
+    { name: 'orcamento_kits', desc: 'Kits de Equipamentos', count: stats?.kitsAtivos || 0, icon: FileText, status: 'active' as const, route: '/orcamentos/kit-regras' },
+    { name: 'customer_portfolio', desc: 'Carteira de Clientes', count: stats?.clientesCarteira || 0, icon: Database, status: 'active' as const, route: '/carteira-clientes' },
+    { name: 'projects + sale_forms', desc: 'Projetos e Formulários', count: stats?.projetos || 0, icon: Database, status: 'active' as const, route: '/projetos' },
+    { name: 'orcamento_regras_precificacao', desc: 'Regras de Precificação', count: stats?.regrasPreco || 0, icon: DollarSign, status: 'active' as const, route: '/orcamentos/regras' },
+    { name: 'orcamento_sessoes', desc: 'Histórico de Sessões', count: stats?.totalSessoes || 0, icon: MessageSquare, status: 'active' as const, route: '/orcamentos/propostas' },
+    { name: 'orcamento_proposta_feedbacks', desc: 'Feedbacks de Propostas Geradas', count: stats?.totalFeedbacks || 0, icon: MessageSquare, status: 'active' as const, route: '/orcamentos/propostas' },
+    { name: 'orcamento_midias', desc: 'Fotos e Vídeos das Visitas', count: stats?.totalMidias || 0, icon: Image, status: 'active' as const, route: '/orcamentos/propostas' },
+    { name: 'orcamento_encaminhamentos_engenharia', desc: 'Regras de Encaminhamento à Engenharia', count: stats?.totalEncaminhamentos || 0, icon: AlertTriangle, status: 'active' as const, route: '/painel-ia/regras-engenharia' },
+    { name: 'Treinamento PDF', desc: 'Conhecimento de Produtos Emive', count: 9, icon: Brain, status: 'trained' as const, route: '/painel-ia/treinamento' },
   ];
 
   const estimatedCostPerInteraction = 0.003; // rough estimate per message
@@ -356,7 +358,7 @@ export default function PainelIA() {
                 {dataSources.map((source) => {
                   const Icon = source.icon;
                   return (
-                    <div key={source.name} className="flex items-center gap-3 p-3 rounded-lg border border-border bg-card">
+                    <div key={source.name} className="flex items-center gap-3 p-3 rounded-lg border border-border bg-card cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => navigate(source.route)}>
                       <div className="p-1.5 rounded bg-primary/10">
                         <Icon className="w-4 h-4 text-primary" />
                       </div>

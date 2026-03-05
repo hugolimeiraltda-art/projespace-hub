@@ -107,7 +107,7 @@ export default function ProjectDetail() {
   const canEdit = user?.role === 'vendedor' && ['RASCUNHO', 'PENDENTE_INFO'].includes(project.status);
   const canChangeStatus = user?.role === 'projetos' || user?.role === 'admin';
   const canMarkCompleted = canChangeStatus && project.engineering_status !== 'CONCLUIDO';
-  const canStartSaleForm = user?.role === 'vendedor' && project.engineering_status === 'CONCLUIDO' && project.sale_status === 'NAO_INICIADO';
+  const canStartSaleForm = ['vendedor', 'admin', 'gerente_comercial', 'administrativo', 'implantacao'].includes(user?.role || '') && project.engineering_status === 'CONCLUIDO' && project.sale_status === 'NAO_INICIADO';
   const canViewSaleForm = project.sale_status && project.sale_status !== 'NAO_INICIADO';
 
   const handleCopyEmail = () => {

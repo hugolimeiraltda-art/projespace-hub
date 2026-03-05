@@ -9,7 +9,7 @@ import { Separator } from '@/components/ui/separator';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { Bot, MessageSquare, Image, Video, FileText, Send, Database, Brain, DollarSign, TrendingUp, Loader2, CheckCircle2, Clock, Sparkles } from 'lucide-react';
+import { Bot, MessageSquare, Image, Video, FileText, Send, Database, Brain, DollarSign, TrendingUp, Loader2, CheckCircle2, Clock, Sparkles, AlertTriangle } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { toast } from 'sonner';
 import { AILearningActivity } from '@/components/AILearningActivity';
@@ -45,6 +45,7 @@ export default function PainelIA() {
         { count: projetos },
         { count: regrasPreco },
         { count: totalFeedbacks },
+        { count: totalEncaminhamentos },
       ] = await Promise.all([
         supabase.from('orcamento_sessoes').select('*', { count: 'exact', head: true }),
         supabase.from('orcamento_mensagens').select('*', { count: 'exact', head: true }),
@@ -60,6 +61,7 @@ export default function PainelIA() {
         supabase.from('projects').select('*', { count: 'exact', head: true }),
         supabase.from('orcamento_regras_precificacao').select('*', { count: 'exact', head: true }),
         supabase.from('orcamento_proposta_feedbacks').select('*', { count: 'exact', head: true }),
+        supabase.from('orcamento_encaminhamentos_engenharia').select('*', { count: 'exact', head: true }),
       ]);
 
       return {
@@ -77,6 +79,7 @@ export default function PainelIA() {
         projetos: projetos || 0,
         regrasPreco: regrasPreco || 0,
         totalFeedbacks: totalFeedbacks || 0,
+        totalEncaminhamentos: totalEncaminhamentos || 0,
       };
     },
   });
@@ -200,6 +203,7 @@ export default function PainelIA() {
     { name: 'orcamento_sessoes', desc: 'Histórico de Sessões', count: stats?.totalSessoes || 0, icon: MessageSquare, status: 'active' as const },
     { name: 'orcamento_proposta_feedbacks', desc: 'Feedbacks de Propostas Geradas', count: stats?.totalFeedbacks || 0, icon: MessageSquare, status: 'active' as const },
     { name: 'orcamento_midias', desc: 'Fotos e Vídeos das Visitas', count: stats?.totalMidias || 0, icon: Image, status: 'active' as const },
+    { name: 'orcamento_encaminhamentos_engenharia', desc: 'Regras de Encaminhamento à Engenharia', count: stats?.totalEncaminhamentos || 0, icon: AlertTriangle, status: 'active' as const },
     { name: 'Treinamento PDF', desc: 'Conhecimento de Produtos Emive', count: 9, icon: Brain, status: 'trained' as const },
   ];
 

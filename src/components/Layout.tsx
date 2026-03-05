@@ -5,7 +5,7 @@ import { useMenuPermissions } from '@/hooks/useMenuPermissions';
 import { Button } from '@/components/ui/button';
 import { NotificationsSidebarItem } from '@/components/NotificationsSidebarItem';
 import { cn } from '@/lib/utils';
-import { LayoutDashboard, FolderPlus, List, Settings, LogOut, User, ClipboardList, Users, Briefcase, ShoppingCart, Package, Heart, Wrench, ChevronDown, ChevronRight, AlertTriangle, Calendar, Bot, Boxes, Percent, Brain, BookOpen, FileText, Menu, X } from 'lucide-react';
+import { LayoutDashboard, FolderPlus, List, Settings, LogOut, User, ClipboardList, Users, Briefcase, ShoppingCart, Package, Heart, Wrench, ChevronDown, ChevronRight, AlertTriangle, Calendar, Bot, Boxes, Percent, Brain, BookOpen, FileText, Menu, X, BarChart3 } from 'lucide-react';
 import emiveLogo from '@/assets/emive-logo.png';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -44,9 +44,9 @@ const ALL_NAV_ITEMS: NavItem[] = [
     icon: List,
     menuKey: 'projetos',
     subItems: [
-      
-      
       { path: '/projetos', label: 'Projetos', icon: List, menuKey: 'projetos/lista' },
+      { path: '/projetos?tab=chamados', label: 'Chamados', icon: ClipboardList, menuKey: 'projetos/lista' },
+      { path: '/projetos?tab=relatorios', label: 'Relatórios', icon: BarChart3, menuKey: 'projetos/lista' },
     ],
   },
   {
@@ -229,7 +229,9 @@ export function Layout({ children }: LayoutProps) {
                     <div className="mt-1 ml-4 space-y-1 border-l border-border pl-3">
                       {item.subItems.map(subItem => {
                         const SubIcon = subItem.icon;
-                        const isSubActive = location.pathname === subItem.path;
+                        const isSubActive = subItem.path.includes('?')
+                          ? location.pathname + location.search === subItem.path
+                          : location.pathname === subItem.path && !location.search;
                         return (
                           <Link
                             key={subItem.path}

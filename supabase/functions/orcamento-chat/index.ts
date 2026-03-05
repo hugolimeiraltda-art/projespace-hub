@@ -9,6 +9,141 @@ const corsHeaders = {
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
+// Regex patterns for extracting JSON blocks (defined outside template literals to avoid backtick parse issues)
+const JSON_BLOCK_REGEX = new RegExp(String.fromCharCode(96,96,96) + 'json\\s*([\\s\\S]*?)' + String.fromCharCode(96,96,96));
+const JSON_BLOCK_REPLACE_REGEX = new RegExp(String.fromCharCode(96,96,96) + 'json\\s*[\\s\\S]*?' + String.fromCharCode(96,96,96));
+const BACKTICKS_STR = String.fromCharCode(96,96,96);
+
+// Engineering referral trigger rules
+const ENGINEERING_TRIGGERS = {
+  max_acessos: 8,
+  max_valor_venda: 300000,
+  max_mensalidade: 7000,
+  max_cameras_ip: 64,
+  max_unidades: 300,
+  sla_dias_uteis: 4,
+  keywords_perimetral_ia: ['hikcentra', 'hik centra', 'hikcentral', 'hik central'],
+  keywords_perimetral_analiticos: ['analítico', 'analitico', 'video analytics', 'detecção inteligente', 'deteccao inteligente'],
+  keywords_lpr: ['lpr', 'leitura de placa', 'reconhecimento de placa', 'plate recognition'],
+};
+
+async function checkEngineeringTriggers(supabase: any, sessaoId: string, itens: any, mensagens: any[]) {
+  const gatilhos: string[] = [];
+
+  // Count access points from items
+  const allItemNames = [
+    ...(itens?.kits || []).map((k: any) => ({ nome: (k.nome || '').toLowerCase(), qtd: k.qtd || 1 })),
+    ...(itens?.avulsos || []).map((k: any) => ({ nome: (k.nome || '').toLowerCase(), qtd: k.qtd || 1 })),
+    ...(itens?.aproveitados || []).map((k: any) => ({ nome: (k.nome || '').toLowerCase(), qtd: k.qtd || 1 })),
+  ];
+  const allNamesStr = allItemNames.map(i => i.nome).join(' ');
+  const msgText = (mensagens || []).map(m => (m.content || '').toLowerCase()).join(' ');
+
+  // 1. Count access points (portas + portões + cancelas + catracas)
+  const accessKeywords = /porta|portão|portao|cancela|catraca|eclusa|totem/i;
+  const totalAcessos = allItemNames
+    .filter(i => accessKeywords.test(i.nome))
+    .reduce((sum, i) => sum + i.qtd, 0);
+  if (totalAcessos > ENGINEERING_TRIGGERS.max_acessos) {
+    gatilhos.push(`Mais de ${ENGINEERING_TRIGGERS.max_acessos} acessos (${totalAcessos} detectados)`);
+  }
+
+  // 2. Check total sale value (taxa_conexao_total)
+  const taxaTotal = itens?.taxa_conexao_total || 0;
+  if (taxaTotal > ENGINEERING_TRIGGERS.max_valor_venda) {
+    gatilhos.push(`Valor total de venda acima de R$ ${ENGINEERING_TRIGGERS.max_valor_venda.toLocaleString('pt-BR')} (R$ ${taxaTotal.toLocaleString('pt-BR')})`);
+  }
+
+  // 3. Check mensalidade
+  const mensalidadeTotal = itens?.mensalidade_total || 0;
+  if (mensalidadeTotal > ENGINEERING_TRIGGERS.max_mensalidade) {
+    gatilhos.push(`Mensalidade acima de R$ ${ENGINEERING_TRIGGERS.max_mensalidade.toLocaleString('pt-BR')} (R$ ${mensalidadeTotal.toLocaleString('pt-BR')})`);
+  }
+
+  // 4. Count cameras
+  const cameraKeywords = /camera|câmera|bullet|dome|speed dome|ptz/i;
+  const totalCameras = allItemNames
+    .filter(i => cameraKeywords.test(i.nome))
+    .reduce((sum, i) => sum + i.qtd, 0);
+  if (totalCameras > ENGINEERING_TRIGGERS.max_cameras_ip) {
+    gatilhos.push(`Mais de ${ENGINEERING_TRIGGERS.max_cameras_ip} câmeras (${totalCameras} detectadas)`);
+  }
+
+  // 5. Check units from conversation
+  const unitsMatch = msgText.match(/(\d+)\s*(?:unidades|apartamentos|aptos|casas)/);
+  const totalUnidades = unitsMatch ? parseInt(unitsMatch[1]) : 0;
+  if (totalUnidades > ENGINEERING_TRIGGERS.max_unidades) {
+    gatilhos.push(`Mais de ${ENGINEERING_TRIGGERS.max_unidades} unidades (${totalUnidades} detectadas)`);
+  }
+
+  // 6. Perimetral with AI (HikCentra)
+  const searchText = allNamesStr + ' ' + msgText;
+  if (ENGINEERING_TRIGGERS.keywords_perimetral_ia.some(kw => searchText.includes(kw))) {
+    gatilhos.push('Proteção perimetral com IA (HikCentra)');
+  }
+
+  // 7. Perimetral with analytics
+  if (ENGINEERING_TRIGGERS.keywords_perimetral_analiticos.some(kw => searchText.includes(kw))) {
+    gatilhos.push('Proteção perimetral com analíticos');
+  }
+
+  // 8. LPR
+  if (ENGINEERING_TRIGGERS.keywords_lpr.some(kw => searchText.includes(kw))) {
+    gatilhos.push('Presença de LPR (leitura de placa)');
+  }
+
+  // 9. Check if vendedor marked "requer engenharia" in messages
+  if (msgText.includes('requer engenharia') || msgText.includes('precisa de engenharia') || msgText.includes('enviar para engenharia')) {
+    gatilhos.push('Vendedor solicitou envio para engenharia');
+  }
+
+  if (gatilhos.length === 0) return { encaminhado: false, gatilhos: [] };
+
+  // Calculate SLA deadline (4 business days)
+  const now = new Date();
+  let diasUteis = 0;
+  const prazo = new Date(now);
+  while (diasUteis < ENGINEERING_TRIGGERS.sla_dias_uteis) {
+    prazo.setDate(prazo.getDate() + 1);
+    const dow = prazo.getDay();
+    if (dow !== 0 && dow !== 6) diasUteis++;
+  }
+
+  // Insert audit record
+  await supabase.from('orcamento_encaminhamentos_engenharia').insert({
+    sessao_id: sessaoId,
+    gatilhos_disparados: gatilhos,
+    mensalidade_total: mensalidadeTotal,
+    taxa_conexao_total: taxaTotal,
+    total_acessos: totalAcessos,
+    total_cameras: totalCameras,
+    total_unidades: totalUnidades,
+    sla_prazo: prazo.toISOString(),
+  });
+
+  // Update session flag
+  await supabase.from('orcamento_sessoes').update({ encaminhado_engenharia: true }).eq('id', sessaoId);
+
+  // Get session info for notification
+  const { data: sessaoData } = await supabase.from('orcamento_sessoes').select('nome_cliente, vendedor_nome').eq('id', sessaoId).single();
+
+  // Create notifications for all "projetos" role users
+  const { data: projetistas } = await supabase.from('user_roles').select('user_id').eq('role', 'projetos');
+  if (projetistas && projetistas.length > 0) {
+    const gatilhosResumo = gatilhos.slice(0, 3).join('; ');
+    for (const p of projetistas) {
+      await supabase.from('manutencao_notificacoes').insert({
+        for_user_id: p.user_id,
+        tipo: 'encaminhamento_engenharia',
+        titulo: `Proposta requer validação técnica`,
+        mensagem: `O orçamento de "${sessaoData?.nome_cliente || 'Cliente'}" (vendedor: ${sessaoData?.vendedor_nome || '?'}) foi encaminhado para Engenharia. Gatilhos: ${gatilhosResumo}. SLA: ${ENGINEERING_TRIGGERS.sla_dias_uteis} dias úteis.`,
+      });
+    }
+  }
+
+  return { encaminhado: true, gatilhos };
+}
+
 async function fetchContextData(supabase: any) {
   const [{ data: projects }, { data: portfolio }, { data: produtos }, { data: kits }, { data: feedbacks }] = await Promise.all([
     supabase.from("projects").select(`
@@ -231,6 +366,27 @@ ${JSON.stringify(ctx.portfolio.slice(0, 5).map((c: any) => ({ r: c.razao_social,
 - Se o vendedor disser um número ambíguo (ex: "são 12"), SEMPRE esclareça: "12 blocos ou 12 unidades?"
 - Para interfonia, o cálculo correto é baseado em UNIDADES (apartamentos), não em blocos. Para portas de bloco, é baseado em BLOCOS.
 
+## REGRA DE ENCAMINHAMENTO PARA ENGENHARIA:
+Ao finalizar o checklist, ANTES de instruir o vendedor a gerar a proposta, avalie se o projeto se enquadra em alguma das condições abaixo. Se SIM, AVISE o vendedor com a mensagem padrão.
+
+**Condições que OBRIGATORIAMENTE encaminham para Engenharia (qualquer uma):**
+1. Mais de 8 acessos controlados (portas + portões + cancelas + catracas + eclusas + totens)
+2. Valor total de venda do projeto acima de R$ 300.000
+3. Mensalidade (locação) total acima de R$ 7.000
+4. Presença de proteção perimetral com IA (HikCentra)
+5. Mais de 64 câmeras IP (digitais)
+6. Presença de proteção perimetral com analíticos
+7. Presença de LPR (leitura de placa)
+8. Mais de 300 unidades (apartamentos/casas)
+9. Vendedor solicitar "requer engenharia"
+
+**Mensagem padrão ao vendedor quando detectar gatilho:**
+"⚠️ **Atenção — Validação Técnica Obrigatória**
+A lista de materiais foi gerada e será encaminhada **automaticamente** ao setor de Engenharia para validação técnica. Nossos engenheiros irão revisar o projeto e retornar com ajustes ou aprovação em até **4 dias úteis**. Caso precise complementar informações (fotos/medições), eu aviso.
+Gatilho(s) identificado(s): [liste os gatilhos que foram disparados]."
+
+**IMPORTANTE**: A proposta é gerada normalmente, mas o vendedor deve saber que a Engenharia irá revisar. O sistema registra automaticamente para auditoria.
+
 - Responda em português brasileiro`;
 }
 
@@ -378,7 +534,7 @@ serve(async (req) => {
       const structuredPrompt = `${buildPropostaPrompt(ctx, sessao)}
 
 ## INSTRUÇÃO ADICIONAL OBRIGATÓRIA:
-Além da proposta em markdown, você DEVE retornar ao final um bloco JSON delimitado por \`\`\`json e \`\`\` contendo os itens estruturados da proposta.
+Além da proposta em markdown, você DEVE retornar ao final um bloco JSON delimitado por ${BACKTICKS_STR}json e ${BACKTICKS_STR} contendo os itens estruturados da proposta.
 
 O JSON deve seguir este formato EXATO:
 {
@@ -425,6 +581,7 @@ REGRAS para o JSON:
 
 ## FOTOS DA VISITA TÉCNICA (associe cada foto ao ambiente correspondente):
 ${fotoListStr}
+`;
 
       const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
         method: "POST",
@@ -452,11 +609,11 @@ ${fotoListStr}
       // Extract JSON block from response
       let itensEstruturados = null;
       let proposta = fullContent;
-      const jsonMatch = fullContent.match(new RegExp('```json\\s*([\\s\\S]*?)```'));
+      const jsonMatch = fullContent.match(JSON_BLOCK_REGEX);
       if (jsonMatch) {
         try {
           itensEstruturados = JSON.parse(jsonMatch[1].trim());
-          proposta = fullContent.replace(new RegExp('```json\\s*[\\s\\S]*?```'), '').trim();
+          proposta = fullContent.replace(JSON_BLOCK_REPLACE_REGEX, '').trim();
         } catch (e) {
           console.error("Failed to parse structured items JSON:", e);
         }
@@ -543,11 +700,16 @@ ${fotoListStr}
         .update({ proposta_gerada: propostaStore, proposta_gerada_at: new Date().toISOString(), status: "proposta_gerada" })
         .eq("id", sessao.id);
 
+      // Check engineering triggers
+      const engCheck = await checkEngineeringTriggers(supabase, sessao.id, itensEstruturados, allMsgs || []);
+
       return new Response(JSON.stringify({ 
         proposta, 
         itens: itensEstruturados,
         itensExpandidos,
         fotos: fotoUrls,
+        encaminhado_engenharia: engCheck.encaminhado,
+        gatilhos_engenharia: engCheck.gatilhos,
         sessao: {
           nome_cliente: sessao.nome_cliente,
           endereco: sessao.endereco_condominio,
@@ -598,7 +760,7 @@ NÃO altere quantidades, NÃO adicione nem remova itens, NÃO mude valores. Gere
 ${editedItemsJson}
 
 ## INSTRUÇÃO ADICIONAL OBRIGATÓRIA:
-Além da proposta em markdown, retorne ao final um bloco JSON delimitado por \`\`\`json e \`\`\` com os mesmos itens estruturados (copie o JSON acima, mantendo a mesma estrutura).
+Além da proposta em markdown, retorne ao final um bloco JSON delimitado por ${BACKTICKS_STR}json e ${BACKTICKS_STR} com os mesmos itens estruturados (copie o JSON acima, mantendo a mesma estrutura).
 
 Adicione também o campo "ambientes" no JSON com o detalhamento EAP conforme as instruções padrão.
 
@@ -632,16 +794,16 @@ ${fotoListStr}
       // Extract JSON block
       let itensFinais = itens_editados; // fallback to edited items
       let proposta = fullContent;
-      const jsonMatch = fullContent.match(new RegExp('```json\\s*([\\s\\S]*?)```'));
+      const jsonMatch = fullContent.match(JSON_BLOCK_REGEX);
       if (jsonMatch) {
         try {
           const parsed = JSON.parse(jsonMatch[1].trim());
           // Merge: keep edited commercial values but add ambientes from AI
           itensFinais = { ...itens_editados, ambientes: parsed.ambientes || itens_editados.ambientes };
-          proposta = fullContent.replace(new RegExp('```json\\s*[\\s\\S]*?```'), '').trim();
+          proposta = fullContent.replace(JSON_BLOCK_REPLACE_REGEX, '').trim();
         } catch (e) {
           console.error("Failed to parse final JSON:", e);
-          proposta = fullContent.replace(new RegExp('```json\\s*[\\s\\S]*?```'), '').trim();
+          proposta = fullContent.replace(JSON_BLOCK_REPLACE_REGEX, '').trim();
         }
       }
 
@@ -699,8 +861,13 @@ ${fotoListStr}
         .update({ proposta_gerada: propostaStore, proposta_gerada_at: new Date().toISOString(), status: "proposta_gerada" })
         .eq("id", sessao.id);
 
+      // Check engineering triggers
+      const engCheck = await checkEngineeringTriggers(supabase, sessao.id, itensFinais, allMsgs || []);
+
       return new Response(JSON.stringify({
         proposta, itens: itensFinais, itensExpandidos, fotos: fotoUrls,
+        encaminhado_engenharia: engCheck.encaminhado,
+        gatilhos_engenharia: engCheck.gatilhos,
         sessao: { nome_cliente: sessao.nome_cliente, endereco: sessao.endereco_condominio, vendedor: sessao.vendedor_nome, email: sessao.email_cliente, telefone: sessao.telefone_cliente }
       }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }

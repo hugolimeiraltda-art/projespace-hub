@@ -1204,6 +1204,74 @@ export type Database = {
           },
         ]
       }
+      orcamento_encaminhamentos_engenharia: {
+        Row: {
+          created_at: string
+          gatilhos_disparados: Json
+          id: string
+          itens_alterados: Json | null
+          mensalidade_total: number | null
+          observacoes_engenharia: string | null
+          respondido_at: string | null
+          respondido_por: string | null
+          respondido_por_nome: string | null
+          sessao_id: string
+          sla_prazo: string | null
+          status: string
+          taxa_conexao_total: number | null
+          total_acessos: number | null
+          total_cameras: number | null
+          total_unidades: number | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          gatilhos_disparados?: Json
+          id?: string
+          itens_alterados?: Json | null
+          mensalidade_total?: number | null
+          observacoes_engenharia?: string | null
+          respondido_at?: string | null
+          respondido_por?: string | null
+          respondido_por_nome?: string | null
+          sessao_id: string
+          sla_prazo?: string | null
+          status?: string
+          taxa_conexao_total?: number | null
+          total_acessos?: number | null
+          total_cameras?: number | null
+          total_unidades?: number | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          gatilhos_disparados?: Json
+          id?: string
+          itens_alterados?: Json | null
+          mensalidade_total?: number | null
+          observacoes_engenharia?: string | null
+          respondido_at?: string | null
+          respondido_por?: string | null
+          respondido_por_nome?: string | null
+          sessao_id?: string
+          sla_prazo?: string | null
+          status?: string
+          taxa_conexao_total?: number | null
+          total_acessos?: number | null
+          total_cameras?: number | null
+          total_unidades?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orcamento_encaminhamentos_engenharia_sessao_id_fkey"
+            columns: ["sessao_id"]
+            isOneToOne: false
+            referencedRelation: "orcamento_sessoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       orcamento_kit_itens: {
         Row: {
           created_at: string
@@ -1547,6 +1615,7 @@ export type Database = {
           created_by: string
           created_by_name: string | null
           email_cliente: string | null
+          encaminhado_engenharia: boolean | null
           endereco_condominio: string | null
           id: string
           nome_cliente: string
@@ -1564,6 +1633,7 @@ export type Database = {
           created_by: string
           created_by_name?: string | null
           email_cliente?: string | null
+          encaminhado_engenharia?: boolean | null
           endereco_condominio?: string | null
           id?: string
           nome_cliente: string
@@ -1581,6 +1651,7 @@ export type Database = {
           created_by?: string
           created_by_name?: string | null
           email_cliente?: string | null
+          encaminhado_engenharia?: boolean | null
           endereco_condominio?: string | null
           id?: string
           nome_cliente?: string

@@ -89,6 +89,14 @@ export default function ProjectsList() {
   const [implantacaoEtapas, setImplantacaoEtapas] = useState<Record<string, number>>({});
   const [activeTab, setActiveTab] = useState<string>(searchParams.get('tab') || 'projetos');
 
+  // Sync tab with URL search params
+  useEffect(() => {
+    const tabParam = searchParams.get('tab');
+    if (tabParam && tabParam !== activeTab) {
+      setActiveTab(tabParam);
+    }
+  }, [searchParams]);
+
   // Chamados filters
   const [chamadosSearch, setChamadosSearch] = useState('');
   const [selectedStatuses, setSelectedStatuses] = useState<ProjectStatus[]>([]);

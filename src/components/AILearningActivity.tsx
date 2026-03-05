@@ -115,47 +115,49 @@ export function AILearningActivity() {
           A IA aprende automaticamente com cada dado novo ou atualizado no sistema. Veja abaixo o que mudou recentemente.
         </p>
       </CardHeader>
-      <CardContent className="space-y-3">
-        {activity.sources.map((source) => {
-          const hasRecent = source.recentCount > 0;
-          return (
-            <div key={source.name} className="p-3 rounded-lg border border-border space-y-2">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  {hasRecent ? (
-                    <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                  ) : (
-                    <div className="w-2 h-2 rounded-full bg-muted-foreground/30" />
-                  )}
-                  <span className="text-sm font-medium text-foreground">{source.label}</span>
+      <CardContent>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+          {activity.sources.map((source) => {
+            const hasRecent = source.recentCount > 0;
+            return (
+              <div key={source.name} className="p-2.5 rounded-lg border border-border space-y-1">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    {hasRecent ? (
+                      <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse shrink-0" />
+                    ) : (
+                      <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground/30 shrink-0" />
+                    )}
+                    <span className="text-xs font-medium text-foreground truncate">{source.label}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    {hasRecent && (
+                      <Badge variant="secondary" className="text-[9px] gap-0.5 px-1.5 py-0">
+                        <TrendingUp className="w-2.5 h-2.5" />
+                        +{source.recentCount}
+                      </Badge>
+                    )}
+                    <span className="text-xs font-semibold text-foreground">{source.totalCount}</span>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  {hasRecent && (
-                    <Badge variant="secondary" className="text-[10px] gap-1">
-                      <TrendingUp className="w-3 h-3" />
-                      +{source.recentCount} esta semana
-                    </Badge>
-                  )}
-                  <span className="text-sm font-semibold text-foreground">{source.totalCount}</span>
+                <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                  <Calendar className="w-2.5 h-2.5" />
+                  <span className="truncate">{formatTime(source.lastUpdated)}</span>
                 </div>
+                {hasRecent && (
+                  <div className="flex items-center gap-1">
+                    <RefreshCw className="w-2.5 h-2.5 text-green-500 animate-spin shrink-0" style={{ animationDuration: '3s' }} />
+                    <span className="text-[10px] text-green-600 dark:text-green-400 truncate">
+                      +{source.recentCount} {source.recentCount === 1 ? 'novo' : 'novos'}
+                    </span>
+                  </div>
+                )}
               </div>
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <Calendar className="w-3 h-3" />
-                <span>Última atualização: {formatTime(source.lastUpdated)}</span>
-              </div>
-              {hasRecent && (
-                <div className="flex items-center gap-2">
-                  <RefreshCw className="w-3 h-3 text-green-500 animate-spin" style={{ animationDuration: '3s' }} />
-                  <span className="text-xs text-green-600 dark:text-green-400">
-                    Aprendendo com {source.recentCount} {source.recentCount === 1 ? 'registro novo' : 'registros novos'}...
-                  </span>
-                </div>
-              )}
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
 
-        <div className="pt-2 border-t border-border">
+        <div className="pt-2 border-t border-border mt-3">
           <div className="flex items-center justify-between text-sm mb-2">
             <span className="text-muted-foreground">Cobertura total de dados</span>
             <span className="font-semibold text-foreground">{activity.totalAll} registros</span>

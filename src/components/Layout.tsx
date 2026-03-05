@@ -40,7 +40,7 @@ const ALL_NAV_ITEMS: NavItem[] = [
   },
   {
     path: '/projetos',
-    label: 'Projetos',
+    label: 'Engenharia',
     icon: List,
     menuKey: 'projetos',
     subItems: [

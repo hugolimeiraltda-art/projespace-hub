@@ -49,7 +49,7 @@ import { ptBR } from 'date-fns/locale';
 export default function ProjectDetail() {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
-  const { getProject, updateStatus, updateEngineeringStatus, addComment, markProjectCompleted, addAttachment, removeAttachment, updateProject, deleteProject, projects } = useProjects();
+  const { getProject, updateStatus, updateEngineeringStatus, addComment, markProjectCompleted, addAttachment, removeAttachment, updateProject, deleteProject, submitSaleForm, projects } = useProjects();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -63,10 +63,12 @@ export default function ProjectDetail() {
   const [showPendingInfoDialog, setShowPendingInfoDialog] = useState(false);
   const [showRetornarDialog, setShowRetornarDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showSaleConfirmDialog, setShowSaleConfirmDialog] = useState(false);
   const [pendingInfoReason, setPendingInfoReason] = useState('');
   const [retornarReason, setRetornarReason] = useState('');
   const [isSendingEmail, setIsSendingEmail] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isSubmittingSale, setIsSubmittingSale] = useState(false);
   const [showAIFeedbackDialog, setShowAIFeedbackDialog] = useState(false);
 
   // Watch for project changes in the context
@@ -107,8 +109,26 @@ export default function ProjectDetail() {
   const canEdit = user?.role === 'vendedor' && ['RASCUNHO', 'PENDENTE_INFO'].includes(project.status);
   const canChangeStatus = user?.role === 'projetos' || user?.role === 'admin';
   const canMarkCompleted = canChangeStatus && project.engineering_status !== 'CONCLUIDO';
-  const canStartSaleForm = ['vendedor', 'admin', 'gerente_comercial', 'administrativo', 'implantacao'].includes(user?.role || '') && project.engineering_status === 'CONCLUIDO' && project.sale_status === 'NAO_INICIADO';
-  const canViewSaleForm = project.sale_status && project.sale_status !== 'NAO_INICIADO';
+  const canStartSaleForm = ['vendedor', 'admin', 'gerente_comercial', 'administrativo', 'implantacao'].includes(user?.role || '') && project.engineering_status === 'CONCLUIDO' && (project.sale_status === 'NAO_INICIADO' || project.sale_status === 'EM_ANDAMENTO');
+
+  const handleConfirmSale = async () => {
+    setIsSubmittingSale(true);
+    const success = await submitSaleForm(project.id);
+    setIsSubmittingSale(false);
+    setShowSaleConfirmDialog(false);
+    if (success) {
+      toast({
+        title: 'Venda confirmada!',
+        description: 'O projeto foi enviado para implantação com sucesso.',
+      });
+    } else {
+      toast({
+        title: 'Erro',
+        description: 'Não foi possível confirmar a venda. Tente novamente.',
+        variant: 'destructive',
+      });
+    }
+  };
 
   const handleCopyEmail = () => {
     if (project.email_padrao_gerado) {
@@ -706,23 +726,10 @@ export default function ProjectDetail() {
             {canStartSaleForm && (
               <Button 
                 className="bg-status-approved hover:bg-status-approved/90"
-                onClick={() => navigate(`/projetos/${project.id}/form2`)}
+                onClick={() => setShowSaleConfirmDialog(true)}
               >
                 <ShoppingCart className="w-4 h-4 mr-2" />
                 Projeto Vendido
-              </Button>
-            )}
-            {canViewSaleForm && (
-              <Button 
-                variant="outline"
-                onClick={() => navigate(
-                  project.sale_status === 'CONCLUIDO' 
-                    ? `/projetos/${project.id}/formulario-venda` 
-                    : `/projetos/${project.id}/formulario-venda`
-                )}
-              >
-                <FileText className="w-4 h-4 mr-2" />
-                {project.sale_status === 'CONCLUIDO' ? 'Visualizar Forms' : 'Informar Venda Concluída'}
               </Button>
             )}
             {user?.role === 'admin' && (
@@ -748,7 +755,7 @@ export default function ProjectDetail() {
               <Button 
                 size="sm" 
                 className="bg-status-approved hover:bg-status-approved/90"
-                onClick={() => navigate(`/projetos/${project.id}/form2`)}
+                onClick={() => setShowSaleConfirmDialog(true)}
               >
                 <ShoppingCart className="w-4 h-4 mr-2" />
                 Projeto Vendido
@@ -1261,6 +1268,34 @@ export default function ProjectDetail() {
           onSubmitted={handleCompleteAfterFeedback}
         />
       )}
+      {/* Dialog para Confirmar Venda */}
+      <Dialog open={showSaleConfirmDialog} onOpenChange={setShowSaleConfirmDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Confirmar Venda</DialogTitle>
+            <DialogDescription>
+              Tem certeza que deseja marcar o projeto <strong>"{project.cliente_condominio_nome}"</strong> como vendido? 
+              Ele será enviado diretamente para a equipe de implantação.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2">
+            <Button 
+              variant="outline" 
+              onClick={() => setShowSaleConfirmDialog(false)}
+              disabled={isSubmittingSale}
+            >
+              Cancelar
+            </Button>
+            <Button 
+              className="bg-status-approved hover:bg-status-approved/90"
+              onClick={handleConfirmSale}
+              disabled={isSubmittingSale}
+            >
+              {isSubmittingSale ? 'Enviando...' : 'Confirmar Venda'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Layout>
   );
 }

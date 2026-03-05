@@ -45,6 +45,8 @@ import OrcamentoPropostas from "./pages/OrcamentoPropostas";
 import VendedorHome from "./pages/VendedorHome";
 import VendedorChat from "./pages/VendedorChat";
 import PainelIA from "./pages/PainelIA";
+import IARegrasEngenharia from "./pages/IARegrasEngenharia";
+import IATreinamentoDocs from "./pages/IATreinamentoDocs";
 import PermissoesAcesso from "./pages/PermissoesAcesso";
 import NotFound from "./pages/NotFound";
 
@@ -234,6 +236,14 @@ function AppRoutes() {
       <Route 
         path="/painel-ia" 
         element={<ProtectedRoute><PainelIA /></ProtectedRoute>} 
+      />
+      <Route 
+        path="/painel-ia/regras-engenharia" 
+        element={<ProtectedRoute><IARegrasEngenharia /></ProtectedRoute>} 
+      />
+      <Route 
+        path="/painel-ia/treinamento" 
+        element={<ProtectedRoute><IATreinamentoDocs /></ProtectedRoute>} 
       />
       <Route 
         path="/orcamento-visita" 

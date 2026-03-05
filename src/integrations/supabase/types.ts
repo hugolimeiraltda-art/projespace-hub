@@ -1579,6 +1579,45 @@ export type Database = {
           },
         ]
       }
+      orcamento_regras_engenharia: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          descricao: string | null
+          historico_alteracoes: Json | null
+          id: string
+          keywords: string[] | null
+          nome: string
+          tipo_regra: string
+          updated_at: string
+          valor_limite: number | null
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          descricao?: string | null
+          historico_alteracoes?: Json | null
+          id?: string
+          keywords?: string[] | null
+          nome: string
+          tipo_regra: string
+          updated_at?: string
+          valor_limite?: number | null
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          descricao?: string | null
+          historico_alteracoes?: Json | null
+          id?: string
+          keywords?: string[] | null
+          nome?: string
+          tipo_regra?: string
+          updated_at?: string
+          valor_limite?: number | null
+        }
+        Relationships: []
+      }
       orcamento_regras_precificacao: {
         Row: {
           base_campo: string
@@ -1663,6 +1702,42 @@ export type Database = {
           updated_at?: string
           vendedor_id?: string | null
           vendedor_nome?: string | null
+        }
+        Relationships: []
+      }
+      orcamento_treinamento_docs: {
+        Row: {
+          ativo: boolean
+          categoria: string
+          conteudo: string
+          created_at: string
+          historico_alteracoes: Json | null
+          id: string
+          ordem: number
+          titulo: string
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          categoria?: string
+          conteudo?: string
+          created_at?: string
+          historico_alteracoes?: Json | null
+          id?: string
+          ordem?: number
+          titulo: string
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          categoria?: string
+          conteudo?: string
+          created_at?: string
+          historico_alteracoes?: Json | null
+          id?: string
+          ordem?: number
+          titulo?: string
+          updated_at?: string
         }
         Relationships: []
       }

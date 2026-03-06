@@ -53,6 +53,7 @@ export function EngineeringDeliverables({
   const [laudo, setLaudo] = useState(project.laudo_projeto || '');
   const [isSaving, setIsSaving] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; nome: string; tipo: string } | null>(null);
+  const [showEquipmentList, setShowEquipmentList] = useState(false);
 
   const getDeliverablesByType = (tipo: DeliverableType) => 
     project.attachments.filter(a => a.tipo === tipo);

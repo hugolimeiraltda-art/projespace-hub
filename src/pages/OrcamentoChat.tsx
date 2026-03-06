@@ -470,11 +470,17 @@ export default function OrcamentoChat() {
         if (data.encaminhado_engenharia) {
           setEncaminhadoEngenharia(true);
           setGatilhosEngenharia(data.gatilhos_engenharia || []);
+          injectEngineeringMessage(data.gatilhos_engenharia || []);
         }
       } else {
         // Fallback: no structured items, show directly
         setProposta(data as PropostaData);
         setPropostaJaGerada(true);
+        if (data.encaminhado_engenharia) {
+          setEncaminhadoEngenharia(true);
+          setGatilhosEngenharia(data.gatilhos_engenharia || []);
+          injectEngineeringMessage(data.gatilhos_engenharia || []);
+        }
       }
     } catch (e) {
       console.error(e);

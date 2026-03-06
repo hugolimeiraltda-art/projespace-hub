@@ -295,6 +295,23 @@ export default function ImplantacaoExecucao() {
       if (attachmentsData) {
         setProjectAttachments(attachmentsData);
       }
+
+      // Check for pending items (to block conclusion)
+      const { data: customerData } = await supabase
+        .from('customer_portfolio')
+        .select('id')
+        .eq('project_id', id!)
+        .maybeSingle();
+      
+      if (customerData) {
+        const { count: pendingCount } = await supabase
+          .from('manutencao_pendencias')
+          .select('id', { count: 'exact', head: true })
+          .eq('customer_id', customerData.id)
+          .eq('status', 'ABERTO');
+        
+        setHasPendingItems((pendingCount || 0) > 0);
+      }
     } catch (error) {
       console.error('Error fetching data:', error);
       toast({

@@ -2,21 +2,23 @@ import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 /**
- * Extracts the storage path from a Supabase signed URL.
- * Signed URLs contain the path in the JWT payload or URL structure.
+ * Extracts the storage path from a Supabase URL (signed or public).
  */
-function extractStoragePath(signedUrl: string): string | null {
+function extractStoragePath(url: string): string | null {
   try {
     // Pattern: /storage/v1/object/sign/bucket-name/path?token=...
-    const match = signedUrl.match(/\/storage\/v1\/object\/sign\/([^?]+)/);
+    let match = url.match(/\/storage\/v1\/object\/sign\/([^?]+)/);
     if (match) {
-      // Returns "bucket-name/path" - we need just the path after bucket
       const fullPath = decodeURIComponent(match[1]);
-      // Remove bucket name (first segment)
       const parts = fullPath.split('/');
-      const bucket = parts[0];
-      const path = parts.slice(1).join('/');
-      return path ? path : null;
+      return parts.slice(1).join('/') || null;
+    }
+    // Pattern: /storage/v1/object/public/bucket-name/path
+    match = url.match(/\/storage\/v1\/object\/public\/([^?]+)/);
+    if (match) {
+      const fullPath = decodeURIComponent(match[1]);
+      const parts = fullPath.split('/');
+      return parts.slice(1).join('/') || null;
     }
     return null;
   } catch {
@@ -32,6 +34,14 @@ export function isSignedStorageUrl(url: string): boolean {
   return url.includes('/storage/v1/object/sign/');
 }
 
+export function isPublicStorageUrl(url: string): boolean {
+  return url.includes('/storage/v1/object/public/');
+}
+
+export function isStorageUrl(url: string): boolean {
+  return isSignedStorageUrl(url) || isPublicStorageUrl(url);
+}
+
 export function useAttachmentUrl() {
   const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -41,7 +51,7 @@ export function useAttachmentUrl() {
       return; // Can't open blob URLs
     }
 
-    if (isSignedStorageUrl(url)) {
+    if (isStorageUrl(url)) {
       e?.preventDefault();
       setIsRefreshing(true);
       try {
@@ -54,7 +64,6 @@ export function useAttachmentUrl() {
           if (!error && data?.signedUrl) {
             window.open(data.signedUrl, '_blank');
           } else {
-            // Fallback: try opening the original URL
             window.open(url, '_blank');
           }
         } else {
@@ -66,7 +75,8 @@ export function useAttachmentUrl() {
         setIsRefreshing(false);
       }
     } else {
-      // Regular URL, let the browser handle it
+      // External URL
+      window.open(url, '_blank');
     }
   }, []);
 

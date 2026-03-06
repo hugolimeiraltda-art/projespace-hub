@@ -4,14 +4,12 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
-import { Mail, Send, Settings, Eye, CheckCircle2, AlertCircle, ArrowLeft } from 'lucide-react';
+import { Mail, Send, Settings, Eye, CheckCircle2, AlertCircle, ArrowLeft, Server } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const EMAIL_TEMPLATES = [
@@ -63,26 +61,31 @@ export default function ConfiguracoesEmail() {
   const [activeTemplate, setActiveTemplate] = useState(EMAIL_TEMPLATES[0].id);
   const [testEmail, setTestEmail] = useState('');
   const [sendingTest, setSendingTest] = useState(false);
+  const [smtpConfigured, setSmtpConfigured] = useState<boolean | null>(null);
   const [resendConfigured, setResendConfigured] = useState<boolean | null>(null);
   const [checkingConfig, setCheckingConfig] = useState(true);
 
   useEffect(() => {
-    checkResendConfig();
+    checkConfig();
   }, []);
 
-  const checkResendConfig = async () => {
+  const checkConfig = async () => {
     setCheckingConfig(true);
     try {
-      const { data, error } = await supabase.functions.invoke('send-email-resend', {
+      const { data } = await supabase.functions.invoke('send-email-resend', {
         body: { action: 'check_config' },
       });
-      setResendConfigured(data?.configured === true);
+      setSmtpConfigured(data?.smtp_configured === true);
+      setResendConfigured(data?.resend_configured === true);
     } catch {
+      setSmtpConfigured(false);
       setResendConfigured(false);
     } finally {
       setCheckingConfig(false);
     }
   };
+
+  const isConfigured = smtpConfigured || resendConfigured;
 
   const handleSendTest = async () => {
     if (!testEmail) {
@@ -102,7 +105,7 @@ export default function ConfiguracoesEmail() {
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
-      toast.success(`E-mail de teste enviado para ${testEmail}`);
+      toast.success(`E-mail de teste enviado para ${testEmail} via ${data?.provider || 'SMTP'}`);
     } catch (err: any) {
       toast.error(err.message || 'Erro ao enviar e-mail de teste');
     } finally {
@@ -123,52 +126,87 @@ export default function ConfiguracoesEmail() {
           <p className="text-muted-foreground mt-1">Configure o provedor de envio e personalize os templates</p>
         </div>
 
-        {/* Status do provedor */}
-        <Card className="shadow-card mb-6">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-secondary rounded-lg">
-                  <Settings className="w-5 h-5 text-secondary-foreground" />
+        {/* Status dos provedores */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+          {/* SMTP Corporativo */}
+          <Card className="shadow-card">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-secondary rounded-lg">
+                    <Server className="w-5 h-5 text-secondary-foreground" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-base">SMTP Corporativo</CardTitle>
+                    <CardDescription className="text-xs">smtp.mailcorp.com.br:465 (SSL)</CardDescription>
+                  </div>
                 </div>
-                <div>
-                  <CardTitle className="text-lg">Provedor de E-mail: Resend</CardTitle>
-                  <CardDescription>Status da configuração do provedor</CardDescription>
-                </div>
+                {checkingConfig ? (
+                  <Badge variant="outline" className="text-xs">Verificando...</Badge>
+                ) : smtpConfigured ? (
+                  <Badge className="bg-green-100 text-green-800 border-green-200 text-xs">
+                    <CheckCircle2 className="w-3 h-3 mr-1" /> Ativo
+                  </Badge>
+                ) : (
+                  <Badge variant="destructive" className="text-xs">
+                    <AlertCircle className="w-3 h-3 mr-1" /> Inativo
+                  </Badge>
+                )}
               </div>
-              {checkingConfig ? (
-                <Badge variant="outline">Verificando...</Badge>
-              ) : resendConfigured ? (
-                <Badge className="bg-green-100 text-green-800 border-green-200">
-                  <CheckCircle2 className="w-3 h-3 mr-1" /> Configurado
-                </Badge>
-              ) : (
-                <Badge variant="destructive">
-                  <AlertCircle className="w-3 h-3 mr-1" /> Não configurado
-                </Badge>
-              )}
-            </div>
-          </CardHeader>
-          <CardContent>
-            {!resendConfigured && !checkingConfig && (
-              <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-sm text-amber-800">
-                <p className="font-medium mb-1">⚠️ API Key do Resend não configurada</p>
-                <p>Para enviar e-mails, é necessário configurar a API Key do Resend nas variáveis de ambiente do projeto.</p>
-                <p className="mt-2">
-                  1. Acesse <a href="https://resend.com" target="_blank" rel="noopener noreferrer" className="underline font-medium">resend.com</a> e crie uma conta<br />
-                  2. Gere uma API Key em Settings → API Keys<br />
-                  3. Configure o domínio de envio (ex: eixopci.com.br)<br />
-                  4. Insira a chave no campo solicitado pelo sistema
-                </p>
-              </div>
-            )}
-            {resendConfigured && (
-              <p className="text-sm text-muted-foreground">
-                O Resend está configurado e pronto para enviar e-mails. Todos os envios da plataforma utilizarão este provedor.
+            </CardHeader>
+            <CardContent>
+              <p className="text-xs text-muted-foreground">
+                {smtpConfigured 
+                  ? 'Provedor primário configurado. E-mails são enviados via eixopci@graberalarmes.com.br.'
+                  : 'Credenciais SMTP não encontradas. Configure SMTP_HOST, SMTP_USER e SMTP_PASSWORD.'}
               </p>
-            )}
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+
+          {/* Resend (Fallback) */}
+          <Card className="shadow-card">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-secondary rounded-lg">
+                    <Mail className="w-5 h-5 text-secondary-foreground" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-base">Resend (Fallback)</CardTitle>
+                    <CardDescription className="text-xs">API de envio alternativo</CardDescription>
+                  </div>
+                </div>
+                {checkingConfig ? (
+                  <Badge variant="outline" className="text-xs">Verificando...</Badge>
+                ) : resendConfigured ? (
+                  <Badge className="bg-blue-100 text-blue-800 border-blue-200 text-xs">
+                    <CheckCircle2 className="w-3 h-3 mr-1" /> Disponível
+                  </Badge>
+                ) : (
+                  <Badge variant="outline" className="text-xs">Não configurado</Badge>
+                )}
+              </div>
+            </CardHeader>
+            <CardContent>
+              <p className="text-xs text-muted-foreground">
+                {resendConfigured 
+                  ? 'Disponível como fallback caso o SMTP corporativo falhe.'
+                  : 'Configure RESEND_API_KEY para ter um provedor alternativo.'}
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {!isConfigured && !checkingConfig && (
+          <Card className="shadow-card mb-6 border-amber-200">
+            <CardContent className="pt-6">
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-sm text-amber-800">
+                <p className="font-medium mb-1">⚠️ Nenhum provedor de e-mail configurado</p>
+                <p>Configure pelo menos um provedor (SMTP corporativo ou Resend) para habilitar o envio de e-mails.</p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Templates e Teste */}
         <Tabs defaultValue="templates" className="space-y-4">
@@ -183,7 +221,6 @@ export default function ConfiguracoesEmail() {
 
           <TabsContent value="templates">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* Lista de templates */}
               <div className="space-y-2">
                 {EMAIL_TEMPLATES.map(template => (
                   <button
@@ -201,7 +238,6 @@ export default function ConfiguracoesEmail() {
                 ))}
               </div>
 
-              {/* Detalhe do template */}
               <div className="lg:col-span-2">
                 {selectedTemplate && (
                   <Card className="shadow-card">
@@ -238,60 +274,40 @@ export default function ConfiguracoesEmail() {
                               <p className="text-sm text-foreground">Olá <strong>{'{{nome}}'}</strong>,</p>
                               {selectedTemplate.id === 'recuperacao_senha' && (
                                 <>
-                                  <p className="text-sm text-muted-foreground">
-                                    Recebemos uma solicitação de redefinição de senha para sua conta.
-                                  </p>
+                                  <p className="text-sm text-muted-foreground">Recebemos uma solicitação de redefinição de senha para sua conta.</p>
                                   <div className="text-center py-3">
-                                    <span className="inline-block bg-primary text-primary-foreground px-6 py-2 rounded-md text-sm font-medium">
-                                      Redefinir Senha
-                                    </span>
+                                    <span className="inline-block bg-primary text-primary-foreground px-6 py-2 rounded-md text-sm font-medium">Redefinir Senha</span>
                                   </div>
-                                  <p className="text-xs text-muted-foreground">
-                                    Este link expira em {'{{validade}}'}.
-                                  </p>
+                                  <p className="text-xs text-muted-foreground">Este link expira em {'{{validade}}'}.</p>
                                 </>
                               )}
                               {selectedTemplate.id === 'boas_vindas' && (
                                 <>
-                                  <p className="text-sm text-muted-foreground">
-                                    Sua conta foi criada no sistema Eixo PCI. Abaixo estão seus dados de acesso:
-                                  </p>
+                                  <p className="text-sm text-muted-foreground">Sua conta foi criada no sistema Eixo PCI. Abaixo estão seus dados de acesso:</p>
                                   <div className="bg-muted rounded-md p-3 text-sm space-y-1">
                                     <p><strong>E-mail:</strong> {'{{email}}'}</p>
                                     <p><strong>Senha temporária:</strong> {'{{senha_temporaria}}'}</p>
                                   </div>
                                   <div className="text-center py-3">
-                                    <span className="inline-block bg-primary text-primary-foreground px-6 py-2 rounded-md text-sm font-medium">
-                                      Acessar o Sistema
-                                    </span>
+                                    <span className="inline-block bg-primary text-primary-foreground px-6 py-2 rounded-md text-sm font-medium">Acessar o Sistema</span>
                                   </div>
                                 </>
                               )}
                               {selectedTemplate.id === 'status_projeto' && (
                                 <>
-                                  <p className="text-sm text-muted-foreground">
-                                    O projeto <strong>{'{{projeto_nome}}'}</strong> teve seu status alterado:
-                                  </p>
+                                  <p className="text-sm text-muted-foreground">O projeto <strong>{'{{projeto_nome}}'}</strong> teve seu status alterado:</p>
                                   <div className="text-center py-3">
-                                    <span className="inline-block bg-green-500 text-white px-4 py-2 rounded-md text-sm font-bold">
-                                      {'{{novo_status}}'}
-                                    </span>
+                                    <Badge className="text-base px-4 py-2">{'{{novo_status}}'}</Badge>
                                   </div>
-                                  <p className="text-xs text-muted-foreground">
-                                    Alterado por: {'{{alterado_por}}'}
-                                  </p>
+                                  <p className="text-xs text-muted-foreground">Alterado por: {'{{alterado_por}}'}</p>
                                 </>
                               )}
                               {selectedTemplate.id === 'relatorio_visita' && (
-                                <p className="text-sm text-muted-foreground">
-                                  O relatório de visita técnica do cliente <strong>{'{{cliente}}'}</strong> foi gerado e está disponível.
-                                </p>
+                                <p className="text-sm text-muted-foreground">O relatório de visita técnica do cliente <strong>{'{{cliente}}'}</strong> foi gerado e está disponível.</p>
                               )}
                               {selectedTemplate.id === 'chamado_manutencao' && (
                                 <>
-                                  <p className="text-sm text-muted-foreground">
-                                    Um chamado de manutenção para <strong>{'{{cliente}}'}</strong> foi atualizado.
-                                  </p>
+                                  <p className="text-sm text-muted-foreground">Um chamado de manutenção para <strong>{'{{cliente}}'}</strong> foi atualizado.</p>
                                   <div className="bg-muted rounded-md p-3 text-sm space-y-1">
                                     <p><strong>Tipo:</strong> {'{{tipo_chamado}}'}</p>
                                     <p><strong>Status:</strong> {'{{status}}'}</p>
@@ -300,17 +316,13 @@ export default function ConfiguracoesEmail() {
                               )}
                               {selectedTemplate.id === 'preventiva_agendada' && (
                                 <>
-                                  <p className="text-sm text-muted-foreground">
-                                    A manutenção preventiva do cliente <strong>{'{{cliente}}'}</strong> está agendada para <strong>{'{{data}}'}</strong>.
-                                  </p>
+                                  <p className="text-sm text-muted-foreground">A manutenção preventiva do cliente <strong>{'{{cliente}}'}</strong> está agendada para <strong>{'{{data}}'}</strong>.</p>
                                   <p className="text-sm text-muted-foreground">{'{{descricao}}'}</p>
                                 </>
                               )}
                             </div>
                             <div className="bg-muted/50 p-3 text-center border-t">
-                              <p className="text-xs text-muted-foreground">
-                                E-mail automático do Sistema Eixo PCI
-                              </p>
+                              <p className="text-xs text-muted-foreground">E-mail automático do Sistema Eixo PCI</p>
                             </div>
                           </div>
                         </div>
@@ -352,12 +364,12 @@ export default function ConfiguracoesEmail() {
                     className="mt-1"
                   />
                 </div>
-                <Button onClick={handleSendTest} disabled={sendingTest || !resendConfigured}>
+                <Button onClick={handleSendTest} disabled={sendingTest || !isConfigured}>
                   <Send className="w-4 h-4 mr-2" />
                   {sendingTest ? 'Enviando...' : 'Enviar Teste'}
                 </Button>
-                {!resendConfigured && (
-                  <p className="text-sm text-destructive">Configure a API Key do Resend antes de enviar testes.</p>
+                {!isConfigured && (
+                  <p className="text-sm text-destructive">Configure ao menos um provedor de e-mail antes de enviar testes.</p>
                 )}
               </CardContent>
             </Card>

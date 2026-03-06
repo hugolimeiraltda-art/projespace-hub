@@ -39,14 +39,24 @@ export function EquipmentListDialog({ open, onOpenChange, projectId, projectName
   const [isLoading, setIsLoading] = useState(false);
   const [hasLoaded, setHasLoaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [loadTriggered, setLoadTriggered] = useState(false);
 
+  // Auto-load when dialog opens
   useEffect(() => {
-    if (open && !hasLoaded && !isLoading) {
-      loadEquipmentList();
+    if (open && !hasLoaded && !loadTriggered) {
+      setLoadTriggered(true);
+      doLoadEquipmentList();
     }
-  }, [open, hasLoaded, isLoading]);
+    if (!open) {
+      // Reset when closing so it re-loads next time
+      setLoadTriggered(false);
+      setHasLoaded(false);
+      setEquipments([]);
+      setError(null);
+    }
+  }, [open]);
 
-  const loadEquipmentList = async () => {
+  const doLoadEquipmentList = async () => {
     setIsLoading(true);
     setError(null);
 

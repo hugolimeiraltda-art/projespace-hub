@@ -1769,6 +1769,11 @@ export default function ImplantacaoExecucao() {
                     ) : (
                       <Button
                         onClick={async () => {
+                          // Validate checklists
+                          if (!checklistsExistentes.includes('check_projeto')) {
+                            toast({ title: 'Checklist obrigatório pendente', description: 'O checklist de projeto (etapa 4.1) é obrigatório para concluir a implantação.', variant: 'destructive' });
+                            return;
+                          }
                           if (hasPendingItems) {
                             toast({ title: 'Pendências em aberto', description: 'Resolva todas as pendências antes de concluir.', variant: 'destructive' });
                             return;
@@ -1799,7 +1804,7 @@ export default function ImplantacaoExecucao() {
                         }}
                         className="w-full"
                         variant="default"
-                        disabled={hasPendingItems}
+                        disabled={hasPendingItems || !checklistsExistentes.includes('check_projeto')}
                       >
                         Concluir Implantação (com avaliação)
                       </Button>

@@ -65,6 +65,14 @@ export default function OrcamentoChat() {
     'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN', 'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO'
   ];
 
+  const stripEngineeringValidationBlock = (text: string) => {
+    return (text || '')
+      .replace(/⚠️\s*\*\*Atenção\s*—\s*Validação Técnica Obrigatória\*\*[\s\S]*?Gatilho\(s\)\s+identificado\(s\):[\s\S]*?(?=\n{2,}|$)/gi, '')
+      .replace(/⚠️\s*Atenção\s*—\s*Validação Técnica Obrigatória[\s\S]*?Gatilho\(s\)\s+identificado\(s\):[\s\S]*?(?=\n{2,}|$)/gi, '')
+      .replace(/\n{3,}/g, '\n\n')
+      .trim();
+  };
+
   useEffect(() => {
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
   }, [messages]);

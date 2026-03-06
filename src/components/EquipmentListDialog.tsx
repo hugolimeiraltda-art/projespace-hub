@@ -4,8 +4,9 @@ import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2, Download, Package, AlertTriangle } from 'lucide-react';
+import { Loader2, Download, Package, AlertTriangle, FileText } from 'lucide-react';
 import * as XLSX from 'xlsx';
+import jsPDF from 'jspdf';
 
 interface EquipmentItem {
   categoria: string;
@@ -14,6 +15,14 @@ interface EquipmentItem {
   quantidade: number;
   unidade: string;
   observacoes: string;
+}
+
+interface PricedEquipmentItem extends EquipmentItem {
+  preco_venda_unitario: number;
+  preco_venda_total: number;
+  preco_locacao_unitario: number;
+  preco_locacao_total: number;
+  encontrado: boolean;
 }
 
 interface EquipmentListDialogProps {

@@ -463,11 +463,19 @@ export function EquipmentListDialog({ open, onOpenChange, projectId, projectName
           </DialogTitle>
         </DialogHeader>
 
+        {/* Download original file button - always visible */}
+        <div className="flex justify-end">
+          <Button variant="outline" size="sm" onClick={downloadOriginalFile}>
+            <Download className="w-4 h-4 mr-1" />
+            Baixar arquivo original
+          </Button>
+        </div>
+
         {isLoading && (
           <div className="flex flex-col items-center justify-center py-12">
             <Loader2 className="w-8 h-8 animate-spin text-primary mb-4" />
             <p className="text-sm text-muted-foreground">Extraindo lista de equipamentos dos documentos...</p>
-            <p className="text-xs text-muted-foreground mt-1">Isso pode levar alguns segundos</p>
+            <p className="text-xs text-muted-foreground mt-1">Isso pode levar até 2 minutos</p>
           </div>
         )}
 

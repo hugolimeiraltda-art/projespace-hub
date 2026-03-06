@@ -139,9 +139,6 @@ export function EquipmentListDialog({ open, onOpenChange, projectId, projectName
 
   const handleOpenChange = (isOpen: boolean) => {
     onOpenChange(isOpen);
-    if (isOpen && !hasLoaded && !isLoading) {
-      loadEquipmentList();
-    }
   };
 
   const exportToExcel = () => {

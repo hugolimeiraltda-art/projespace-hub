@@ -36,8 +36,8 @@ interface EquipmentListDialogProps {
 export function EquipmentListDialog({ open, onOpenChange, projectId, projectName, engineeringStatus }: EquipmentListDialogProps) {
   const { toast } = useToast();
   const [equipments, setEquipments] = useState<EquipmentItem[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
   const [hasLoaded, setHasLoaded] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (open && !hasLoaded && !isLoading) {

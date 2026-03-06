@@ -229,12 +229,24 @@ export function EngineeringDeliverables({
             const files = getDeliverablesByType(tipo);
             if (files.length === 0) return null;
             
-            return (
+             return (
               <div key={tipo} className="space-y-2">
-                <Label className="flex items-center gap-2 text-sm font-medium">
-                  <Icon className="w-4 h-4 text-primary" />
-                  {label}
-                </Label>
+                <div className="flex items-center justify-between">
+                  <Label className="flex items-center gap-2 text-sm font-medium">
+                    <Icon className="w-4 h-4 text-primary" />
+                    {label}
+                  </Label>
+                  {tipo === 'LISTA_EQUIPAMENTOS' && files.length > 0 && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowEquipmentList(true)}
+                    >
+                      <Package className="w-4 h-4 mr-1" />
+                      PDF com Preços
+                    </Button>
+                  )}
+                </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   {files.map(att => {
                     const broken = isBlobUrl(att.arquivo_url);

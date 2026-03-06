@@ -1807,6 +1807,7 @@ export default function ImplantacaoExecucao() {
                           O checklist de entrega técnica (etapa 7.3) é obrigatório. Anexe o documento antes de concluir.
                         </AlertDescription>
                       </Alert>
+                    )}
                     {hasPendingItems && !etapas.concluido && (
                       <Alert variant="destructive" className="mb-4">
                         <AlertTriangle className="h-4 w-4" />

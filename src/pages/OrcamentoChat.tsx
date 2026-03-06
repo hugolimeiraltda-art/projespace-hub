@@ -516,13 +516,14 @@ export default function OrcamentoChat() {
         return;
       }
 
-      setProposta(data as PropostaData);
+      const finalData = await resp.json();
+      setProposta(finalData as PropostaData);
       setPropostaJaGerada(true);
       // Update engineering flags from final generation
-      if (data.encaminhado_engenharia) {
+      if (finalData.encaminhado_engenharia) {
         setEncaminhadoEngenharia(true);
-        setGatilhosEngenharia(data.gatilhos_engenharia || []);
-        injectEngineeringMessage(data.gatilhos_engenharia || []);
+        setGatilhosEngenharia(finalData.gatilhos_engenharia || []);
+        injectEngineeringMessage(finalData.gatilhos_engenharia || []);
       }
       setPrePropostaOpen(false);
       setPrePropostaData(null);

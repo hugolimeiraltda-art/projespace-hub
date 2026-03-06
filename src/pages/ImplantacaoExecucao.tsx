@@ -324,6 +324,16 @@ export default function ImplantacaoExecucao() {
       if (checklistsData) {
         setChecklistsExistentes(checklistsData.map(c => c.tipo));
       }
+
+      // Fetch sections that have attachments (for mandatory upload validation)
+      const { data: secAttachments } = await supabase
+        .from('sale_form_attachments')
+        .select('secao')
+        .eq('project_id', id!);
+      
+      if (secAttachments) {
+        setSecoesComAnexo([...new Set(secAttachments.map(a => a.secao))]);
+      }
     } catch (error) {
       console.error('Error fetching data:', error);
       toast({

@@ -1750,6 +1750,14 @@ export default function ImplantacaoExecucao() {
                   </div>
 
                   <div className="px-4">
+                    {!checklistsExistentes.includes('check_projeto') && !etapas.concluido && (
+                      <Alert variant="destructive" className="mb-4">
+                        <AlertTriangle className="h-4 w-4" />
+                        <AlertDescription>
+                          O checklist de projeto (etapa 4.1) é obrigatório e ainda não foi preenchido. Preencha antes de concluir.
+                        </AlertDescription>
+                      </Alert>
+                    )}
                     {hasPendingItems && !etapas.concluido && (
                       <Alert variant="destructive" className="mb-4">
                         <AlertTriangle className="h-4 w-4" />

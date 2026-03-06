@@ -407,7 +407,7 @@ export function EquipmentListDialog({ open, onOpenChange, projectId, projectName
           <div className="flex flex-col items-center justify-center py-8">
             <AlertTriangle className="w-8 h-8 text-destructive mb-3" />
             <p className="text-sm text-muted-foreground text-center">{error}</p>
-            <Button variant="outline" size="sm" className="mt-4" onClick={loadEquipmentList}>
+            <Button variant="outline" size="sm" className="mt-4" onClick={doLoadEquipmentList}>
               Tentar novamente
             </Button>
           </div>
@@ -420,7 +420,7 @@ export function EquipmentListDialog({ open, onOpenChange, projectId, projectName
                 {equipments.length} equipamento(s) encontrado(s)
               </p>
               <div className="flex gap-2">
-                <Button variant="outline" size="sm" onClick={loadEquipmentList}>
+                <Button variant="outline" size="sm" onClick={doLoadEquipmentList}>
                   Reextrair
                 </Button>
                 <Button variant="outline" size="sm" onClick={exportPricingPdf} disabled={isExportingPdf}>

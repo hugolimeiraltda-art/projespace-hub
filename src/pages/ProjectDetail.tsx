@@ -156,6 +156,46 @@ export default function ProjectDetail() {
   };
 
   const handleDownloadPDF = async () => {
+    toast({
+      title: 'Gerando PDF...',
+      description: 'Extraindo lista de equipamentos e montando o documento.',
+    });
+
+    // Try to extract equipment list
+    let equipmentItems: Array<{ categoria: string; codigo: string; item: string; quantidade: number; unidade: string; observacoes: string }> = [];
+    try {
+      const { data: attachments } = await supabase
+        .from('project_attachments')
+        .select('arquivo_url, nome_arquivo')
+        .eq('project_id', project.id)
+        .eq('tipo', 'LISTA_EQUIPAMENTOS');
+
+      if (attachments && attachments.length > 0) {
+        const fileUrls: string[] = [];
+        for (const att of attachments) {
+          if (!att.arquivo_url || att.arquivo_url.startsWith('blob:') || att.arquivo_url.startsWith('data:')) continue;
+          let storagePath: string | null = null;
+          if (att.arquivo_url.includes('/storage/v1/object/sign/')) {
+            const match = att.arquivo_url.match(/\/storage\/v1\/object\/sign\/([^?]+)/);
+            if (match) storagePath = decodeURIComponent(match[1]).split('/').slice(1).join('/');
+          } else if (att.arquivo_url.includes('/storage/v1/object/public/')) {
+            const match = att.arquivo_url.match(/\/storage\/v1\/object\/public\/([^?]+)/);
+            if (match) storagePath = decodeURIComponent(match[1]).split('/').slice(1).join('/');
+          }
+          if (storagePath) {
+            const { data: signedData } = await supabase.storage.from('project-attachments').createSignedUrl(storagePath, 600);
+            if (signedData?.signedUrl) fileUrls.push(signedData.signedUrl);
+          }
+        }
+        if (fileUrls.length > 0) {
+          const { data: eqData } = await supabase.functions.invoke('extract-equipment-list', { body: { fileUrls } });
+          if (eqData?.equipamentos) equipmentItems = eqData.equipamentos;
+        }
+      }
+    } catch (err) {
+      console.error('Error extracting equipment for PDF:', err);
+    }
+
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
     let yPosition = 20;
@@ -356,6 +396,45 @@ export default function ProjectDetail() {
           }
         }
       }
+    }
+
+    // Equipment List Section
+    if (equipmentItems.length > 0) {
+      addSectionTitle('LISTA DE EQUIPAMENTOS');
+      
+      doc.setFillColor(230, 230, 230);
+      doc.rect(15, yPosition - 5, pageWidth - 30, 8, 'F');
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Código', 18, yPosition);
+      doc.text('Item', 48, yPosition);
+      doc.text('Qtd', 140, yPosition);
+      doc.text('Unidade', 155, yPosition);
+      doc.text('Categoria', 175, yPosition);
+      yPosition += 8;
+      
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7);
+      
+      equipmentItems.forEach((eq, index) => {
+        checkNewPage(10);
+        if (index % 2 === 0) {
+          doc.setFillColor(248, 248, 248);
+          doc.rect(15, yPosition - 4, pageWidth - 30, 6, 'F');
+        }
+        doc.text((eq.codigo || '-').substring(0, 18), 18, yPosition);
+        doc.text((eq.item || '-').substring(0, 50), 48, yPosition);
+        doc.text(String(eq.quantidade || 0), 142, yPosition);
+        doc.text((eq.unidade || 'un').substring(0, 8), 155, yPosition);
+        doc.text((eq.categoria || '-').substring(0, 15), 175, yPosition);
+        yPosition += 6;
+      });
+      
+      yPosition += 3;
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'bold');
+      doc.text(`Total: ${equipmentItems.length} equipamento(s)`, 18, yPosition);
+      yPosition += 5;
     }
 
     // Comments Section

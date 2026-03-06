@@ -9,6 +9,7 @@ import * as XLSX from 'xlsx';
 
 interface EquipmentItem {
   categoria: string;
+  codigo: string;
   item: string;
   quantidade: number;
   unidade: string;
@@ -132,9 +133,10 @@ export function EquipmentListDialog({ open, onOpenChange, projectId, projectName
     if (equipments.length === 0) return;
 
     const wsData = [
-      ['Categoria', 'Item', 'Quantidade', 'Unidade', 'Observações'],
+      ['Categoria', 'Código', 'Item', 'Quantidade', 'Unidade', 'Observações'],
       ...equipments.map(eq => [
         eq.categoria || '',
+        eq.codigo || '',
         eq.item || '',
         eq.quantidade || 0,
         eq.unidade || 'un',
@@ -148,6 +150,7 @@ export function EquipmentListDialog({ open, onOpenChange, projectId, projectName
     // Column widths
     ws['!cols'] = [
       { wch: 20 },
+      { wch: 15 },
       { wch: 40 },
       { wch: 12 },
       { wch: 10 },
@@ -224,6 +227,7 @@ export function EquipmentListDialog({ open, onOpenChange, projectId, projectName
                 <Table>
                   <TableHeader>
                     <TableRow>
+                      <TableHead className="w-[100px]">Código</TableHead>
                       <TableHead>Item</TableHead>
                       <TableHead className="w-[80px] text-center">Qtd</TableHead>
                       <TableHead className="w-[80px] text-center">Unidade</TableHead>
@@ -233,6 +237,7 @@ export function EquipmentListDialog({ open, onOpenChange, projectId, projectName
                   <TableBody>
                     {items.map((eq, idx) => (
                       <TableRow key={idx}>
+                        <TableCell className="text-xs text-muted-foreground font-mono">{eq.codigo || '-'}</TableCell>
                         <TableCell className="font-medium">{eq.item}</TableCell>
                         <TableCell className="text-center">{eq.quantidade}</TableCell>
                         <TableCell className="text-center">{eq.unidade || 'un'}</TableCell>

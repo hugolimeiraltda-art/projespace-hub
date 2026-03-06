@@ -51,7 +51,7 @@ Sua tarefa é extrair a LISTA DE EQUIPAMENTOS de documentos PDF fornecidos e ret
 Regras:
 - Analise cuidadosamente tabelas, listas e textos nos documentos
 - Extraia TODOS os equipamentos mencionados com suas quantidades
-- Para cada equipamento, extraia: item (nome/descrição), quantidade, unidade (se disponível), observações (se houver)
+- Para cada equipamento, extraia: codigo (código do produto/modelo se disponível, senão string vazia), item (nome/descrição), quantidade, unidade (se disponível), observações (se houver)
 - Se houver categorias/seções (ex: CFTV, Controle de Acesso, Alarme), inclua a categoria
 - Retorne APENAS o JSON, sem texto adicional
 - Se não encontrar lista de equipamentos, retorne um array vazio
@@ -61,6 +61,7 @@ Formato de resposta (JSON puro):
   "equipamentos": [
     {
       "categoria": "CFTV",
+      "codigo": "CAM-IP-2MP",
       "item": "Câmera IP Bullet 2MP",
       "quantidade": 8,
       "unidade": "un",

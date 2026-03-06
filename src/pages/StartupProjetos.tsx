@@ -24,6 +24,8 @@ import {
   Eye,
   RotateCcw,
   Sparkles,
+  Headphones,
+  Wrench,
 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';

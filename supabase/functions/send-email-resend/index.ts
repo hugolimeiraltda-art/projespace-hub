@@ -120,20 +120,56 @@ const TEMPLATES: Record<string, (v: Record<string, string>) => { subject: string
   }),
 };
 
-// ── SMTP Send (SSL on port 465) ──
+// ── SMTP Send (supports both port 465 SSL and port 587 STARTTLS) ──
 async function sendViaSMTP(to: string, subject: string, htmlBody: string) {
   const encoder = new TextEncoder();
   const decoder = new TextDecoder();
-  const tlsConn = await Deno.connectTls({ hostname: SMTP_HOST!, port: SMTP_PORT });
+  const useDirectTls = SMTP_PORT === 465;
+
+  let conn: Deno.Conn;
+  let secureConn: Deno.TlsConn;
+
+  if (useDirectTls) {
+    // Port 465: Direct SSL/TLS connection
+    secureConn = await Deno.connectTls({ hostname: SMTP_HOST!, port: SMTP_PORT });
+  } else {
+    // Port 587: Plain connection first, then STARTTLS
+    conn = await Deno.connect({ hostname: SMTP_HOST!, port: SMTP_PORT });
+
+    async function plainRead(): Promise<string> {
+      const buf = new Uint8Array(4096);
+      const n = await conn.read(buf);
+      if (n === null) throw new Error("Connection closed");
+      return decoder.decode(buf.subarray(0, n));
+    }
+    async function plainWrite(cmd: string) {
+      await conn.write(encoder.encode(cmd + "\r\n"));
+    }
+
+    // Read greeting
+    const greeting = await plainRead();
+    if (!greeting.startsWith("220")) throw new Error("SMTP greeting failed: " + greeting);
+
+    // EHLO before STARTTLS
+    plainWrite("EHLO localhost");
+    await plainRead();
+
+    // Upgrade to TLS
+    plainWrite("STARTTLS");
+    const starttlsResp = await plainRead();
+    if (!starttlsResp.startsWith("220")) throw new Error("STARTTLS failed: " + starttlsResp);
+
+    secureConn = await Deno.startTls(conn, { hostname: SMTP_HOST! });
+  }
 
   async function tlsRead(): Promise<string> {
     const buf = new Uint8Array(4096);
-    const n = await tlsConn.read(buf);
+    const n = await secureConn.read(buf);
     if (n === null) throw new Error("TLS Connection closed");
     return decoder.decode(buf.subarray(0, n));
   }
   async function tlsWrite(cmd: string) {
-    await tlsConn.write(encoder.encode(cmd + "\r\n"));
+    await secureConn.write(encoder.encode(cmd + "\r\n"));
   }
   async function tlsCommand(cmd: string, code: string): Promise<string> {
     await tlsWrite(cmd);
@@ -142,8 +178,12 @@ async function sendViaSMTP(to: string, subject: string, htmlBody: string) {
     return resp;
   }
 
-  const greeting = await tlsRead();
-  if (!greeting.startsWith("220")) throw new Error("SMTP greeting failed: " + greeting);
+  if (useDirectTls) {
+    const greeting = await tlsRead();
+    if (!greeting.startsWith("220")) throw new Error("SMTP greeting failed: " + greeting);
+  }
+
+  await tlsCommand("EHLO localhost", "250");
 
   await tlsCommand("EHLO localhost", "250");
   await tlsCommand("AUTH LOGIN", "334");

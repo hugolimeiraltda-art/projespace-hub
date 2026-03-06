@@ -61,24 +61,29 @@ export default function Configuracoes() {
             </Card>
           </Link>
 
-          <Card className="shadow-card">
-            <CardHeader>
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-secondary rounded-lg">
-                  <FileText className="w-5 h-5 text-secondary-foreground" />
+          <Link to="/configuracoes/email">
+            <Card className="shadow-card hover:shadow-lg transition-shadow cursor-pointer group">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-secondary rounded-lg">
+                      <FileText className="w-5 h-5 text-secondary-foreground" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-lg">Configurações de E-mail</CardTitle>
+                      <CardDescription>Configurar envio e templates de e-mail</CardDescription>
+                    </div>
+                  </div>
+                  <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-foreground transition-colors" />
                 </div>
-                <div>
-                  <CardTitle className="text-lg">Templates de E-mail</CardTitle>
-                  <CardDescription>Personalizar templates de comunicação</CardDescription>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">
-                Em desenvolvimento. Configure os templates de e-mail padrão do sistema.
-              </p>
-            </CardContent>
-          </Card>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground">
+                  Configure o provedor de e-mail (Resend), personalize templates e teste envios.
+                </p>
+              </CardContent>
+            </Card>
+          </Link>
 
           <Card className="shadow-card">
             <CardHeader>

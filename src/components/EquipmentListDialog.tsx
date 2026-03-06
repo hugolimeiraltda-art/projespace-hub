@@ -156,7 +156,6 @@ export function EquipmentListDialog({ open, onOpenChange, projectId, projectName
     const wb = XLSX.utils.book_new();
     const ws = XLSX.utils.aoa_to_sheet(wsData);
 
-    // Column widths
     ws['!cols'] = [
       { wch: 20 },
       { wch: 15 },
@@ -173,6 +172,196 @@ export function EquipmentListDialog({ open, onOpenChange, projectId, projectName
       title: 'Excel exportado!',
       description: 'A lista de equipamentos foi baixada com sucesso.',
     });
+  };
+
+  const [isExportingPdf, setIsExportingPdf] = useState(false);
+
+  const exportPricingPdf = async () => {
+    if (equipments.length === 0) return;
+    setIsExportingPdf(true);
+
+    try {
+      // Collect all unique codes
+      const codes = [...new Set(equipments.map(e => e.codigo).filter(Boolean))];
+
+      // Fetch prices from orcamento_produtos by codigo
+      let productsMap: Record<string, { preco_unitario: number; valor_locacao: number }> = {};
+      if (codes.length > 0) {
+        const { data: products } = await supabase
+          .from('orcamento_produtos')
+          .select('codigo, preco_unitario, valor_locacao')
+          .in('codigo', codes)
+          .eq('ativo', true);
+
+        if (products) {
+          for (const p of products) {
+            if (p.codigo) {
+              productsMap[p.codigo] = {
+                preco_unitario: Number(p.preco_unitario) || 0,
+                valor_locacao: Number(p.valor_locacao) || 0,
+              };
+            }
+          }
+        }
+      }
+
+      // Build priced items
+      const pricedItems: PricedEquipmentItem[] = equipments.map(eq => {
+        const prod = eq.codigo ? productsMap[eq.codigo] : undefined;
+        const vendaUn = prod?.preco_unitario || 0;
+        const locacaoUn = prod?.valor_locacao || 0;
+        const qtd = eq.quantidade || 0;
+        return {
+          ...eq,
+          preco_venda_unitario: vendaUn,
+          preco_venda_total: vendaUn * qtd,
+          preco_locacao_unitario: locacaoUn,
+          preco_locacao_total: locacaoUn * qtd,
+          encontrado: !!prod,
+        };
+      });
+
+      const totalVenda = pricedItems.reduce((s, i) => s + i.preco_venda_total, 0);
+      const totalLocacao = pricedItems.reduce((s, i) => s + i.preco_locacao_total, 0);
+      const notFound = pricedItems.filter(i => !i.encontrado && i.codigo);
+
+      // Generate PDF
+      const doc = new jsPDF({ orientation: 'landscape' });
+      const pw = doc.internal.pageSize.getWidth();
+      const margin = 12;
+      const fmt = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+      // Header
+      doc.setFillColor(232, 107, 36);
+      doc.rect(0, 0, pw, 20, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(14);
+      doc.setFont('helvetica', 'bold');
+      doc.text('LISTA DE EQUIPAMENTOS COM PREÇOS', margin, 14);
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'normal');
+      doc.text(projectName, pw - margin, 10, { align: 'right' });
+      doc.text(`Data: ${new Date().toLocaleDateString('pt-BR')}`, pw - margin, 15, { align: 'right' });
+
+      doc.setTextColor(0, 0, 0);
+      let y = 28;
+
+      // Table header
+      const colX = {
+        cod: margin,
+        desc: margin + 28,
+        qtd: 135,
+        vendaUn: 155,
+        vendaTotal: 190,
+        locUn: 225,
+        locTotal: 260,
+      };
+
+      const drawHeader = (yPos: number) => {
+        doc.setFillColor(51, 51, 51);
+        doc.setTextColor(255, 255, 255);
+        doc.rect(margin, yPos - 4, pw - margin * 2, 7, 'F');
+        doc.setFontSize(7.5);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Código', colX.cod + 1, yPos);
+        doc.text('Descrição', colX.desc, yPos);
+        doc.text('Qtd', colX.qtd, yPos, { align: 'center' });
+        doc.text('Venda (un)', colX.vendaUn, yPos, { align: 'right' });
+        doc.text('Venda Total', colX.vendaTotal, yPos, { align: 'right' });
+        doc.text('Locação (un)', colX.locUn, yPos, { align: 'right' });
+        doc.text('Locação Total', colX.locTotal, yPos, { align: 'right' });
+        doc.setTextColor(0, 0, 0);
+        doc.setFont('helvetica', 'normal');
+        return yPos + 7;
+      };
+
+      y = drawHeader(y);
+      const pageH = doc.internal.pageSize.getHeight();
+
+      // Rows
+      doc.setFontSize(7);
+      for (const item of pricedItems) {
+        if (y > pageH - 25) {
+          doc.addPage();
+          y = 15;
+          y = drawHeader(y);
+          doc.setFontSize(7);
+        }
+
+        if (!item.encontrado && item.codigo) {
+          doc.setTextColor(180, 0, 0);
+        } else {
+          doc.setTextColor(0, 0, 0);
+        }
+
+        doc.text(item.codigo || '-', colX.cod + 1, y);
+        // Truncate description
+        let desc = item.item || '';
+        const maxDescW = colX.qtd - colX.desc - 5;
+        while (doc.getTextWidth(desc) > maxDescW && desc.length > 3) {
+          desc = desc.substring(0, desc.length - 4) + '...';
+        }
+        doc.text(desc, colX.desc, y);
+        doc.text(String(item.quantidade), colX.qtd, y, { align: 'center' });
+        doc.text(fmt(item.preco_venda_unitario), colX.vendaUn, y, { align: 'right' });
+        doc.text(fmt(item.preco_venda_total), colX.vendaTotal, y, { align: 'right' });
+        doc.text(fmt(item.preco_locacao_unitario), colX.locUn, y, { align: 'right' });
+        doc.text(fmt(item.preco_locacao_total), colX.locTotal, y, { align: 'right' });
+
+        doc.setDrawColor(230, 230, 230);
+        doc.line(margin, y + 2, pw - margin, y + 2);
+        y += 5.5;
+      }
+
+      doc.setTextColor(0, 0, 0);
+
+      // Totals
+      y += 3;
+      if (y > pageH - 20) { doc.addPage(); y = 15; }
+      doc.setFillColor(245, 245, 245);
+      doc.rect(margin, y - 4, pw - margin * 2, 14, 'F');
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'bold');
+      doc.text('TOTAL VENDA:', colX.vendaUn - 30, y + 2);
+      doc.text(fmt(totalVenda), colX.vendaTotal, y + 2, { align: 'right' });
+      doc.text('TOTAL LOCAÇÃO:', colX.locUn - 30, y + 2);
+      doc.text(fmt(totalLocacao), colX.locTotal, y + 2, { align: 'right' });
+
+      // Warning for missing codes
+      if (notFound.length > 0) {
+        y += 18;
+        if (y > pageH - 15) { doc.addPage(); y = 15; }
+        doc.setFontSize(7);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(180, 0, 0);
+        doc.text(`⚠ ${notFound.length} item(ns) não encontrado(s) no cadastro de produtos (código sem correspondência).`, margin, y);
+        doc.setTextColor(0, 0, 0);
+      }
+
+      // Footer
+      const totalPages = doc.getNumberOfPages();
+      for (let p = 1; p <= totalPages; p++) {
+        doc.setPage(p);
+        doc.setFontSize(7);
+        doc.setTextColor(150, 150, 150);
+        doc.text(`Emive - Lista de Equipamentos | ${projectName} | Página ${p}/${totalPages}`, pw / 2, pageH - 5, { align: 'center' });
+      }
+
+      doc.save(`equipamentos-precos_${projectName.replace(/\s+/g, '-').toLowerCase()}.pdf`);
+
+      toast({
+        title: 'PDF exportado!',
+        description: notFound.length > 0
+          ? `PDF gerado. ${notFound.length} código(s) não encontrado(s) no cadastro.`
+          : 'Lista com preços exportada com sucesso.',
+        variant: notFound.length > 0 ? 'destructive' : 'default',
+      });
+    } catch (err) {
+      console.error('Error generating pricing PDF:', err);
+      toast({ title: 'Erro', description: 'Não foi possível gerar o PDF.', variant: 'destructive' });
+    } finally {
+      setIsExportingPdf(false);
+    }
   };
 
   // Group by category

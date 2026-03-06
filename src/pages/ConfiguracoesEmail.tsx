@@ -179,7 +179,7 @@ export default function ConfiguracoesEmail() {
             <TabsTrigger value="teste" className="gap-2">
               <Send className="w-4 h-4" /> Enviar Teste
             </TabsTrigger>
-          </Tabs>
+          </TabsList>
 
           <TabsContent value="templates">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

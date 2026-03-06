@@ -156,6 +156,46 @@ export default function ProjectDetail() {
   };
 
   const handleDownloadPDF = async () => {
+    toast({
+      title: 'Gerando PDF...',
+      description: 'Extraindo lista de equipamentos e montando o documento.',
+    });
+
+    // Try to extract equipment list
+    let equipmentItems: Array<{ categoria: string; codigo: string; item: string; quantidade: number; unidade: string; observacoes: string }> = [];
+    try {
+      const { data: attachments } = await supabase
+        .from('project_attachments')
+        .select('arquivo_url, nome_arquivo')
+        .eq('project_id', project.id)
+        .eq('tipo', 'LISTA_EQUIPAMENTOS');
+
+      if (attachments && attachments.length > 0) {
+        const fileUrls: string[] = [];
+        for (const att of attachments) {
+          if (!att.arquivo_url || att.arquivo_url.startsWith('blob:') || att.arquivo_url.startsWith('data:')) continue;
+          let storagePath: string | null = null;
+          if (att.arquivo_url.includes('/storage/v1/object/sign/')) {
+            const match = att.arquivo_url.match(/\/storage\/v1\/object\/sign\/([^?]+)/);
+            if (match) storagePath = decodeURIComponent(match[1]).split('/').slice(1).join('/');
+          } else if (att.arquivo_url.includes('/storage/v1/object/public/')) {
+            const match = att.arquivo_url.match(/\/storage\/v1\/object\/public\/([^?]+)/);
+            if (match) storagePath = decodeURIComponent(match[1]).split('/').slice(1).join('/');
+          }
+          if (storagePath) {
+            const { data: signedData } = await supabase.storage.from('project-attachments').createSignedUrl(storagePath, 600);
+            if (signedData?.signedUrl) fileUrls.push(signedData.signedUrl);
+          }
+        }
+        if (fileUrls.length > 0) {
+          const { data: eqData } = await supabase.functions.invoke('extract-equipment-list', { body: { fileUrls } });
+          if (eqData?.equipamentos) equipmentItems = eqData.equipamentos;
+        }
+      }
+    } catch (err) {
+      console.error('Error extracting equipment for PDF:', err);
+    }
+
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
     let yPosition = 20;

@@ -537,7 +537,7 @@ export default function StartupProjetos() {
         {activeTab === 'pequenas-obras' && (
           <Card>
             <CardContent className="py-12 text-center">
-              <Wrench className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+              <Settings className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-lg font-medium text-foreground mb-2">Pequenas Obras</h3>
               <p className="text-muted-foreground">
                 As pequenas obras e serviços aparecerão aqui.

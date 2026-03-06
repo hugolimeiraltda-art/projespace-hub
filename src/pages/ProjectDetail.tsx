@@ -945,7 +945,7 @@ export default function ProjectDetail() {
                         <a 
                           key={att.id} 
                           href={broken ? undefined : att.arquivo_url}
-                          onClick={(e) => openAttachment(att.arquivo_url, e)}
+                          onClick={(e) => openAttachment(att.arquivo_url, e, att.nome_arquivo)}
                           target="_blank" 
                           rel="noopener noreferrer"
                           className={cn(

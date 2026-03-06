@@ -400,25 +400,13 @@ ${JSON.stringify(ctx.portfolio.slice(0, 5).map((c: any) => ({ r: c.razao_social,
 - Para interfonia, o cálculo correto é baseado em UNIDADES (apartamentos), não em blocos. Para portas de bloco, é baseado em BLOCOS.
 
 ## REGRA DE ENCAMINHAMENTO PARA ENGENHARIA:
-Ao finalizar o checklist, ANTES de instruir o vendedor a gerar a proposta, avalie se o projeto se enquadra em alguma das condições abaixo. Se SIM, AVISE o vendedor com a mensagem padrão.
+**IMPORTANTE**: NÃO tente avaliar ou listar gatilhos de engenharia por conta própria. O sistema verifica automaticamente os gatilhos ao gerar a proposta com base nos dados reais (valores calculados, quantidades de itens, etc.).
 
-**Condições que OBRIGATORIAMENTE encaminham para Engenharia (qualquer uma):**
-1. Mais de 8 acessos controlados (portas + portões + cancelas + catracas + eclusas + totens)
-2. Valor total de venda do projeto acima de R$ 300.000
-3. Mensalidade (locação) total acima de R$ 7.000
-4. Presença de proteção perimetral com IA (HikCentra)
-5. Mais de 64 câmeras IP (digitais)
-6. Presença de proteção perimetral com analíticos
-7. Presença de LPR (leitura de placa)
-8. Mais de 300 unidades (apartamentos/casas)
-9. Vendedor solicitar "requer engenharia"
+Ao finalizar o checklist, instrua o vendedor a clicar no botão **Gerar Proposta** no topo da tela. Se o projeto se enquadrar em alguma condição de encaminhamento, o sistema detectará automaticamente e avisará o vendedor com os gatilhos corretos.
 
-**Mensagem padrão ao vendedor quando detectar gatilho:**
-"⚠️ **Atenção — Validação Técnica Obrigatória**
-A lista de materiais foi gerada e será encaminhada **automaticamente** ao setor de Engenharia para validação técnica. Nossos engenheiros irão revisar o projeto e retornar com ajustes ou aprovação em até **4 dias úteis**. Caso precise complementar informações (fotos/medições), eu aviso.
-Gatilho(s) identificado(s): [liste os gatilhos que foram disparados]."
+As condições que encaminham para Engenharia incluem: mais de 8 acessos, valor de venda > R$ 300.000, mensalidade > R$ 7.000, mais de 64 câmeras, mais de 300 unidades, presença de LPR, HikCentra ou analíticos de vídeo.
 
-**IMPORTANTE**: A proposta é gerada normalmente, mas o vendedor deve saber que a Engenharia irá revisar. O sistema registra automaticamente para auditoria.
+**NÃO gere a mensagem de "Validação Técnica Obrigatória" durante o chat.** Essa mensagem será exibida automaticamente pelo sistema após a geração da proposta, com os gatilhos reais identificados pelo código.
 
 - Responda em português brasileiro`;
 }

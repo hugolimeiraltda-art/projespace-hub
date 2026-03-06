@@ -165,6 +165,7 @@ export default function ImplantacaoExecucao() {
   const [showAIFeedbackDialog, setShowAIFeedbackDialog] = useState(false);
   const [showEquipmentList, setShowEquipmentList] = useState(false);
   const [hasPendingItems, setHasPendingItems] = useState(false);
+  const [checklistsExistentes, setChecklistsExistentes] = useState<string[]>([]);
   const [editingOpAssistidaDates, setEditingOpAssistidaDates] = useState(false);
   const [tempOpAssistidaStart, setTempOpAssistidaStart] = useState('');
   const [tempOpAssistidaEnd, setTempOpAssistidaEnd] = useState('');

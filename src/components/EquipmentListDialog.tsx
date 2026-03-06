@@ -9,6 +9,7 @@ import * as XLSX from 'xlsx';
 
 interface EquipmentItem {
   categoria: string;
+  codigo: string;
   item: string;
   quantidade: number;
   unidade: string;

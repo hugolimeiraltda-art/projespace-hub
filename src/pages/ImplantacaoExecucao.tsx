@@ -165,6 +165,7 @@ export default function ImplantacaoExecucao() {
   const [showAIFeedbackDialog, setShowAIFeedbackDialog] = useState(false);
   const [showEquipmentList, setShowEquipmentList] = useState(false);
   const [hasPendingItems, setHasPendingItems] = useState(false);
+  const [checklistsExistentes, setChecklistsExistentes] = useState<string[]>([]);
   const [editingOpAssistidaDates, setEditingOpAssistidaDates] = useState(false);
   const [tempOpAssistidaStart, setTempOpAssistidaStart] = useState('');
   const [tempOpAssistidaEnd, setTempOpAssistidaEnd] = useState('');
@@ -311,6 +312,16 @@ export default function ImplantacaoExecucao() {
           .eq('status', 'ABERTO');
         
         setHasPendingItems((pendingCount || 0) > 0);
+      }
+
+      // Fetch existing checklists for this project
+      const { data: checklistsData } = await supabase
+        .from('implantacao_checklists')
+        .select('tipo')
+        .eq('project_id', id!);
+      
+      if (checklistsData) {
+        setChecklistsExistentes(checklistsData.map(c => c.tipo));
       }
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -1337,15 +1348,46 @@ export default function ImplantacaoExecucao() {
               </CollapsibleTrigger>
               <CollapsibleContent>
                 <CardContent className="pt-0 space-y-1">
-                  <SubItem 
-                    label="4.1 - Check de projeto" 
-                    checked={etapas.check_projeto} 
-                    field="check_projeto"
-                    dateField="check_projeto_at"
-                    date={etapas.check_projeto_at}
-                    hasChecklist
-                    checklistType="check_projeto"
-                  />
+                  <div className="flex items-center justify-between py-2 px-4 hover:bg-muted/50 rounded-md">
+                    <div className="flex items-center gap-3">
+                      <Checkbox 
+                        checked={etapas.check_projeto}
+                        onCheckedChange={(value) => {
+                          if (value === true && !checklistsExistentes.includes('check_projeto')) {
+                            toast({
+                              title: 'Checklist obrigatório',
+                              description: 'Preencha o checklist de projeto antes de marcar como concluído. Clique no botão "Checklist" ao lado.',
+                              variant: 'destructive',
+                            });
+                            return;
+                          }
+                          updateEtapa('check_projeto', value, 'check_projeto_at');
+                        }}
+                        disabled={isSaving}
+                      />
+                      <span className={cn("text-sm", etapas.check_projeto && "text-muted-foreground line-through")}>
+                        4.1 - Check de projeto
+                        {!checklistsExistentes.includes('check_projeto') && !etapas.check_projeto && (
+                          <span className="text-destructive ml-2 text-xs font-medium">(Checklist pendente)</span>
+                        )}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {etapas.check_projeto_at && (
+                        <span className="text-xs text-muted-foreground">
+                          {format(parseISO(etapas.check_projeto_at), "dd/MM/yyyy", { locale: ptBR })}
+                        </span>
+                      )}
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => navigate(`/startup-projetos/${id}/checklist/check_projeto`)}
+                      >
+                        <ClipboardCheck className="w-4 h-4 mr-1" />
+                        Checklist
+                      </Button>
+                    </div>
+                  </div>
                   <div className="flex items-center justify-between py-2 px-4 hover:bg-muted/50 rounded-md">
                     <div className="flex items-center gap-3">
                       <Checkbox 
@@ -1708,6 +1750,14 @@ export default function ImplantacaoExecucao() {
                   </div>
 
                   <div className="px-4">
+                    {!checklistsExistentes.includes('check_projeto') && !etapas.concluido && (
+                      <Alert variant="destructive" className="mb-4">
+                        <AlertTriangle className="h-4 w-4" />
+                        <AlertDescription>
+                          O checklist de projeto (etapa 4.1) é obrigatório e ainda não foi preenchido. Preencha antes de concluir.
+                        </AlertDescription>
+                      </Alert>
+                    )}
                     {hasPendingItems && !etapas.concluido && (
                       <Alert variant="destructive" className="mb-4">
                         <AlertTriangle className="h-4 w-4" />
@@ -1727,6 +1777,11 @@ export default function ImplantacaoExecucao() {
                     ) : (
                       <Button
                         onClick={async () => {
+                          // Validate checklists
+                          if (!checklistsExistentes.includes('check_projeto')) {
+                            toast({ title: 'Checklist obrigatório pendente', description: 'O checklist de projeto (etapa 4.1) é obrigatório para concluir a implantação.', variant: 'destructive' });
+                            return;
+                          }
                           if (hasPendingItems) {
                             toast({ title: 'Pendências em aberto', description: 'Resolva todas as pendências antes de concluir.', variant: 'destructive' });
                             return;
@@ -1757,7 +1812,7 @@ export default function ImplantacaoExecucao() {
                         }}
                         className="w-full"
                         variant="default"
-                        disabled={hasPendingItems}
+                        disabled={hasPendingItems || !checklistsExistentes.includes('check_projeto')}
                       >
                         Concluir Implantação (com avaliação)
                       </Button>

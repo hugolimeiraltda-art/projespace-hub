@@ -165,6 +165,60 @@ export function EquipmentListDialog({ open, onOpenChange, projectId, projectName
     onOpenChange(isOpen);
   };
 
+  const downloadOriginalFile = async () => {
+    try {
+      const { data: attachments } = await supabase
+        .from('project_attachments')
+        .select('arquivo_url, nome_arquivo')
+        .eq('project_id', projectId)
+        .eq('tipo', 'LISTA_EQUIPAMENTOS')
+        .limit(1);
+
+      if (!attachments || attachments.length === 0) {
+        toast({ title: 'Erro', description: 'Arquivo não encontrado.', variant: 'destructive' });
+        return;
+      }
+
+      const att = attachments[0];
+      let storagePath: string | null = null;
+      const signMatch = att.arquivo_url.match(/\/storage\/v1\/object\/sign\/([^?]+)/);
+      const pubMatch = att.arquivo_url.match(/\/storage\/v1\/object\/public\/([^?]+)/);
+      const match = signMatch || pubMatch;
+      if (match) {
+        const fullPath = decodeURIComponent(match[1]);
+        storagePath = fullPath.split('/').slice(1).join('/');
+      }
+
+      if (!storagePath) {
+        toast({ title: 'Erro', description: 'Caminho do arquivo inválido.', variant: 'destructive' });
+        return;
+      }
+
+      const { data: signedData } = await supabase.storage
+        .from('project-attachments')
+        .createSignedUrl(storagePath, 3600, { download: true });
+
+      if (!signedData?.signedUrl) {
+        toast({ title: 'Erro', description: 'Não foi possível gerar o link.', variant: 'destructive' });
+        return;
+      }
+
+      const response = await fetch(signedData.signedUrl);
+      const blob = await response.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = att.nome_arquivo || 'lista-equipamentos.pdf';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(blobUrl);
+    } catch (err) {
+      console.error('Download error:', err);
+      toast({ title: 'Erro', description: 'Falha ao baixar o arquivo.', variant: 'destructive' });
+    }
+  };
+
   const exportToExcel = () => {
     if (equipments.length === 0) return;
 

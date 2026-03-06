@@ -67,6 +67,8 @@ export default function StartupProjetos() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [searchParams] = useSearchParams();
+  const activeTab = searchParams.get('tab') || 'em-implantacao';
   
   const [projects, setProjects] = useState<StartupProject[]>([]);
   const [isLoading, setIsLoading] = useState(true);

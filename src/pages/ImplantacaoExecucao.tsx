@@ -154,7 +154,7 @@ export default function ImplantacaoExecucao() {
   const [projectAttachments, setProjectAttachments] = useState<Array<{ nome_arquivo: string; tipo: string; arquivo_url?: string }>>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [expandedEtapas, setExpandedEtapas] = useState<number[]>([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+  const [expandedEtapas, setExpandedEtapas] = useState<number[]>([1, 2, 3, 4, 5, 6, 7, 8, 9]);
   const [novaInteracao, setNovaInteracao] = useState('');
   const [editingDates, setEditingDates] = useState(false);
   const [tempStartDate, setTempStartDate] = useState('');
@@ -572,7 +572,7 @@ export default function ImplantacaoExecucao() {
       case 7: return etapas.agendamento_visita_comercial && etapas.laudo_visita_comercial;
       case 8: return (etapas.operacao_assistida_interacoes?.length || 0) > 0;
       case 9: return etapas.concluido;
-      case 10: return etapas.pesquisa_satisfacao_realizada;
+      default: return false;
       default: return false;
     }
   };

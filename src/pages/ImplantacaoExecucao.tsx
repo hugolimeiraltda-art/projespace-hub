@@ -164,6 +164,10 @@ export default function ImplantacaoExecucao() {
   const [editingContrato, setEditingContrato] = useState(false);
   const [showAIFeedbackDialog, setShowAIFeedbackDialog] = useState(false);
   const [showEquipmentList, setShowEquipmentList] = useState(false);
+  const [hasPendingItems, setHasPendingItems] = useState(false);
+  const [editingOpAssistidaDates, setEditingOpAssistidaDates] = useState(false);
+  const [tempOpAssistidaStart, setTempOpAssistidaStart] = useState('');
+  const [tempOpAssistidaEnd, setTempOpAssistidaEnd] = useState('');
 
   const canEditDates = user?.role === 'admin' || user?.role === 'administrativo' || user?.role === 'implantacao';
 

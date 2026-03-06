@@ -909,11 +909,19 @@ ${fotoListStr}
       }
     }
 
+    const sanitizedMessages = (messages || [])
+      .map((m: any) => (
+        m?.role === "assistant"
+          ? { ...m, content: removeEngineeringValidationBlock(m.content || "") }
+          : m
+      ))
+      .filter((m: any) => (m?.content || "").trim().length > 0);
+
     const requestBody = JSON.stringify({
         model: "google/gemini-2.5-flash",
         messages: [
           { role: "system", content: buildVisitSystemPrompt(ctx, sessao) },
-          ...messages,
+          ...sanitizedMessages,
         ],
         stream: true,
       });
@@ -955,8 +963,9 @@ ${fotoListStr}
           } catch {}
         }
       }
-      if (fullContent) {
-        await supabase.from("orcamento_mensagens").insert({ sessao_id: sessao.id, role: "assistant", content: fullContent });
+      const sanitizedContent = removeEngineeringValidationBlock(fullContent);
+      if (sanitizedContent) {
+        await supabase.from("orcamento_mensagens").insert({ sessao_id: sessao.id, role: "assistant", content: sanitizedContent });
       }
     })();
 

@@ -30,6 +30,33 @@ const ENGINEERING_TRIGGERS = {
 async function checkEngineeringTriggers(supabase: any, sessaoId: string, itens: any, mensagens: any[]) {
   const gatilhos: string[] = [];
 
+  // Load dynamic rules from database
+  const { data: regras } = await supabase
+    .from('orcamento_regras_engenharia')
+    .select('*')
+    .eq('ativo', true);
+
+  // Merge dynamic rules with defaults
+  const dynamicLimites: Record<string, number> = {};
+  const dynamicKeywords: string[] = [];
+  if (regras && regras.length > 0) {
+    for (const r of regras) {
+      if (r.tipo_regra === 'limite_numerico' && r.valor_limite != null) {
+        dynamicLimites[r.nome.toLowerCase()] = r.valor_limite;
+      }
+      if (r.tipo_regra === 'keyword' && r.keywords) {
+        dynamicKeywords.push(...r.keywords.map((k: string) => k.toLowerCase()));
+      }
+    }
+  }
+
+  // Use dynamic values if available, otherwise fall back to defaults
+  const maxAcessos = dynamicLimites['máximo de acessos'] ?? dynamicLimites['maximo de acessos'] ?? ENGINEERING_TRIGGERS.max_acessos;
+  const maxValorVenda = dynamicLimites['valor de venda'] ?? dynamicLimites['valor máximo de venda'] ?? ENGINEERING_TRIGGERS.max_valor_venda;
+  const maxMensalidade = dynamicLimites['mensalidade'] ?? dynamicLimites['valor máximo de mensalidade'] ?? ENGINEERING_TRIGGERS.max_mensalidade;
+  const maxCameras = dynamicLimites['câmeras ip'] ?? dynamicLimites['cameras ip'] ?? ENGINEERING_TRIGGERS.max_cameras_ip;
+  const maxUnidades = dynamicLimites['unidades'] ?? dynamicLimites['máximo de unidades'] ?? ENGINEERING_TRIGGERS.max_unidades;
+
   // Count access points from items
   const allItemNames = [
     ...(itens?.kits || []).map((k: any) => ({ nome: (k.nome || '').toLowerCase(), qtd: k.qtd || 1 })),
@@ -44,20 +71,20 @@ async function checkEngineeringTriggers(supabase: any, sessaoId: string, itens: 
   const totalAcessos = allItemNames
     .filter(i => accessKeywords.test(i.nome))
     .reduce((sum, i) => sum + i.qtd, 0);
-  if (totalAcessos > ENGINEERING_TRIGGERS.max_acessos) {
-    gatilhos.push(`Mais de ${ENGINEERING_TRIGGERS.max_acessos} acessos (${totalAcessos} detectados)`);
+  if (totalAcessos > maxAcessos) {
+    gatilhos.push(`Mais de ${maxAcessos} acessos (${totalAcessos} detectados)`);
   }
 
   // 2. Check total sale value (taxa_conexao_total)
   const taxaTotal = itens?.taxa_conexao_total || 0;
-  if (taxaTotal > ENGINEERING_TRIGGERS.max_valor_venda) {
-    gatilhos.push(`Valor total de venda acima de R$ ${ENGINEERING_TRIGGERS.max_valor_venda.toLocaleString('pt-BR')} (R$ ${taxaTotal.toLocaleString('pt-BR')})`);
+  if (taxaTotal > maxValorVenda) {
+    gatilhos.push(`Valor total de venda acima de R$ ${maxValorVenda.toLocaleString('pt-BR')} (R$ ${taxaTotal.toLocaleString('pt-BR')})`);
   }
 
   // 3. Check mensalidade
   const mensalidadeTotal = itens?.mensalidade_total || 0;
-  if (mensalidadeTotal > ENGINEERING_TRIGGERS.max_mensalidade) {
-    gatilhos.push(`Mensalidade acima de R$ ${ENGINEERING_TRIGGERS.max_mensalidade.toLocaleString('pt-BR')} (R$ ${mensalidadeTotal.toLocaleString('pt-BR')})`);
+  if (mensalidadeTotal > maxMensalidade) {
+    gatilhos.push(`Mensalidade acima de R$ ${maxMensalidade.toLocaleString('pt-BR')} (R$ ${mensalidadeTotal.toLocaleString('pt-BR')})`);
   }
 
   // 4. Count cameras
@@ -65,15 +92,15 @@ async function checkEngineeringTriggers(supabase: any, sessaoId: string, itens: 
   const totalCameras = allItemNames
     .filter(i => cameraKeywords.test(i.nome))
     .reduce((sum, i) => sum + i.qtd, 0);
-  if (totalCameras > ENGINEERING_TRIGGERS.max_cameras_ip) {
-    gatilhos.push(`Mais de ${ENGINEERING_TRIGGERS.max_cameras_ip} câmeras (${totalCameras} detectadas)`);
+  if (totalCameras > maxCameras) {
+    gatilhos.push(`Mais de ${maxCameras} câmeras (${totalCameras} detectadas)`);
   }
 
   // 5. Check units from conversation
   const unitsMatch = msgText.match(/(\d+)\s*(?:unidades|apartamentos|aptos|casas)/);
   const totalUnidades = unitsMatch ? parseInt(unitsMatch[1]) : 0;
-  if (totalUnidades > ENGINEERING_TRIGGERS.max_unidades) {
-    gatilhos.push(`Mais de ${ENGINEERING_TRIGGERS.max_unidades} unidades (${totalUnidades} detectadas)`);
+  if (totalUnidades > maxUnidades) {
+    gatilhos.push(`Mais de ${maxUnidades} unidades (${totalUnidades} detectadas)`);
   }
 
   // 6. Perimetral with AI (HikCentra)
@@ -92,7 +119,13 @@ async function checkEngineeringTriggers(supabase: any, sessaoId: string, itens: 
     gatilhos.push('Presença de LPR (leitura de placa)');
   }
 
-  // 9. Check if vendedor marked "requer engenharia" in messages
+  // 9. Dynamic keyword rules from database
+  if (dynamicKeywords.length > 0 && dynamicKeywords.some(kw => searchText.includes(kw))) {
+    const matched = dynamicKeywords.filter(kw => searchText.includes(kw));
+    gatilhos.push(`Palavra-chave detectada: ${matched.join(', ')}`);
+  }
+
+  // 10. Check if vendedor marked "requer engenharia" in messages
   if (msgText.includes('requer engenharia') || msgText.includes('precisa de engenharia') || msgText.includes('enviar para engenharia')) {
     gatilhos.push('Vendedor solicitou envio para engenharia');
   }
@@ -367,25 +400,13 @@ ${JSON.stringify(ctx.portfolio.slice(0, 5).map((c: any) => ({ r: c.razao_social,
 - Para interfonia, o cálculo correto é baseado em UNIDADES (apartamentos), não em blocos. Para portas de bloco, é baseado em BLOCOS.
 
 ## REGRA DE ENCAMINHAMENTO PARA ENGENHARIA:
-Ao finalizar o checklist, ANTES de instruir o vendedor a gerar a proposta, avalie se o projeto se enquadra em alguma das condições abaixo. Se SIM, AVISE o vendedor com a mensagem padrão.
+**IMPORTANTE**: NÃO tente avaliar ou listar gatilhos de engenharia por conta própria. O sistema verifica automaticamente os gatilhos ao gerar a proposta com base nos dados reais (valores calculados, quantidades de itens, etc.).
 
-**Condições que OBRIGATORIAMENTE encaminham para Engenharia (qualquer uma):**
-1. Mais de 8 acessos controlados (portas + portões + cancelas + catracas + eclusas + totens)
-2. Valor total de venda do projeto acima de R$ 300.000
-3. Mensalidade (locação) total acima de R$ 7.000
-4. Presença de proteção perimetral com IA (HikCentra)
-5. Mais de 64 câmeras IP (digitais)
-6. Presença de proteção perimetral com analíticos
-7. Presença de LPR (leitura de placa)
-8. Mais de 300 unidades (apartamentos/casas)
-9. Vendedor solicitar "requer engenharia"
+Ao finalizar o checklist, instrua o vendedor a clicar no botão **Gerar Proposta** no topo da tela. Se o projeto se enquadrar em alguma condição de encaminhamento, o sistema detectará automaticamente e avisará o vendedor com os gatilhos corretos.
 
-**Mensagem padrão ao vendedor quando detectar gatilho:**
-"⚠️ **Atenção — Validação Técnica Obrigatória**
-A lista de materiais foi gerada e será encaminhada **automaticamente** ao setor de Engenharia para validação técnica. Nossos engenheiros irão revisar o projeto e retornar com ajustes ou aprovação em até **4 dias úteis**. Caso precise complementar informações (fotos/medições), eu aviso.
-Gatilho(s) identificado(s): [liste os gatilhos que foram disparados]."
+As condições que encaminham para Engenharia incluem: mais de 8 acessos, valor de venda > R$ 300.000, mensalidade > R$ 7.000, mais de 64 câmeras, mais de 300 unidades, presença de LPR, HikCentra ou analíticos de vídeo.
 
-**IMPORTANTE**: A proposta é gerada normalmente, mas o vendedor deve saber que a Engenharia irá revisar. O sistema registra automaticamente para auditoria.
+**NÃO gere a mensagem de "Validação Técnica Obrigatória" durante o chat.** Essa mensagem será exibida automaticamente pelo sistema após a geração da proposta, com os gatilhos reais identificados pelo código.
 
 - Responda em português brasileiro`;
 }

@@ -216,300 +216,332 @@ export default function StartupProjetos() {
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-2">
             <Rocket className="w-8 h-8 text-primary" />
-            <h1 className="text-2xl font-bold text-foreground">Implantação de Projetos</h1>
+            <h1 className="text-2xl font-bold text-foreground">
+              {activeTab === 'em-implantacao' && 'Implantação de Projetos'}
+              {activeTab === 'operacao-assistida' && 'Operação Assistida'}
+              {activeTab === 'pequenas-obras' && 'Pequenas Obras'}
+            </h1>
           </div>
           <p className="text-muted-foreground">
-            Gerencie a implantação dos projetos vendidos
+            {activeTab === 'em-implantacao' && 'Gerencie a implantação dos projetos vendidos'}
+            {activeTab === 'operacao-assistida' && 'Acompanhe os projetos em fase de operação assistida'}
+            {activeTab === 'pequenas-obras' && 'Gerencie as pequenas obras e serviços'}
           </p>
         </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          <Card 
-            className={cn(
-              "cursor-pointer transition-all hover:shadow-md",
-              statusFilter === 'TODOS' && "ring-2 ring-primary"
-            )}
-            onClick={() => setStatusFilter('TODOS')}
-          >
-            <CardContent className="pt-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">Total</p>
-                  <p className="text-2xl font-bold">{statusCounts.TODOS}</p>
-                </div>
-                <Filter className="w-8 h-8 text-muted-foreground" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card 
-            className={cn(
-              "cursor-pointer transition-all hover:shadow-md",
-              statusFilter === 'A_EXECUTAR' && "ring-2 ring-amber-500"
-            )}
-            onClick={() => setStatusFilter('A_EXECUTAR')}
-          >
-            <CardContent className="pt-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">A Executar</p>
-                  <p className="text-2xl font-bold text-amber-600">{statusCounts.A_EXECUTAR}</p>
-                </div>
-                <Clock className="w-8 h-8 text-amber-500" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card 
-            className={cn(
-              "cursor-pointer transition-all hover:shadow-md",
-              statusFilter === 'EM_EXECUCAO' && "ring-2 ring-blue-500"
-            )}
-            onClick={() => setStatusFilter('EM_EXECUCAO')}
-          >
-            <CardContent className="pt-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">Em Execução</p>
-                  <p className="text-2xl font-bold text-blue-600">{statusCounts.EM_EXECUCAO}</p>
-                </div>
-                <PlayCircle className="w-8 h-8 text-blue-500" />
-              </div>
-            </CardContent>
-          </Card>
-
-        </div>
-
-        {/* Projetos em Andamento Table */}
-        {(() => {
-          const emAndamento = projects.filter(p => p.implantacao_status === 'EM_EXECUCAO');
-          if (emAndamento.length === 0) return null;
-          return (
-            <Card className="mb-6">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <PlayCircle className="w-5 h-5 text-blue-500" />
-                  Projetos em Andamento
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-0">
-                <div className="relative w-full overflow-auto">
-                  <table className="w-full caption-bottom text-sm">
-                    <thead className="[&_tr]:border-b">
-                      <tr className="border-b">
-                        <th className="h-10 px-4 text-left align-middle font-medium text-muted-foreground">Projeto</th>
-                        <th className="h-10 px-4 text-left align-middle font-medium text-muted-foreground">Condomínio</th>
-                        <th className="h-10 px-4 text-left align-middle font-medium text-muted-foreground">Data Início</th>
-                        <th className="h-10 px-4 text-left align-middle font-medium text-muted-foreground">Data Entrega</th>
-                        <th className="h-10 px-4 text-right align-middle font-medium text-muted-foreground">Mensalidade</th>
-                        <th className="h-10 px-4 text-right align-middle font-medium text-muted-foreground">Taxa Ativação</th>
-                      </tr>
-                    </thead>
-                    <tbody className="[&_tr:last-child]:border-0">
-                      {emAndamento.map((project) => {
-                        const portfolio = portfolioMap[project.id];
-                        return (
-                          <tr key={project.id} className="border-b transition-colors hover:bg-muted/50 cursor-pointer" onClick={() => navigate(`/startup-projetos/${project.id}/execucao`)}>
-                            <td className="p-4 align-middle font-medium">#{project.numero_projeto}</td>
-                            <td className="p-4 align-middle">{project.cliente_condominio_nome}</td>
-                            <td className="p-4 align-middle">
-                              {project.implantacao_started_at
-                                ? format(parseISO(project.implantacao_started_at), 'dd/MM/yyyy', { locale: ptBR })
-                                : '—'}
-                            </td>
-                            <td className="p-4 align-middle">
-                              {project.prazo_entrega_projeto
-                                ? format(parseISO(project.prazo_entrega_projeto), 'dd/MM/yyyy', { locale: ptBR })
-                                : '—'}
-                            </td>
-                            <td className="p-4 align-middle text-right">
-                              {portfolio?.mensalidade != null
-                                ? `R$ ${portfolio.mensalidade.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
-                                : '—'}
-                            </td>
-                            <td className="p-4 align-middle text-right">
-                              {portfolio?.taxa_ativacao != null
-                                ? `R$ ${portfolio.taxa_ativacao.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
-                                : '—'}
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              </CardContent>
-            </Card>
-          );
-        })()}
-
-        {/* Search and Filter */}
-        <div className="mb-6 flex flex-col sm:flex-row gap-4">
-          <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input
-              placeholder="Buscar por nome, vendedor ou número..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-          
-          <Select
-            value={statusFilter}
-            onValueChange={(value) => setStatusFilter(value as ImplantacaoStatus | 'TODOS')}
-          >
-            <SelectTrigger className="w-full sm:w-[200px]">
-              <Filter className="w-4 h-4 mr-2" />
-              <SelectValue placeholder="Filtrar por status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="TODOS">Todos os status</SelectItem>
-              <SelectItem value="A_EXECUTAR">A Executar</SelectItem>
-              <SelectItem value="EM_EXECUCAO">Em Execução</SelectItem>
-              
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* Projects List */}
-        {filteredProjects.length === 0 ? (
-          <Card>
-            <CardContent className="py-12 text-center">
-              <Rocket className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-foreground mb-2">Nenhum projeto encontrado</h3>
-              <p className="text-muted-foreground">
-                {searchTerm || statusFilter !== 'TODOS' 
-                  ? 'Tente ajustar os filtros de busca.' 
-                  : 'Os projetos com venda concluída aparecerão aqui.'}
-              </p>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="space-y-4">
-            {filteredProjects.map((project) => {
-              const StatusIcon = project.implantacao_status 
-                ? IMPLANTACAO_STATUS_ICONS[project.implantacao_status] 
-                : Clock;
-              
-              return (
-                <Card key={project.id} className="hover:shadow-md transition-shadow">
-                  <CardContent className="p-4">
-                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                      {/* Project Info */}
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-2">
-                          <span className="text-sm text-muted-foreground">#{project.numero_projeto}</span>
-                          {project.implantacao_status && (
-                            <Badge 
-                              className={cn(
-                                "border",
-                                IMPLANTACAO_STATUS_COLORS[project.implantacao_status]
-                              )}
-                            >
-                              <StatusIcon className="w-3 h-3 mr-1" />
-                              {IMPLANTACAO_STATUS_LABELS[project.implantacao_status]}
-                            </Badge>
-                          )}
-                        </div>
-                        
-                        <h3 className="text-lg font-semibold text-foreground mb-1">
-                          {project.cliente_condominio_nome}
-                        </h3>
-                        
-                        <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
-                          <span className="flex items-center gap-1">
-                            <Building className="w-4 h-4" />
-                            {project.cliente_cidade}, {project.cliente_estado}
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <User className="w-4 h-4" />
-                            {project.vendedor_nome}
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <Calendar className="w-4 h-4" />
-                            {format(parseISO(project.updated_at), "dd/MM/yyyy", { locale: ptBR })}
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Actions */}
-                      <div className="flex items-center gap-2 flex-wrap">
-                        {(!project.implantacao_status || project.implantacao_status === 'A_EXECUTAR') && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="border-green-300 text-green-700 hover:bg-green-50"
-                            onClick={() => {
-                              handleStatusChange(project.id, 'EM_EXECUCAO', project);
-                              navigate(`/startup-projetos/${project.id}/execucao`);
-                            }}
-                          >
-                            <PlayCircle className="w-4 h-4 mr-1" />
-                            Iniciar
-                          </Button>
-                        )}
-                        {project.implantacao_status === 'EM_EXECUCAO' && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="border-blue-300 text-blue-700 hover:bg-blue-50"
-                            onClick={() => navigate(`/startup-projetos/${project.id}/execucao`)}
-                          >
-                            <PlayCircle className="w-4 h-4 mr-1" />
-                            Continuar
-                          </Button>
-                        )}
-                        
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            navigate(`/projetos/${project.id}/formulario-venda`);
-                          }}
-                        >
-                          <Eye className="w-4 h-4 mr-2" />
-                          Formulário
-                        </Button>
-
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            navigate(`/projetos/${project.id}`);
-                          }}
-                        >
-                          <Eye className="w-4 h-4 mr-2" />
-                          Ver Detalhes
-                        </Button>
-                      </div>
+        {activeTab === 'em-implantacao' && (
+          <>
+            {/* Stats Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+              <Card 
+                className={cn(
+                  "cursor-pointer transition-all hover:shadow-md",
+                  statusFilter === 'TODOS' && "ring-2 ring-primary"
+                )}
+                onClick={() => setStatusFilter('TODOS')}
+              >
+                <CardContent className="pt-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Total</p>
+                      <p className="text-2xl font-bold">{statusCounts.TODOS}</p>
                     </div>
+                    <Filter className="w-8 h-8 text-muted-foreground" />
+                  </div>
+                </CardContent>
+              </Card>
 
-                    {/* Timeline info */}
-                    {(project.implantacao_started_at || project.implantacao_completed_at) && (
-                      <div className="mt-3 pt-3 border-t border-border flex gap-4 text-xs text-muted-foreground">
-                        {project.implantacao_started_at && (
-                          <span>
-                            Início: {format(parseISO(project.implantacao_started_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-                          </span>
-                        )}
-                        {project.implantacao_completed_at && (
-                          <span>
-                            Conclusão: {format(parseISO(project.implantacao_completed_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-                          </span>
-                        )}
-                      </div>
-                    )}
+              <Card 
+                className={cn(
+                  "cursor-pointer transition-all hover:shadow-md",
+                  statusFilter === 'A_EXECUTAR' && "ring-2 ring-amber-500"
+                )}
+                onClick={() => setStatusFilter('A_EXECUTAR')}
+              >
+                <CardContent className="pt-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-muted-foreground">A Executar</p>
+                      <p className="text-2xl font-bold text-amber-600">{statusCounts.A_EXECUTAR}</p>
+                    </div>
+                    <Clock className="w-8 h-8 text-amber-500" />
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card 
+                className={cn(
+                  "cursor-pointer transition-all hover:shadow-md",
+                  statusFilter === 'EM_EXECUCAO' && "ring-2 ring-blue-500"
+                )}
+                onClick={() => setStatusFilter('EM_EXECUCAO')}
+              >
+                <CardContent className="pt-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Em Execução</p>
+                      <p className="text-2xl font-bold text-blue-600">{statusCounts.EM_EXECUCAO}</p>
+                    </div>
+                    <PlayCircle className="w-8 h-8 text-blue-500" />
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Projetos em Andamento Table */}
+            {(() => {
+              const emAndamento = projects.filter(p => p.implantacao_status === 'EM_EXECUCAO');
+              if (emAndamento.length === 0) return null;
+              return (
+                <Card className="mb-6">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <PlayCircle className="w-5 h-5 text-blue-500" />
+                      Projetos em Andamento
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-0">
+                    <div className="relative w-full overflow-auto">
+                      <table className="w-full caption-bottom text-sm">
+                        <thead className="[&_tr]:border-b">
+                          <tr className="border-b">
+                            <th className="h-10 px-4 text-left align-middle font-medium text-muted-foreground">Projeto</th>
+                            <th className="h-10 px-4 text-left align-middle font-medium text-muted-foreground">Condomínio</th>
+                            <th className="h-10 px-4 text-left align-middle font-medium text-muted-foreground">Data Início</th>
+                            <th className="h-10 px-4 text-left align-middle font-medium text-muted-foreground">Data Entrega</th>
+                            <th className="h-10 px-4 text-right align-middle font-medium text-muted-foreground">Mensalidade</th>
+                            <th className="h-10 px-4 text-right align-middle font-medium text-muted-foreground">Taxa Ativação</th>
+                          </tr>
+                        </thead>
+                        <tbody className="[&_tr:last-child]:border-0">
+                          {emAndamento.map((project) => {
+                            const portfolio = portfolioMap[project.id];
+                            return (
+                              <tr key={project.id} className="border-b transition-colors hover:bg-muted/50 cursor-pointer" onClick={() => navigate(`/startup-projetos/${project.id}/execucao`)}>
+                                <td className="p-4 align-middle font-medium">#{project.numero_projeto}</td>
+                                <td className="p-4 align-middle">{project.cliente_condominio_nome}</td>
+                                <td className="p-4 align-middle">
+                                  {project.implantacao_started_at
+                                    ? format(parseISO(project.implantacao_started_at), 'dd/MM/yyyy', { locale: ptBR })
+                                    : '—'}
+                                </td>
+                                <td className="p-4 align-middle">
+                                  {project.prazo_entrega_projeto
+                                    ? format(parseISO(project.prazo_entrega_projeto), 'dd/MM/yyyy', { locale: ptBR })
+                                    : '—'}
+                                </td>
+                                <td className="p-4 align-middle text-right">
+                                  {portfolio?.mensalidade != null
+                                    ? `R$ ${portfolio.mensalidade.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
+                                    : '—'}
+                                </td>
+                                <td className="p-4 align-middle text-right">
+                                  {portfolio?.taxa_ativacao != null
+                                    ? `R$ ${portfolio.taxa_ativacao.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
+                                    : '—'}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
                   </CardContent>
                 </Card>
               );
-            })}
-          </div>
+            })()}
+
+            {/* Search and Filter */}
+            <div className="mb-6 flex flex-col sm:flex-row gap-4">
+              <div className="relative flex-1 max-w-md">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  placeholder="Buscar por nome, vendedor ou número..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+              
+              <Select
+                value={statusFilter}
+                onValueChange={(value) => setStatusFilter(value as ImplantacaoStatus | 'TODOS')}
+              >
+                <SelectTrigger className="w-full sm:w-[200px]">
+                  <Filter className="w-4 h-4 mr-2" />
+                  <SelectValue placeholder="Filtrar por status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="TODOS">Todos os status</SelectItem>
+                  <SelectItem value="A_EXECUTAR">A Executar</SelectItem>
+                  <SelectItem value="EM_EXECUCAO">Em Execução</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Projects List */}
+            {filteredProjects.length === 0 ? (
+              <Card>
+                <CardContent className="py-12 text-center">
+                  <Rocket className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-foreground mb-2">Nenhum projeto encontrado</h3>
+                  <p className="text-muted-foreground">
+                    {searchTerm || statusFilter !== 'TODOS' 
+                      ? 'Tente ajustar os filtros de busca.' 
+                      : 'Os projetos com venda concluída aparecerão aqui.'}
+                  </p>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="space-y-4">
+                {filteredProjects.map((project) => {
+                  const StatusIcon = project.implantacao_status 
+                    ? IMPLANTACAO_STATUS_ICONS[project.implantacao_status] 
+                    : Clock;
+                  
+                  return (
+                    <Card key={project.id} className="hover:shadow-md transition-shadow">
+                      <CardContent className="p-4">
+                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                          {/* Project Info */}
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-2">
+                              <span className="text-sm text-muted-foreground">#{project.numero_projeto}</span>
+                              {project.implantacao_status && (
+                                <Badge 
+                                  className={cn(
+                                    "border",
+                                    IMPLANTACAO_STATUS_COLORS[project.implantacao_status]
+                                  )}
+                                >
+                                  <StatusIcon className="w-3 h-3 mr-1" />
+                                  {IMPLANTACAO_STATUS_LABELS[project.implantacao_status]}
+                                </Badge>
+                              )}
+                            </div>
+                            
+                            <h3 className="text-lg font-semibold text-foreground mb-1">
+                              {project.cliente_condominio_nome}
+                            </h3>
+                            
+                            <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
+                              <span className="flex items-center gap-1">
+                                <Building className="w-4 h-4" />
+                                {project.cliente_cidade}, {project.cliente_estado}
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <User className="w-4 h-4" />
+                                {project.vendedor_nome}
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <Calendar className="w-4 h-4" />
+                                {format(parseISO(project.updated_at), "dd/MM/yyyy", { locale: ptBR })}
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Actions */}
+                          <div className="flex items-center gap-2 flex-wrap">
+                            {(!project.implantacao_status || project.implantacao_status === 'A_EXECUTAR') && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="border-green-300 text-green-700 hover:bg-green-50"
+                                onClick={() => {
+                                  handleStatusChange(project.id, 'EM_EXECUCAO', project);
+                                  navigate(`/startup-projetos/${project.id}/execucao`);
+                                }}
+                              >
+                                <PlayCircle className="w-4 h-4 mr-1" />
+                                Iniciar
+                              </Button>
+                            )}
+                            {project.implantacao_status === 'EM_EXECUCAO' && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="border-blue-300 text-blue-700 hover:bg-blue-50"
+                                onClick={() => navigate(`/startup-projetos/${project.id}/execucao`)}
+                              >
+                                <PlayCircle className="w-4 h-4 mr-1" />
+                                Continuar
+                              </Button>
+                            )}
+                            
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                navigate(`/projetos/${project.id}/formulario-venda`);
+                              }}
+                            >
+                              <Eye className="w-4 h-4 mr-2" />
+                              Formulário
+                            </Button>
+
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                navigate(`/projetos/${project.id}`);
+                              }}
+                            >
+                              <Eye className="w-4 h-4 mr-2" />
+                              Ver Detalhes
+                            </Button>
+                          </div>
+                        </div>
+
+                        {/* Timeline info */}
+                        {(project.implantacao_started_at || project.implantacao_completed_at) && (
+                          <div className="mt-3 pt-3 border-t border-border flex gap-4 text-xs text-muted-foreground">
+                            {project.implantacao_started_at && (
+                              <span>
+                                Início: {format(parseISO(project.implantacao_started_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                              </span>
+                            )}
+                            {project.implantacao_completed_at && (
+                              <span>
+                                Conclusão: {format(parseISO(project.implantacao_completed_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                              </span>
+                            )}
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            )}
+          </>
+        )}
+
+        {activeTab === 'operacao-assistida' && (
+          <Card>
+            <CardContent className="py-12 text-center">
+              <HeadphonesIcon className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-foreground mb-2">Operação Assistida</h3>
+              <p className="text-muted-foreground">
+                Os projetos em fase de operação assistida aparecerão aqui.
+              </p>
+            </CardContent>
+          </Card>
+        )}
+
+        {activeTab === 'pequenas-obras' && (
+          <Card>
+            <CardContent className="py-12 text-center">
+              <Wrench className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-foreground mb-2">Pequenas Obras</h3>
+              <p className="text-muted-foreground">
+                As pequenas obras e serviços aparecerão aqui.
+              </p>
+            </CardContent>
+          </Card>
         )}
       </div>
     </Layout>

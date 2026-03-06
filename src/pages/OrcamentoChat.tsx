@@ -73,6 +73,24 @@ export default function OrcamentoChat() {
       .trim();
   };
 
+  const injectEngineeringMessage = (gatilhos: string[]) => {
+    if (!gatilhos || gatilhos.length === 0) return;
+    const gatilhosText = gatilhos.map(g => `• ${g}`).join('\n');
+    const engMsg: Msg = {
+      role: 'assistant',
+      content: `⚠️ **Atenção — Validação Técnica Obrigatória**\nA lista de materiais foi gerada e será encaminhada **automaticamente** ao setor de Engenharia para validação técnica. Nossos engenheiros irão revisar o projeto e retornar com ajustes ou aprovação em até **4 dias úteis**. Caso precise complementar informações (fotos/medições), eu aviso.\n\n**Gatilho(s) identificado(s):**\n${gatilhosText}`,
+    };
+    setMessages(prev => [...prev, engMsg]);
+    // Save to database
+    if (sessaoId) {
+      supabase.from('orcamento_mensagens').insert({
+        sessao_id: sessaoId,
+        role: 'assistant',
+        content: engMsg.content,
+      });
+    }
+  };
+
   useEffect(() => {
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
   }, [messages]);
@@ -470,11 +488,17 @@ export default function OrcamentoChat() {
         if (data.encaminhado_engenharia) {
           setEncaminhadoEngenharia(true);
           setGatilhosEngenharia(data.gatilhos_engenharia || []);
+          injectEngineeringMessage(data.gatilhos_engenharia || []);
         }
       } else {
         // Fallback: no structured items, show directly
         setProposta(data as PropostaData);
         setPropostaJaGerada(true);
+        if (data.encaminhado_engenharia) {
+          setEncaminhadoEngenharia(true);
+          setGatilhosEngenharia(data.gatilhos_engenharia || []);
+          injectEngineeringMessage(data.gatilhos_engenharia || []);
+        }
       }
     } catch (e) {
       console.error(e);
@@ -510,13 +534,14 @@ export default function OrcamentoChat() {
         return;
       }
 
-      const data = await resp.json();
-      setProposta(data as PropostaData);
+      const finalData = await resp.json();
+      setProposta(finalData as PropostaData);
       setPropostaJaGerada(true);
       // Update engineering flags from final generation
-      if (data.encaminhado_engenharia) {
+      if (finalData.encaminhado_engenharia) {
         setEncaminhadoEngenharia(true);
-        setGatilhosEngenharia(data.gatilhos_engenharia || []);
+        setGatilhosEngenharia(finalData.gatilhos_engenharia || []);
+        injectEngineeringMessage(finalData.gatilhos_engenharia || []);
       }
       setPrePropostaOpen(false);
       setPrePropostaData(null);

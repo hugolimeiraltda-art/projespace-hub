@@ -1348,15 +1348,46 @@ export default function ImplantacaoExecucao() {
               </CollapsibleTrigger>
               <CollapsibleContent>
                 <CardContent className="pt-0 space-y-1">
-                  <SubItem 
-                    label="4.1 - Check de projeto" 
-                    checked={etapas.check_projeto} 
-                    field="check_projeto"
-                    dateField="check_projeto_at"
-                    date={etapas.check_projeto_at}
-                    hasChecklist
-                    checklistType="check_projeto"
-                  />
+                  <div className="flex items-center justify-between py-2 px-4 hover:bg-muted/50 rounded-md">
+                    <div className="flex items-center gap-3">
+                      <Checkbox 
+                        checked={etapas.check_projeto}
+                        onCheckedChange={(value) => {
+                          if (value === true && !checklistsExistentes.includes('check_projeto')) {
+                            toast({
+                              title: 'Checklist obrigatório',
+                              description: 'Preencha o checklist de projeto antes de marcar como concluído. Clique no botão "Checklist" ao lado.',
+                              variant: 'destructive',
+                            });
+                            return;
+                          }
+                          updateEtapa('check_projeto', value, 'check_projeto_at');
+                        }}
+                        disabled={isSaving}
+                      />
+                      <span className={cn("text-sm", etapas.check_projeto && "text-muted-foreground line-through")}>
+                        4.1 - Check de projeto
+                        {!checklistsExistentes.includes('check_projeto') && !etapas.check_projeto && (
+                          <span className="text-destructive ml-2 text-xs font-medium">(Checklist pendente)</span>
+                        )}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {etapas.check_projeto_at && (
+                        <span className="text-xs text-muted-foreground">
+                          {format(parseISO(etapas.check_projeto_at), "dd/MM/yyyy", { locale: ptBR })}
+                        </span>
+                      )}
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => navigate(`/startup-projetos/${id}/checklist/check_projeto`)}
+                      >
+                        <ClipboardCheck className="w-4 h-4 mr-1" />
+                        Checklist
+                      </Button>
+                    </div>
+                  </div>
                   <div className="flex items-center justify-between py-2 px-4 hover:bg-muted/50 rounded-md">
                     <div className="flex items-center gap-3">
                       <Checkbox 

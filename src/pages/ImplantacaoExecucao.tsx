@@ -1637,9 +1637,13 @@ export default function ImplantacaoExecucao() {
                       className="mt-1"
                     />
                   </div>
-                  {/* Upload de checklist de entrega técnica */}
                   <div className="px-4 pt-2">
-                    <Label className="text-sm font-medium">7.3 - Check-list de Entrega Técnica (Upload)</Label>
+                    <Label className="text-sm font-medium">
+                      7.3 - Check-list de Entrega Técnica (Upload)
+                      {!secoesComAnexo.includes('implantacao_entrega_tecnica') && (
+                        <span className="text-destructive ml-2 text-xs">(Upload obrigatório)</span>
+                      )}
+                    </Label>
                     <p className="text-xs text-muted-foreground mb-2">
                       Envie o checklist de entrega técnica assinado pelo cliente. O sistema verificará se há pendências registradas.
                     </p>

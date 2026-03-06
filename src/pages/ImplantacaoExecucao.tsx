@@ -1475,8 +1475,27 @@ export default function ImplantacaoExecucao() {
                   {/* 5.1 - Instalador */}
                   <div className="py-2 px-4">
                     <div className="flex items-center gap-3 mb-2">
-                      <Checkbox checked={etapas.laudo_instalador} onCheckedChange={(value) => updateEtapa('laudo_instalador', value, 'laudo_instalador_at')} disabled={isSaving} />
-                      <span className={cn("text-sm font-medium", etapas.laudo_instalador && "text-muted-foreground line-through")}>5.1 - Laudo e Check-list do Instalador</span>
+                      <Checkbox 
+                        checked={etapas.laudo_instalador} 
+                        onCheckedChange={(value) => {
+                          if (value === true && !secoesComAnexo.includes('implantacao_laudo_instalador')) {
+                            toast({
+                              title: 'Upload obrigatório',
+                              description: 'Anexe o laudo/checklist do instalador antes de marcar como concluído.',
+                              variant: 'destructive',
+                            });
+                            return;
+                          }
+                          updateEtapa('laudo_instalador', value, 'laudo_instalador_at');
+                        }} 
+                        disabled={isSaving} 
+                      />
+                      <span className={cn("text-sm font-medium", etapas.laudo_instalador && "text-muted-foreground line-through")}>
+                        5.1 - Laudo e Check-list do Instalador
+                        {!secoesComAnexo.includes('implantacao_laudo_instalador') && !etapas.laudo_instalador && (
+                          <span className="text-destructive ml-2 text-xs font-medium">(Upload obrigatório)</span>
+                        )}
+                      </span>
                       {etapas.laudo_instalador_at && <span className="text-xs text-muted-foreground">{format(parseISO(etapas.laudo_instalador_at), "dd/MM/yyyy", { locale: ptBR })}</span>}
                     </div>
                     <div className="ml-8"><SectionFileUpload projectId={id || null} secao="implantacao_laudo_instalador" /></div>

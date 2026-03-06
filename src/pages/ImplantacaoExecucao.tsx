@@ -12,9 +12,11 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
+import { SectionFileUpload } from '@/components/SectionFileUpload';
 import {
   ArrowLeft,
   Check,
@@ -43,6 +45,8 @@ import {
   ExternalLink,
   BookOpen,
   Package,
+  Upload,
+  AlertTriangle,
 } from 'lucide-react';
 import { format, parseISO, addDays, differenceInDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -150,7 +154,7 @@ export default function ImplantacaoExecucao() {
   const [projectAttachments, setProjectAttachments] = useState<Array<{ nome_arquivo: string; tipo: string; arquivo_url?: string }>>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [expandedEtapas, setExpandedEtapas] = useState<number[]>([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+  const [expandedEtapas, setExpandedEtapas] = useState<number[]>([1, 2, 3, 4, 5, 6, 7, 8, 9]);
   const [novaInteracao, setNovaInteracao] = useState('');
   const [editingDates, setEditingDates] = useState(false);
   const [tempStartDate, setTempStartDate] = useState('');
@@ -160,6 +164,10 @@ export default function ImplantacaoExecucao() {
   const [editingContrato, setEditingContrato] = useState(false);
   const [showAIFeedbackDialog, setShowAIFeedbackDialog] = useState(false);
   const [showEquipmentList, setShowEquipmentList] = useState(false);
+  const [hasPendingItems, setHasPendingItems] = useState(false);
+  const [editingOpAssistidaDates, setEditingOpAssistidaDates] = useState(false);
+  const [tempOpAssistidaStart, setTempOpAssistidaStart] = useState('');
+  const [tempOpAssistidaEnd, setTempOpAssistidaEnd] = useState('');
 
   const canEditDates = user?.role === 'admin' || user?.role === 'administrativo' || user?.role === 'implantacao';
 
@@ -286,6 +294,23 @@ export default function ImplantacaoExecucao() {
 
       if (attachmentsData) {
         setProjectAttachments(attachmentsData);
+      }
+
+      // Check for pending items (to block conclusion)
+      const { data: customerData } = await supabase
+        .from('customer_portfolio')
+        .select('id')
+        .eq('project_id', id!)
+        .maybeSingle();
+      
+      if (customerData) {
+        const { count: pendingCount } = await supabase
+          .from('manutencao_pendencias')
+          .select('id', { count: 'exact', head: true })
+          .eq('customer_id', customerData.id)
+          .eq('status', 'ABERTO');
+        
+        setHasPendingItems((pendingCount || 0) > 0);
       }
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -547,7 +572,6 @@ export default function ImplantacaoExecucao() {
       case 7: return etapas.agendamento_visita_comercial && etapas.laudo_visita_comercial;
       case 8: return (etapas.operacao_assistida_interacoes?.length || 0) > 0;
       case 9: return etapas.concluido;
-      case 10: return etapas.pesquisa_satisfacao_realizada;
       default: return false;
     }
   };
@@ -1313,15 +1337,30 @@ export default function ImplantacaoExecucao() {
                       />
                     </div>
                   </div>
-                  <SubItem 
-                    label="4.3 - Laudo e check-list de visita" 
-                    checked={etapas.laudo_visita_startup} 
-                    field="laudo_visita_startup"
-                    dateField="laudo_visita_startup_at"
-                    date={etapas.laudo_visita_startup_at}
-                    hasChecklist
-                    checklistType="laudo_visita_startup"
-                  />
+                  {/* 4.3 - Upload obrigatório de PDF/fotos com validação de terceirizados */}
+                  <div className="py-2 px-4">
+                    <div className="flex items-center gap-3 mb-2">
+                      <Checkbox 
+                        checked={etapas.laudo_visita_startup}
+                        onCheckedChange={(value) => updateEtapa('laudo_visita_startup', value, 'laudo_visita_startup_at')}
+                        disabled={isSaving}
+                      />
+                      <span className={cn("text-sm font-medium", etapas.laudo_visita_startup && "text-muted-foreground line-through")}>
+                        4.3 - Laudo e check-list de visita (Upload obrigatório)
+                      </span>
+                      {etapas.laudo_visita_startup_at && (
+                        <span className="text-xs text-muted-foreground">
+                          {format(parseISO(etapas.laudo_visita_startup_at), "dd/MM/yyyy", { locale: ptBR })}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-muted-foreground mb-2 ml-8">
+                      Envie o checklist preenchido com os dados dos terceirizados (vidraceiro, serralheiro, instalador de motor, câmera de elevador, instalador Smart Portaria). Se os dados não estiverem completos, ficará com status de pendência.
+                    </p>
+                    <div className="ml-8">
+                      <SectionFileUpload projectId={id || null} secao="implantacao_laudo_visita" />
+                    </div>
+                  </div>
                 </CardContent>
               </CollapsibleContent>
             </Collapsible>
@@ -1347,43 +1386,46 @@ export default function ImplantacaoExecucao() {
                 </CardHeader>
               </CollapsibleTrigger>
               <CollapsibleContent>
-                <CardContent className="pt-0 space-y-1">
-                  <SubItem 
-                    label="5.1 - Laudo e Check-list do Instalador" 
-                    checked={etapas.laudo_instalador} 
-                    field="laudo_instalador"
-                    dateField="laudo_instalador_at"
-                    date={etapas.laudo_instalador_at}
-                    hasChecklist
-                    checklistType="laudo_instalador"
-                  />
-                  <SubItem 
-                    label="5.2 - Laudo e Check-list do Vidraceiro" 
-                    checked={etapas.laudo_vidraceiro} 
-                    field="laudo_vidraceiro"
-                    dateField="laudo_vidraceiro_at"
-                    date={etapas.laudo_vidraceiro_at}
-                    hasChecklist
-                    checklistType="laudo_vidraceiro"
-                  />
-                  <SubItem 
-                    label="5.3 - Laudo e Check-list do Serralheiro" 
-                    checked={etapas.laudo_serralheiro} 
-                    field="laudo_serralheiro"
-                    dateField="laudo_serralheiro_at"
-                    date={etapas.laudo_serralheiro_at}
-                    hasChecklist
-                    checklistType="laudo_serralheiro"
-                  />
-                  <SubItem 
-                    label="5.4 - Laudo e Check-list de Conclusão do Supervisor" 
-                    checked={etapas.laudo_conclusao_supervisor} 
-                    field="laudo_conclusao_supervisor"
-                    dateField="laudo_conclusao_supervisor_at"
-                    date={etapas.laudo_conclusao_supervisor_at}
-                    hasChecklist
-                    checklistType="laudo_conclusao"
-                  />
+                <CardContent className="pt-0 space-y-4">
+                  <p className="text-xs text-muted-foreground px-4">
+                    Faça upload dos laudos/checklists preenchidos (PDF ou fotos). Se o documento não estiver devidamente preenchido, ficará com mensagem de pendência de informação.
+                  </p>
+                  {/* 5.1 - Instalador */}
+                  <div className="py-2 px-4">
+                    <div className="flex items-center gap-3 mb-2">
+                      <Checkbox checked={etapas.laudo_instalador} onCheckedChange={(value) => updateEtapa('laudo_instalador', value, 'laudo_instalador_at')} disabled={isSaving} />
+                      <span className={cn("text-sm font-medium", etapas.laudo_instalador && "text-muted-foreground line-through")}>5.1 - Laudo e Check-list do Instalador</span>
+                      {etapas.laudo_instalador_at && <span className="text-xs text-muted-foreground">{format(parseISO(etapas.laudo_instalador_at), "dd/MM/yyyy", { locale: ptBR })}</span>}
+                    </div>
+                    <div className="ml-8"><SectionFileUpload projectId={id || null} secao="implantacao_laudo_instalador" /></div>
+                  </div>
+                  {/* 5.2 - Vidraceiro */}
+                  <div className="py-2 px-4">
+                    <div className="flex items-center gap-3 mb-2">
+                      <Checkbox checked={etapas.laudo_vidraceiro} onCheckedChange={(value) => updateEtapa('laudo_vidraceiro', value, 'laudo_vidraceiro_at')} disabled={isSaving} />
+                      <span className={cn("text-sm font-medium", etapas.laudo_vidraceiro && "text-muted-foreground line-through")}>5.2 - Laudo e Check-list do Vidraceiro</span>
+                      {etapas.laudo_vidraceiro_at && <span className="text-xs text-muted-foreground">{format(parseISO(etapas.laudo_vidraceiro_at), "dd/MM/yyyy", { locale: ptBR })}</span>}
+                    </div>
+                    <div className="ml-8"><SectionFileUpload projectId={id || null} secao="implantacao_laudo_vidraceiro" /></div>
+                  </div>
+                  {/* 5.3 - Serralheiro */}
+                  <div className="py-2 px-4">
+                    <div className="flex items-center gap-3 mb-2">
+                      <Checkbox checked={etapas.laudo_serralheiro} onCheckedChange={(value) => updateEtapa('laudo_serralheiro', value, 'laudo_serralheiro_at')} disabled={isSaving} />
+                      <span className={cn("text-sm font-medium", etapas.laudo_serralheiro && "text-muted-foreground line-through")}>5.3 - Laudo e Check-list do Serralheiro</span>
+                      {etapas.laudo_serralheiro_at && <span className="text-xs text-muted-foreground">{format(parseISO(etapas.laudo_serralheiro_at), "dd/MM/yyyy", { locale: ptBR })}</span>}
+                    </div>
+                    <div className="ml-8"><SectionFileUpload projectId={id || null} secao="implantacao_laudo_serralheiro" /></div>
+                  </div>
+                  {/* 5.4 - Conclusão do Supervisor */}
+                  <div className="py-2 px-4">
+                    <div className="flex items-center gap-3 mb-2">
+                      <Checkbox checked={etapas.laudo_conclusao_supervisor} onCheckedChange={(value) => updateEtapa('laudo_conclusao_supervisor', value, 'laudo_conclusao_supervisor_at')} disabled={isSaving} />
+                      <span className={cn("text-sm font-medium", etapas.laudo_conclusao_supervisor && "text-muted-foreground line-through")}>5.4 - Laudo e Check-list de Conclusão do Supervisor</span>
+                      {etapas.laudo_conclusao_supervisor_at && <span className="text-xs text-muted-foreground">{format(parseISO(etapas.laudo_conclusao_supervisor_at), "dd/MM/yyyy", { locale: ptBR })}</span>}
+                    </div>
+                    <div className="ml-8"><SectionFileUpload projectId={id || null} secao="implantacao_laudo_conclusao" /></div>
+                  </div>
                 </CardContent>
               </CollapsibleContent>
             </Collapsible>
@@ -1437,7 +1479,7 @@ export default function ImplantacaoExecucao() {
             </Collapsible>
           </Card>
 
-          {/* Etapa 7: Entrega Comercial */}
+          {/* Etapa 7: Entrega Técnica e Comercial */}
           <Card>
             <Collapsible open={expandedEtapas.includes(7)} onOpenChange={() => toggleEtapa(7)}>
               <CollapsibleTrigger asChild>
@@ -1450,14 +1492,14 @@ export default function ImplantacaoExecucao() {
                       )}>
                         {isEtapaComplete(7) ? <Check className="w-4 h-4" /> : <Handshake className="w-4 h-4" />}
                       </div>
-                      <CardTitle className="text-base">7 - Entrega Comercial</CardTitle>
+                      <CardTitle className="text-base">7 - Entrega Técnica e Comercial</CardTitle>
                     </div>
                     {expandedEtapas.includes(7) ? <ChevronDown className="w-5 h-5" /> : <ChevronRight className="w-5 h-5" />}
                   </div>
                 </CardHeader>
               </CollapsibleTrigger>
               <CollapsibleContent>
-                <CardContent className="pt-0 space-y-1">
+                <CardContent className="pt-0 space-y-4">
                   <div className="flex items-center justify-between py-2 px-4 hover:bg-muted/50 rounded-md">
                     <div className="flex items-center gap-3">
                       <Checkbox 
@@ -1486,13 +1528,21 @@ export default function ImplantacaoExecucao() {
                     date={etapas.laudo_visita_comercial_at}
                   />
                   <div className="px-4 pt-2">
-                    <Label className="text-sm text-muted-foreground">Observações da visita comercial</Label>
+                    <Label className="text-sm text-muted-foreground">Observações da entrega técnica e comercial</Label>
                     <Textarea 
                       value={etapas.laudo_visita_comercial_texto || ''}
                       onChange={(e) => updateEtapa('laudo_visita_comercial_texto', e.target.value)}
-                      placeholder="Descreva observações sobre a visita comercial..."
+                      placeholder="Descreva observações sobre a entrega técnica e comercial..."
                       className="mt-1"
                     />
+                  </div>
+                  {/* Upload de checklist de entrega técnica */}
+                  <div className="px-4 pt-2">
+                    <Label className="text-sm font-medium">7.3 - Check-list de Entrega Técnica (Upload)</Label>
+                    <p className="text-xs text-muted-foreground mb-2">
+                      Envie o checklist de entrega técnica assinado pelo cliente. O sistema verificará se há pendências registradas.
+                    </p>
+                    <SectionFileUpload projectId={id || null} secao="implantacao_entrega_tecnica" />
                   </div>
                 </CardContent>
               </CollapsibleContent>
@@ -1520,14 +1570,46 @@ export default function ImplantacaoExecucao() {
               </CollapsibleTrigger>
               <CollapsibleContent>
                 <CardContent className="pt-0 space-y-4">
-                  {etapas.operacao_assistida_inicio && (
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground px-4">
-                      <span>Início: {format(parseISO(etapas.operacao_assistida_inicio), "dd/MM/yyyy", { locale: ptBR })}</span>
-                      {etapas.operacao_assistida_fim && (
-                        <span>Término previsto: {format(parseISO(etapas.operacao_assistida_fim), "dd/MM/yyyy", { locale: ptBR })}</span>
-                      )}
-                    </div>
-                  )}
+                  {/* Data de início e término editáveis */}
+                  <div className="px-4 space-y-3">
+                    <Label className="text-sm font-medium">Período da Operação Assistida</Label>
+                    {!editingOpAssistidaDates ? (
+                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                        <span>Início: {etapas.operacao_assistida_inicio ? format(parseISO(etapas.operacao_assistida_inicio), "dd/MM/yyyy", { locale: ptBR }) : 'Não definido'}</span>
+                        <span>Término: {etapas.operacao_assistida_fim ? format(parseISO(etapas.operacao_assistida_fim), "dd/MM/yyyy", { locale: ptBR }) : 'Não definido'}</span>
+                        {canEditDates && (
+                          <Button variant="ghost" size="sm" onClick={() => {
+                            setTempOpAssistidaStart(etapas.operacao_assistida_inicio ? etapas.operacao_assistida_inicio.split('T')[0] : '');
+                            setTempOpAssistidaEnd(etapas.operacao_assistida_fim ? etapas.operacao_assistida_fim.split('T')[0] : '');
+                            setEditingOpAssistidaDates(true);
+                          }}>
+                            <Pencil className="w-3 h-3" />
+                          </Button>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <Input type="date" value={tempOpAssistidaStart} onChange={(e) => setTempOpAssistidaStart(e.target.value)} className="w-40" />
+                        <span className="text-sm text-muted-foreground">até</span>
+                        <Input type="date" value={tempOpAssistidaEnd} onChange={(e) => setTempOpAssistidaEnd(e.target.value)} className="w-40" />
+                        <Button size="sm" onClick={async () => {
+                          await supabase.from('implantacao_etapas').update({
+                            operacao_assistida_inicio: tempOpAssistidaStart ? new Date(tempOpAssistidaStart).toISOString() : null,
+                            operacao_assistida_fim: tempOpAssistidaEnd ? new Date(tempOpAssistidaEnd).toISOString() : null,
+                          }).eq('project_id', id!);
+                          setEtapas(prev => prev ? {
+                            ...prev,
+                            operacao_assistida_inicio: tempOpAssistidaStart ? new Date(tempOpAssistidaStart).toISOString() : null,
+                            operacao_assistida_fim: tempOpAssistidaEnd ? new Date(tempOpAssistidaEnd).toISOString() : null,
+                          } : null);
+                          setEditingOpAssistidaDates(false);
+                          toast({ title: 'Datas atualizadas' });
+                        }}>
+                          <Check className="w-3 h-3" />
+                        </Button>
+                      </div>
+                    )}
+                  </div>
                   
                   <div className="px-4">
                     <Label className="text-sm font-medium">8.1 - Registrar interação com o cliente</Label>
@@ -1597,6 +1679,14 @@ export default function ImplantacaoExecucao() {
                   </div>
 
                   <div className="px-4">
+                    {hasPendingItems && !etapas.concluido && (
+                      <Alert variant="destructive" className="mb-4">
+                        <AlertTriangle className="h-4 w-4" />
+                        <AlertDescription>
+                          Existem pendências em aberto para este cliente. Resolva todas as pendências antes de concluir a implantação.
+                        </AlertDescription>
+                      </Alert>
+                    )}
                     {etapas.concluido ? (
                       <SubItem 
                         label="Marcar implantação como concluída" 
@@ -1607,127 +1697,42 @@ export default function ImplantacaoExecucao() {
                       />
                     ) : (
                       <Button
-                        onClick={() => setShowAIFeedbackDialog(true)}
+                        onClick={async () => {
+                          if (hasPendingItems) {
+                            toast({ title: 'Pendências em aberto', description: 'Resolva todas as pendências antes de concluir.', variant: 'destructive' });
+                            return;
+                          }
+                          // Create chamado for Sucesso do Cliente (satisfaction survey)
+                          try {
+                            const { data: customerData } = await supabase
+                              .from('customer_portfolio')
+                              .select('id')
+                              .eq('project_id', id!)
+                              .maybeSingle();
+                            
+                            if (customerData) {
+                              await supabase.from('customer_chamados').insert({
+                                customer_id: customerData.id,
+                                assunto: 'Pesquisa de Satisfação - Implantação',
+                                descricao: `Realizar pesquisa de satisfação com o cliente ${project.cliente_condominio_nome} referente à implantação do projeto #${project.numero_projeto}. O projeto foi concluído e necessita avaliação de satisfação do cliente.`,
+                                prioridade: 'media',
+                                status: 'aberto',
+                                created_by: user?.id,
+                                created_by_name: user?.nome,
+                              });
+                            }
+                          } catch (err) {
+                            console.error('Error creating satisfaction chamado:', err);
+                          }
+                          setShowAIFeedbackDialog(true);
+                        }}
                         className="w-full"
                         variant="default"
+                        disabled={hasPendingItems}
                       >
                         Concluir Implantação (com avaliação)
                       </Button>
                     )}
-                  </div>
-                </CardContent>
-              </CollapsibleContent>
-            </Collapsible>
-          </Card>
-
-          {/* Etapa 10: Pesquisa de Satisfação */}
-          <Card>
-            <Collapsible open={expandedEtapas.includes(10)} onOpenChange={() => toggleEtapa(10)}>
-              <CollapsibleTrigger asChild>
-                <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className={cn(
-                        "w-8 h-8 rounded-full flex items-center justify-center",
-                        isEtapaComplete(10) ? "bg-green-500 text-white" : "bg-muted text-muted-foreground"
-                      )}>
-                        {isEtapaComplete(10) ? <Check className="w-4 h-4" /> : <Star className="w-4 h-4" />}
-                      </div>
-                      <CardTitle className="text-base">10 - Pesquisa de Satisfação com a Implantação</CardTitle>
-                    </div>
-                    {expandedEtapas.includes(10) ? <ChevronDown className="w-5 h-5" /> : <ChevronRight className="w-5 h-5" />}
-                  </div>
-                </CardHeader>
-              </CollapsibleTrigger>
-              <CollapsibleContent>
-                <CardContent className="pt-0 space-y-4">
-                  <div className="px-4">
-                    <Label className="text-sm font-medium">10.1 - Nota de Satisfação (1-10)</Label>
-                    <p className="text-sm text-muted-foreground mb-2">De 1 a 10, qual a nota para o processo de implantação?</p>
-                    <div className="flex gap-2 flex-wrap">
-                      {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => (
-                        <Button
-                          key={n}
-                          variant={(etapas.pesquisa_satisfacao_nota === n || selectedNota === n) ? 'default' : 'outline'}
-                          size="sm"
-                          className={cn(
-                            "w-10 h-10",
-                            n <= 6 && (etapas.pesquisa_satisfacao_nota === n || selectedNota === n) && "bg-red-500 hover:bg-red-600",
-                            n >= 7 && n <= 8 && (etapas.pesquisa_satisfacao_nota === n || selectedNota === n) && "bg-amber-500 hover:bg-amber-600",
-                            n >= 9 && (etapas.pesquisa_satisfacao_nota === n || selectedNota === n) && "bg-green-500 hover:bg-green-600"
-                          )}
-                          onClick={() => {
-                            setSelectedNota(n);
-                            updateEtapa('pesquisa_satisfacao_nota', n);
-                          }}
-                          disabled={isSaving}
-                        >
-                          {n}
-                        </Button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="px-4">
-                    <Label className="text-sm font-medium">10.2 - O cliente recomendaria nossos serviços?</Label>
-                    <div className="flex gap-4 mt-2">
-                      <Button
-                        variant={etapas.pesquisa_satisfacao_recomendaria === true ? 'default' : 'outline'}
-                        onClick={() => updateEtapa('pesquisa_satisfacao_recomendaria', true)}
-                        disabled={isSaving}
-                        className={cn(etapas.pesquisa_satisfacao_recomendaria === true && "bg-green-500 hover:bg-green-600")}
-                      >
-                        Sim
-                      </Button>
-                      <Button
-                        variant={etapas.pesquisa_satisfacao_recomendaria === false ? 'default' : 'outline'}
-                        onClick={() => updateEtapa('pesquisa_satisfacao_recomendaria', false)}
-                        disabled={isSaving}
-                        className={cn(etapas.pesquisa_satisfacao_recomendaria === false && "bg-red-500 hover:bg-red-600")}
-                      >
-                        Não
-                      </Button>
-                    </div>
-                  </div>
-
-                  <div className="px-4">
-                    <Label className="text-sm font-medium">10.3 - Pontos Positivos</Label>
-                    <Textarea 
-                      value={etapas.pesquisa_satisfacao_pontos_positivos || ''}
-                      onChange={(e) => updateEtapa('pesquisa_satisfacao_pontos_positivos', e.target.value)}
-                      placeholder="O que o cliente destacou como pontos positivos da implantação?"
-                      className="mt-2"
-                    />
-                  </div>
-
-                  <div className="px-4">
-                    <Label className="text-sm font-medium">10.4 - Pontos de Melhoria</Label>
-                    <Textarea 
-                      value={etapas.pesquisa_satisfacao_pontos_negativos || ''}
-                      onChange={(e) => updateEtapa('pesquisa_satisfacao_pontos_negativos', e.target.value)}
-                      placeholder="O que o cliente apontou como pontos que podem melhorar?"
-                      className="mt-2"
-                    />
-                  </div>
-
-                  <div className="px-4">
-                    <Label className="text-sm font-medium">10.5 - Comentário Geral</Label>
-                    <Textarea 
-                      value={etapas.pesquisa_satisfacao_comentario || ''}
-                      onChange={(e) => updateEtapa('pesquisa_satisfacao_comentario', e.target.value)}
-                      placeholder="Comentários adicionais do cliente sobre a implantação..."
-                      className="mt-2"
-                    />
-                  </div>
-
-                  <div className="px-4 pt-2">
-                    <SubItem 
-                      label="Marcar pesquisa de satisfação como realizada" 
-                      checked={etapas.pesquisa_satisfacao_realizada} 
-                      field="pesquisa_satisfacao_realizada"
-                      dateField="pesquisa_satisfacao_realizada_at"
-                      date={etapas.pesquisa_satisfacao_realizada_at}
-                    />
                   </div>
                 </CardContent>
               </CollapsibleContent>

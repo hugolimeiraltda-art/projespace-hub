@@ -38,7 +38,12 @@ export function EquipmentListDialog({ open, onOpenChange, projectId, projectName
   const [equipments, setEquipments] = useState<EquipmentItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [hasLoaded, setHasLoaded] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (open && !hasLoaded && !isLoading) {
+      loadEquipmentList();
+    }
+  }, [open, hasLoaded, isLoading]);
 
   const loadEquipmentList = async () => {
     setIsLoading(true);

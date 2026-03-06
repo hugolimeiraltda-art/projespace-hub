@@ -5,13 +5,21 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+// SMTP Config
+const SMTP_HOST = Deno.env.get("SMTP_HOST");
+const SMTP_USER = Deno.env.get("SMTP_USER");
+const SMTP_PASSWORD = Deno.env.get("SMTP_PASSWORD");
+const SMTP_PORT = parseInt(Deno.env.get("SMTP_PORT") || "465");
+
+// Resend Config (fallback)
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
-const FROM_EMAIL = Deno.env.get("RESEND_FROM_EMAIL") || "Eixo PCI <noreply@eixopci.com.br>";
+const RESEND_FROM_EMAIL = Deno.env.get("RESEND_FROM_EMAIL") || "Eixo PCI <noreply@eixopci.com.br>";
+
+const smtpConfigured = !!(SMTP_HOST && SMTP_USER && SMTP_PASSWORD);
+const resendConfigured = !!RESEND_API_KEY;
 
 function escapeHtml(text: string): string {
-  const map: Record<string, string> = {
-    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'
-  };
+  const map: Record<string, string> = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
   return text.replace(/[&<>"']/g, m => map[m]);
 }
 
@@ -24,9 +32,7 @@ function buildBaseHtml(bodyContent: string): string {
     <div style="background-color: #1e40af; padding: 24px; text-align: center;">
       <h1 style="color: white; margin: 0; font-size: 22px;">Eixo PCI</h1>
     </div>
-    <div style="padding: 32px;">
-      ${bodyContent}
-    </div>
+    <div style="padding: 32px;">${bodyContent}</div>
     <div style="background-color: #f9fafb; padding: 16px; text-align: center; border-top: 1px solid #e5e7eb;">
       <p style="color: #9CA3AF; font-size: 12px; margin: 0;">E-mail automático do Sistema Eixo PCI</p>
     </div>
@@ -35,7 +41,7 @@ function buildBaseHtml(bodyContent: string): string {
 </html>`;
 }
 
-const TEMPLATES: Record<string, (vars: Record<string, string>) => { subject: string; html: string }> = {
+const TEMPLATES: Record<string, (v: Record<string, string>) => { subject: string; html: string }> = {
   recuperacao_senha: (v) => ({
     subject: 'Redefinição de Senha - Eixo PCI',
     html: buildBaseHtml(`
@@ -114,24 +120,104 @@ const TEMPLATES: Record<string, (vars: Record<string, string>) => { subject: str
   }),
 };
 
-async function sendViaResend(to: string, subject: string, html: string) {
-  if (!RESEND_API_KEY) throw new Error("RESEND_API_KEY não configurada");
+// ── SMTP Send (SSL on port 465) ──
+async function sendViaSMTP(to: string, subject: string, htmlBody: string) {
+  const encoder = new TextEncoder();
+  const decoder = new TextDecoder();
+  const tlsConn = await Deno.connectTls({ hostname: SMTP_HOST!, port: SMTP_PORT });
 
+  async function tlsRead(): Promise<string> {
+    const buf = new Uint8Array(4096);
+    const n = await tlsConn.read(buf);
+    if (n === null) throw new Error("TLS Connection closed");
+    return decoder.decode(buf.subarray(0, n));
+  }
+  async function tlsWrite(cmd: string) {
+    await tlsConn.write(encoder.encode(cmd + "\r\n"));
+  }
+  async function tlsCommand(cmd: string, code: string): Promise<string> {
+    await tlsWrite(cmd);
+    const resp = await tlsRead();
+    if (!resp.startsWith(code)) throw new Error(`SMTP error on "${cmd}": ${resp}`);
+    return resp;
+  }
+
+  const greeting = await tlsRead();
+  if (!greeting.startsWith("220")) throw new Error("SMTP greeting failed: " + greeting);
+
+  await tlsCommand("EHLO localhost", "250");
+  await tlsCommand("AUTH LOGIN", "334");
+  await tlsCommand(btoa(SMTP_USER!), "334");
+  await tlsCommand(btoa(SMTP_PASSWORD!), "235");
+  await tlsCommand(`MAIL FROM:<${SMTP_USER}>`, "250");
+  await tlsCommand(`RCPT TO:<${to}>`, "250");
+  await tlsCommand("DATA", "354");
+
+  const boundary = "boundary_" + crypto.randomUUID().replace(/-/g, "");
+  const message = [
+    `From: Eixo PCI <${SMTP_USER}>`,
+    `To: ${to}`,
+    `Subject: ${subject}`,
+    `MIME-Version: 1.0`,
+    `Content-Type: multipart/alternative; boundary="${boundary}"`,
+    ``,
+    `--${boundary}`,
+    `Content-Type: text/plain; charset=UTF-8`,
+    ``,
+    `E-mail do Sistema Eixo PCI`,
+    ``,
+    `--${boundary}`,
+    `Content-Type: text/html; charset=UTF-8`,
+    ``,
+    htmlBody,
+    ``,
+    `--${boundary}--`,
+    ``,
+    `.`,
+  ].join("\r\n");
+
+  await tlsConn.write(encoder.encode(message));
+  const dataResp = await tlsRead();
+  if (!dataResp.startsWith("250")) throw new Error("DATA send failed: " + dataResp);
+
+  await tlsCommand("QUIT", "221");
+  tlsConn.close();
+}
+
+// ── Resend Send (fallback) ──
+async function sendViaResend(to: string, subject: string, html: string) {
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
-    headers: {
-      "Authorization": `Bearer ${RESEND_API_KEY}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ from: FROM_EMAIL, to: [to], subject, html }),
+    headers: { "Authorization": `Bearer ${RESEND_API_KEY}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ from: RESEND_FROM_EMAIL, to: [to], subject, html }),
   });
-
   if (!res.ok) {
     const err = await res.json();
     throw new Error(err.message || `Resend API error: ${res.status}`);
   }
-
   return await res.json();
+}
+
+// ── Unified send: SMTP first, Resend fallback ──
+async function sendEmail(to: string, subject: string, html: string): Promise<{ provider: string }> {
+  if (smtpConfigured) {
+    try {
+      await sendViaSMTP(to, subject, html);
+      return { provider: "SMTP Corporativo" };
+    } catch (smtpErr) {
+      console.error("SMTP failed, trying Resend fallback:", smtpErr);
+      if (resendConfigured) {
+        await sendViaResend(to, subject, html);
+        return { provider: "Resend (fallback)" };
+      }
+      throw smtpErr;
+    }
+  }
+  if (resendConfigured) {
+    await sendViaResend(to, subject, html);
+    return { provider: "Resend" };
+  }
+  throw new Error("Nenhum provedor de e-mail configurado (SMTP ou Resend)");
 }
 
 serve(async (req) => {
@@ -143,70 +229,59 @@ serve(async (req) => {
     const body = await req.json();
     const { action } = body;
 
-    // Check config action
     if (action === "check_config") {
       return new Response(
-        JSON.stringify({ configured: !!RESEND_API_KEY }),
+        JSON.stringify({ smtp_configured: smtpConfigured, resend_configured: resendConfigured }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // Send test action
     if (action === "send_test") {
       const { template_id, to } = body;
       const templateFn = TEMPLATES[template_id];
       if (!templateFn) throw new Error(`Template "${template_id}" não encontrado`);
 
       const testVars: Record<string, string> = {
-        nome: "Usuário Teste",
-        email: to,
-        senha_temporaria: "Teste@123",
+        nome: "Usuário Teste", email: to, senha_temporaria: "Teste@123",
         link_login: "https://eixopci.lovable.app/login",
         link_redefinicao: "https://eixopci.lovable.app/login",
-        validade: "24 horas",
-        projeto_nome: "Condomínio Exemplo",
-        status_anterior: "Em Análise",
-        novo_status: "Aprovado",
-        status_color: "#10B981",
-        alterado_por: "Admin Teste",
+        validade: "24 horas", projeto_nome: "Condomínio Exemplo",
+        status_anterior: "Em Análise", novo_status: "Aprovado",
+        status_color: "#10B981", alterado_por: "Admin Teste",
         link_projeto: "https://eixopci.lovable.app/projetos/teste",
         cliente: "Condomínio Exemplo",
         conteudo_relatorio: "<p>Conteúdo do relatório de teste.</p>",
-        tipo_chamado: "Corretiva",
-        status: "Aberto",
-        link_chamado: "#",
+        tipo_chamado: "Corretiva", status: "Aberto", link_chamado: "#",
         data: new Date().toLocaleDateString("pt-BR"),
         descricao: "Manutenção preventiva de teste",
       };
 
       const { subject, html } = templateFn(testVars);
-      const result = await sendViaResend(to, `[TESTE] ${subject}`, html);
+      const result = await sendEmail(to, `[TESTE] ${subject}`, html);
       return new Response(
-        JSON.stringify({ success: true, id: result.id }),
+        JSON.stringify({ success: true, provider: result.provider }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // Send email action (used by other edge functions)
     if (action === "send") {
       const { template_id, to, variables } = body;
       const templateFn = TEMPLATES[template_id];
-      
+
       if (templateFn) {
         const { subject, html } = templateFn(variables || {});
         const customSubject = body.subject || subject;
-        const result = await sendViaResend(to, customSubject, html);
+        const result = await sendEmail(to, customSubject, html);
         return new Response(
-          JSON.stringify({ success: true, id: result.id }),
+          JSON.stringify({ success: true, provider: result.provider }),
           { headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
 
-      // Fallback: send raw HTML
       if (body.html && body.subject) {
-        const result = await sendViaResend(to, body.subject, body.html);
+        const result = await sendEmail(to, body.subject, body.html);
         return new Response(
-          JSON.stringify({ success: true, id: result.id }),
+          JSON.stringify({ success: true, provider: result.provider }),
           { headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }

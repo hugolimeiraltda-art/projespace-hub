@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -39,6 +39,12 @@ export function EquipmentListDialog({ open, onOpenChange, projectId, projectName
   const [isLoading, setIsLoading] = useState(false);
   const [hasLoaded, setHasLoaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (open && !hasLoaded && !isLoading) {
+      loadEquipmentList();
+    }
+  }, [open, hasLoaded, isLoading]);
 
   const loadEquipmentList = async () => {
     setIsLoading(true);
@@ -133,9 +139,6 @@ export function EquipmentListDialog({ open, onOpenChange, projectId, projectName
 
   const handleOpenChange = (isOpen: boolean) => {
     onOpenChange(isOpen);
-    if (isOpen && !hasLoaded && !isLoading) {
-      loadEquipmentList();
-    }
   };
 
   const exportToExcel = () => {

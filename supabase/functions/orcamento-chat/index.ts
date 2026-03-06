@@ -27,6 +27,14 @@ const ENGINEERING_TRIGGERS = {
   keywords_lpr: ['lpr', 'leitura de placa', 'reconhecimento de placa', 'plate recognition'],
 };
 
+function removeEngineeringValidationBlock(text: string): string {
+  return (text || '')
+    .replace(/⚠️\s*\*\*Atenção\s*—\s*Validação Técnica Obrigatória\*\*[\s\S]*?Gatilho\(s\)\s+identificado\(s\):[\s\S]*?(?=\n{2,}|$)/gi, '')
+    .replace(/⚠️\s*Atenção\s*—\s*Validação Técnica Obrigatória[\s\S]*?Gatilho\(s\)\s+identificado\(s\):[\s\S]*?(?=\n{2,}|$)/gi, '')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
 async function checkEngineeringTriggers(supabase: any, sessaoId: string, itens: any, mensagens: any[]) {
   const gatilhos: string[] = [];
 
@@ -901,11 +909,19 @@ ${fotoListStr}
       }
     }
 
+    const sanitizedMessages = (messages || [])
+      .map((m: any) => (
+        m?.role === "assistant"
+          ? { ...m, content: removeEngineeringValidationBlock(m.content || "") }
+          : m
+      ))
+      .filter((m: any) => (m?.content || "").trim().length > 0);
+
     const requestBody = JSON.stringify({
         model: "google/gemini-2.5-flash",
         messages: [
           { role: "system", content: buildVisitSystemPrompt(ctx, sessao) },
-          ...messages,
+          ...sanitizedMessages,
         ],
         stream: true,
       });
@@ -947,8 +963,9 @@ ${fotoListStr}
           } catch {}
         }
       }
-      if (fullContent) {
-        await supabase.from("orcamento_mensagens").insert({ sessao_id: sessao.id, role: "assistant", content: fullContent });
+      const sanitizedContent = removeEngineeringValidationBlock(fullContent);
+      if (sanitizedContent) {
+        await supabase.from("orcamento_mensagens").insert({ sessao_id: sessao.id, role: "assistant", content: sanitizedContent });
       }
     })();
 

@@ -65,6 +65,14 @@ export default function OrcamentoChat() {
     'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN', 'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO'
   ];
 
+  const stripEngineeringValidationBlock = (text: string) => {
+    return (text || '')
+      .replace(/⚠️\s*\*\*Atenção\s*—\s*Validação Técnica Obrigatória\*\*[\s\S]*?Gatilho\(s\)\s+identificado\(s\):[\s\S]*?(?=\n{2,}|$)/gi, '')
+      .replace(/⚠️\s*Atenção\s*—\s*Validação Técnica Obrigatória[\s\S]*?Gatilho\(s\)\s+identificado\(s\):[\s\S]*?(?=\n{2,}|$)/gi, '')
+      .replace(/\n{3,}/g, '\n\n')
+      .trim();
+  };
+
   useEffect(() => {
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
   }, [messages]);
@@ -114,7 +122,10 @@ export default function OrcamentoChat() {
           .order('created_at', { ascending: true });
 
         if (existingMsgs && existingMsgs.length > 0) {
-          setMessages(existingMsgs.map(m => ({ role: m.role as 'user' | 'assistant', content: m.content })));
+          setMessages(existingMsgs.map(m => ({
+            role: m.role as 'user' | 'assistant',
+            content: m.role === 'assistant' ? stripEngineeringValidationBlock(m.content) : m.content,
+          })));
           setSessionValid(true);
         } else {
           sendMessage('Olá, estou no local para realizar o orçamento.', true, sid);
@@ -138,7 +149,10 @@ export default function OrcamentoChat() {
             .order('created_at', { ascending: true });
 
           if (existingMsgs && existingMsgs.length > 0) {
-            setMessages(existingMsgs.map(m => ({ role: m.role as 'user' | 'assistant', content: m.content })));
+            setMessages(existingMsgs.map(m => ({
+              role: m.role as 'user' | 'assistant',
+              content: m.role === 'assistant' ? stripEngineeringValidationBlock(m.content) : m.content,
+            })));
             setSessionValid(true);
             return;
           }
@@ -194,12 +208,13 @@ export default function OrcamentoChat() {
 
       const upsertAssistant = (chunk: string) => {
         assistantSoFar += chunk;
+        const sanitizedAssistant = stripEngineeringValidationBlock(assistantSoFar);
         setMessages(prev => {
           const last = prev[prev.length - 1];
           if (last?.role === 'assistant') {
-            return prev.map((m, i) => (i === prev.length - 1 ? { ...m, content: assistantSoFar } : m));
+            return prev.map((m, i) => (i === prev.length - 1 ? { ...m, content: sanitizedAssistant } : m));
           }
-          return [...prev, { role: 'assistant', content: assistantSoFar }];
+          return [...prev, { role: 'assistant', content: sanitizedAssistant }];
         });
       };
 

@@ -525,7 +525,7 @@ export default function StartupProjetos() {
         {activeTab === 'operacao-assistida' && (
           <Card>
             <CardContent className="py-12 text-center">
-              <HeadphonesIcon className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+              <Headphones className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-lg font-medium text-foreground mb-2">Operação Assistida</h3>
               <p className="text-muted-foreground">
                 Os projetos em fase de operação assistida aparecerão aqui.

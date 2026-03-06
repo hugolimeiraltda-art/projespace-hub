@@ -469,6 +469,39 @@ export type Database = {
           },
         ]
       }
+      email_templates: {
+        Row: {
+          assunto: string
+          corpo_html: string | null
+          descricao: string | null
+          id: string
+          nome: string
+          updated_at: string
+          updated_by: string | null
+          variaveis: string[] | null
+        }
+        Insert: {
+          assunto: string
+          corpo_html?: string | null
+          descricao?: string | null
+          id: string
+          nome: string
+          updated_at?: string
+          updated_by?: string | null
+          variaveis?: string[] | null
+        }
+        Update: {
+          assunto?: string
+          corpo_html?: string | null
+          descricao?: string | null
+          id?: string
+          nome?: string
+          updated_at?: string
+          updated_by?: string | null
+          variaveis?: string[] | null
+        }
+        Relationships: []
+      }
       estoque: {
         Row: {
           created_at: string

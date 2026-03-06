@@ -73,6 +73,24 @@ export default function OrcamentoChat() {
       .trim();
   };
 
+  const injectEngineeringMessage = (gatilhos: string[]) => {
+    if (!gatilhos || gatilhos.length === 0) return;
+    const gatilhosText = gatilhos.map(g => `• ${g}`).join('\n');
+    const engMsg: Msg = {
+      role: 'assistant',
+      content: `⚠️ **Atenção — Validação Técnica Obrigatória**\nA lista de materiais foi gerada e será encaminhada **automaticamente** ao setor de Engenharia para validação técnica. Nossos engenheiros irão revisar o projeto e retornar com ajustes ou aprovação em até **4 dias úteis**. Caso precise complementar informações (fotos/medições), eu aviso.\n\n**Gatilho(s) identificado(s):**\n${gatilhosText}`,
+    };
+    setMessages(prev => [...prev, engMsg]);
+    // Save to database
+    if (sessaoId) {
+      supabase.from('orcamento_mensagens').insert({
+        sessao_id: sessaoId,
+        role: 'assistant',
+        content: engMsg.content,
+      });
+    }
+  };
+
   useEffect(() => {
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
   }, [messages]);

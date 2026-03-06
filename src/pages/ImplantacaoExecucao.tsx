@@ -573,7 +573,6 @@ export default function ImplantacaoExecucao() {
       case 8: return (etapas.operacao_assistida_interacoes?.length || 0) > 0;
       case 9: return etapas.concluido;
       default: return false;
-      default: return false;
     }
   };
 

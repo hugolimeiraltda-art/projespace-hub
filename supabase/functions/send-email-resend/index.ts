@@ -216,12 +216,12 @@ async function sendViaSMTP(to: string, subject: string, htmlBody: string) {
     `.`,
   ].join("\r\n");
 
-  await tlsConn.write(encoder.encode(message));
+  await secureConn.write(encoder.encode(message));
   const dataResp = await tlsRead();
   if (!dataResp.startsWith("250")) throw new Error("DATA send failed: " + dataResp);
 
   await tlsCommand("QUIT", "221");
-  tlsConn.close();
+  secureConn.close();
 }
 
 // ── Resend Send (fallback) ──

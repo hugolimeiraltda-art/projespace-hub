@@ -410,6 +410,10 @@ export function EquipmentListDialog({ open, onOpenChange, projectId, projectName
                 <Button variant="outline" size="sm" onClick={loadEquipmentList}>
                   Reextrair
                 </Button>
+                <Button variant="outline" size="sm" onClick={exportPricingPdf} disabled={isExportingPdf}>
+                  {isExportingPdf ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <FileText className="w-4 h-4 mr-1" />}
+                  PDF com Preços
+                </Button>
                 <Button size="sm" onClick={exportToExcel}>
                   <Download className="w-4 h-4 mr-1" />
                   Exportar Excel

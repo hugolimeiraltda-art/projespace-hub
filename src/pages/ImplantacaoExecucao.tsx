@@ -28,7 +28,7 @@ import {
   Tag,
   ClipboardCheck,
   Calendar,
-  Wrench,
+  
   Settings,
   DollarSign,
   Handshake,
@@ -549,7 +549,7 @@ export default function ImplantacaoExecucao() {
       2: FileText,
       3: Phone,
       4: ClipboardCheck,
-      5: Wrench,
+      5: Settings,
       6: Settings,
       7: Handshake,
       8: HeadphonesIcon,
@@ -1221,13 +1221,42 @@ export default function ImplantacaoExecucao() {
                     </div>
                   </div>
                   
-                  <SubItem 
-                    label="Contrato cadastrado no sistema" 
-                    checked={etapas.contrato_cadastrado} 
-                    field="contrato_cadastrado"
-                    dateField="contrato_cadastrado_at"
-                    date={etapas.contrato_cadastrado_at}
-                  />
+                  <div className="flex items-center justify-between py-2 px-4 hover:bg-muted/50 rounded-md">
+                    <div className="flex items-center gap-3">
+                      <Checkbox 
+                        checked={etapas.contrato_cadastrado}
+                        onCheckedChange={(value) => {
+                          if (value === true) {
+                            const missingFields: string[] = [];
+                            if (!contratoInfo.contrato?.trim()) missingFields.push('Contrato');
+                            if (!contratoInfo.alarme_codigo?.trim()) missingFields.push('Código de Alarme');
+                            if (!contratoInfo.mensalidade?.trim()) missingFields.push('Mensalidade');
+                            if (!contratoInfo.prazo_contrato) missingFields.push('Prazo do Contrato');
+                            if (!contratoInfo.taxa_instalacao?.trim()) missingFields.push('Taxa de Instalação');
+
+                            if (missingFields.length > 0) {
+                              toast({
+                                title: 'Campos obrigatórios não preenchidos',
+                                description: `Preencha e salve os campos: ${missingFields.join(', ')} antes de marcar como concluído.`,
+                                variant: 'destructive',
+                              });
+                              return;
+                            }
+                          }
+                          updateEtapa('contrato_cadastrado', value, 'contrato_cadastrado_at');
+                        }}
+                        disabled={isSaving}
+                      />
+                      <span className={cn("text-sm", etapas.contrato_cadastrado && "text-muted-foreground line-through")}>Contrato cadastrado no sistema</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {etapas.contrato_cadastrado_at && (
+                        <span className="text-xs text-muted-foreground">
+                          {format(parseISO(etapas.contrato_cadastrado_at), "dd/MM/yyyy", { locale: ptBR })}
+                        </span>
+                      )}
+                    </div>
+                  </div>
                 </CardContent>
               </CollapsibleContent>
             </Collapsible>

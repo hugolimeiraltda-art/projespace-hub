@@ -27,6 +27,14 @@ const ENGINEERING_TRIGGERS = {
   keywords_lpr: ['lpr', 'leitura de placa', 'reconhecimento de placa', 'plate recognition'],
 };
 
+function removeEngineeringValidationBlock(text: string): string {
+  return (text || '')
+    .replace(/⚠️\s*\*\*Atenção\s*—\s*Validação Técnica Obrigatória\*\*[\s\S]*?Gatilho\(s\)\s+identificado\(s\):[\s\S]*?(?=\n{2,}|$)/gi, '')
+    .replace(/⚠️\s*Atenção\s*—\s*Validação Técnica Obrigatória[\s\S]*?Gatilho\(s\)\s+identificado\(s\):[\s\S]*?(?=\n{2,}|$)/gi, '')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
 async function checkEngineeringTriggers(supabase: any, sessaoId: string, itens: any, mensagens: any[]) {
   const gatilhos: string[] = [];
 

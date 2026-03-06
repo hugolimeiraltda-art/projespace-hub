@@ -19,6 +19,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { EquipmentListDialog } from '@/components/EquipmentListDialog';
 
 interface EngineeringDeliverablesProps {
   project: ProjectWithDetails;
@@ -52,6 +53,7 @@ export function EngineeringDeliverables({
   const [laudo, setLaudo] = useState(project.laudo_projeto || '');
   const [isSaving, setIsSaving] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; nome: string; tipo: string } | null>(null);
+  const [showEquipmentList, setShowEquipmentList] = useState(false);
 
   const getDeliverablesByType = (tipo: DeliverableType) => 
     project.attachments.filter(a => a.tipo === tipo);
@@ -227,12 +229,24 @@ export function EngineeringDeliverables({
             const files = getDeliverablesByType(tipo);
             if (files.length === 0) return null;
             
-            return (
+             return (
               <div key={tipo} className="space-y-2">
-                <Label className="flex items-center gap-2 text-sm font-medium">
-                  <Icon className="w-4 h-4 text-primary" />
-                  {label}
-                </Label>
+                <div className="flex items-center justify-between">
+                  <Label className="flex items-center gap-2 text-sm font-medium">
+                    <Icon className="w-4 h-4 text-primary" />
+                    {label}
+                  </Label>
+                  {tipo === 'LISTA_EQUIPAMENTOS' && files.length > 0 && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowEquipmentList(true)}
+                    >
+                      <Package className="w-4 h-4 mr-1" />
+                      PDF com Preços
+                    </Button>
+                  )}
+                </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   {files.map(att => {
                     const broken = isBlobUrl(att.arquivo_url);
@@ -332,6 +346,14 @@ export function EngineeringDeliverables({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <EquipmentListDialog
+        open={showEquipmentList}
+        onOpenChange={setShowEquipmentList}
+        projectId={project.id}
+        projectName={project.cliente_condominio_nome || project.id}
+        engineeringStatus={project.engineering_status}
+      />
     </>
   );
 }

@@ -313,6 +313,16 @@ export default function ImplantacaoExecucao() {
         
         setHasPendingItems((pendingCount || 0) > 0);
       }
+
+      // Fetch existing checklists for this project
+      const { data: checklistsData } = await supabase
+        .from('implantacao_checklists')
+        .select('tipo')
+        .eq('project_id', id!);
+      
+      if (checklistsData) {
+        setChecklistsExistentes(checklistsData.map(c => c.tipo));
+      }
     } catch (error) {
       console.error('Error fetching data:', error);
       toast({

@@ -119,12 +119,26 @@ export function EquipmentListDialog({ open, onOpenChange, projectId, projectName
         return;
       }
 
-      // Call edge function to extract equipment list
-      const { data, error: fnError } = await supabase.functions.invoke('extract-equipment-list', {
-        body: { fileUrls },
-      });
+      // Call edge function to extract equipment list with timeout
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 120000); // 2min timeout
+      
+      let data: any;
+      try {
+        const result = await supabase.functions.invoke('extract-equipment-list', {
+          body: { fileUrls },
+        });
+        clearTimeout(timeout);
+        if (result.error) throw result.error;
+        data = result.data;
+      } catch (invokeErr: any) {
+        clearTimeout(timeout);
+        if (invokeErr?.name === 'AbortError') {
+          throw new Error('A extração demorou demais. O arquivo pode ser muito grande.');
+        }
+        throw invokeErr;
+      }
 
-      if (fnError) throw fnError;
       if (data?.error) {
         setError(data.error);
         setHasLoaded(true);

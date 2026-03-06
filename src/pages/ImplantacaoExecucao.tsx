@@ -1406,7 +1406,7 @@ export default function ImplantacaoExecucao() {
                         "w-8 h-8 rounded-full flex items-center justify-center",
                         isEtapaComplete(5) ? "bg-green-500 text-white" : "bg-muted text-muted-foreground"
                       )}>
-                        {isEtapaComplete(5) ? <Check className="w-4 h-4" /> : <Wrench className="w-4 h-4" />}
+                        {isEtapaComplete(5) ? <Check className="w-4 h-4" /> : <Settings className="w-4 h-4" />}
                       </div>
                       <CardTitle className="text-base">5 - Execução da Obra</CardTitle>
                     </div>

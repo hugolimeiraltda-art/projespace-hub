@@ -1480,7 +1480,7 @@ export default function ImplantacaoExecucao() {
             </Collapsible>
           </Card>
 
-          {/* Etapa 7: Entrega Comercial */}
+          {/* Etapa 7: Entrega Técnica e Comercial */}
           <Card>
             <Collapsible open={expandedEtapas.includes(7)} onOpenChange={() => toggleEtapa(7)}>
               <CollapsibleTrigger asChild>
@@ -1493,14 +1493,14 @@ export default function ImplantacaoExecucao() {
                       )}>
                         {isEtapaComplete(7) ? <Check className="w-4 h-4" /> : <Handshake className="w-4 h-4" />}
                       </div>
-                      <CardTitle className="text-base">7 - Entrega Comercial</CardTitle>
+                      <CardTitle className="text-base">7 - Entrega Técnica e Comercial</CardTitle>
                     </div>
                     {expandedEtapas.includes(7) ? <ChevronDown className="w-5 h-5" /> : <ChevronRight className="w-5 h-5" />}
                   </div>
                 </CardHeader>
               </CollapsibleTrigger>
               <CollapsibleContent>
-                <CardContent className="pt-0 space-y-1">
+                <CardContent className="pt-0 space-y-4">
                   <div className="flex items-center justify-between py-2 px-4 hover:bg-muted/50 rounded-md">
                     <div className="flex items-center gap-3">
                       <Checkbox 
@@ -1529,13 +1529,21 @@ export default function ImplantacaoExecucao() {
                     date={etapas.laudo_visita_comercial_at}
                   />
                   <div className="px-4 pt-2">
-                    <Label className="text-sm text-muted-foreground">Observações da visita comercial</Label>
+                    <Label className="text-sm text-muted-foreground">Observações da entrega técnica e comercial</Label>
                     <Textarea 
                       value={etapas.laudo_visita_comercial_texto || ''}
                       onChange={(e) => updateEtapa('laudo_visita_comercial_texto', e.target.value)}
-                      placeholder="Descreva observações sobre a visita comercial..."
+                      placeholder="Descreva observações sobre a entrega técnica e comercial..."
                       className="mt-1"
                     />
+                  </div>
+                  {/* Upload de checklist de entrega técnica */}
+                  <div className="px-4 pt-2">
+                    <Label className="text-sm font-medium">7.3 - Check-list de Entrega Técnica (Upload)</Label>
+                    <p className="text-xs text-muted-foreground mb-2">
+                      Envie o checklist de entrega técnica assinado pelo cliente. O sistema verificará se há pendências registradas.
+                    </p>
+                    <SectionFileUpload projectId={id || null} secao="implantacao_entrega_tecnica" />
                   </div>
                 </CardContent>
               </CollapsibleContent>
@@ -1563,14 +1571,46 @@ export default function ImplantacaoExecucao() {
               </CollapsibleTrigger>
               <CollapsibleContent>
                 <CardContent className="pt-0 space-y-4">
-                  {etapas.operacao_assistida_inicio && (
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground px-4">
-                      <span>Início: {format(parseISO(etapas.operacao_assistida_inicio), "dd/MM/yyyy", { locale: ptBR })}</span>
-                      {etapas.operacao_assistida_fim && (
-                        <span>Término previsto: {format(parseISO(etapas.operacao_assistida_fim), "dd/MM/yyyy", { locale: ptBR })}</span>
-                      )}
-                    </div>
-                  )}
+                  {/* Data de início e término editáveis */}
+                  <div className="px-4 space-y-3">
+                    <Label className="text-sm font-medium">Período da Operação Assistida</Label>
+                    {!editingOpAssistidaDates ? (
+                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                        <span>Início: {etapas.operacao_assistida_inicio ? format(parseISO(etapas.operacao_assistida_inicio), "dd/MM/yyyy", { locale: ptBR }) : 'Não definido'}</span>
+                        <span>Término: {etapas.operacao_assistida_fim ? format(parseISO(etapas.operacao_assistida_fim), "dd/MM/yyyy", { locale: ptBR }) : 'Não definido'}</span>
+                        {canEditDates && (
+                          <Button variant="ghost" size="sm" onClick={() => {
+                            setTempOpAssistidaStart(etapas.operacao_assistida_inicio ? etapas.operacao_assistida_inicio.split('T')[0] : '');
+                            setTempOpAssistidaEnd(etapas.operacao_assistida_fim ? etapas.operacao_assistida_fim.split('T')[0] : '');
+                            setEditingOpAssistidaDates(true);
+                          }}>
+                            <Pencil className="w-3 h-3" />
+                          </Button>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <Input type="date" value={tempOpAssistidaStart} onChange={(e) => setTempOpAssistidaStart(e.target.value)} className="w-40" />
+                        <span className="text-sm text-muted-foreground">até</span>
+                        <Input type="date" value={tempOpAssistidaEnd} onChange={(e) => setTempOpAssistidaEnd(e.target.value)} className="w-40" />
+                        <Button size="sm" onClick={async () => {
+                          await supabase.from('implantacao_etapas').update({
+                            operacao_assistida_inicio: tempOpAssistidaStart ? new Date(tempOpAssistidaStart).toISOString() : null,
+                            operacao_assistida_fim: tempOpAssistidaEnd ? new Date(tempOpAssistidaEnd).toISOString() : null,
+                          }).eq('project_id', id!);
+                          setEtapas(prev => prev ? {
+                            ...prev,
+                            operacao_assistida_inicio: tempOpAssistidaStart ? new Date(tempOpAssistidaStart).toISOString() : null,
+                            operacao_assistida_fim: tempOpAssistidaEnd ? new Date(tempOpAssistidaEnd).toISOString() : null,
+                          } : null);
+                          setEditingOpAssistidaDates(false);
+                          toast({ title: 'Datas atualizadas' });
+                        }}>
+                          <Check className="w-3 h-3" />
+                        </Button>
+                      </div>
+                    )}
+                  </div>
                   
                   <div className="px-4">
                     <Label className="text-sm font-medium">8.1 - Registrar interação com o cliente</Label>
@@ -1640,6 +1680,14 @@ export default function ImplantacaoExecucao() {
                   </div>
 
                   <div className="px-4">
+                    {hasPendingItems && !etapas.concluido && (
+                      <Alert variant="destructive" className="mb-4">
+                        <AlertTriangle className="h-4 w-4" />
+                        <AlertDescription>
+                          Existem pendências em aberto para este cliente. Resolva todas as pendências antes de concluir a implantação.
+                        </AlertDescription>
+                      </Alert>
+                    )}
                     {etapas.concluido ? (
                       <SubItem 
                         label="Marcar implantação como concluída" 
@@ -1650,127 +1698,42 @@ export default function ImplantacaoExecucao() {
                       />
                     ) : (
                       <Button
-                        onClick={() => setShowAIFeedbackDialog(true)}
+                        onClick={async () => {
+                          if (hasPendingItems) {
+                            toast({ title: 'Pendências em aberto', description: 'Resolva todas as pendências antes de concluir.', variant: 'destructive' });
+                            return;
+                          }
+                          // Create chamado for Sucesso do Cliente (satisfaction survey)
+                          try {
+                            const { data: customerData } = await supabase
+                              .from('customer_portfolio')
+                              .select('id')
+                              .eq('project_id', id!)
+                              .maybeSingle();
+                            
+                            if (customerData) {
+                              await supabase.from('customer_chamados').insert({
+                                customer_id: customerData.id,
+                                assunto: 'Pesquisa de Satisfação - Implantação',
+                                descricao: `Realizar pesquisa de satisfação com o cliente ${project.cliente_condominio_nome} referente à implantação do projeto #${project.numero_projeto}. O projeto foi concluído e necessita avaliação de satisfação do cliente.`,
+                                prioridade: 'media',
+                                status: 'aberto',
+                                created_by: user?.id,
+                                created_by_name: user?.nome,
+                              });
+                            }
+                          } catch (err) {
+                            console.error('Error creating satisfaction chamado:', err);
+                          }
+                          setShowAIFeedbackDialog(true);
+                        }}
                         className="w-full"
                         variant="default"
+                        disabled={hasPendingItems}
                       >
                         Concluir Implantação (com avaliação)
                       </Button>
                     )}
-                  </div>
-                </CardContent>
-              </CollapsibleContent>
-            </Collapsible>
-          </Card>
-
-          {/* Etapa 10: Pesquisa de Satisfação */}
-          <Card>
-            <Collapsible open={expandedEtapas.includes(10)} onOpenChange={() => toggleEtapa(10)}>
-              <CollapsibleTrigger asChild>
-                <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className={cn(
-                        "w-8 h-8 rounded-full flex items-center justify-center",
-                        isEtapaComplete(10) ? "bg-green-500 text-white" : "bg-muted text-muted-foreground"
-                      )}>
-                        {isEtapaComplete(10) ? <Check className="w-4 h-4" /> : <Star className="w-4 h-4" />}
-                      </div>
-                      <CardTitle className="text-base">10 - Pesquisa de Satisfação com a Implantação</CardTitle>
-                    </div>
-                    {expandedEtapas.includes(10) ? <ChevronDown className="w-5 h-5" /> : <ChevronRight className="w-5 h-5" />}
-                  </div>
-                </CardHeader>
-              </CollapsibleTrigger>
-              <CollapsibleContent>
-                <CardContent className="pt-0 space-y-4">
-                  <div className="px-4">
-                    <Label className="text-sm font-medium">10.1 - Nota de Satisfação (1-10)</Label>
-                    <p className="text-sm text-muted-foreground mb-2">De 1 a 10, qual a nota para o processo de implantação?</p>
-                    <div className="flex gap-2 flex-wrap">
-                      {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => (
-                        <Button
-                          key={n}
-                          variant={(etapas.pesquisa_satisfacao_nota === n || selectedNota === n) ? 'default' : 'outline'}
-                          size="sm"
-                          className={cn(
-                            "w-10 h-10",
-                            n <= 6 && (etapas.pesquisa_satisfacao_nota === n || selectedNota === n) && "bg-red-500 hover:bg-red-600",
-                            n >= 7 && n <= 8 && (etapas.pesquisa_satisfacao_nota === n || selectedNota === n) && "bg-amber-500 hover:bg-amber-600",
-                            n >= 9 && (etapas.pesquisa_satisfacao_nota === n || selectedNota === n) && "bg-green-500 hover:bg-green-600"
-                          )}
-                          onClick={() => {
-                            setSelectedNota(n);
-                            updateEtapa('pesquisa_satisfacao_nota', n);
-                          }}
-                          disabled={isSaving}
-                        >
-                          {n}
-                        </Button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="px-4">
-                    <Label className="text-sm font-medium">10.2 - O cliente recomendaria nossos serviços?</Label>
-                    <div className="flex gap-4 mt-2">
-                      <Button
-                        variant={etapas.pesquisa_satisfacao_recomendaria === true ? 'default' : 'outline'}
-                        onClick={() => updateEtapa('pesquisa_satisfacao_recomendaria', true)}
-                        disabled={isSaving}
-                        className={cn(etapas.pesquisa_satisfacao_recomendaria === true && "bg-green-500 hover:bg-green-600")}
-                      >
-                        Sim
-                      </Button>
-                      <Button
-                        variant={etapas.pesquisa_satisfacao_recomendaria === false ? 'default' : 'outline'}
-                        onClick={() => updateEtapa('pesquisa_satisfacao_recomendaria', false)}
-                        disabled={isSaving}
-                        className={cn(etapas.pesquisa_satisfacao_recomendaria === false && "bg-red-500 hover:bg-red-600")}
-                      >
-                        Não
-                      </Button>
-                    </div>
-                  </div>
-
-                  <div className="px-4">
-                    <Label className="text-sm font-medium">10.3 - Pontos Positivos</Label>
-                    <Textarea 
-                      value={etapas.pesquisa_satisfacao_pontos_positivos || ''}
-                      onChange={(e) => updateEtapa('pesquisa_satisfacao_pontos_positivos', e.target.value)}
-                      placeholder="O que o cliente destacou como pontos positivos da implantação?"
-                      className="mt-2"
-                    />
-                  </div>
-
-                  <div className="px-4">
-                    <Label className="text-sm font-medium">10.4 - Pontos de Melhoria</Label>
-                    <Textarea 
-                      value={etapas.pesquisa_satisfacao_pontos_negativos || ''}
-                      onChange={(e) => updateEtapa('pesquisa_satisfacao_pontos_negativos', e.target.value)}
-                      placeholder="O que o cliente apontou como pontos que podem melhorar?"
-                      className="mt-2"
-                    />
-                  </div>
-
-                  <div className="px-4">
-                    <Label className="text-sm font-medium">10.5 - Comentário Geral</Label>
-                    <Textarea 
-                      value={etapas.pesquisa_satisfacao_comentario || ''}
-                      onChange={(e) => updateEtapa('pesquisa_satisfacao_comentario', e.target.value)}
-                      placeholder="Comentários adicionais do cliente sobre a implantação..."
-                      className="mt-2"
-                    />
-                  </div>
-
-                  <div className="px-4 pt-2">
-                    <SubItem 
-                      label="Marcar pesquisa de satisfação como realizada" 
-                      checked={etapas.pesquisa_satisfacao_realizada} 
-                      field="pesquisa_satisfacao_realizada"
-                      dateField="pesquisa_satisfacao_realizada_at"
-                      date={etapas.pesquisa_satisfacao_realizada_at}
-                    />
                   </div>
                 </CardContent>
               </CollapsibleContent>

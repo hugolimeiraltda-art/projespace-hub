@@ -346,6 +346,14 @@ export function EngineeringDeliverables({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <EquipmentListDialog
+        open={showEquipmentList}
+        onOpenChange={setShowEquipmentList}
+        projectId={project.id}
+        projectName={project.nome_condominio || project.id}
+        engineeringStatus={project.engineering_status}
+      />
     </>
   );
 }

@@ -166,6 +166,10 @@ function AppRoutes() {
         element={<ProtectedRoute><PermissoesAcesso /></ProtectedRoute>} 
       />
       <Route 
+        path="/configuracoes/email" 
+        element={<ProtectedRoute><ConfiguracoesEmail /></ProtectedRoute>} 
+      />
+      <Route 
         path="/controle-estoque" 
         element={<ProtectedRoute><ControleEstoque /></ProtectedRoute>} 
       />

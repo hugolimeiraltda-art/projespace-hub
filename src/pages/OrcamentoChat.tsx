@@ -122,7 +122,10 @@ export default function OrcamentoChat() {
           .order('created_at', { ascending: true });
 
         if (existingMsgs && existingMsgs.length > 0) {
-          setMessages(existingMsgs.map(m => ({ role: m.role as 'user' | 'assistant', content: m.content })));
+          setMessages(existingMsgs.map(m => ({
+            role: m.role as 'user' | 'assistant',
+            content: m.role === 'assistant' ? stripEngineeringValidationBlock(m.content) : m.content,
+          })));
           setSessionValid(true);
         } else {
           sendMessage('Olá, estou no local para realizar o orçamento.', true, sid);

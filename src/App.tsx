@@ -48,6 +48,7 @@ import PainelIA from "./pages/PainelIA";
 import IARegrasEngenharia from "./pages/IARegrasEngenharia";
 import IATreinamentoDocs from "./pages/IATreinamentoDocs";
 import PermissoesAcesso from "./pages/PermissoesAcesso";
+import ConfiguracoesEmail from "./pages/ConfiguracoesEmail";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -163,6 +164,10 @@ function AppRoutes() {
       <Route 
         path="/configuracoes/permissoes" 
         element={<ProtectedRoute><PermissoesAcesso /></ProtectedRoute>} 
+      />
+      <Route 
+        path="/configuracoes/email" 
+        element={<ProtectedRoute><ConfiguracoesEmail /></ProtectedRoute>} 
       />
       <Route 
         path="/controle-estoque" 

@@ -1338,15 +1338,30 @@ export default function ImplantacaoExecucao() {
                       />
                     </div>
                   </div>
-                  <SubItem 
-                    label="4.3 - Laudo e check-list de visita" 
-                    checked={etapas.laudo_visita_startup} 
-                    field="laudo_visita_startup"
-                    dateField="laudo_visita_startup_at"
-                    date={etapas.laudo_visita_startup_at}
-                    hasChecklist
-                    checklistType="laudo_visita_startup"
-                  />
+                  {/* 4.3 - Upload obrigatório de PDF/fotos com validação de terceirizados */}
+                  <div className="py-2 px-4">
+                    <div className="flex items-center gap-3 mb-2">
+                      <Checkbox 
+                        checked={etapas.laudo_visita_startup}
+                        onCheckedChange={(value) => updateEtapa('laudo_visita_startup', value, 'laudo_visita_startup_at')}
+                        disabled={isSaving}
+                      />
+                      <span className={cn("text-sm font-medium", etapas.laudo_visita_startup && "text-muted-foreground line-through")}>
+                        4.3 - Laudo e check-list de visita (Upload obrigatório)
+                      </span>
+                      {etapas.laudo_visita_startup_at && (
+                        <span className="text-xs text-muted-foreground">
+                          {format(parseISO(etapas.laudo_visita_startup_at), "dd/MM/yyyy", { locale: ptBR })}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-muted-foreground mb-2 ml-8">
+                      Envie o checklist preenchido com os dados dos terceirizados (vidraceiro, serralheiro, instalador de motor, câmera de elevador, instalador Smart Portaria). Se os dados não estiverem completos, ficará com status de pendência.
+                    </p>
+                    <div className="ml-8">
+                      <SectionFileUpload projectId={id || null} secao="implantacao_laudo_visita" />
+                    </div>
+                  </div>
                 </CardContent>
               </CollapsibleContent>
             </Collapsible>

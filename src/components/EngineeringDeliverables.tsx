@@ -351,7 +351,7 @@ export function EngineeringDeliverables({
         open={showEquipmentList}
         onOpenChange={setShowEquipmentList}
         projectId={project.id}
-        projectName={project.nome_condominio || project.id}
+        projectName={project.cliente_condominio_nome || project.id}
         engineeringStatus={project.engineering_status}
       />
     </>

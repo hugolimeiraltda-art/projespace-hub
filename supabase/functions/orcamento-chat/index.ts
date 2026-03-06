@@ -30,6 +30,33 @@ const ENGINEERING_TRIGGERS = {
 async function checkEngineeringTriggers(supabase: any, sessaoId: string, itens: any, mensagens: any[]) {
   const gatilhos: string[] = [];
 
+  // Load dynamic rules from database
+  const { data: regras } = await supabase
+    .from('orcamento_regras_engenharia')
+    .select('*')
+    .eq('ativo', true);
+
+  // Merge dynamic rules with defaults
+  const dynamicLimites: Record<string, number> = {};
+  const dynamicKeywords: string[] = [];
+  if (regras && regras.length > 0) {
+    for (const r of regras) {
+      if (r.tipo_regra === 'limite_numerico' && r.valor_limite != null) {
+        dynamicLimites[r.nome.toLowerCase()] = r.valor_limite;
+      }
+      if (r.tipo_regra === 'keyword' && r.keywords) {
+        dynamicKeywords.push(...r.keywords.map((k: string) => k.toLowerCase()));
+      }
+    }
+  }
+
+  // Use dynamic values if available, otherwise fall back to defaults
+  const maxAcessos = dynamicLimites['máximo de acessos'] ?? dynamicLimites['maximo de acessos'] ?? ENGINEERING_TRIGGERS.max_acessos;
+  const maxValorVenda = dynamicLimites['valor de venda'] ?? dynamicLimites['valor máximo de venda'] ?? ENGINEERING_TRIGGERS.max_valor_venda;
+  const maxMensalidade = dynamicLimites['mensalidade'] ?? dynamicLimites['valor máximo de mensalidade'] ?? ENGINEERING_TRIGGERS.max_mensalidade;
+  const maxCameras = dynamicLimites['câmeras ip'] ?? dynamicLimites['cameras ip'] ?? ENGINEERING_TRIGGERS.max_cameras_ip;
+  const maxUnidades = dynamicLimites['unidades'] ?? dynamicLimites['máximo de unidades'] ?? ENGINEERING_TRIGGERS.max_unidades;
+
   // Count access points from items
   const allItemNames = [
     ...(itens?.kits || []).map((k: any) => ({ nome: (k.nome || '').toLowerCase(), qtd: k.qtd || 1 })),
@@ -44,20 +71,20 @@ async function checkEngineeringTriggers(supabase: any, sessaoId: string, itens: 
   const totalAcessos = allItemNames
     .filter(i => accessKeywords.test(i.nome))
     .reduce((sum, i) => sum + i.qtd, 0);
-  if (totalAcessos > ENGINEERING_TRIGGERS.max_acessos) {
-    gatilhos.push(`Mais de ${ENGINEERING_TRIGGERS.max_acessos} acessos (${totalAcessos} detectados)`);
+  if (totalAcessos > maxAcessos) {
+    gatilhos.push(`Mais de ${maxAcessos} acessos (${totalAcessos} detectados)`);
   }
 
   // 2. Check total sale value (taxa_conexao_total)
   const taxaTotal = itens?.taxa_conexao_total || 0;
-  if (taxaTotal > ENGINEERING_TRIGGERS.max_valor_venda) {
-    gatilhos.push(`Valor total de venda acima de R$ ${ENGINEERING_TRIGGERS.max_valor_venda.toLocaleString('pt-BR')} (R$ ${taxaTotal.toLocaleString('pt-BR')})`);
+  if (taxaTotal > maxValorVenda) {
+    gatilhos.push(`Valor total de venda acima de R$ ${maxValorVenda.toLocaleString('pt-BR')} (R$ ${taxaTotal.toLocaleString('pt-BR')})`);
   }
 
   // 3. Check mensalidade
   const mensalidadeTotal = itens?.mensalidade_total || 0;
-  if (mensalidadeTotal > ENGINEERING_TRIGGERS.max_mensalidade) {
-    gatilhos.push(`Mensalidade acima de R$ ${ENGINEERING_TRIGGERS.max_mensalidade.toLocaleString('pt-BR')} (R$ ${mensalidadeTotal.toLocaleString('pt-BR')})`);
+  if (mensalidadeTotal > maxMensalidade) {
+    gatilhos.push(`Mensalidade acima de R$ ${maxMensalidade.toLocaleString('pt-BR')} (R$ ${mensalidadeTotal.toLocaleString('pt-BR')})`);
   }
 
   // 4. Count cameras
@@ -65,15 +92,15 @@ async function checkEngineeringTriggers(supabase: any, sessaoId: string, itens: 
   const totalCameras = allItemNames
     .filter(i => cameraKeywords.test(i.nome))
     .reduce((sum, i) => sum + i.qtd, 0);
-  if (totalCameras > ENGINEERING_TRIGGERS.max_cameras_ip) {
-    gatilhos.push(`Mais de ${ENGINEERING_TRIGGERS.max_cameras_ip} câmeras (${totalCameras} detectadas)`);
+  if (totalCameras > maxCameras) {
+    gatilhos.push(`Mais de ${maxCameras} câmeras (${totalCameras} detectadas)`);
   }
 
   // 5. Check units from conversation
   const unitsMatch = msgText.match(/(\d+)\s*(?:unidades|apartamentos|aptos|casas)/);
   const totalUnidades = unitsMatch ? parseInt(unitsMatch[1]) : 0;
-  if (totalUnidades > ENGINEERING_TRIGGERS.max_unidades) {
-    gatilhos.push(`Mais de ${ENGINEERING_TRIGGERS.max_unidades} unidades (${totalUnidades} detectadas)`);
+  if (totalUnidades > maxUnidades) {
+    gatilhos.push(`Mais de ${maxUnidades} unidades (${totalUnidades} detectadas)`);
   }
 
   // 6. Perimetral with AI (HikCentra)
@@ -92,7 +119,13 @@ async function checkEngineeringTriggers(supabase: any, sessaoId: string, itens: 
     gatilhos.push('Presença de LPR (leitura de placa)');
   }
 
-  // 9. Check if vendedor marked "requer engenharia" in messages
+  // 9. Dynamic keyword rules from database
+  if (dynamicKeywords.length > 0 && dynamicKeywords.some(kw => searchText.includes(kw))) {
+    const matched = dynamicKeywords.filter(kw => searchText.includes(kw));
+    gatilhos.push(`Palavra-chave detectada: ${matched.join(', ')}`);
+  }
+
+  // 10. Check if vendedor marked "requer engenharia" in messages
   if (msgText.includes('requer engenharia') || msgText.includes('precisa de engenharia') || msgText.includes('enviar para engenharia')) {
     gatilhos.push('Vendedor solicitou envio para engenharia');
   }

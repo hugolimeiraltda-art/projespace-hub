@@ -39,14 +39,24 @@ export function EquipmentListDialog({ open, onOpenChange, projectId, projectName
   const [isLoading, setIsLoading] = useState(false);
   const [hasLoaded, setHasLoaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [loadTriggered, setLoadTriggered] = useState(false);
 
+  // Auto-load when dialog opens
   useEffect(() => {
-    if (open && !hasLoaded && !isLoading) {
-      loadEquipmentList();
+    if (open && !hasLoaded && !loadTriggered) {
+      setLoadTriggered(true);
+      doLoadEquipmentList();
     }
-  }, [open, hasLoaded, isLoading]);
+    if (!open) {
+      // Reset when closing so it re-loads next time
+      setLoadTriggered(false);
+      setHasLoaded(false);
+      setEquipments([]);
+      setError(null);
+    }
+  }, [open]);
 
-  const loadEquipmentList = async () => {
+  const doLoadEquipmentList = async () => {
     setIsLoading(true);
     setError(null);
 
@@ -109,12 +119,26 @@ export function EquipmentListDialog({ open, onOpenChange, projectId, projectName
         return;
       }
 
-      // Call edge function to extract equipment list
-      const { data, error: fnError } = await supabase.functions.invoke('extract-equipment-list', {
-        body: { fileUrls },
-      });
+      // Call edge function to extract equipment list with timeout
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 120000); // 2min timeout
+      
+      let data: any;
+      try {
+        const result = await supabase.functions.invoke('extract-equipment-list', {
+          body: { fileUrls },
+        });
+        clearTimeout(timeout);
+        if (result.error) throw result.error;
+        data = result.data;
+      } catch (invokeErr: any) {
+        clearTimeout(timeout);
+        if (invokeErr?.name === 'AbortError') {
+          throw new Error('A extração demorou demais. O arquivo pode ser muito grande.');
+        }
+        throw invokeErr;
+      }
 
-      if (fnError) throw fnError;
       if (data?.error) {
         setError(data.error);
         setHasLoaded(true);
@@ -139,6 +163,60 @@ export function EquipmentListDialog({ open, onOpenChange, projectId, projectName
 
   const handleOpenChange = (isOpen: boolean) => {
     onOpenChange(isOpen);
+  };
+
+  const downloadOriginalFile = async () => {
+    try {
+      const { data: attachments } = await supabase
+        .from('project_attachments')
+        .select('arquivo_url, nome_arquivo')
+        .eq('project_id', projectId)
+        .eq('tipo', 'LISTA_EQUIPAMENTOS')
+        .limit(1);
+
+      if (!attachments || attachments.length === 0) {
+        toast({ title: 'Erro', description: 'Arquivo não encontrado.', variant: 'destructive' });
+        return;
+      }
+
+      const att = attachments[0];
+      let storagePath: string | null = null;
+      const signMatch = att.arquivo_url.match(/\/storage\/v1\/object\/sign\/([^?]+)/);
+      const pubMatch = att.arquivo_url.match(/\/storage\/v1\/object\/public\/([^?]+)/);
+      const match = signMatch || pubMatch;
+      if (match) {
+        const fullPath = decodeURIComponent(match[1]);
+        storagePath = fullPath.split('/').slice(1).join('/');
+      }
+
+      if (!storagePath) {
+        toast({ title: 'Erro', description: 'Caminho do arquivo inválido.', variant: 'destructive' });
+        return;
+      }
+
+      const { data: signedData } = await supabase.storage
+        .from('project-attachments')
+        .createSignedUrl(storagePath, 3600, { download: true });
+
+      if (!signedData?.signedUrl) {
+        toast({ title: 'Erro', description: 'Não foi possível gerar o link.', variant: 'destructive' });
+        return;
+      }
+
+      const response = await fetch(signedData.signedUrl);
+      const blob = await response.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = att.nome_arquivo || 'lista-equipamentos.pdf';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(blobUrl);
+    } catch (err) {
+      console.error('Download error:', err);
+      toast({ title: 'Erro', description: 'Falha ao baixar o arquivo.', variant: 'destructive' });
+    }
   };
 
   const exportToExcel = () => {
@@ -385,11 +463,19 @@ export function EquipmentListDialog({ open, onOpenChange, projectId, projectName
           </DialogTitle>
         </DialogHeader>
 
+        {/* Download original file button - always visible */}
+        <div className="flex justify-end">
+          <Button variant="outline" size="sm" onClick={downloadOriginalFile}>
+            <Download className="w-4 h-4 mr-1" />
+            Baixar arquivo original
+          </Button>
+        </div>
+
         {isLoading && (
           <div className="flex flex-col items-center justify-center py-12">
             <Loader2 className="w-8 h-8 animate-spin text-primary mb-4" />
             <p className="text-sm text-muted-foreground">Extraindo lista de equipamentos dos documentos...</p>
-            <p className="text-xs text-muted-foreground mt-1">Isso pode levar alguns segundos</p>
+            <p className="text-xs text-muted-foreground mt-1">Isso pode levar até 2 minutos</p>
           </div>
         )}
 
@@ -397,7 +483,7 @@ export function EquipmentListDialog({ open, onOpenChange, projectId, projectName
           <div className="flex flex-col items-center justify-center py-8">
             <AlertTriangle className="w-8 h-8 text-destructive mb-3" />
             <p className="text-sm text-muted-foreground text-center">{error}</p>
-            <Button variant="outline" size="sm" className="mt-4" onClick={loadEquipmentList}>
+            <Button variant="outline" size="sm" className="mt-4" onClick={doLoadEquipmentList}>
               Tentar novamente
             </Button>
           </div>
@@ -410,7 +496,7 @@ export function EquipmentListDialog({ open, onOpenChange, projectId, projectName
                 {equipments.length} equipamento(s) encontrado(s)
               </p>
               <div className="flex gap-2">
-                <Button variant="outline" size="sm" onClick={loadEquipmentList}>
+                <Button variant="outline" size="sm" onClick={doLoadEquipmentList}>
                   Reextrair
                 </Button>
                 <Button variant="outline" size="sm" onClick={exportPricingPdf} disabled={isExportingPdf}>

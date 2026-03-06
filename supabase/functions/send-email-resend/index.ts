@@ -238,24 +238,24 @@ async function sendViaResend(to: string, subject: string, html: string) {
   return await res.json();
 }
 
-// ── Unified send: SMTP first, Resend fallback ──
+// ── Unified send: Resend first, SMTP fallback ──
 async function sendEmail(to: string, subject: string, html: string): Promise<{ provider: string }> {
-  if (smtpConfigured) {
+  if (resendConfigured) {
     try {
-      await sendViaSMTP(to, subject, html);
-      return { provider: "SMTP Corporativo" };
-    } catch (smtpErr) {
-      console.error("SMTP failed, trying Resend fallback:", smtpErr);
-      if (resendConfigured) {
-        await sendViaResend(to, subject, html);
-        return { provider: "Resend (fallback)" };
+      await sendViaResend(to, subject, html);
+      return { provider: "Resend" };
+    } catch (resendErr) {
+      console.error("Resend failed, trying SMTP fallback:", resendErr);
+      if (smtpConfigured) {
+        await sendViaSMTP(to, subject, html);
+        return { provider: "SMTP Corporativo (fallback)" };
       }
-      throw smtpErr;
+      throw resendErr;
     }
   }
-  if (resendConfigured) {
-    await sendViaResend(to, subject, html);
-    return { provider: "Resend" };
+  if (smtpConfigured) {
+    await sendViaSMTP(to, subject, html);
+    return { provider: "SMTP Corporativo" };
   }
   throw new Error("Nenhum provedor de e-mail configurado (SMTP ou Resend)");
 }

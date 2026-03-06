@@ -1800,6 +1800,13 @@ export default function ImplantacaoExecucao() {
                         </AlertDescription>
                       </Alert>
                     )}
+                    {!secoesComAnexo.includes('implantacao_entrega_tecnica') && !etapas.concluido && (
+                      <Alert variant="destructive" className="mb-4">
+                        <AlertTriangle className="h-4 w-4" />
+                        <AlertDescription>
+                          O checklist de entrega técnica (etapa 7.3) é obrigatório. Anexe o documento antes de concluir.
+                        </AlertDescription>
+                      </Alert>
                     {hasPendingItems && !etapas.concluido && (
                       <Alert variant="destructive" className="mb-4">
                         <AlertTriangle className="h-4 w-4" />
@@ -1826,6 +1833,10 @@ export default function ImplantacaoExecucao() {
                           }
                           if (!secoesComAnexo.includes('implantacao_laudo_instalador')) {
                             toast({ title: 'Upload obrigatório pendente', description: 'O laudo/checklist do instalador (etapa 5.1) é obrigatório para concluir a implantação.', variant: 'destructive' });
+                            return;
+                          }
+                          if (!secoesComAnexo.includes('implantacao_entrega_tecnica')) {
+                            toast({ title: 'Upload obrigatório pendente', description: 'O checklist de entrega técnica (etapa 7.3) é obrigatório para concluir a implantação.', variant: 'destructive' });
                             return;
                           }
                           if (hasPendingItems) {
@@ -1858,7 +1869,7 @@ export default function ImplantacaoExecucao() {
                         }}
                         className="w-full"
                         variant="default"
-                        disabled={hasPendingItems || !checklistsExistentes.includes('check_projeto') || !secoesComAnexo.includes('implantacao_laudo_instalador')}
+                        disabled={hasPendingItems || !checklistsExistentes.includes('check_projeto') || !secoesComAnexo.includes('implantacao_laudo_instalador') || !secoesComAnexo.includes('implantacao_entrega_tecnica')}
                       >
                         Concluir Implantação (com avaliação)
                       </Button>

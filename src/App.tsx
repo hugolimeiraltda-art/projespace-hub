@@ -50,6 +50,7 @@ import IATreinamentoDocs from "./pages/IATreinamentoDocs";
 import PermissoesAcesso from "./pages/PermissoesAcesso";
 import ConfiguracoesEmail from "./pages/ConfiguracoesEmail";
 import NotFound from "./pages/NotFound";
+import ComparacaoPlanilhas from "./pages/ComparacaoPlanilhas";
 
 const queryClient = new QueryClient();
 
@@ -257,6 +258,10 @@ function AppRoutes() {
       {/* Vendor app - authenticated routes */}
       <Route path="/orcar" element={<ProtectedRoute><VendedorHome /></ProtectedRoute>} />
       <Route path="/orcar/chat/:sessaoId" element={<ProtectedRoute><VendedorChat /></ProtectedRoute>} />
+      <Route 
+        path="/comparacao-planilhas" 
+        element={<ProtectedRoute><ComparacaoPlanilhas /></ProtectedRoute>} 
+      />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );

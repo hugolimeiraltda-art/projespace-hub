@@ -50,6 +50,7 @@ import IATreinamentoDocs from "./pages/IATreinamentoDocs";
 import PermissoesAcesso from "./pages/PermissoesAcesso";
 import ConfiguracoesEmail from "./pages/ConfiguracoesEmail";
 import NotFound from "./pages/NotFound";
+import ComparacaoPlanilhas from "./pages/ComparacaoPlanilhas";
 
 const queryClient = new QueryClient();
 

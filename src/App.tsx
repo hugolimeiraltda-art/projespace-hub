@@ -258,6 +258,10 @@ function AppRoutes() {
       {/* Vendor app - authenticated routes */}
       <Route path="/orcar" element={<ProtectedRoute><VendedorHome /></ProtectedRoute>} />
       <Route path="/orcar/chat/:sessaoId" element={<ProtectedRoute><VendedorChat /></ProtectedRoute>} />
+      <Route 
+        path="/comparacao-planilhas" 
+        element={<ProtectedRoute><ComparacaoPlanilhas /></ProtectedRoute>} 
+      />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );

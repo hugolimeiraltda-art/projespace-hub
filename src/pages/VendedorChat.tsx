@@ -505,6 +505,14 @@ export default function VendedorChat() {
             )}
 
             <Button
+              className="w-full border-primary text-primary hover:bg-primary/10"
+              variant="outline"
+              onClick={openProjetoDialog}
+            >
+              <FolderPlus className="mr-2 h-4 w-4" />Abrir Projeto para Projetista
+            </Button>
+
+            <Button
               variant="outline"
               className="w-full"
               onClick={() => navigate('/orcar')}

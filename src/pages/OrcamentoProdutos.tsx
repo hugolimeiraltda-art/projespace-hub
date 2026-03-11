@@ -654,8 +654,9 @@ export default function OrcamentoProdutos() {
   };
 
 
-  if (user?.role !== 'admin') {
-    return <Layout><div className="p-8 text-center text-muted-foreground">Acesso restrito a administradores.</div></Layout>;
+  const { canAccess, loading: menuPermsLoading } = useMenuPermissions();
+  if (!menuPermsLoading && !canAccess('orcamentos/produtos') && !canAccess('orcamentos')) {
+    return <Layout><div className="p-8 text-center text-muted-foreground">Acesso restrito.</div></Layout>;
   }
 
   return (

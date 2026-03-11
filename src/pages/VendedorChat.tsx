@@ -45,10 +45,21 @@ export default function VendedorChat() {
   const [emailSent, setEmailSent] = useState(false);
   const [sessionStatus, setSessionStatus] = useState('');
   const [isRecording, setIsRecording] = useState(false);
+  const [projetoOpen, setProjetoOpen] = useState(false);
+  const [projetoCriando, setProjetoCriando] = useState(false);
+  const [projNome, setProjNome] = useState('');
+  const [projEndereco, setProjEndereco] = useState('');
+  const [projCidade, setProjCidade] = useState('');
+  const [projEstado, setProjEstado] = useState('');
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const recognitionRef = useRef<any>(null);
+
+  const ESTADOS_BR = [
+    'AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MT', 'MS', 'MG',
+    'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN', 'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO'
+  ];
 
   useEffect(() => {
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;

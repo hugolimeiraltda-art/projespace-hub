@@ -713,7 +713,10 @@ export default function OrcamentoChat() {
           <div className="flex items-center gap-2">
             {propostaJaGerada ? (
               <>
-                <Button onClick={carregarPropostaExistente} disabled={gerandoProposta} variant="outline" size="sm" className="shrink-0">
+                <Button onClick={gerarProposta} disabled={gerandoProposta} variant="outline" size="sm" className="shrink-0">
+                  {gerandoProposta ? <><Loader2 className="mr-1.5 h-4 w-4 animate-spin" /><span className="hidden sm:inline">Gerando...</span><span className="sm:hidden">...</span></> : <><FileText className="mr-1.5 h-4 w-4" /><span className="hidden sm:inline">Gerar Nova Proposta</span><span className="sm:hidden">Nova</span></>}
+                </Button>
+                <Button onClick={carregarPropostaExistente} disabled={gerandoProposta} size="sm" className="shrink-0">
                   {gerandoProposta ? <><Loader2 className="mr-1.5 h-4 w-4 animate-spin" /><span className="hidden sm:inline">Carregando...</span><span className="sm:hidden">...</span></> : <><FileText className="mr-1.5 h-4 w-4" /><span className="hidden sm:inline">Ver Proposta</span><span className="sm:hidden">Proposta</span></>}
                 </Button>
                 {user && (

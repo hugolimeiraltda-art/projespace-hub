@@ -66,6 +66,7 @@ const IMPLANTACAO_STATUS_COLORS: Record<string, string> = {
 
 export default function ProjectsList() {
   const { user } = useAuth();
+  const { canAccess, loading: menuPermsLoading } = useMenuPermissions();
   const { projects, getProjectsByUser } = useProjects();
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();

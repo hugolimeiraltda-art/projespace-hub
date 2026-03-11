@@ -56,6 +56,7 @@ interface DashboardStats {
 
 export default function Dashboard() {
   const { user } = useAuth();
+  const { canAccess, loading: menuPermsLoading } = useMenuPermissions();
   const { projects, getProjectsByUser } = useProjects();
   const navigate = useNavigate();
 

@@ -696,7 +696,7 @@ export default function ProjectsList() {
                       ? 'Tente ajustar os filtros de busca'
                       : 'Crie seu primeiro projeto para começar'}
                   </p>
-                  {(user?.role === 'vendedor' || user?.role === 'admin') && !hasFilters && (
+                  {!menuPermsLoading && canAccess('projetos/novo') && !hasFilters && (
                     <Button asChild>
                       <Link to="/projetos/novo">
                         <FolderPlus className="w-4 h-4 mr-2" />

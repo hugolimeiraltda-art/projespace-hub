@@ -4,11 +4,18 @@ import { VendedorLayout } from '@/components/VendedorLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
-import { Send, FileText, Loader2, Bot, User, Paperclip, ArrowLeft, CheckCircle, Mail, Download, Mic, MicOff } from 'lucide-react';
+import { useProjects } from '@/contexts/ProjectsContext';
+import { Send, FileText, Loader2, Bot, User, Paperclip, ArrowLeft, CheckCircle, Mail, Download, Mic, MicOff, FolderPlus, Table2, MapPin } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { supabase } from '@/integrations/supabase/client';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 type Msg = { role: 'user' | 'assistant'; content: string };
 
@@ -21,6 +28,7 @@ export default function VendedorChat() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user } = useAuth();
+  const { addProject } = useProjects();
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -37,10 +45,21 @@ export default function VendedorChat() {
   const [emailSent, setEmailSent] = useState(false);
   const [sessionStatus, setSessionStatus] = useState('');
   const [isRecording, setIsRecording] = useState(false);
+  const [projetoOpen, setProjetoOpen] = useState(false);
+  const [projetoCriando, setProjetoCriando] = useState(false);
+  const [projNome, setProjNome] = useState('');
+  const [projEndereco, setProjEndereco] = useState('');
+  const [projCidade, setProjCidade] = useState('');
+  const [projEstado, setProjEstado] = useState('');
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const recognitionRef = useRef<any>(null);
+
+  const ESTADOS_BR = [
+    'AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MT', 'MS', 'MG',
+    'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN', 'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO'
+  ];
 
   useEffect(() => {
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
@@ -303,6 +322,99 @@ export default function VendedorChat() {
     setSendingEmail(false);
   };
 
+  const openProjetoDialog = async () => {
+    if (!sessaoId) return;
+    const { data: sessaoData } = await supabase
+      .from('orcamento_sessoes')
+      .select('nome_cliente, endereco_condominio, vendedor_nome')
+      .eq('id', sessaoId)
+      .single();
+    setProjNome(sessaoData?.nome_cliente || '');
+    setProjEndereco(sessaoData?.endereco_condominio || '');
+    setProjCidade('');
+    setProjEstado('');
+    setProjetoOpen(true);
+  };
+
+  const handleCriarProjeto = async () => {
+    if (!user || !sessaoId) return;
+    if (!projNome.trim() || !projCidade.trim() || !projEstado) {
+      toast({ title: 'Preencha todos os campos obrigatórios', variant: 'destructive' });
+      return;
+    }
+
+    setProjetoCriando(true);
+    try {
+      const { data: sessaoData } = await supabase
+        .from('orcamento_sessoes')
+        .select('id, nome_cliente, vendedor_nome, proposta_gerada, proposta_gerada_at, endereco_condominio')
+        .eq('id', sessaoId)
+        .single();
+
+      const propostaResumo = sessaoData?.proposta_gerada || '';
+      const observacoes = `[PROJETO_IA:${sessaoId}]\n\nProjeto originado da proposta IA.\nProposta gerada em: ${sessaoData?.proposta_gerada_at ? format(new Date(sessaoData.proposta_gerada_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR }) : 'N/A'}\nVendedor: ${sessaoData?.vendedor_nome || user.nome}\n\n${propostaResumo}`;
+
+      const projectId = await addProject(
+        {
+          created_by_user_id: user.id,
+          vendedor_nome: sessaoData?.vendedor_nome || user.nome,
+          vendedor_email: user.email,
+          cliente_condominio_nome: projNome,
+          cliente_cidade: projCidade,
+          cliente_estado: projEstado,
+          endereco_condominio: projEndereco,
+          status: 'ENVIADO',
+          observacoes_gerais: observacoes,
+          email_padrao_gerado: propostaResumo,
+        },
+        {
+          solicitacao_origem: 'EMAIL' as any,
+          modalidade_portaria: 'VIRTUAL' as any,
+          portaria_virtual_atendimento_app: 'NAO' as any,
+          numero_blocos: 1,
+          interfonia: false,
+          observacao_nao_assumir_cameras: false,
+          marcacao_croqui_confirmada: false,
+          marcacao_croqui_itens: [],
+          cftv_elevador_possui: 'NAO_INFORMADO' as any,
+        }
+      );
+
+      if (projectId) {
+        try {
+          await supabase.functions.invoke('notify-project-submitted', {
+            body: {
+              project_id: projectId,
+              project_name: projNome,
+              vendedor_name: sessaoData?.vendedor_nome || user.nome,
+              vendedorEmail: user.email,
+              cidade: projCidade,
+              estado: projEstado,
+              is_resubmission: false,
+            },
+          });
+        } catch (err) {
+          console.error('Error notifying team:', err);
+        }
+
+        await supabase
+          .from('orcamento_sessoes')
+          .update({ status: 'projeto_aberto' })
+          .eq('id', sessaoId);
+
+        toast({ title: 'Projeto criado e enviado!', description: 'O projetista foi notificado e já pode iniciar o trabalho.' });
+        setProjetoOpen(false);
+        navigate(`/projetos/${projectId}`);
+      } else {
+        throw new Error('Falha ao criar projeto');
+      }
+    } catch (error) {
+      console.error('Error creating project from proposal:', error);
+      toast({ title: 'Erro', description: 'Não foi possível criar o projeto.', variant: 'destructive' });
+    }
+    setProjetoCriando(false);
+  };
+
   if (initialLoading) {
     return (
       <VendedorLayout vendedorNome={user?.nome}>
@@ -393,6 +505,14 @@ export default function VendedorChat() {
             )}
 
             <Button
+              className="w-full border-primary text-primary hover:bg-primary/10"
+              variant="outline"
+              onClick={openProjetoDialog}
+            >
+              <FolderPlus className="mr-2 h-4 w-4" />Abrir Projeto para Projetista
+            </Button>
+
+            <Button
               variant="outline"
               className="w-full"
               onClick={() => navigate('/orcar')}
@@ -431,6 +551,9 @@ export default function VendedorChat() {
                   <><CheckCircle className="mr-2 h-4 w-4" />Validar Escopo e Gerar Relatório</>
                 )}
               </Button>
+              <Button onClick={openProjetoDialog} variant="outline" size="lg" className="border-primary text-primary hover:bg-primary/10">
+                <FolderPlus className="mr-2 h-4 w-4" />Abrir Projeto
+              </Button>
             </div>
           </div>
         </div>
@@ -447,9 +570,15 @@ export default function VendedorChat() {
             <ArrowLeft className="mr-1 h-4 w-4" />Voltar
           </Button>
           {proposta ? (
-            <Button size="sm" onClick={gerarProposta} disabled={gerandoProposta} variant="outline">
-              {gerandoProposta ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Carregando...</> : <><FileText className="mr-2 h-4 w-4" />Ver Proposta</>}
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button size="sm" onClick={gerarProposta} disabled={gerandoProposta} variant="outline">
+                {gerandoProposta ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Carregando...</> : <><FileText className="mr-2 h-4 w-4" />Ver Proposta</>}
+              </Button>
+              <Button size="sm" variant="outline" className="border-primary text-primary hover:bg-primary/10" onClick={openProjetoDialog}>
+                <FolderPlus className="mr-1.5 h-4 w-4" />
+                <span className="hidden sm:inline">Abrir Projeto</span>
+              </Button>
+            </div>
           ) : messages.length >= 6 ? (
             <Button size="sm" onClick={gerarProposta} disabled={gerandoProposta}>
               {gerandoProposta ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Gerando...</> : <><FileText className="mr-2 h-4 w-4" />Gerar Proposta</>}
@@ -511,6 +640,88 @@ export default function VendedorChat() {
           </form>
         </div>
       </div>
+
+      {/* Project Creation Dialog */}
+      <Dialog open={projetoOpen} onOpenChange={(open) => { if (!open) setProjetoOpen(false); }}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FolderPlus className="w-5 h-5 text-primary" />
+              Criar Projeto a partir da Proposta IA
+            </DialogTitle>
+            <DialogDescription>
+              O projeto será enviado diretamente para o projetista com todos os dados da proposta.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-5 py-2">
+            <div className="space-y-3">
+              <h3 className="text-sm font-semibold text-foreground">Identificação</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Nome do Condomínio *</Label>
+                  <Input value={projNome} onChange={e => setProjNome(e.target.value)} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Endereço</Label>
+                  <Input value={projEndereco} onChange={e => setProjEndereco(e.target.value)} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Cidade *</Label>
+                  <Input value={projCidade} onChange={e => setProjCidade(e.target.value)} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Estado *</Label>
+                  <Select value={projEstado} onValueChange={setProjEstado}>
+                    <SelectTrigger><SelectValue placeholder="UF" /></SelectTrigger>
+                    <SelectContent>
+                      {ESTADOS_BR.map(uf => <SelectItem key={uf} value={uf}>{uf}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </div>
+
+            <Separator />
+
+            <div className="space-y-3">
+              <h3 className="text-sm font-semibold text-foreground">Projeto da IA</h3>
+              <p className="text-xs text-muted-foreground">
+                Os seguintes dados serão anexados ao projeto para o projetista:
+              </p>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                <div className="p-3 bg-muted/50 rounded-lg text-center">
+                  <FileText className="w-5 h-5 mx-auto mb-1 text-primary" />
+                  <p className="text-xs font-medium">Proposta Completa</p>
+                  <p className="text-[10px] text-muted-foreground">Texto detalhado</p>
+                </div>
+                <div className="p-3 bg-muted/50 rounded-lg text-center">
+                  <Download className="w-5 h-5 mx-auto mb-1 text-primary" />
+                  <p className="text-xs font-medium">PDF da Proposta</p>
+                  <p className="text-[10px] text-muted-foreground">Download disponível</p>
+                </div>
+                <div className="p-3 bg-muted/50 rounded-lg text-center">
+                  <Table2 className="w-5 h-5 mx-auto mb-1 text-primary" />
+                  <p className="text-xs font-medium">Planilha Excel</p>
+                  <p className="text-[10px] text-muted-foreground">Equipamentos detalhados</p>
+                </div>
+                <div className="p-3 bg-muted/50 rounded-lg text-center">
+                  <MapPin className="w-5 h-5 mx-auto mb-1 text-primary" />
+                  <p className="text-xs font-medium">EAP por Ambiente</p>
+                  <p className="text-[10px] text-muted-foreground">Estrutura analítica</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setProjetoOpen(false)}>Cancelar</Button>
+            <Button onClick={handleCriarProjeto} disabled={projetoCriando}>
+              {projetoCriando ? <><Loader2 className="w-4 h-4 mr-1 animate-spin" />Criando...</> : 'Criar Projeto e Enviar ao Projetista'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </VendedorLayout>
   );
 }

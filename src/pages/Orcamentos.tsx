@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import DOMPurify from 'dompurify';
+import { useMenuPermissions } from '@/hooks/useMenuPermissions';
 import { Layout } from '@/components/Layout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -159,9 +160,10 @@ export default function Orcamentos() {
     }
   };
 
+  const { canAccess, loading: menuPermsLoading } = useMenuPermissions();
   const isAdmin = user?.role === 'admin' || user?.role === 'projetos' || user?.role === 'gerente_comercial';
-  const allowedRoles = ['admin', 'vendedor', 'gerente_comercial', 'supervisor_operacoes', 'projetos', 'implantacao'];
-  if (!user || !allowedRoles.includes(user.role)) {
+  
+  if (!menuPermsLoading && !canAccess('orcamentos/sessoes') && !canAccess('orcamentos')) {
     return <Layout><div className="p-8 text-center text-muted-foreground">Acesso restrito.</div></Layout>;
   }
 

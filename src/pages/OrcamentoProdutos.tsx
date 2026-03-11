@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { useMenuPermissions } from '@/hooks/useMenuPermissions';
 import { Layout } from '@/components/Layout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -653,8 +654,9 @@ export default function OrcamentoProdutos() {
   };
 
 
-  if (user?.role !== 'admin') {
-    return <Layout><div className="p-8 text-center text-muted-foreground">Acesso restrito a administradores.</div></Layout>;
+  const { canAccess, loading: menuPermsLoading } = useMenuPermissions();
+  if (!menuPermsLoading && !canAccess('orcamentos/produtos') && !canAccess('orcamentos')) {
+    return <Layout><div className="p-8 text-center text-muted-foreground">Acesso restrito.</div></Layout>;
   }
 
   return (

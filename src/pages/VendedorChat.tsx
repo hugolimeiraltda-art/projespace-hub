@@ -562,9 +562,15 @@ export default function VendedorChat() {
             <ArrowLeft className="mr-1 h-4 w-4" />Voltar
           </Button>
           {proposta ? (
-            <Button size="sm" onClick={gerarProposta} disabled={gerandoProposta} variant="outline">
-              {gerandoProposta ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Carregando...</> : <><FileText className="mr-2 h-4 w-4" />Ver Proposta</>}
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button size="sm" onClick={gerarProposta} disabled={gerandoProposta} variant="outline">
+                {gerandoProposta ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Carregando...</> : <><FileText className="mr-2 h-4 w-4" />Ver Proposta</>}
+              </Button>
+              <Button size="sm" variant="outline" className="border-primary text-primary hover:bg-primary/10" onClick={openProjetoDialog}>
+                <FolderPlus className="mr-1.5 h-4 w-4" />
+                <span className="hidden sm:inline">Abrir Projeto</span>
+              </Button>
+            </div>
           ) : messages.length >= 6 ? (
             <Button size="sm" onClick={gerarProposta} disabled={gerandoProposta}>
               {gerandoProposta ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Gerando...</> : <><FileText className="mr-2 h-4 w-4" />Gerar Proposta</>}

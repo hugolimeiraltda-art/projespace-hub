@@ -415,6 +415,7 @@ export default function VendedorChat() {
     setProjetoCriando(false);
   };
 
+  if (initialLoading) {
     return (
       <VendedorLayout vendedorNome={user?.nome}>
         <div className="flex-1 flex items-center justify-center">

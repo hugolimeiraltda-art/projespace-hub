@@ -28,6 +28,7 @@ export default function VendedorChat() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user } = useAuth();
+  const { addProject } = useProjects();
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import DOMPurify from 'dompurify';
+import { useMenuPermissions } from '@/hooks/useMenuPermissions';
 import { Layout } from '@/components/Layout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';

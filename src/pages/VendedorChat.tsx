@@ -4,11 +4,18 @@ import { VendedorLayout } from '@/components/VendedorLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
-import { Send, FileText, Loader2, Bot, User, Paperclip, ArrowLeft, CheckCircle, Mail, Download, Mic, MicOff } from 'lucide-react';
+import { useProjects } from '@/contexts/ProjectsContext';
+import { Send, FileText, Loader2, Bot, User, Paperclip, ArrowLeft, CheckCircle, Mail, Download, Mic, MicOff, FolderPlus, Table2, MapPin } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { supabase } from '@/integrations/supabase/client';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 type Msg = { role: 'user' | 'assistant'; content: string };
 

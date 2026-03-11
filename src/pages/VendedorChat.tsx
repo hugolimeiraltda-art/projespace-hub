@@ -322,7 +322,99 @@ export default function VendedorChat() {
     setSendingEmail(false);
   };
 
-  if (initialLoading) {
+  const openProjetoDialog = async () => {
+    if (!sessaoId) return;
+    const { data: sessaoData } = await supabase
+      .from('orcamento_sessoes')
+      .select('nome_cliente, endereco_condominio, vendedor_nome')
+      .eq('id', sessaoId)
+      .single();
+    setProjNome(sessaoData?.nome_cliente || '');
+    setProjEndereco(sessaoData?.endereco_condominio || '');
+    setProjCidade('');
+    setProjEstado('');
+    setProjetoOpen(true);
+  };
+
+  const handleCriarProjeto = async () => {
+    if (!user || !sessaoId) return;
+    if (!projNome.trim() || !projCidade.trim() || !projEstado) {
+      toast({ title: 'Preencha todos os campos obrigatórios', variant: 'destructive' });
+      return;
+    }
+
+    setProjetoCriando(true);
+    try {
+      const { data: sessaoData } = await supabase
+        .from('orcamento_sessoes')
+        .select('id, nome_cliente, vendedor_nome, proposta_gerada, proposta_gerada_at, endereco_condominio')
+        .eq('id', sessaoId)
+        .single();
+
+      const propostaResumo = sessaoData?.proposta_gerada || '';
+      const observacoes = `[PROJETO_IA:${sessaoId}]\n\nProjeto originado da proposta IA.\nProposta gerada em: ${sessaoData?.proposta_gerada_at ? format(new Date(sessaoData.proposta_gerada_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR }) : 'N/A'}\nVendedor: ${sessaoData?.vendedor_nome || user.nome}\n\n${propostaResumo}`;
+
+      const projectId = await addProject(
+        {
+          created_by_user_id: user.id,
+          vendedor_nome: sessaoData?.vendedor_nome || user.nome,
+          vendedor_email: user.email,
+          cliente_condominio_nome: projNome,
+          cliente_cidade: projCidade,
+          cliente_estado: projEstado,
+          endereco_condominio: projEndereco,
+          status: 'ENVIADO',
+          observacoes_gerais: observacoes,
+          email_padrao_gerado: propostaResumo,
+        },
+        {
+          solicitacao_origem: 'EMAIL' as any,
+          modalidade_portaria: 'VIRTUAL' as any,
+          portaria_virtual_atendimento_app: 'NAO' as any,
+          numero_blocos: 1,
+          interfonia: false,
+          observacao_nao_assumir_cameras: false,
+          marcacao_croqui_confirmada: false,
+          marcacao_croqui_itens: [],
+          cftv_elevador_possui: 'NAO_INFORMADO' as any,
+        }
+      );
+
+      if (projectId) {
+        try {
+          await supabase.functions.invoke('notify-project-submitted', {
+            body: {
+              project_id: projectId,
+              project_name: projNome,
+              vendedor_name: sessaoData?.vendedor_nome || user.nome,
+              vendedorEmail: user.email,
+              cidade: projCidade,
+              estado: projEstado,
+              is_resubmission: false,
+            },
+          });
+        } catch (err) {
+          console.error('Error notifying team:', err);
+        }
+
+        await supabase
+          .from('orcamento_sessoes')
+          .update({ status: 'projeto_aberto' })
+          .eq('id', sessaoId);
+
+        toast({ title: 'Projeto criado e enviado!', description: 'O projetista foi notificado e já pode iniciar o trabalho.' });
+        setProjetoOpen(false);
+        navigate(`/projetos/${projectId}`);
+      } else {
+        throw new Error('Falha ao criar projeto');
+      }
+    } catch (error) {
+      console.error('Error creating project from proposal:', error);
+      toast({ title: 'Erro', description: 'Não foi possível criar o projeto.', variant: 'destructive' });
+    }
+    setProjetoCriando(false);
+  };
+
     return (
       <VendedorLayout vendedorNome={user?.nome}>
         <div className="flex-1 flex items-center justify-center">

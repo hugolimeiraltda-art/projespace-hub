@@ -640,6 +640,88 @@ export default function VendedorChat() {
           </form>
         </div>
       </div>
+
+      {/* Project Creation Dialog */}
+      <Dialog open={projetoOpen} onOpenChange={(open) => { if (!open) setProjetoOpen(false); }}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FolderPlus className="w-5 h-5 text-primary" />
+              Criar Projeto a partir da Proposta IA
+            </DialogTitle>
+            <DialogDescription>
+              O projeto será enviado diretamente para o projetista com todos os dados da proposta.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-5 py-2">
+            <div className="space-y-3">
+              <h3 className="text-sm font-semibold text-foreground">Identificação</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Nome do Condomínio *</Label>
+                  <Input value={projNome} onChange={e => setProjNome(e.target.value)} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Endereço</Label>
+                  <Input value={projEndereco} onChange={e => setProjEndereco(e.target.value)} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Cidade *</Label>
+                  <Input value={projCidade} onChange={e => setProjCidade(e.target.value)} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Estado *</Label>
+                  <Select value={projEstado} onValueChange={setProjEstado}>
+                    <SelectTrigger><SelectValue placeholder="UF" /></SelectTrigger>
+                    <SelectContent>
+                      {ESTADOS_BR.map(uf => <SelectItem key={uf} value={uf}>{uf}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </div>
+
+            <Separator />
+
+            <div className="space-y-3">
+              <h3 className="text-sm font-semibold text-foreground">Projeto da IA</h3>
+              <p className="text-xs text-muted-foreground">
+                Os seguintes dados serão anexados ao projeto para o projetista:
+              </p>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                <div className="p-3 bg-muted/50 rounded-lg text-center">
+                  <FileText className="w-5 h-5 mx-auto mb-1 text-primary" />
+                  <p className="text-xs font-medium">Proposta Completa</p>
+                  <p className="text-[10px] text-muted-foreground">Texto detalhado</p>
+                </div>
+                <div className="p-3 bg-muted/50 rounded-lg text-center">
+                  <Download className="w-5 h-5 mx-auto mb-1 text-primary" />
+                  <p className="text-xs font-medium">PDF da Proposta</p>
+                  <p className="text-[10px] text-muted-foreground">Download disponível</p>
+                </div>
+                <div className="p-3 bg-muted/50 rounded-lg text-center">
+                  <Table2 className="w-5 h-5 mx-auto mb-1 text-primary" />
+                  <p className="text-xs font-medium">Planilha Excel</p>
+                  <p className="text-[10px] text-muted-foreground">Equipamentos detalhados</p>
+                </div>
+                <div className="p-3 bg-muted/50 rounded-lg text-center">
+                  <MapPin className="w-5 h-5 mx-auto mb-1 text-primary" />
+                  <p className="text-xs font-medium">EAP por Ambiente</p>
+                  <p className="text-[10px] text-muted-foreground">Estrutura analítica</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setProjetoOpen(false)}>Cancelar</Button>
+            <Button onClick={handleCriarProjeto} disabled={projetoCriando}>
+              {projetoCriando ? <><Loader2 className="w-4 h-4 mr-1 animate-spin" />Criando...</> : 'Criar Projeto e Enviar ao Projetista'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </VendedorLayout>
   );
 }

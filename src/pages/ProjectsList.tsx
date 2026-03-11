@@ -409,7 +409,7 @@ export default function ProjectsList() {
               Gerencie todos os projetos
             </p>
           </div>
-          {(user?.role === 'vendedor' || user?.role === 'admin') && (
+          {user?.role === 'admin' && (
             <Button asChild>
               <Link to="/projetos/novo">
                 <FolderPlus className="w-4 h-4 mr-2" />

@@ -110,6 +110,29 @@ export default function OrcamentoChat() {
     }
   }, [messages, propostaJaGerada]);
 
+  // Generate instant welcome message locally (no AI call)
+  const generateLocalWelcome = async (sessionId: string) => {
+    const { data: sessaoData } = await supabase
+      .from('orcamento_sessoes')
+      .select('nome_cliente, endereco_condominio, vendedor_nome, email_cliente, telefone_cliente')
+      .eq('id', sessionId)
+      .single();
+
+    const vendedor = sessaoData?.vendedor_nome || user?.nome || 'Vendedor';
+    const primeiroNome = vendedor.split(' ')[0];
+    const condominio = sessaoData?.nome_cliente || 'o condomínio';
+    const endereco = sessaoData?.endereco_condominio;
+
+    const welcomeContent = `Olá, ${primeiroNome}! 👋 Vou te guiar no orçamento do **${condominio}**${endereco ? ` (${endereco})` : ''}.\n\nQual produto você quer orçar?\n- **Portaria Digital** (autônoma, sem porteiro)\n- **Portaria Remota** (central de atendimento)\n- **Portaria Assistida** (porteiro + sistema Emive)\n- **Portaria Expressa** (até 20 aptos, máx 2 portas)`;
+
+    // Save the hidden user trigger + welcome to DB
+    await supabase.from('orcamento_mensagens').insert({ sessao_id: sessionId, role: 'user', content: 'Olá, estou no local para realizar o orçamento.' });
+    await supabase.from('orcamento_mensagens').insert({ sessao_id: sessionId, role: 'assistant', content: welcomeContent });
+
+    setMessages([{ role: 'assistant', content: welcomeContent }]);
+    setSessionValid(true);
+  };
+
   // Resolve session from URL params or query string
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -120,12 +143,12 @@ export default function OrcamentoChat() {
       // Load existing messages first
       (async () => {
         // Check if proposal already generated
-        const { data: sessaoData } = await supabase
+        const { data: sessaoCheck } = await supabase
           .from('orcamento_sessoes')
           .select('status, proposta_gerada')
           .eq('id', sid)
           .single();
-        if (sessaoData?.proposta_gerada) {
+        if (sessaoCheck?.proposta_gerada) {
           setPropostaJaGerada(true);
           // Auto-show proposal if ver=1
           if (autoVer) {
@@ -146,7 +169,8 @@ export default function OrcamentoChat() {
           })));
           setSessionValid(true);
         } else {
-          sendMessage('Olá, estou no local para realizar o orçamento.', true, sid);
+          // Instant welcome - no AI call needed
+          await generateLocalWelcome(sid);
         }
       })();
     } else if (token) {
@@ -160,6 +184,7 @@ export default function OrcamentoChat() {
           .single();
 
         if (sessaoData) {
+          setSessaoId(sessaoData.id);
           const { data: existingMsgs } = await supabase
             .from('orcamento_mensagens')
             .select('role, content')
@@ -174,8 +199,11 @@ export default function OrcamentoChat() {
             setSessionValid(true);
             return;
           }
+          // Instant welcome - no AI call needed
+          await generateLocalWelcome(sessaoData.id);
+        } else {
+          setSessionValid(false);
         }
-        sendMessage('Olá', true, undefined, token);
       })();
     }
   }, [token]);

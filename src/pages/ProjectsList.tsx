@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { useMenuPermissions } from '@/hooks/useMenuPermissions';
 import { useProjects } from '@/contexts/ProjectsContext';
 import { Layout } from '@/components/Layout';
 import { StatusBadge } from '@/components/StatusBadge';
@@ -65,6 +66,7 @@ const IMPLANTACAO_STATUS_COLORS: Record<string, string> = {
 
 export default function ProjectsList() {
   const { user } = useAuth();
+  const { canAccess, loading: menuPermsLoading } = useMenuPermissions();
   const { projects, getProjectsByUser } = useProjects();
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -409,7 +411,7 @@ export default function ProjectsList() {
               Gerencie todos os projetos
             </p>
           </div>
-          {user?.role === 'admin' && (
+          {!menuPermsLoading && canAccess('projetos/novo') && (
             <Button asChild>
               <Link to="/projetos/novo">
                 <FolderPlus className="w-4 h-4 mr-2" />
@@ -694,7 +696,7 @@ export default function ProjectsList() {
                       ? 'Tente ajustar os filtros de busca'
                       : 'Crie seu primeiro projeto para começar'}
                   </p>
-                  {(user?.role === 'vendedor' || user?.role === 'admin') && !hasFilters && (
+                  {!menuPermsLoading && canAccess('projetos/novo') && !hasFilters && (
                     <Button asChild>
                       <Link to="/projetos/novo">
                         <FolderPlus className="w-4 h-4 mr-2" />

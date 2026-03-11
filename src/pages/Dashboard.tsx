@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useMenuPermissions } from '@/hooks/useMenuPermissions';
 import { useProjects } from '@/contexts/ProjectsContext';
 import { Layout } from '@/components/Layout';
 import { Card, CardContent } from '@/components/ui/card';
@@ -55,6 +56,7 @@ interface DashboardStats {
 
 export default function Dashboard() {
   const { user } = useAuth();
+  const { canAccess, loading: menuPermsLoading } = useMenuPermissions();
   const { projects, getProjectsByUser } = useProjects();
   const navigate = useNavigate();
 
@@ -265,7 +267,7 @@ export default function Dashboard() {
               Bem-vindo, {user?.nome}
             </p>
           </div>
-          {user?.role === 'admin' && (
+          {!menuPermsLoading && canAccess('projetos/novo') && (
             <Button asChild>
               <Link to="/projetos/novo">
                 <FolderPlus className="w-4 h-4 mr-2" />

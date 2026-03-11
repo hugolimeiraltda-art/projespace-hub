@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useMenuPermissions } from '@/hooks/useMenuPermissions';
 import { useProjects } from '@/contexts/ProjectsContext';
 import { Layout } from '@/components/Layout';
 import { Card, CardContent } from '@/components/ui/card';

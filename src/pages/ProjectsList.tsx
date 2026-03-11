@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { useMenuPermissions } from '@/hooks/useMenuPermissions';
 import { useProjects } from '@/contexts/ProjectsContext';
 import { Layout } from '@/components/Layout';
 import { StatusBadge } from '@/components/StatusBadge';

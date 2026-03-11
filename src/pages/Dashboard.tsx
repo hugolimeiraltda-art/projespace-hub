@@ -265,7 +265,7 @@ export default function Dashboard() {
               Bem-vindo, {user?.nome}
             </p>
           </div>
-          {(user?.role === 'vendedor' || user?.role === 'admin' || user?.role === 'administrativo' || user?.role === 'sucesso_cliente' || user?.role === 'supervisor_operacoes') && (
+          {user?.role === 'admin' && (
             <Button asChild>
               <Link to="/projetos/novo">
                 <FolderPlus className="w-4 h-4 mr-2" />

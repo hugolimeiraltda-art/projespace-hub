@@ -543,6 +543,9 @@ export default function VendedorChat() {
                   <><CheckCircle className="mr-2 h-4 w-4" />Validar Escopo e Gerar Relatório</>
                 )}
               </Button>
+              <Button onClick={openProjetoDialog} variant="outline" size="lg" className="border-primary text-primary hover:bg-primary/10">
+                <FolderPlus className="mr-2 h-4 w-4" />Abrir Projeto
+              </Button>
             </div>
           </div>
         </div>

@@ -87,7 +87,7 @@ export default function StartupProjetos() {
   const fetchProjects = async () => {
     try {
       setIsLoading(true);
-      const [projectsRes, portfolioRes] = await Promise.all([
+      const [projectsRes, portfolioRes, etapasRes] = await Promise.all([
         supabase
           .from('projects')
           .select('id, numero_projeto, cliente_condominio_nome, cliente_cidade, cliente_estado, vendedor_nome, created_at, updated_at, implantacao_status, implantacao_started_at, implantacao_completed_at, prazo_entrega_projeto')
@@ -98,6 +98,9 @@ export default function StartupProjetos() {
           .from('customer_portfolio')
           .select('project_id, mensalidade, taxa_ativacao')
           .not('project_id', 'is', null),
+        supabase
+          .from('implantacao_etapas')
+          .select('project_id, contrato_assinado_at, ligacao_boas_vindas_at, agendamento_visita_startup_at, laudo_visita_startup_at, check_programacao_at, confirmacao_ativacao_financeira_at, operacao_assistida_inicio, operacao_assistida_fim'),
       ]);
 
       if (projectsRes.error) {
@@ -118,6 +121,24 @@ export default function StartupProjetos() {
         }
       });
       setPortfolioMap(pMap);
+
+      // Build etapas map
+      const eMap: Record<string, ImplantacaoEtapasData> = {};
+      etapasRes.data?.forEach((e: any) => {
+        if (e.project_id) {
+          eMap[e.project_id] = {
+            contrato_assinado_at: e.contrato_assinado_at,
+            ligacao_boas_vindas_at: e.ligacao_boas_vindas_at,
+            agendamento_visita_startup_at: e.agendamento_visita_startup_at,
+            laudo_visita_startup_at: e.laudo_visita_startup_at,
+            check_programacao_at: e.check_programacao_at,
+            confirmacao_ativacao_financeira_at: e.confirmacao_ativacao_financeira_at,
+            operacao_assistida_inicio: e.operacao_assistida_inicio,
+            operacao_assistida_fim: e.operacao_assistida_fim,
+          };
+        }
+      });
+      setEtapasMap(eMap);
 
       setProjects(projectsRes.data || []);
     } catch (error) {

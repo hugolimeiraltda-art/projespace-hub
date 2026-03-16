@@ -2665,6 +2665,8 @@ export type Database = {
         | "DEPT_CONTAS_RECEBER"
         | "DEPT_FISCAL"
         | "DEPT_IMPLANTACAO"
+        | "DEPT_INSTALACAO"
+        | "CLIENTE_INSTALACAO"
       project_status:
         | "RASCUNHO"
         | "ENVIADO"
@@ -2874,6 +2876,8 @@ export const Constants = {
         "DEPT_CONTAS_RECEBER",
         "DEPT_FISCAL",
         "DEPT_IMPLANTACAO",
+        "DEPT_INSTALACAO",
+        "CLIENTE_INSTALACAO",
       ],
       project_status: [
         "RASCUNHO",

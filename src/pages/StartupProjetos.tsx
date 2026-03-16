@@ -332,8 +332,8 @@ export default function StartupProjetos() {
                           <tr className="border-b">
                             <th className="h-10 px-4 text-left align-middle font-medium text-muted-foreground">Projeto</th>
                             <th className="h-10 px-4 text-left align-middle font-medium text-muted-foreground">Condomínio</th>
+                            <th className="h-10 px-4 text-left align-middle font-medium text-muted-foreground">Progresso</th>
                             <th className="h-10 px-4 text-left align-middle font-medium text-muted-foreground">Data Início</th>
-                            <th className="h-10 px-4 text-left align-middle font-medium text-muted-foreground">Data Entrega</th>
                             <th className="h-10 px-4 text-right align-middle font-medium text-muted-foreground">Mensalidade</th>
                             <th className="h-10 px-4 text-right align-middle font-medium text-muted-foreground">Taxa Ativação</th>
                           </tr>

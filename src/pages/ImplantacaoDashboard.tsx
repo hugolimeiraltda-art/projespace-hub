@@ -233,6 +233,7 @@ export default function ImplantacaoDashboard() {
                       {/* Row 1: Project info */}
                       <div className="flex items-center gap-6 text-sm mb-2 flex-wrap">
                         <span className="font-semibold text-foreground">#{project.numero_projeto}</span>
+                        {portfolio?.contrato && <span className="text-muted-foreground font-medium">{portfolio.contrato}</span>}
                         <span className="font-medium text-foreground flex-1 min-w-[200px]">
                           {project.cliente_condominio_nome}
                           {cidadeEstado && <span className="text-muted-foreground font-normal ml-1">— {cidadeEstado}</span>}

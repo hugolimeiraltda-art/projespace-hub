@@ -39,7 +39,7 @@ export default function ImplantacaoDashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [etapasMap, setEtapasMap] = useState<Record<string, ImplantacaoEtapasData>>({});
-  const [portfolioMap, setPortfolioMap] = useState<Record<string, { mensalidade: number | null; taxa_ativacao: number | null }>>({});
+  const [portfolioMap, setPortfolioMap] = useState<Record<string, { mensalidade: number | null; taxa_ativacao: number | null; contrato: string | null }>>({});
 
   useEffect(() => {
     fetchData();

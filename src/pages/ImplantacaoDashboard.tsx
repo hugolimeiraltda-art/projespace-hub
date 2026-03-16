@@ -86,10 +86,10 @@ export default function ImplantacaoDashboard() {
       });
       setEtapasMap(eMap);
 
-      const pMap: Record<string, { mensalidade: number | null; taxa_ativacao: number | null }> = {};
+      const pMap: Record<string, { mensalidade: number | null; taxa_ativacao: number | null; contrato: string | null }> = {};
       portfolioRes.data?.forEach((p) => {
         if (p.project_id) {
-          pMap[p.project_id] = { mensalidade: p.mensalidade ? Number(p.mensalidade) : null, taxa_ativacao: p.taxa_ativacao ? Number(p.taxa_ativacao) : null };
+          pMap[p.project_id] = { mensalidade: p.mensalidade ? Number(p.mensalidade) : null, taxa_ativacao: p.taxa_ativacao ? Number(p.taxa_ativacao) : null, contrato: p.contrato || null };
         }
       });
       setPortfolioMap(pMap);

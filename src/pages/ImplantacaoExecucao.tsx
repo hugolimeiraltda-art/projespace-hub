@@ -1393,7 +1393,46 @@ export default function ImplantacaoExecucao() {
                     field="conferencia_tags"
                     dateField="conferencia_tags_at"
                     date={etapas.conferencia_tags_at}
-                  />
+                   />
+
+                  {/* 3.5 - Pendência de Departamento (Instalação) */}
+                  <div className="px-4 py-3 space-y-2 border-t border-border">
+                    <span className="text-sm font-medium">3.5 - Abrir Pendência de Departamento (Instalação)</span>
+                    <Textarea
+                      placeholder="Descreva a pendência de departamento..."
+                      value={pendenciaDeptTexto}
+                      onChange={(e) => setPendenciaDeptTexto(e.target.value)}
+                      className="min-h-[60px]"
+                    />
+                    <Button
+                      size="sm"
+                      onClick={() => criarPendencia('DEPT_INSTALACAO', pendenciaDeptTexto)}
+                      disabled={criandoPendencia || !pendenciaDeptTexto.trim()}
+                    >
+                      <Plus className="w-4 h-4 mr-1" />
+                      Abrir Pendência Departamento
+                    </Button>
+                  </div>
+
+                  {/* 3.6 - Pendência de Cliente (Instalação) */}
+                  <div className="px-4 py-3 space-y-2 border-t border-border">
+                    <span className="text-sm font-medium">3.6 - Abrir Pendência Externa de Instalação (Cliente)</span>
+                    <Textarea
+                      placeholder="Descreva a pendência do cliente..."
+                      value={pendenciaClienteTexto}
+                      onChange={(e) => setPendenciaClienteTexto(e.target.value)}
+                      className="min-h-[60px]"
+                    />
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => criarPendencia('CLIENTE_INSTALACAO', pendenciaClienteTexto)}
+                      disabled={criandoPendencia || !pendenciaClienteTexto.trim()}
+                    >
+                      <Plus className="w-4 h-4 mr-1" />
+                      Abrir Pendência Cliente
+                    </Button>
+                  </div>
                 </CardContent>
               </CollapsibleContent>
             </Collapsible>

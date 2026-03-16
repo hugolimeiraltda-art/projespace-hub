@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
 import {
-  Loader2, MapPin, FileText, Table2, Image as ImageIcon, ChevronRight,
+  Loader2, MapPin, FileText, Table2, Image as ImageIcon, ChevronRight, Send,
   DoorOpen, Car, Shield, Camera, Waves, PartyPopper,
   UtensilsCrossed, Baby, Dumbbell, Flame, Laptop, TreePine, Trophy, LayoutGrid, Building
 } from 'lucide-react';

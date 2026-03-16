@@ -39,7 +39,7 @@ export default function ImplantacaoDashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [etapasMap, setEtapasMap] = useState<Record<string, ImplantacaoEtapasData>>({});
-  const [portfolioMap, setPortfolioMap] = useState<Record<string, { mensalidade: number | null; taxa_ativacao: number | null }>>({});
+  const [portfolioMap, setPortfolioMap] = useState<Record<string, { mensalidade: number | null; taxa_ativacao: number | null; contrato: string | null }>>({});
 
   useEffect(() => {
     fetchData();
@@ -60,7 +60,7 @@ export default function ImplantacaoDashboard() {
           .select('project_id, contrato_assinado_at, ligacao_boas_vindas_at, agendamento_visita_startup_at, laudo_visita_startup_at, check_programacao_at, confirmacao_ativacao_financeira_at, operacao_assistida_inicio, operacao_assistida_fim'),
         supabase
           .from('customer_portfolio')
-          .select('project_id, mensalidade, taxa_ativacao')
+          .select('project_id, mensalidade, taxa_ativacao, contrato')
           .not('project_id', 'is', null),
       ]);
 
@@ -86,10 +86,10 @@ export default function ImplantacaoDashboard() {
       });
       setEtapasMap(eMap);
 
-      const pMap: Record<string, { mensalidade: number | null; taxa_ativacao: number | null }> = {};
+      const pMap: Record<string, { mensalidade: number | null; taxa_ativacao: number | null; contrato: string | null }> = {};
       portfolioRes.data?.forEach((p) => {
         if (p.project_id) {
-          pMap[p.project_id] = { mensalidade: p.mensalidade ? Number(p.mensalidade) : null, taxa_ativacao: p.taxa_ativacao ? Number(p.taxa_ativacao) : null };
+          pMap[p.project_id] = { mensalidade: p.mensalidade ? Number(p.mensalidade) : null, taxa_ativacao: p.taxa_ativacao ? Number(p.taxa_ativacao) : null, contrato: p.contrato || null };
         }
       });
       setPortfolioMap(pMap);
@@ -233,6 +233,7 @@ export default function ImplantacaoDashboard() {
                       {/* Row 1: Project info */}
                       <div className="flex items-center gap-6 text-sm mb-2 flex-wrap">
                         <span className="font-semibold text-foreground">#{project.numero_projeto}</span>
+                        {portfolio?.contrato && <span className="text-muted-foreground font-medium">{portfolio.contrato}</span>}
                         <span className="font-medium text-foreground flex-1 min-w-[200px]">
                           {project.cliente_condominio_nome}
                           {cidadeEstado && <span className="text-muted-foreground font-normal ml-1">— {cidadeEstado}</span>}

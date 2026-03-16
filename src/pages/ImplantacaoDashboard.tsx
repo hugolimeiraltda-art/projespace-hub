@@ -227,7 +227,7 @@ export default function ImplantacaoDashboard() {
                   return (
                     <div
                       key={project.id}
-                      className="px-4 py-3 hover:bg-muted/50 cursor-pointer transition-colors"
+                      className="px-4 py-5 hover:bg-muted/50 cursor-pointer transition-colors border-b border-border last:border-b-0"
                       onClick={() => navigate(`/startup-projetos/${project.id}/execucao`)}
                     >
                       {/* Row 1: Project info */}

@@ -24,8 +24,11 @@ interface DashboardProject {
   id: string;
   numero_projeto: number;
   cliente_condominio_nome: string;
+  cliente_cidade: string | null;
+  cliente_estado: string | null;
   implantacao_status: string | null;
   implantacao_started_at: string | null;
+  prazo_entrega_projeto: string | null;
 }
 
 export default function ImplantacaoDashboard() {

@@ -177,6 +177,8 @@ export default function ImplantacaoExecucao() {
   const [enderecoInstalacao, setEnderecoInstalacao] = useState('');
   const [editingEndereco, setEditingEndereco] = useState(false);
   const [usarEnderecoOrigem, setUsarEnderecoOrigem] = useState(false);
+  const [pendenciaDeptVisitaTexto, setPendenciaDeptVisitaTexto] = useState('');
+  const [pendenciaClienteVisitaTexto, setPendenciaClienteVisitaTexto] = useState('');
 
   const canEditDates = user?.role === 'admin' || user?.role === 'administrativo' || user?.role === 'implantacao';
 

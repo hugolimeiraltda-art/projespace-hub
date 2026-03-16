@@ -236,8 +236,8 @@ export default function ImplantacaoDashboard() {
                         {portfolio?.contrato && <span className="text-muted-foreground font-medium">{portfolio.contrato}</span>}
                         <span className="font-medium text-foreground flex-1 min-w-[200px]">
                           {project.cliente_condominio_nome}
-                          {cidadeEstado && <span className="text-muted-foreground font-normal ml-1">— {cidadeEstado}</span>}
                         </span>
+                        {cidadeEstado && <span className="text-muted-foreground text-sm min-w-[120px]">{cidadeEstado}</span>}
                         <div className="flex items-center gap-6 text-muted-foreground">
                           <span className="flex items-center gap-1.5">
                             <Calendar className="w-3.5 h-3.5" />

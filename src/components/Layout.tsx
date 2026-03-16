@@ -75,8 +75,13 @@ const ALL_NAV_ITEMS: NavItem[] = [
     subItems: [
       { path: '/manutencao/preventivas', label: 'Agendas Preventivas', icon: Calendar, menuKey: 'manutencao/preventivas' },
       { path: '/manutencao/chamados', label: 'Chamados', icon: Wrench, menuKey: 'manutencao/chamados' },
-      { path: '/manutencao/pendencias', label: 'Controle de Pendências', icon: AlertTriangle, menuKey: 'manutencao/pendencias' },
     ],
+  },
+  {
+    path: '/manutencao/pendencias',
+    label: 'Controle de Pendências',
+    icon: AlertTriangle,
+    menuKey: 'manutencao/pendencias',
   },
   {
     path: '/carteira-clientes',

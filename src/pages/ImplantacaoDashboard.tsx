@@ -16,6 +16,7 @@ import {
   CheckCircle2,
   Building,
   DollarSign,
+  Calendar,
 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -24,8 +25,11 @@ interface DashboardProject {
   id: string;
   numero_projeto: number;
   cliente_condominio_nome: string;
+  cliente_cidade: string | null;
+  cliente_estado: string | null;
   implantacao_status: string | null;
   implantacao_started_at: string | null;
+  prazo_entrega_projeto: string | null;
 }
 
 export default function ImplantacaoDashboard() {
@@ -47,7 +51,7 @@ export default function ImplantacaoDashboard() {
       const [projectsRes, etapasRes, portfolioRes] = await Promise.all([
         supabase
           .from('projects')
-          .select('id, numero_projeto, cliente_condominio_nome, implantacao_status, implantacao_started_at')
+          .select('id, numero_projeto, cliente_condominio_nome, cliente_cidade, cliente_estado, implantacao_status, implantacao_started_at, prazo_entrega_projeto')
           .eq('sale_status', 'CONCLUIDO')
           .neq('implantacao_status', 'CONCLUIDO_IMPLANTACAO')
           .order('updated_at', { ascending: false }),
@@ -202,70 +206,70 @@ export default function ImplantacaoDashboard() {
           </div>
         </div>
 
-        {/* Timeline Table */}
+        {/* Timeline List */}
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
-              <PlayCircle className="w-5 h-5 text-blue-500" />
+              <PlayCircle className="w-5 h-5 text-primary" />
               Timeline dos Projetos
             </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
-            <div className="relative w-full overflow-auto">
-              <table className="w-full caption-bottom text-sm">
-                <thead className="[&_tr]:border-b">
-                  <tr className="border-b">
-                    <th className="h-10 px-4 text-left align-middle font-medium text-muted-foreground w-20">Projeto</th>
-                    <th className="h-10 px-4 text-left align-middle font-medium text-muted-foreground">Condomínio</th>
-                    <th className="h-10 px-4 text-left align-middle font-medium text-muted-foreground min-w-[350px]">Progresso</th>
-                    <th className="h-10 px-4 text-left align-middle font-medium text-muted-foreground">Data Início</th>
-                    <th className="h-10 px-4 text-right align-middle font-medium text-muted-foreground">Mensalidade</th>
-                    <th className="h-10 px-4 text-right align-middle font-medium text-muted-foreground">Taxa Ativação</th>
-                  </tr>
-                </thead>
-                <tbody className="[&_tr:last-child]:border-0">
-                  {filtered.length === 0 ? (
-                    <tr>
-                      <td colSpan={6} className="p-8 text-center text-muted-foreground">
-                        Nenhum projeto encontrado.
-                      </td>
-                    </tr>
-                  ) : (
-                    filtered.map((project) => {
-                      const portfolio = portfolioMap[project.id];
-                      return (
-                        <tr
-                          key={project.id}
-                          className="border-b transition-colors hover:bg-muted/50 cursor-pointer"
-                          onClick={() => navigate(`/startup-projetos/${project.id}/execucao`)}
-                        >
-                          <td className="p-4 align-middle font-medium">#{project.numero_projeto}</td>
-                          <td className="p-4 align-middle">{project.cliente_condominio_nome}</td>
-                          <td className="p-4 align-middle">
-                            <ImplantacaoTimeline etapas={etapasMap[project.id] || null} compact />
-                          </td>
-                          <td className="p-4 align-middle">
-                            {project.implantacao_started_at
+            {filtered.length === 0 ? (
+              <div className="p-8 text-center text-muted-foreground">
+                Nenhum projeto encontrado.
+              </div>
+            ) : (
+              <div className="divide-y divide-border">
+                {filtered.map((project) => {
+                  const portfolio = portfolioMap[project.id];
+                  const cidadeEstado = [project.cliente_cidade, project.cliente_estado].filter(Boolean).join('/');
+                  return (
+                    <div
+                      key={project.id}
+                      className="px-4 py-3 hover:bg-muted/50 cursor-pointer transition-colors"
+                      onClick={() => navigate(`/startup-projetos/${project.id}/execucao`)}
+                    >
+                      {/* Row 1: Project info */}
+                      <div className="flex items-center gap-6 text-sm mb-2 flex-wrap">
+                        <span className="font-semibold text-foreground">#{project.numero_projeto}</span>
+                        <span className="font-medium text-foreground flex-1 min-w-[200px]">
+                          {project.cliente_condominio_nome}
+                          {cidadeEstado && <span className="text-muted-foreground font-normal ml-1">— {cidadeEstado}</span>}
+                        </span>
+                        <div className="flex items-center gap-6 text-muted-foreground">
+                          <span className="flex items-center gap-1.5">
+                            <Calendar className="w-3.5 h-3.5" />
+                            Início: {project.implantacao_started_at
                               ? format(parseISO(project.implantacao_started_at), 'dd/MM/yyyy', { locale: ptBR })
                               : '—'}
-                          </td>
-                          <td className="p-4 align-middle text-right">
+                          </span>
+                          <span className="flex items-center gap-1.5">
+                            <Calendar className="w-3.5 h-3.5" />
+                            Previsão: {project.prazo_entrega_projeto
+                              ? format(parseISO(project.prazo_entrega_projeto), 'dd/MM/yyyy', { locale: ptBR })
+                              : '—'}
+                          </span>
+                          <span className="flex items-center gap-1.5">
+                            <DollarSign className="w-3.5 h-3.5" />
                             {portfolio?.mensalidade != null
                               ? `R$ ${portfolio.mensalidade.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
                               : '—'}
-                          </td>
-                          <td className="p-4 align-middle text-right">
-                            {portfolio?.taxa_ativacao != null
+                          </span>
+                          <span className="flex items-center gap-1.5">
+                            Taxa: {portfolio?.taxa_ativacao != null
                               ? `R$ ${portfolio.taxa_ativacao.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
                               : '—'}
-                          </td>
-                        </tr>
-                      );
-                    })
-                  )}
-                </tbody>
-              </table>
-            </div>
+                          </span>
+                        </div>
+                      </div>
+                      {/* Row 2: Timeline */}
+                      <ImplantacaoTimeline etapas={etapasMap[project.id] || null} compact />
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>

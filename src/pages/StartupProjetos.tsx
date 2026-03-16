@@ -313,67 +313,6 @@ export default function StartupProjetos() {
               </Card>
             </div>
 
-            {/* Projetos em Andamento Table */}
-            {(() => {
-              const emAndamento = projects.filter(p => p.implantacao_status === 'EM_EXECUCAO');
-              if (emAndamento.length === 0) return null;
-              return (
-                <Card className="mb-6">
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-base flex items-center gap-2">
-                      <PlayCircle className="w-5 h-5 text-blue-500" />
-                      Projetos em Andamento
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-0">
-                    <div className="relative w-full overflow-auto">
-                      <table className="w-full caption-bottom text-sm">
-                        <thead className="[&_tr]:border-b">
-                          <tr className="border-b">
-                            <th className="h-10 px-4 text-left align-middle font-medium text-muted-foreground">Projeto</th>
-                            <th className="h-10 px-4 text-left align-middle font-medium text-muted-foreground">Condomínio</th>
-                            <th className="h-10 px-4 text-left align-middle font-medium text-muted-foreground">Progresso</th>
-                            <th className="h-10 px-4 text-left align-middle font-medium text-muted-foreground">Data Início</th>
-                            <th className="h-10 px-4 text-right align-middle font-medium text-muted-foreground">Mensalidade</th>
-                            <th className="h-10 px-4 text-right align-middle font-medium text-muted-foreground">Taxa Ativação</th>
-                          </tr>
-                        </thead>
-                        <tbody className="[&_tr:last-child]:border-0">
-                          {emAndamento.map((project) => {
-                            const portfolio = portfolioMap[project.id];
-                            return (
-                              <tr key={project.id} className="border-b transition-colors hover:bg-muted/50 cursor-pointer" onClick={() => navigate(`/startup-projetos/${project.id}/execucao`)}>
-                                <td className="p-4 align-middle font-medium">#{project.numero_projeto}</td>
-                                <td className="p-4 align-middle">{project.cliente_condominio_nome}</td>
-                                <td className="p-4 align-middle min-w-[280px]">
-                                  <ImplantacaoTimeline etapas={etapasMap[project.id] || null} compact />
-                                </td>
-                                <td className="p-4 align-middle">
-                                  {project.implantacao_started_at
-                                    ? format(parseISO(project.implantacao_started_at), 'dd/MM/yyyy', { locale: ptBR })
-                                    : '—'}
-                                </td>
-                                <td className="p-4 align-middle text-right">
-                                  {portfolio?.mensalidade != null
-                                    ? `R$ ${portfolio.mensalidade.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
-                                    : '—'}
-                                </td>
-                                <td className="p-4 align-middle text-right">
-                                  {portfolio?.taxa_ativacao != null
-                                    ? `R$ ${portfolio.taxa_ativacao.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
-                                    : '—'}
-                                </td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })()}
-
             {/* Search and Filter */}
             <div className="mb-6 flex flex-col sm:flex-row gap-4">
               <div className="relative flex-1 max-w-md">

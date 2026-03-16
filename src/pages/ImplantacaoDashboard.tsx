@@ -16,6 +16,7 @@ import {
   CheckCircle2,
   Building,
   DollarSign,
+  Calendar,
 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';

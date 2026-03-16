@@ -130,6 +130,7 @@ interface Project {
   prazo_entrega_projeto: string | null;
   implantacao_started_at: string | null;
   engineering_status: string | null;
+  endereco_condominio: string | null;
 }
 
 interface ContratoInfo {
@@ -173,6 +174,9 @@ export default function ImplantacaoExecucao() {
   const [pendenciaDeptTexto, setPendenciaDeptTexto] = useState('');
   const [pendenciaClienteTexto, setPendenciaClienteTexto] = useState('');
   const [criandoPendencia, setCriandoPendencia] = useState(false);
+  const [enderecoInstalacao, setEnderecoInstalacao] = useState('');
+  const [editingEndereco, setEditingEndereco] = useState(false);
+  const [usarEnderecoOrigem, setUsarEnderecoOrigem] = useState(false);
 
   const canEditDates = user?.role === 'admin' || user?.role === 'administrativo' || user?.role === 'implantacao';
 
@@ -189,7 +193,7 @@ export default function ImplantacaoExecucao() {
       // Fetch project
       const { data: projectData, error: projectError } = await supabase
         .from('projects')
-        .select('id, numero_projeto, cliente_condominio_nome, cliente_cidade, cliente_estado, vendedor_nome, created_at, prazo_entrega_projeto, implantacao_started_at, engineering_status')
+        .select('id, numero_projeto, cliente_condominio_nome, cliente_cidade, cliente_estado, vendedor_nome, created_at, prazo_entrega_projeto, implantacao_started_at, engineering_status, endereco_condominio')
         .eq('id', id)
         .single();
 
@@ -231,7 +235,7 @@ export default function ImplantacaoExecucao() {
       // Fetch customer_portfolio data for contract info
       const { data: portfolioData } = await supabase
         .from('customer_portfolio')
-        .select('contrato, alarme_codigo, mensalidade, taxa_ativacao, data_termino')
+        .select('contrato, alarme_codigo, mensalidade, taxa_ativacao, data_termino, endereco')
         .eq('project_id', id)
         .maybeSingle();
 
@@ -256,6 +260,9 @@ export default function ImplantacaoExecucao() {
           prazo_contrato: prazoValue,
           taxa_instalacao: portfolioData.taxa_ativacao ? String(portfolioData.taxa_ativacao) : '',
         });
+        if (portfolioData.endereco) {
+          setEnderecoInstalacao(portfolioData.endereco);
+        }
       }
 
       // Fetch TAP form
@@ -1302,6 +1309,111 @@ export default function ImplantacaoExecucao() {
                         )}
                       </div>
                     </div>
+                  </div>
+
+                  {/* Endereço de Instalação */}
+                  <div className="p-4 bg-muted/30 rounded-lg border">
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className="text-sm font-medium">Endereço de Instalação</h4>
+                      {!editingEndereco && enderecoInstalacao && (
+                        <div className="flex gap-1">
+                          <Button variant="ghost" size="sm" onClick={() => setEditingEndereco(true)}>
+                            <Pencil className="w-4 h-4" />
+                          </Button>
+                          <Button variant="ghost" size="sm" onClick={async () => {
+                            setEnderecoInstalacao('');
+                            const { data: existing } = await supabase
+                              .from('customer_portfolio')
+                              .select('id')
+                              .eq('project_id', id)
+                              .maybeSingle();
+                            if (existing) {
+                              await supabase.from('customer_portfolio').update({ endereco: null }).eq('id', existing.id);
+                            }
+                            toast({ title: 'Endereço removido' });
+                          }}>
+                            <span className="text-xs text-destructive">Remover</span>
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+
+                    {project?.endereco_condominio && !enderecoInstalacao && !editingEndereco && (
+                      <div className="space-y-2">
+                        <p className="text-sm text-muted-foreground">
+                          Endereço do projeto: <span className="font-medium text-foreground">{project.endereco_condominio}</span>
+                        </p>
+                        <div className="flex gap-2">
+                          <Button size="sm" variant="outline" onClick={async () => {
+                            setEnderecoInstalacao(project.endereco_condominio!);
+                            const { data: existing } = await supabase
+                              .from('customer_portfolio')
+                              .select('id')
+                              .eq('project_id', id)
+                              .maybeSingle();
+                            if (existing) {
+                              await supabase.from('customer_portfolio').update({ endereco: project.endereco_condominio }).eq('id', existing.id);
+                            }
+                            toast({ title: 'Endereço confirmado' });
+                          }}>
+                            <Check className="w-4 h-4 mr-1" />
+                            Usar este endereço
+                          </Button>
+                          <Button size="sm" variant="outline" onClick={() => setEditingEndereco(true)}>
+                            <Pencil className="w-4 h-4 mr-1" />
+                            Informar outro
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+
+                    {!project?.endereco_condominio && !enderecoInstalacao && !editingEndereco && (
+                      <div className="space-y-2">
+                        <p className="text-sm text-muted-foreground">Nenhum endereço cadastrado.</p>
+                        <Button size="sm" variant="outline" onClick={() => setEditingEndereco(true)}>
+                          <Plus className="w-4 h-4 mr-1" />
+                          Adicionar endereço
+                        </Button>
+                      </div>
+                    )}
+
+                    {enderecoInstalacao && !editingEndereco && (
+                      <p className="text-sm font-medium">{enderecoInstalacao}</p>
+                    )}
+
+                    {editingEndereco && (
+                      <div className="space-y-2">
+                        <Input
+                          value={enderecoInstalacao}
+                          onChange={(e) => setEnderecoInstalacao(e.target.value)}
+                          placeholder="Endereço completo de instalação"
+                        />
+                        <div className="flex gap-2">
+                          <Button size="sm" onClick={async () => {
+                            if (!enderecoInstalacao.trim()) {
+                              toast({ title: 'Erro', description: 'Preencha o endereço.', variant: 'destructive' });
+                              return;
+                            }
+                            const { data: existing } = await supabase
+                              .from('customer_portfolio')
+                              .select('id')
+                              .eq('project_id', id)
+                              .maybeSingle();
+                            if (existing) {
+                              await supabase.from('customer_portfolio').update({ endereco: enderecoInstalacao.trim() }).eq('id', existing.id);
+                            }
+                            setEditingEndereco(false);
+                            toast({ title: 'Endereço salvo' });
+                          }}>
+                            <Check className="w-4 h-4 mr-1" />
+                            Salvar
+                          </Button>
+                          <Button size="sm" variant="outline" onClick={() => setEditingEndereco(false)}>
+                            Cancelar
+                          </Button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                   
                   <div className="flex items-center justify-between py-2 px-4 hover:bg-muted/50 rounded-md">

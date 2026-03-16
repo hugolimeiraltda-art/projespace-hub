@@ -345,14 +345,12 @@ export default function StartupProjetos() {
                               <tr key={project.id} className="border-b transition-colors hover:bg-muted/50 cursor-pointer" onClick={() => navigate(`/startup-projetos/${project.id}/execucao`)}>
                                 <td className="p-4 align-middle font-medium">#{project.numero_projeto}</td>
                                 <td className="p-4 align-middle">{project.cliente_condominio_nome}</td>
+                                <td className="p-4 align-middle min-w-[280px]">
+                                  <ImplantacaoTimeline etapas={etapasMap[project.id] || null} compact />
+                                </td>
                                 <td className="p-4 align-middle">
                                   {project.implantacao_started_at
                                     ? format(parseISO(project.implantacao_started_at), 'dd/MM/yyyy', { locale: ptBR })
-                                    : '—'}
-                                </td>
-                                <td className="p-4 align-middle">
-                                  {project.prazo_entrega_projeto
-                                    ? format(parseISO(project.prazo_entrega_projeto), 'dd/MM/yyyy', { locale: ptBR })
                                     : '—'}
                                 </td>
                                 <td className="p-4 align-middle text-right">

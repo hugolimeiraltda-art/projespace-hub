@@ -130,6 +130,7 @@ interface Project {
   prazo_entrega_projeto: string | null;
   implantacao_started_at: string | null;
   engineering_status: string | null;
+  endereco_condominio: string | null;
 }
 
 interface ContratoInfo {

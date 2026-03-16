@@ -361,6 +361,10 @@ export function EAPDialog({ open, onOpenChange, sessaoId, nomeCliente }: EAPDial
                 {gerando === 'excel' ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Table2 className="h-4 w-4 mr-2" />}
                 Baixar Excel de Equipamentos
               </Button>
+              <Button size="sm" onClick={handleEnviarVendedor} disabled={enviando} className="bg-primary text-primary-foreground hover:bg-primary/90">
+                {enviando ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Send className="h-4 w-4 mr-2" />}
+                Enviar EAP ao Vendedor
+              </Button>
             </div>
 
             {/* Totals */}

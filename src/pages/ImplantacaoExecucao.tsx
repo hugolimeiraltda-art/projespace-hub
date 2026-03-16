@@ -612,7 +612,7 @@ export default function ImplantacaoExecucao() {
     );
   }
 
-  const criarPendencia = async (tipo: 'PENDENCIA_DEPARTAMENTO' | 'PENDENCIA_CLIENTE', descricao: string) => {
+  const criarPendencia = async (tipo: string, descricao: string) => {
     if (!descricao.trim()) {
       toast({ title: 'Erro', description: 'Preencha a descrição da pendência.', variant: 'destructive' });
       return;
@@ -626,7 +626,8 @@ export default function ImplantacaoExecucao() {
         .maybeSingle();
 
       const contrato = customer?.contrato || contratoInfo.contrato || `TEMP-${project!.numero_projeto}`;
-      const slaDias = tipo === 'PENDENCIA_DEPARTAMENTO' ? 5 : 7;
+      const isDept = tipo.startsWith('DEPT_');
+      const slaDias = isDept ? 5 : 7;
       const prazo = new Date();
       prazo.setDate(prazo.getDate() + slaDias);
 
@@ -634,7 +635,7 @@ export default function ImplantacaoExecucao() {
         .from('manutencao_pendencias')
         .insert({
           customer_id: customer?.id || null,
-          tipo,
+          tipo: tipo as any,
           contrato,
           razao_social: project!.cliente_condominio_nome,
           numero_os: `IMP-${project!.numero_projeto}`,
@@ -648,9 +649,9 @@ export default function ImplantacaoExecucao() {
 
       if (error) throw error;
 
-      toast({ title: 'Pendência criada', description: `Pendência de ${tipo === 'PENDENCIA_DEPARTAMENTO' ? 'departamento' : 'cliente'} aberta com sucesso.` });
+      toast({ title: 'Pendência criada', description: `Pendência de ${isDept ? 'departamento' : 'cliente'} aberta com sucesso.` });
       
-      if (tipo === 'PENDENCIA_DEPARTAMENTO') setPendenciaDeptTexto('');
+      if (isDept) setPendenciaDeptTexto('');
       else setPendenciaClienteTexto('');
 
       if (customer) {

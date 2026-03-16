@@ -118,6 +118,24 @@ const TEMPLATES: Record<string, (v: Record<string, string>) => { subject: string
       <p style="color:#374151;font-size:14px;">${escapeHtml(v.descricao || '')}</p>
     `),
   }),
+  eap_vendedor: (v) => ({
+    subject: `EAP Disponível — ${escapeHtml(v.cliente || '')}`,
+    html: buildBaseHtml(`
+      <p style="color:#374151;font-size:16px;">Olá <strong>${escapeHtml(v.nome || 'Vendedor')}</strong>,</p>
+      <p style="color:#374151;font-size:16px;">A Estrutura Analítica do Projeto (EAP) do cliente <strong>${escapeHtml(v.cliente || '')}</strong> foi finalizada e está disponível para consulta.</p>
+      <div style="background-color:#f3f4f6;border-radius:8px;padding:16px;margin:16px 0;">
+        ${v.endereco ? `<p style="margin:4px 0;color:#374151;font-size:14px;"><strong>Endereço:</strong> ${escapeHtml(v.endereco)}</p>` : ''}
+        ${v.qtd_ambientes ? `<p style="margin:4px 0;color:#374151;font-size:14px;"><strong>Ambientes:</strong> ${escapeHtml(v.qtd_ambientes)}</p>` : ''}
+        ${v.mensalidade ? `<p style="margin:4px 0;color:#374151;font-size:14px;"><strong>Mensalidade:</strong> R$ ${escapeHtml(v.mensalidade)}</p>` : ''}
+        ${v.taxa_instalacao ? `<p style="margin:4px 0;color:#374151;font-size:14px;"><strong>Taxa de Instalação:</strong> R$ ${escapeHtml(v.taxa_instalacao)}</p>` : ''}
+      </div>
+      <p style="color:#374151;font-size:14px;">Acesse o sistema para visualizar o detalhamento completo, baixar o PDF ou a planilha de equipamentos.</p>
+      <div style="text-align:center;margin:24px 0;">
+        <a href="${v.link || 'https://eixopci.lovable.app'}" style="display:inline-block;background-color:#1e40af;color:white;padding:12px 32px;border-radius:6px;text-decoration:none;font-weight:bold;">Acessar EAP no Sistema</a>
+      </div>
+      <p style="color:#6B7280;font-size:12px;">Enviado por: ${escapeHtml(v.enviado_por || 'Projetista')}</p>
+    `),
+  }),
 };
 
 // ── SMTP Send (supports both port 465 SSL and port 587 STARTTLS) ──

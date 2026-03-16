@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
 import {
-  Loader2, MapPin, FileText, Table2, Image as ImageIcon, ChevronRight,
+  Loader2, MapPin, FileText, Table2, Image as ImageIcon, ChevronRight, Send,
   DoorOpen, Car, Shield, Camera, Waves, PartyPopper,
   UtensilsCrossed, Baby, Dumbbell, Flame, Laptop, TreePine, Trophy, LayoutGrid, Building
 } from 'lucide-react';
@@ -48,12 +49,14 @@ const getAmbienteIcon = (tipo: string) => {
 
 export function EAPDialog({ open, onOpenChange, sessaoId, nomeCliente }: EAPDialogProps) {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [propostaData, setPropostaData] = useState<PropostaData | null>(null);
   const [ambientes, setAmbientes] = useState<AmbienteItem[]>([]);
   const [fotos, setFotos] = useState<{ arquivo_url: string; nome_arquivo: string; descricao: string | null }[]>([]);
   const [gerando, setGerando] = useState<string | null>(null);
   const [selectedAmbiente, setSelectedAmbiente] = useState<AmbienteItem | null>(null);
+  const [enviando, setEnviando] = useState(false);
 
   useEffect(() => {
     if (!open) return;
@@ -258,6 +261,78 @@ export function EAPDialog({ open, onOpenChange, sessaoId, nomeCliente }: EAPDial
     setGerando(null);
   };
 
+  const handleEnviarVendedor = async () => {
+    setEnviando(true);
+    try {
+      // Fetch vendedor info from sessão
+      const { data: sessao } = await supabase
+        .from('orcamento_sessoes')
+        .select('vendedor_id, vendedor_nome, endereco_condominio')
+        .eq('id', sessaoId)
+        .single();
+
+      if (!sessao?.vendedor_id) {
+        toast({ title: 'Vendedor não encontrado nesta sessão', variant: 'destructive' });
+        setEnviando(false);
+        return;
+      }
+
+      // Fetch vendedor email
+      const { data: vendedorProfile } = await supabase
+        .from('profiles')
+        .select('email, nome')
+        .eq('id', sessao.vendedor_id)
+        .single();
+
+      if (!vendedorProfile?.email) {
+        toast({ title: 'E-mail do vendedor não encontrado', variant: 'destructive' });
+        setEnviando(false);
+        return;
+      }
+
+      // Send email
+      const variables: Record<string, string> = {
+        nome: vendedorProfile.nome || sessao.vendedor_nome || 'Vendedor',
+        cliente: nomeCliente,
+        endereco: sessao.endereco_condominio || '',
+        qtd_ambientes: String(ambientes.length),
+        mensalidade: propostaData?.itens?.mensalidade_total
+          ? propostaData.itens.mensalidade_total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })
+          : '',
+        taxa_instalacao: propostaData?.itens?.taxa_conexao_total
+          ? propostaData.itens.taxa_conexao_total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })
+          : '',
+        link: 'https://eixopci.lovable.app/orcamentos/chat',
+        enviado_por: user?.nome || 'Projetista',
+      };
+
+      const { error: emailError } = await supabase.functions.invoke('send-email-resend', {
+        body: {
+          action: 'send',
+          template_id: 'eap_vendedor',
+          to: vendedorProfile.email,
+          variables,
+        },
+      });
+
+      if (emailError) throw emailError;
+
+      // Create notification for vendedor
+      await supabase.from('manutencao_notificacoes').insert({
+        tipo: 'eap_disponivel',
+        titulo: `EAP disponível — ${nomeCliente}`,
+        mensagem: `A Estrutura Analítica do Projeto do cliente ${nomeCliente} foi finalizada. Acesse o sistema para visualizar.`,
+        for_user_id: sessao.vendedor_id,
+      });
+
+      toast({ title: 'EAP enviado ao vendedor com sucesso!' });
+    } catch (e) {
+      console.error('Erro ao enviar EAP:', e);
+      toast({ title: 'Erro ao enviar EAP ao vendedor', variant: 'destructive' });
+    }
+    setEnviando(false);
+  };
+
   return (
     <>
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -285,6 +360,10 @@ export function EAPDialog({ open, onOpenChange, sessaoId, nomeCliente }: EAPDial
               <Button variant="outline" size="sm" onClick={handleDownloadExcel} disabled={gerando === 'excel'}>
                 {gerando === 'excel' ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Table2 className="h-4 w-4 mr-2" />}
                 Baixar Excel de Equipamentos
+              </Button>
+              <Button size="sm" onClick={handleEnviarVendedor} disabled={enviando} className="bg-primary text-primary-foreground hover:bg-primary/90">
+                {enviando ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Send className="h-4 w-4 mr-2" />}
+                Enviar EAP ao Vendedor
               </Button>
             </div>
 

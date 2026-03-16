@@ -521,21 +521,10 @@ export default function StartupProjetos() {
                           </div>
                         </div>
 
-                        {/* Timeline info */}
-                        {(project.implantacao_started_at || project.implantacao_completed_at) && (
-                          <div className="mt-3 pt-3 border-t border-border flex gap-4 text-xs text-muted-foreground">
-                            {project.implantacao_started_at && (
-                              <span>
-                                Início: {format(parseISO(project.implantacao_started_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-                              </span>
-                            )}
-                            {project.implantacao_completed_at && (
-                              <span>
-                                Conclusão: {format(parseISO(project.implantacao_completed_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-                              </span>
-                            )}
-                          </div>
-                        )}
+                        {/* Implantação Timeline */}
+                        <div className="mt-3 pt-3 border-t border-border">
+                          <ImplantacaoTimeline etapas={etapasMap[project.id] || null} />
+                        </div>
                       </CardContent>
                     </Card>
                   );

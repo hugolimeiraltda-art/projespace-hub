@@ -261,7 +261,78 @@ export function EAPDialog({ open, onOpenChange, sessaoId, nomeCliente }: EAPDial
     setGerando(null);
   };
 
-  return (
+  const handleEnviarVendedor = async () => {
+    setEnviando(true);
+    try {
+      // Fetch vendedor info from sessão
+      const { data: sessao } = await supabase
+        .from('orcamento_sessoes')
+        .select('vendedor_id, vendedor_nome, endereco_condominio')
+        .eq('id', sessaoId)
+        .single();
+
+      if (!sessao?.vendedor_id) {
+        toast({ title: 'Vendedor não encontrado nesta sessão', variant: 'destructive' });
+        setEnviando(false);
+        return;
+      }
+
+      // Fetch vendedor email
+      const { data: vendedorProfile } = await supabase
+        .from('profiles')
+        .select('email, nome')
+        .eq('id', sessao.vendedor_id)
+        .single();
+
+      if (!vendedorProfile?.email) {
+        toast({ title: 'E-mail do vendedor não encontrado', variant: 'destructive' });
+        setEnviando(false);
+        return;
+      }
+
+      // Send email
+      const variables: Record<string, string> = {
+        nome: vendedorProfile.nome || sessao.vendedor_nome || 'Vendedor',
+        cliente: nomeCliente,
+        endereco: sessao.endereco_condominio || '',
+        qtd_ambientes: String(ambientes.length),
+        mensalidade: propostaData?.itens?.mensalidade_total
+          ? propostaData.itens.mensalidade_total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })
+          : '',
+        taxa_instalacao: propostaData?.itens?.taxa_conexao_total
+          ? propostaData.itens.taxa_conexao_total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })
+          : '',
+        link: 'https://eixopci.lovable.app/orcamentos/chat',
+        enviado_por: user?.nome || 'Projetista',
+      };
+
+      const { error: emailError } = await supabase.functions.invoke('send-email-resend', {
+        body: {
+          action: 'send',
+          template_id: 'eap_vendedor',
+          to: vendedorProfile.email,
+          variables,
+        },
+      });
+
+      if (emailError) throw emailError;
+
+      // Create notification for vendedor
+      await supabase.from('manutencao_notificacoes').insert({
+        tipo: 'eap_disponivel',
+        titulo: `EAP disponível — ${nomeCliente}`,
+        mensagem: `A Estrutura Analítica do Projeto do cliente ${nomeCliente} foi finalizada. Acesse o sistema para visualizar.`,
+        for_user_id: sessao.vendedor_id,
+      });
+
+      toast({ title: 'EAP enviado ao vendedor com sucesso!' });
+    } catch (e) {
+      console.error('Erro ao enviar EAP:', e);
+      toast({ title: 'Erro ao enviar EAP ao vendedor', variant: 'destructive' });
+    }
+    setEnviando(false);
+  };
+
     <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-6xl max-h-[85vh] overflow-y-auto">

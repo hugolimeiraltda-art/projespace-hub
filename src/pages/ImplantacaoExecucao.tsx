@@ -177,6 +177,8 @@ export default function ImplantacaoExecucao() {
   const [enderecoInstalacao, setEnderecoInstalacao] = useState('');
   const [editingEndereco, setEditingEndereco] = useState(false);
   const [usarEnderecoOrigem, setUsarEnderecoOrigem] = useState(false);
+  const [pendenciaDeptVisitaTexto, setPendenciaDeptVisitaTexto] = useState('');
+  const [pendenciaClienteVisitaTexto, setPendenciaClienteVisitaTexto] = useState('');
 
   const canEditDates = user?.role === 'admin' || user?.role === 'administrativo' || user?.role === 'implantacao';
 
@@ -1653,6 +1655,59 @@ export default function ImplantacaoExecucao() {
                     </p>
                     <div className="ml-8">
                       <SectionFileUpload projectId={id || null} secao="implantacao_laudo_visita" />
+                    </div>
+                  </div>
+
+                  {/* 4.4 - Pendências detectadas */}
+                  <div className="px-4 py-3 space-y-3 border-t border-border">
+                    <span className="text-sm font-medium">4.4 - Pendências detectadas na visita</span>
+                    <p className="text-xs text-muted-foreground">
+                      Se alguma pendência por parte do cliente ou da Emive foi detectada durante a visita, registre abaixo.
+                    </p>
+
+                    {/* Pendência de Departamento */}
+                    <div className="space-y-2 p-3 bg-muted/30 rounded-lg border">
+                      <span className="text-xs font-medium text-muted-foreground">Pendência Interna (Departamento Instalação)</span>
+                      <Textarea
+                        placeholder="Descreva a pendência interna detectada..."
+                        value={pendenciaDeptVisitaTexto}
+                        onChange={(e) => setPendenciaDeptVisitaTexto(e.target.value)}
+                        className="min-h-[60px]"
+                      />
+                      <Button
+                        size="sm"
+                        onClick={async () => {
+                          await criarPendencia('DEPT_INSTALACAO', pendenciaDeptVisitaTexto);
+                          setPendenciaDeptVisitaTexto('');
+                        }}
+                        disabled={criandoPendencia || !pendenciaDeptVisitaTexto.trim()}
+                      >
+                        <Plus className="w-4 h-4 mr-1" />
+                        Abrir Pendência Departamento
+                      </Button>
+                    </div>
+
+                    {/* Pendência de Cliente */}
+                    <div className="space-y-2 p-3 bg-muted/30 rounded-lg border">
+                      <span className="text-xs font-medium text-muted-foreground">Pendência Externa (Cliente)</span>
+                      <Textarea
+                        placeholder="Descreva a pendência do cliente detectada..."
+                        value={pendenciaClienteVisitaTexto}
+                        onChange={(e) => setPendenciaClienteVisitaTexto(e.target.value)}
+                        className="min-h-[60px]"
+                      />
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={async () => {
+                          await criarPendencia('CLIENTE_INSTALACAO', pendenciaClienteVisitaTexto);
+                          setPendenciaClienteVisitaTexto('');
+                        }}
+                        disabled={criandoPendencia || !pendenciaClienteVisitaTexto.trim()}
+                      >
+                        <Plus className="w-4 h-4 mr-1" />
+                        Abrir Pendência Cliente
+                      </Button>
                     </div>
                   </div>
                 </CardContent>

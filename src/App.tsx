@@ -128,6 +128,10 @@ function AppRoutes() {
         element={<ProtectedRoute><InformarNovaVenda /></ProtectedRoute>} 
       />
       <Route 
+        path="/implantacao-dashboard" 
+        element={<ProtectedRoute><ImplantacaoDashboard /></ProtectedRoute>} 
+      />
+      <Route 
         path="/startup-projetos" 
         element={<ProtectedRoute><StartupProjetos /></ProtectedRoute>} 
       />

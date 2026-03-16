@@ -49,12 +49,14 @@ const getAmbienteIcon = (tipo: string) => {
 
 export function EAPDialog({ open, onOpenChange, sessaoId, nomeCliente }: EAPDialogProps) {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [propostaData, setPropostaData] = useState<PropostaData | null>(null);
   const [ambientes, setAmbientes] = useState<AmbienteItem[]>([]);
   const [fotos, setFotos] = useState<{ arquivo_url: string; nome_arquivo: string; descricao: string | null }[]>([]);
   const [gerando, setGerando] = useState<string | null>(null);
   const [selectedAmbiente, setSelectedAmbiente] = useState<AmbienteItem | null>(null);
+  const [enviando, setEnviando] = useState(false);
 
   useEffect(() => {
     if (!open) return;

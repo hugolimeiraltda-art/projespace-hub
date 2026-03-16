@@ -50,7 +50,7 @@ export default function ImplantacaoDashboard() {
       const [projectsRes, etapasRes, portfolioRes] = await Promise.all([
         supabase
           .from('projects')
-          .select('id, numero_projeto, cliente_condominio_nome, implantacao_status, implantacao_started_at')
+          .select('id, numero_projeto, cliente_condominio_nome, cliente_cidade, cliente_estado, implantacao_status, implantacao_started_at, prazo_entrega_projeto')
           .eq('sale_status', 'CONCLUIDO')
           .neq('implantacao_status', 'CONCLUIDO_IMPLANTACAO')
           .order('updated_at', { ascending: false }),

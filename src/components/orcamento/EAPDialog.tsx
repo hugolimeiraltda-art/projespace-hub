@@ -333,6 +333,7 @@ export function EAPDialog({ open, onOpenChange, sessaoId, nomeCliente }: EAPDial
     setEnviando(false);
   };
 
+  return (
     <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-6xl max-h-[85vh] overflow-y-auto">

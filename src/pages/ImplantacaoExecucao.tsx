@@ -170,6 +170,9 @@ export default function ImplantacaoExecucao() {
   const [editingOpAssistidaDates, setEditingOpAssistidaDates] = useState(false);
   const [tempOpAssistidaStart, setTempOpAssistidaStart] = useState('');
   const [tempOpAssistidaEnd, setTempOpAssistidaEnd] = useState('');
+  const [pendenciaDeptTexto, setPendenciaDeptTexto] = useState('');
+  const [pendenciaClienteTexto, setPendenciaClienteTexto] = useState('');
+  const [criandoPendencia, setCriandoPendencia] = useState(false);
 
   const canEditDates = user?.role === 'admin' || user?.role === 'administrativo' || user?.role === 'implantacao';
 
@@ -608,6 +611,64 @@ export default function ImplantacaoExecucao() {
       </Layout>
     );
   }
+
+  const criarPendencia = async (tipo: string, descricao: string) => {
+    if (!descricao.trim()) {
+      toast({ title: 'Erro', description: 'Preencha a descrição da pendência.', variant: 'destructive' });
+      return;
+    }
+    setCriandoPendencia(true);
+    try {
+      const { data: customer } = await supabase
+        .from('customer_portfolio')
+        .select('id, contrato')
+        .eq('project_id', id!)
+        .maybeSingle();
+
+      const contrato = customer?.contrato || contratoInfo.contrato || `TEMP-${project!.numero_projeto}`;
+      const isDept = tipo.startsWith('DEPT_');
+      const slaDias = isDept ? 5 : 7;
+      const prazo = new Date();
+      prazo.setDate(prazo.getDate() + slaDias);
+
+      const { error } = await supabase
+        .from('manutencao_pendencias')
+        .insert({
+          customer_id: customer?.id || null,
+          tipo: tipo as any,
+          contrato,
+          razao_social: project!.cliente_condominio_nome,
+          numero_os: `IMP-${project!.numero_projeto}`,
+          setor: 'Instalação',
+          descricao,
+          sla_dias: slaDias,
+          data_prazo: prazo.toISOString(),
+          created_by: user?.id,
+          created_by_name: user?.nome,
+        });
+
+      if (error) throw error;
+
+      toast({ title: 'Pendência criada', description: `Pendência de ${isDept ? 'departamento' : 'cliente'} aberta com sucesso.` });
+      
+      if (isDept) setPendenciaDeptTexto('');
+      else setPendenciaClienteTexto('');
+
+      if (customer) {
+        const { count } = await supabase
+          .from('manutencao_pendencias')
+          .select('id', { count: 'exact', head: true })
+          .eq('customer_id', customer.id)
+          .eq('status', 'ABERTO');
+        setHasPendingItems((count || 0) > 0);
+      }
+    } catch (error) {
+      console.error('Error creating pendencia:', error);
+      toast({ title: 'Erro', description: 'Não foi possível criar a pendência.', variant: 'destructive' });
+    } finally {
+      setCriandoPendencia(false);
+    }
+  };
 
   if (!project || !etapas) {
     return (
@@ -1332,7 +1393,46 @@ export default function ImplantacaoExecucao() {
                     field="conferencia_tags"
                     dateField="conferencia_tags_at"
                     date={etapas.conferencia_tags_at}
-                  />
+                   />
+
+                  {/* 3.5 - Pendência de Departamento (Instalação) */}
+                  <div className="px-4 py-3 space-y-2 border-t border-border">
+                    <span className="text-sm font-medium">3.5 - Abrir Pendência de Departamento (Instalação)</span>
+                    <Textarea
+                      placeholder="Descreva a pendência de departamento..."
+                      value={pendenciaDeptTexto}
+                      onChange={(e) => setPendenciaDeptTexto(e.target.value)}
+                      className="min-h-[60px]"
+                    />
+                    <Button
+                      size="sm"
+                      onClick={() => criarPendencia('DEPT_INSTALACAO', pendenciaDeptTexto)}
+                      disabled={criandoPendencia || !pendenciaDeptTexto.trim()}
+                    >
+                      <Plus className="w-4 h-4 mr-1" />
+                      Abrir Pendência Departamento
+                    </Button>
+                  </div>
+
+                  {/* 3.6 - Pendência de Cliente (Instalação) */}
+                  <div className="px-4 py-3 space-y-2 border-t border-border">
+                    <span className="text-sm font-medium">3.6 - Abrir Pendência Externa de Instalação (Cliente)</span>
+                    <Textarea
+                      placeholder="Descreva a pendência do cliente..."
+                      value={pendenciaClienteTexto}
+                      onChange={(e) => setPendenciaClienteTexto(e.target.value)}
+                      className="min-h-[60px]"
+                    />
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => criarPendencia('CLIENTE_INSTALACAO', pendenciaClienteTexto)}
+                      disabled={criandoPendencia || !pendenciaClienteTexto.trim()}
+                    >
+                      <Plus className="w-4 h-4 mr-1" />
+                      Abrir Pendência Cliente
+                    </Button>
+                  </div>
                 </CardContent>
               </CollapsibleContent>
             </Collapsible>

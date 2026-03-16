@@ -612,6 +612,63 @@ export default function ImplantacaoExecucao() {
     );
   }
 
+  const criarPendencia = async (tipo: 'PENDENCIA_DEPARTAMENTO' | 'PENDENCIA_CLIENTE', descricao: string) => {
+    if (!descricao.trim()) {
+      toast({ title: 'Erro', description: 'Preencha a descrição da pendência.', variant: 'destructive' });
+      return;
+    }
+    setCriandoPendencia(true);
+    try {
+      const { data: customer } = await supabase
+        .from('customer_portfolio')
+        .select('id, contrato')
+        .eq('project_id', id!)
+        .maybeSingle();
+
+      const contrato = customer?.contrato || contratoInfo.contrato || `TEMP-${project!.numero_projeto}`;
+      const slaDias = tipo === 'PENDENCIA_DEPARTAMENTO' ? 5 : 7;
+      const prazo = new Date();
+      prazo.setDate(prazo.getDate() + slaDias);
+
+      const { error } = await supabase
+        .from('manutencao_pendencias')
+        .insert({
+          customer_id: customer?.id || null,
+          tipo,
+          contrato,
+          razao_social: project!.cliente_condominio_nome,
+          numero_os: `IMP-${project!.numero_projeto}`,
+          setor: 'Instalação',
+          descricao,
+          sla_dias: slaDias,
+          data_prazo: prazo.toISOString(),
+          created_by: user?.id,
+          created_by_name: user?.nome,
+        });
+
+      if (error) throw error;
+
+      toast({ title: 'Pendência criada', description: `Pendência de ${tipo === 'PENDENCIA_DEPARTAMENTO' ? 'departamento' : 'cliente'} aberta com sucesso.` });
+      
+      if (tipo === 'PENDENCIA_DEPARTAMENTO') setPendenciaDeptTexto('');
+      else setPendenciaClienteTexto('');
+
+      if (customer) {
+        const { count } = await supabase
+          .from('manutencao_pendencias')
+          .select('id', { count: 'exact', head: true })
+          .eq('customer_id', customer.id)
+          .eq('status', 'ABERTO');
+        setHasPendingItems((count || 0) > 0);
+      }
+    } catch (error) {
+      console.error('Error creating pendencia:', error);
+      toast({ title: 'Erro', description: 'Não foi possível criar a pendência.', variant: 'destructive' });
+    } finally {
+      setCriandoPendencia(false);
+    }
+  };
+
   if (!project || !etapas) {
     return (
       <Layout>

@@ -260,6 +260,9 @@ export default function ImplantacaoExecucao() {
           prazo_contrato: prazoValue,
           taxa_instalacao: portfolioData.taxa_ativacao ? String(portfolioData.taxa_ativacao) : '',
         });
+        if (portfolioData.endereco) {
+          setEnderecoInstalacao(portfolioData.endereco);
+        }
       }
 
       // Fetch TAP form

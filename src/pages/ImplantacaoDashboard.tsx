@@ -60,7 +60,7 @@ export default function ImplantacaoDashboard() {
           .select('project_id, contrato_assinado_at, ligacao_boas_vindas_at, agendamento_visita_startup_at, laudo_visita_startup_at, check_programacao_at, confirmacao_ativacao_financeira_at, operacao_assistida_inicio, operacao_assistida_fim'),
         supabase
           .from('customer_portfolio')
-          .select('project_id, mensalidade, taxa_ativacao')
+          .select('project_id, mensalidade, taxa_ativacao, contrato')
           .not('project_id', 'is', null),
       ]);
 

@@ -136,6 +136,7 @@ export function Layout({ children }: LayoutProps) {
     if (path.startsWith('/projetos') || path === '/informar-venda') initial.push('/projetos');
     if (path.startsWith('/manutencao')) initial.push('/manutencao');
     if (path.startsWith('/orcamentos') || path.startsWith('/orcamento')) initial.push('/orcamentos');
+    if (path.startsWith('/startup-projetos') || path.startsWith('/implantacao')) initial.push('/startup-projetos');
     return initial;
   });
 

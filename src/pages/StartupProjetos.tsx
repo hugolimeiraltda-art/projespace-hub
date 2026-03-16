@@ -11,6 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useImplantacaoIntegration } from '@/hooks/useImplantacaoIntegration';
 import { cn } from '@/lib/utils';
+import { ImplantacaoTimeline, ImplantacaoEtapasData } from '@/components/ImplantacaoTimeline';
 import {
   Search,
   Filter,
@@ -77,6 +78,7 @@ export default function StartupProjetos() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<ImplantacaoStatus | 'TODOS'>('TODOS');
   const [portfolioMap, setPortfolioMap] = useState<Record<string, { mensalidade: number | null; taxa_ativacao: number | null }>>({});
+  const [etapasMap, setEtapasMap] = useState<Record<string, ImplantacaoEtapasData>>({});
 
   useEffect(() => {
     fetchProjects();
@@ -85,7 +87,7 @@ export default function StartupProjetos() {
   const fetchProjects = async () => {
     try {
       setIsLoading(true);
-      const [projectsRes, portfolioRes] = await Promise.all([
+      const [projectsRes, portfolioRes, etapasRes] = await Promise.all([
         supabase
           .from('projects')
           .select('id, numero_projeto, cliente_condominio_nome, cliente_cidade, cliente_estado, vendedor_nome, created_at, updated_at, implantacao_status, implantacao_started_at, implantacao_completed_at, prazo_entrega_projeto')
@@ -96,6 +98,9 @@ export default function StartupProjetos() {
           .from('customer_portfolio')
           .select('project_id, mensalidade, taxa_ativacao')
           .not('project_id', 'is', null),
+        supabase
+          .from('implantacao_etapas')
+          .select('project_id, contrato_assinado_at, ligacao_boas_vindas_at, agendamento_visita_startup_at, laudo_visita_startup_at, check_programacao_at, confirmacao_ativacao_financeira_at, operacao_assistida_inicio, operacao_assistida_fim'),
       ]);
 
       if (projectsRes.error) {
@@ -116,6 +121,24 @@ export default function StartupProjetos() {
         }
       });
       setPortfolioMap(pMap);
+
+      // Build etapas map
+      const eMap: Record<string, ImplantacaoEtapasData> = {};
+      etapasRes.data?.forEach((e: any) => {
+        if (e.project_id) {
+          eMap[e.project_id] = {
+            contrato_assinado_at: e.contrato_assinado_at,
+            ligacao_boas_vindas_at: e.ligacao_boas_vindas_at,
+            agendamento_visita_startup_at: e.agendamento_visita_startup_at,
+            laudo_visita_startup_at: e.laudo_visita_startup_at,
+            check_programacao_at: e.check_programacao_at,
+            confirmacao_ativacao_financeira_at: e.confirmacao_ativacao_financeira_at,
+            operacao_assistida_inicio: e.operacao_assistida_inicio,
+            operacao_assistida_fim: e.operacao_assistida_fim,
+          };
+        }
+      });
+      setEtapasMap(eMap);
 
       setProjects(projectsRes.data || []);
     } catch (error) {
@@ -309,8 +332,8 @@ export default function StartupProjetos() {
                           <tr className="border-b">
                             <th className="h-10 px-4 text-left align-middle font-medium text-muted-foreground">Projeto</th>
                             <th className="h-10 px-4 text-left align-middle font-medium text-muted-foreground">Condomínio</th>
+                            <th className="h-10 px-4 text-left align-middle font-medium text-muted-foreground">Progresso</th>
                             <th className="h-10 px-4 text-left align-middle font-medium text-muted-foreground">Data Início</th>
-                            <th className="h-10 px-4 text-left align-middle font-medium text-muted-foreground">Data Entrega</th>
                             <th className="h-10 px-4 text-right align-middle font-medium text-muted-foreground">Mensalidade</th>
                             <th className="h-10 px-4 text-right align-middle font-medium text-muted-foreground">Taxa Ativação</th>
                           </tr>
@@ -322,14 +345,12 @@ export default function StartupProjetos() {
                               <tr key={project.id} className="border-b transition-colors hover:bg-muted/50 cursor-pointer" onClick={() => navigate(`/startup-projetos/${project.id}/execucao`)}>
                                 <td className="p-4 align-middle font-medium">#{project.numero_projeto}</td>
                                 <td className="p-4 align-middle">{project.cliente_condominio_nome}</td>
+                                <td className="p-4 align-middle min-w-[280px]">
+                                  <ImplantacaoTimeline etapas={etapasMap[project.id] || null} compact />
+                                </td>
                                 <td className="p-4 align-middle">
                                   {project.implantacao_started_at
                                     ? format(parseISO(project.implantacao_started_at), 'dd/MM/yyyy', { locale: ptBR })
-                                    : '—'}
-                                </td>
-                                <td className="p-4 align-middle">
-                                  {project.prazo_entrega_projeto
-                                    ? format(parseISO(project.prazo_entrega_projeto), 'dd/MM/yyyy', { locale: ptBR })
                                     : '—'}
                                 </td>
                                 <td className="p-4 align-middle text-right">
@@ -498,21 +519,10 @@ export default function StartupProjetos() {
                           </div>
                         </div>
 
-                        {/* Timeline info */}
-                        {(project.implantacao_started_at || project.implantacao_completed_at) && (
-                          <div className="mt-3 pt-3 border-t border-border flex gap-4 text-xs text-muted-foreground">
-                            {project.implantacao_started_at && (
-                              <span>
-                                Início: {format(parseISO(project.implantacao_started_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-                              </span>
-                            )}
-                            {project.implantacao_completed_at && (
-                              <span>
-                                Conclusão: {format(parseISO(project.implantacao_completed_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-                              </span>
-                            )}
-                          </div>
-                        )}
+                        {/* Implantação Timeline */}
+                        <div className="mt-3 pt-3 border-t border-border">
+                          <ImplantacaoTimeline etapas={etapasMap[project.id] || null} />
+                        </div>
                       </CardContent>
                     </Card>
                   );

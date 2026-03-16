@@ -231,38 +231,34 @@ export default function ImplantacaoDashboard() {
                       onClick={() => navigate(`/startup-projetos/${project.id}/execucao`)}
                     >
                       {/* Row 1: Project info */}
-                      <div className="flex items-center gap-6 text-sm mb-2 flex-wrap">
-                        <span className="font-semibold text-foreground">#{project.numero_projeto}</span>
-                        {portfolio?.contrato && <span className="text-muted-foreground font-medium">{portfolio.contrato}</span>}
-                        <span className="font-medium text-foreground flex-1 min-w-[200px]">
-                          {project.cliente_condominio_nome}
+                      <div className="flex items-center text-sm mb-2">
+                        <span className="font-semibold text-foreground w-[60px] shrink-0">#{project.numero_projeto}</span>
+                        <span className="text-muted-foreground font-medium w-[90px] shrink-0 truncate">{portfolio?.contrato || '—'}</span>
+                        <span className="font-medium text-foreground flex-1 min-w-0 truncate">{project.cliente_condominio_nome}</span>
+                        <span className="text-muted-foreground w-[140px] shrink-0 truncate">{cidadeEstado || '—'}</span>
+                        <span className="flex items-center gap-1.5 text-muted-foreground w-[170px] shrink-0">
+                          <Calendar className="w-3.5 h-3.5" />
+                          Início: {project.implantacao_started_at
+                            ? format(parseISO(project.implantacao_started_at), 'dd/MM/yyyy', { locale: ptBR })
+                            : '—'}
                         </span>
-                        {cidadeEstado && <span className="text-muted-foreground text-sm min-w-[120px]">{cidadeEstado}</span>}
-                        <div className="flex items-center gap-6 text-muted-foreground">
-                          <span className="flex items-center gap-1.5">
-                            <Calendar className="w-3.5 h-3.5" />
-                            Início: {project.implantacao_started_at
-                              ? format(parseISO(project.implantacao_started_at), 'dd/MM/yyyy', { locale: ptBR })
-                              : '—'}
-                          </span>
-                          <span className="flex items-center gap-1.5">
-                            <Calendar className="w-3.5 h-3.5" />
-                            Previsão: {project.prazo_entrega_projeto
-                              ? format(parseISO(project.prazo_entrega_projeto), 'dd/MM/yyyy', { locale: ptBR })
-                              : '—'}
-                          </span>
-                          <span className="flex items-center gap-1.5">
-                            <DollarSign className="w-3.5 h-3.5" />
-                            {portfolio?.mensalidade != null
-                              ? `R$ ${portfolio.mensalidade.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
-                              : '—'}
-                          </span>
-                          <span className="flex items-center gap-1.5">
-                            Taxa: {portfolio?.taxa_ativacao != null
-                              ? `R$ ${portfolio.taxa_ativacao.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
-                              : '—'}
-                          </span>
-                        </div>
+                        <span className="flex items-center gap-1.5 text-muted-foreground w-[190px] shrink-0">
+                          <Calendar className="w-3.5 h-3.5" />
+                          Previsão: {project.prazo_entrega_projeto
+                            ? format(parseISO(project.prazo_entrega_projeto), 'dd/MM/yyyy', { locale: ptBR })
+                            : '—'}
+                        </span>
+                        <span className="flex items-center gap-1.5 text-muted-foreground w-[130px] shrink-0">
+                          <DollarSign className="w-3.5 h-3.5" />
+                          {portfolio?.mensalidade != null
+                            ? `R$ ${portfolio.mensalidade.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
+                            : '—'}
+                        </span>
+                        <span className="text-muted-foreground w-[110px] shrink-0">
+                          Taxa: {portfolio?.taxa_ativacao != null
+                            ? `R$ ${portfolio.taxa_ativacao.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
+                            : '—'}
+                        </span>
                       </div>
                       {/* Row 2: Timeline */}
                       <ImplantacaoTimeline etapas={etapasMap[project.id] || null} compact />

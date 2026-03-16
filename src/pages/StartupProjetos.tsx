@@ -78,6 +78,7 @@ export default function StartupProjetos() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<ImplantacaoStatus | 'TODOS'>('TODOS');
   const [portfolioMap, setPortfolioMap] = useState<Record<string, { mensalidade: number | null; taxa_ativacao: number | null }>>({});
+  const [etapasMap, setEtapasMap] = useState<Record<string, ImplantacaoEtapasData>>({});
 
   useEffect(() => {
     fetchProjects();

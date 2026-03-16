@@ -55,6 +55,7 @@ const ALL_NAV_ITEMS: NavItem[] = [
     icon: ClipboardList,
     menuKey: 'implantacao',
     subItems: [
+      { path: '/implantacao-dashboard', label: 'Dashboard', icon: BarChart3, menuKey: 'implantacao/dashboard' },
       { path: '/startup-projetos?tab=em-implantacao', label: 'Em Implantação', icon: PlayCircle, menuKey: 'implantacao/em-implantacao' },
       { path: '/startup-projetos?tab=operacao-assistida', label: 'Operação Assistida', icon: HeadphonesIcon, menuKey: 'implantacao/operacao-assistida' },
       { path: '/startup-projetos?tab=pequenas-obras', label: 'Pequenas Obras', icon: Wrench, menuKey: 'implantacao/pequenas-obras' },
@@ -135,6 +136,7 @@ export function Layout({ children }: LayoutProps) {
     if (path.startsWith('/projetos') || path === '/informar-venda') initial.push('/projetos');
     if (path.startsWith('/manutencao')) initial.push('/manutencao');
     if (path.startsWith('/orcamentos') || path.startsWith('/orcamento')) initial.push('/orcamentos');
+    if (path.startsWith('/startup-projetos') || path.startsWith('/implantacao')) initial.push('/startup-projetos');
     return initial;
   });
 

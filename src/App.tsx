@@ -23,6 +23,7 @@ import GestaoUsuarios from "./pages/GestaoUsuarios";
 import StartupProjetos from "./pages/StartupProjetos";
 import ImplantacaoExecucao from "./pages/ImplantacaoExecucao";
 import ImplantacaoChecklist from "./pages/ImplantacaoChecklist";
+import ImplantacaoDashboard from "./pages/ImplantacaoDashboard";
 import CarteiraClientes from "./pages/CarteiraClientes";
 import CustomerDetail from "./pages/CustomerDetail";
 import ControleEstoque from "./pages/ControleEstoque";
@@ -125,6 +126,10 @@ function AppRoutes() {
       <Route 
         path="/informar-venda" 
         element={<ProtectedRoute><InformarNovaVenda /></ProtectedRoute>} 
+      />
+      <Route 
+        path="/implantacao-dashboard" 
+        element={<ProtectedRoute><ImplantacaoDashboard /></ProtectedRoute>} 
       />
       <Route 
         path="/startup-projetos" 

@@ -152,73 +152,7 @@ export function EquipmentListDialog({ open, onOpenChange, projectId, projectName
         return;
       }
 
-      let items: EquipmentItem[] = data?.equipamentos || [];
-
-      // Auto-match codes from orcamento_produtos for items without codes
-      if (items.length > 0) {
-        const itemsWithoutCode = items.filter(i => !i.codigo);
-        if (itemsWithoutCode.length > 0) {
-          setLoadingStep('Cruzando com cadastro de produtos para preencher códigos...');
-          try {
-            const { data: products } = await supabase
-              .from('orcamento_produtos')
-              .select('codigo, nome')
-              .eq('ativo', true);
-
-            if (products && products.length > 0) {
-              // Build a normalized lookup: lowercase name -> codigo
-              const normalize = (s: string) => s.toLowerCase()
-                .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-                .replace(/[^a-z0-9\s]/g, ' ').replace(/\s+/g, ' ').trim();
-
-              const productIndex = products
-                .filter(p => p.codigo && p.nome)
-                .map(p => ({ codigo: p.codigo!, norm: normalize(p.nome) }));
-
-              let matched = 0;
-              items = items.map(item => {
-                if (item.codigo) return item;
-                const normItem = normalize(item.item);
-                
-                // Try exact match first
-                const exact = productIndex.find(p => p.norm === normItem);
-                if (exact) { matched++; return { ...item, codigo: exact.codigo }; }
-
-                // Try contains match (product name in item or item in product name)
-                const contains = productIndex.find(p => 
-                  normItem.includes(p.norm) || p.norm.includes(normItem)
-                );
-                if (contains) { matched++; return { ...item, codigo: contains.codigo }; }
-
-                // Try word-based matching (at least 2 significant words match)
-                const itemWords = normItem.split(' ').filter(w => w.length > 2);
-                if (itemWords.length >= 2) {
-                  let bestMatch: { codigo: string; score: number } | null = null;
-                  for (const p of productIndex) {
-                    const pWords = p.norm.split(' ').filter(w => w.length > 2);
-                    const commonWords = itemWords.filter(w => pWords.includes(w));
-                    const score = commonWords.length / Math.max(itemWords.length, pWords.length);
-                    if (score >= 0.5 && commonWords.length >= 2 && (!bestMatch || score > bestMatch.score)) {
-                      bestMatch = { codigo: p.codigo, score };
-                    }
-                  }
-                  if (bestMatch) { matched++; return { ...item, codigo: bestMatch.codigo }; }
-                }
-
-                return item;
-              });
-
-              if (matched > 0) {
-                console.log(`Auto-matched ${matched} equipment codes from product catalog`);
-              }
-            }
-          } catch (matchErr) {
-            console.error('Error matching product codes:', matchErr);
-            // Non-fatal, continue with items as-is
-          }
-        }
-      }
-
+      const items: EquipmentItem[] = data?.equipamentos || [];
       setEquipments(items);
       setHasLoaded(true);
 

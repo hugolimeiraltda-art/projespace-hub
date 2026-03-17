@@ -193,7 +193,7 @@ serve(async (req) => {
       tipo_implantacao: "padrao",
       prioridade: "normal",
       
-      secao_2_cliente: {
+      cliente: {
         cliente_id: customerPortfolio?.id,
         nome: project?.cliente_condominio_nome || customerPortfolio?.razao_social,
         razao_social: project?.cliente_condominio_nome || customerPortfolio?.razao_social,

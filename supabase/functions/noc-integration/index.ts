@@ -103,7 +103,7 @@ serve(async (req) => {
       .eq("project_id", project_id)
       .maybeSingle();
 
-    console.log("Project nome:", project?.cliente_condominio_nome, "CP razao:", customerPortfolio?.razao_social);
+    
 
     const { data: administradores } = await supabase
       .from("customer_administradores")

@@ -29,6 +29,7 @@ interface Props {
   sessaoId?: string;
   initialData?: ItensData | null;
   initialItensExpandidos?: any[];
+  onEquipamentoIpChange?: (ipMap: Record<string, boolean>) => void;
 }
 
 export default function EquipamentosPrecos({ sessaoId, initialData, initialItensExpandidos }: Props) {

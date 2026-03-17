@@ -483,15 +483,13 @@ export function EquipmentListDialog({ open, onOpenChange, projectId, projectName
             <p className="text-sm font-medium text-foreground">{loadingStep || 'Processando...'}</p>
             <p className="text-xs text-muted-foreground mt-1">Isso pode levar até 2 minutos</p>
             <div className="flex gap-2 mt-4 flex-wrap justify-center">
-              {['Buscando arquivos', 'Gerando URLs', 'Analisando com IA', 'Cruzando códigos'].map((step, i) => {
+              {['Buscando arquivos', 'Gerando URLs', 'Analisando com IA'].map((step, i) => {
                 const isActive = loadingStep.includes('Buscando') ? i === 0 
                   : loadingStep.includes('Gerando') ? i === 1 
-                  : loadingStep.includes('Analisando') ? i === 2 
-                  : loadingStep.includes('Cruzando') ? i === 3 : false;
+                  : loadingStep.includes('Analisando') ? i === 2 : false;
                 const isDone = loadingStep.includes('Buscando') ? false 
                   : loadingStep.includes('Gerando') ? i < 1 
-                  : loadingStep.includes('Analisando') ? i < 2 
-                  : loadingStep.includes('Cruzando') ? i < 3 : false;
+                  : loadingStep.includes('Analisando') ? i < 2 : false;
                 return (
                   <div key={step} className={`flex items-center gap-1.5 text-xs px-2 py-1 rounded-full ${
                     isActive ? 'bg-primary/10 text-primary font-medium' 

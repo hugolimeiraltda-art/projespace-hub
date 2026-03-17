@@ -25,6 +25,7 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get("SUPABASE_ANON_KEY")!;
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const nocApiUrl = Deno.env.get("EIXONOC_API_URL");
+    const nocApiKey = Deno.env.get("EIXONOC_API_KEY");
 
     if (!nocApiUrl) {
       return new Response(
@@ -101,6 +102,8 @@ serve(async (req) => {
       .select("*")
       .eq("project_id", project_id)
       .maybeSingle();
+
+    
 
     const { data: administradores } = await supabase
       .from("customer_administradores")
@@ -185,12 +188,14 @@ serve(async (req) => {
     const payload = {
       implantacao_id: etapas?.id,
       project_id,
+      transicao_noc: "abertura_secao_6",
       secao_atual: 6,
       tipo_implantacao: "padrao",
       prioridade: "normal",
       
-      secao_2_cliente: {
+      cliente: {
         cliente_id: customerPortfolio?.id,
+        nome: project?.cliente_condominio_nome || customerPortfolio?.razao_social,
         razao_social: project?.cliente_condominio_nome || customerPortfolio?.razao_social,
         contrato: customerPortfolio?.contrato,
         endereco: customerPortfolio?.endereco,
@@ -291,7 +296,10 @@ serve(async (req) => {
     try {
       const nocRes = await fetch(nocApiUrl, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(nocApiKey ? { "Authorization": `Bearer ${nocApiKey}` } : {}),
+        },
         body: JSON.stringify(payload),
       });
 

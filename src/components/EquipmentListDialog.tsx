@@ -40,6 +40,7 @@ export function EquipmentListDialog({ open, onOpenChange, projectId, projectName
   const [hasLoaded, setHasLoaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loadTriggered, setLoadTriggered] = useState(false);
+  const [loadingStep, setLoadingStep] = useState<string>('');
 
   // Auto-load when dialog opens
   useEffect(() => {
@@ -59,6 +60,7 @@ export function EquipmentListDialog({ open, onOpenChange, projectId, projectName
   const doLoadEquipmentList = async () => {
     setIsLoading(true);
     setError(null);
+    setLoadingStep('Buscando arquivos do projeto...');
 
     try {
       // Fetch LISTA_EQUIPAMENTOS attachments for this project
@@ -83,6 +85,7 @@ export function EquipmentListDialog({ open, onOpenChange, projectId, projectName
       }
 
       // Generate signed URLs for the attachments
+      setLoadingStep(`Gerando URLs de acesso (${attachments.length} arquivo${attachments.length > 1 ? 's' : ''})...`);
       const fileUrls: string[] = [];
       for (const att of attachments) {
         if (!att.arquivo_url || att.arquivo_url.startsWith('blob:') || att.arquivo_url.startsWith('data:')) continue;
@@ -119,6 +122,7 @@ export function EquipmentListDialog({ open, onOpenChange, projectId, projectName
         return;
       }
 
+      setLoadingStep(`Analisando ${fileUrls.length} documento${fileUrls.length > 1 ? 's' : ''} com IA...`);
       // Call edge function to extract equipment list with timeout
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 120000); // 2min timeout
@@ -474,8 +478,29 @@ export function EquipmentListDialog({ open, onOpenChange, projectId, projectName
         {isLoading && (
           <div className="flex flex-col items-center justify-center py-12">
             <Loader2 className="w-8 h-8 animate-spin text-primary mb-4" />
-            <p className="text-sm text-muted-foreground">Extraindo lista de equipamentos dos documentos...</p>
+            <p className="text-sm font-medium text-foreground">{loadingStep || 'Processando...'}</p>
             <p className="text-xs text-muted-foreground mt-1">Isso pode levar até 2 minutos</p>
+            <div className="flex gap-2 mt-4">
+              {['Buscando arquivos', 'Gerando URLs', 'Analisando com IA'].map((step, i) => {
+                const isActive = loadingStep.includes('Buscando') ? i === 0 
+                  : loadingStep.includes('Gerando') ? i === 1 
+                  : loadingStep.includes('Analisando') ? i === 2 : false;
+                const isDone = loadingStep.includes('Buscando') ? false 
+                  : loadingStep.includes('Gerando') ? i < 1 
+                  : loadingStep.includes('Analisando') ? i < 2 : false;
+                return (
+                  <div key={step} className={`flex items-center gap-1.5 text-xs px-2 py-1 rounded-full ${
+                    isActive ? 'bg-primary/10 text-primary font-medium' 
+                    : isDone ? 'bg-muted text-muted-foreground line-through' 
+                    : 'text-muted-foreground/50'
+                  }`}>
+                    {isActive && <Loader2 className="w-3 h-3 animate-spin" />}
+                    {isDone && <span className="text-primary">✓</span>}
+                    {step}
+                  </div>
+                );
+              })}
+            </div>
           </div>
         )}
 

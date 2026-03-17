@@ -97,13 +97,13 @@ serve(async (req) => {
       .eq("id", project_id)
       .single();
 
-    console.log("Project data:", project?.cliente_condominio_nome);
-    console.log("Customer portfolio:", customerPortfolio?.razao_social);
-
+    const { data: customerPortfolio } = await supabase
       .from("customer_portfolio")
       .select("*")
       .eq("project_id", project_id)
       .maybeSingle();
+
+    console.log("Project nome:", project?.cliente_condominio_nome, "CP razao:", customerPortfolio?.razao_social);
 
     const { data: administradores } = await supabase
       .from("customer_administradores")

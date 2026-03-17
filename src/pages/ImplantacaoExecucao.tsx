@@ -1922,9 +1922,14 @@ export default function ImplantacaoExecucao() {
                     {/* Before opening */}
                     {(!nocChamado || nocChamado.item_6_1_status === 'pending' || nocChamado.item_6_1_status === 'error') && (
                       <div className="ml-9 space-y-3">
+                        {!(isEtapaComplete(1) && isEtapaComplete(2) && isEtapaComplete(3) && isEtapaComplete(4) && isEtapaComplete(5)) && (
+                          <p className="text-sm text-muted-foreground italic">
+                            Todas as etapas anteriores (1 a 5) precisam estar concluídas para abrir o chamado.
+                          </p>
+                        )}
                         <Button
                           onClick={handleAbrirChamadoNoc}
-                          disabled={nocLoading}
+                          disabled={nocLoading || !(isEtapaComplete(1) && isEtapaComplete(2) && isEtapaComplete(3) && isEtapaComplete(4) && isEtapaComplete(5))}
                           className="w-full"
                         >
                           {nocLoading ? (

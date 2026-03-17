@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { SaleFormSummary } from '@/components/SaleFormSummary';
-import { ProjetoIASection } from '@/components/ProjetoIASection';
 import { AIFeedbackDialog } from '@/components/AIFeedbackDialog';
 import { SaleCompletedForm, PORTARIA_VIRTUAL_LABELS, CFTV_ELEVADOR_LABELS, MODALIDADE_PORTARIA_LABELS, PortariaVirtualApp, CFTVElevador, ModalidadePortaria } from '@/types/project';
 import { Layout } from '@/components/Layout';
@@ -132,7 +131,6 @@ interface Project {
   implantacao_started_at: string | null;
   engineering_status: string | null;
   endereco_condominio: string | null;
-  observacoes: string | null;
 }
 
 interface ContratoInfo {
@@ -197,7 +195,7 @@ export default function ImplantacaoExecucao() {
       // Fetch project
       const { data: projectData, error: projectError } = await supabase
         .from('projects')
-        .select('id, numero_projeto, cliente_condominio_nome, cliente_cidade, cliente_estado, vendedor_nome, created_at, prazo_entrega_projeto, implantacao_started_at, engineering_status, endereco_condominio, observacoes')
+        .select('id, numero_projeto, cliente_condominio_nome, cliente_cidade, cliente_estado, vendedor_nome, created_at, prazo_entrega_projeto, implantacao_started_at, engineering_status, endereco_condominio')
         .eq('id', id)
         .single();
 
@@ -1034,16 +1032,6 @@ export default function ImplantacaoExecucao() {
                       summaryType="projeto"
                     />
                   )}
-
-                  {/* EAP - AI Proposal Section */}
-                  {(() => {
-                    const match = project?.observacoes?.match(/\[PROJETO_IA:([^\]]+)\]/);
-                    return match ? (
-                      <div className="mt-4">
-                        <ProjetoIASection sessaoId={match[1]} />
-                      </div>
-                    ) : null;
-                  })()}
                 </CardContent>
               </CollapsibleContent>
             </Card>

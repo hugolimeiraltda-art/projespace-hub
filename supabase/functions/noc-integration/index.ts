@@ -292,7 +292,10 @@ serve(async (req) => {
     try {
       const nocRes = await fetch(nocApiUrl, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(nocApiKey ? { "Authorization": `Bearer ${nocApiKey}` } : {}),
+        },
         body: JSON.stringify(payload),
       });
 

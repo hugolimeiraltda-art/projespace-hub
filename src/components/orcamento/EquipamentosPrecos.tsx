@@ -157,6 +157,7 @@ export default function EquipamentosPrecos({ sessaoId, initialData, initialItens
                         const kitComponents = isKit ? getKitComponents(item.nome) : [];
                         const hasComponents = kitComponents.length > 0;
                         const key = `${group.label}-${i}`;
+                        const ipKey = `${group.label}-${item.codigo || item.nome}-${i}`;
                         const isExpanded = expandedKits.has(key);
                         return (
                           <> 
@@ -177,6 +178,13 @@ export default function EquipamentosPrecos({ sessaoId, initialData, initialItens
                               </td>
                               <td className="py-1.5 pr-2 text-xs font-medium truncate" title={item.nome}>{item.nome}</td>
                               <td className="py-1.5 pr-2 text-xs text-muted-foreground">{item.codigo || '-'}</td>
+                              <td className="text-center py-1.5 px-2" onClick={(e) => e.stopPropagation()}>
+                                <Checkbox
+                                  checked={!!equipamentoIpMap[ipKey]}
+                                  onCheckedChange={() => toggleEquipamentoIp(ipKey)}
+                                  className="h-3.5 w-3.5"
+                                />
+                              </td>
                               <td className="py-1.5 pl-2 text-right text-xs whitespace-nowrap">{formatBRL((item.valor_locacao || 0) * item.qtd)}</td>
                               <td className="py-1.5 pl-2 text-right text-xs whitespace-nowrap">{formatBRL((item.valor_instalacao || 0) * item.qtd)}</td>
                             </tr>

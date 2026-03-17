@@ -1034,6 +1034,16 @@ export default function ImplantacaoExecucao() {
                       summaryType="projeto"
                     />
                   )}
+
+                  {/* EAP - AI Proposal Section */}
+                  {(() => {
+                    const match = project?.observacoes?.match(/\[PROJETO_IA:([^\]]+)\]/);
+                    return match ? (
+                      <div className="mt-4">
+                        <ProjetoIASection sessaoId={match[1]} />
+                      </div>
+                    ) : null;
+                  })()}
                 </CardContent>
               </CollapsibleContent>
             </Card>

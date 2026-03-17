@@ -193,6 +193,7 @@ serve(async (req) => {
       
       secao_2_cliente: {
         cliente_id: customerPortfolio?.id,
+        nome: project?.cliente_condominio_nome || customerPortfolio?.razao_social,
         razao_social: project?.cliente_condominio_nome || customerPortfolio?.razao_social,
         contrato: customerPortfolio?.contrato,
         endereco: customerPortfolio?.endereco,

@@ -152,73 +152,7 @@ export function EquipmentListDialog({ open, onOpenChange, projectId, projectName
         return;
       }
 
-      let items: EquipmentItem[] = data?.equipamentos || [];
-
-      // Auto-match codes from orcamento_produtos for items without codes
-      if (items.length > 0) {
-        const itemsWithoutCode = items.filter(i => !i.codigo);
-        if (itemsWithoutCode.length > 0) {
-          setLoadingStep('Cruzando com cadastro de produtos para preencher códigos...');
-          try {
-            const { data: products } = await supabase
-              .from('orcamento_produtos')
-              .select('codigo, nome')
-              .eq('ativo', true);
-
-            if (products && products.length > 0) {
-              // Build a normalized lookup: lowercase name -> codigo
-              const normalize = (s: string) => s.toLowerCase()
-                .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-                .replace(/[^a-z0-9\s]/g, ' ').replace(/\s+/g, ' ').trim();
-
-              const productIndex = products
-                .filter(p => p.codigo && p.nome)
-                .map(p => ({ codigo: p.codigo!, norm: normalize(p.nome) }));
-
-              let matched = 0;
-              items = items.map(item => {
-                if (item.codigo) return item;
-                const normItem = normalize(item.item);
-                
-                // Try exact match first
-                const exact = productIndex.find(p => p.norm === normItem);
-                if (exact) { matched++; return { ...item, codigo: exact.codigo }; }
-
-                // Try contains match (product name in item or item in product name)
-                const contains = productIndex.find(p => 
-                  normItem.includes(p.norm) || p.norm.includes(normItem)
-                );
-                if (contains) { matched++; return { ...item, codigo: contains.codigo }; }
-
-                // Try word-based matching (at least 2 significant words match)
-                const itemWords = normItem.split(' ').filter(w => w.length > 2);
-                if (itemWords.length >= 2) {
-                  let bestMatch: { codigo: string; score: number } | null = null;
-                  for (const p of productIndex) {
-                    const pWords = p.norm.split(' ').filter(w => w.length > 2);
-                    const commonWords = itemWords.filter(w => pWords.includes(w));
-                    const score = commonWords.length / Math.max(itemWords.length, pWords.length);
-                    if (score >= 0.5 && commonWords.length >= 2 && (!bestMatch || score > bestMatch.score)) {
-                      bestMatch = { codigo: p.codigo, score };
-                    }
-                  }
-                  if (bestMatch) { matched++; return { ...item, codigo: bestMatch.codigo }; }
-                }
-
-                return item;
-              });
-
-              if (matched > 0) {
-                console.log(`Auto-matched ${matched} equipment codes from product catalog`);
-              }
-            }
-          } catch (matchErr) {
-            console.error('Error matching product codes:', matchErr);
-            // Non-fatal, continue with items as-is
-          }
-        }
-      }
-
+      const items: EquipmentItem[] = data?.equipamentos || [];
       setEquipments(items);
       setHasLoaded(true);
 
@@ -549,15 +483,13 @@ export function EquipmentListDialog({ open, onOpenChange, projectId, projectName
             <p className="text-sm font-medium text-foreground">{loadingStep || 'Processando...'}</p>
             <p className="text-xs text-muted-foreground mt-1">Isso pode levar até 2 minutos</p>
             <div className="flex gap-2 mt-4 flex-wrap justify-center">
-              {['Buscando arquivos', 'Gerando URLs', 'Analisando com IA', 'Cruzando códigos'].map((step, i) => {
+              {['Buscando arquivos', 'Gerando URLs', 'Analisando com IA'].map((step, i) => {
                 const isActive = loadingStep.includes('Buscando') ? i === 0 
                   : loadingStep.includes('Gerando') ? i === 1 
-                  : loadingStep.includes('Analisando') ? i === 2 
-                  : loadingStep.includes('Cruzando') ? i === 3 : false;
+                  : loadingStep.includes('Analisando') ? i === 2 : false;
                 const isDone = loadingStep.includes('Buscando') ? false 
                   : loadingStep.includes('Gerando') ? i < 1 
-                  : loadingStep.includes('Analisando') ? i < 2 
-                  : loadingStep.includes('Cruzando') ? i < 3 : false;
+                  : loadingStep.includes('Analisando') ? i < 2 : false;
                 return (
                   <div key={step} className={`flex items-center gap-1.5 text-xs px-2 py-1 rounded-full ${
                     isActive ? 'bg-primary/10 text-primary font-medium' 

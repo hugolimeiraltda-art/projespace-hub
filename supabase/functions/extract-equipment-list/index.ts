@@ -44,14 +44,20 @@ serve(async (req) => {
     const systemPrompt = `Você é um especialista em análise de documentos técnicos de projetos de portaria digital e segurança condominial da empresa Emive.
 
 ## PRINCÍPIO FUNDAMENTAL: DADOS INTERNOS PRIMEIRO — SEMPRE
-🔴 Extraia os dados EXATAMENTE como constam nos documentos fornecidos. NUNCA invente equipamentos ou quantidades que não estejam nos documentos. Se reconhecer equipamentos do catálogo Emive, use os nomes padronizados do catálogo.
+🔴 Extraia os dados EXATAMENTE como constam nos documentos fornecidos. NUNCA invente equipamentos ou quantidades que não estejam nos documentos.
 
 Sua tarefa é extrair a LISTA DE EQUIPAMENTOS de documentos PDF fornecidos e retornar em formato JSON estruturado.
 
-Regras:
+## REGRAS CRÍTICAS PARA CÓDIGOS:
+- **PRIORIDADE MÁXIMA**: Extraia o CÓDIGO de cada equipamento. Os documentos da engenharia SEMPRE contêm códigos alfanuméricos (ex: "CAM-IP-2MP", "KIT-PD-01", "LT-RFID", "ATA-311X", etc.)
+- Procure códigos em colunas como "Código", "Cód.", "Ref.", "SKU", "Modelo", "Part Number" ou similares
+- Códigos podem estar em tabelas, listas numeradas ou ao lado do nome do equipamento
+- Se o código estiver em uma coluna separada da descrição, CERTIFIQUE-SE de associar corretamente
+- NÃO deixe o campo código vazio se houver qualquer identificador alfanumérico associado ao item no documento
+
+## Outras regras:
 - Analise cuidadosamente tabelas, listas e textos nos documentos
 - Extraia TODOS os equipamentos mencionados com suas quantidades
-- Para cada equipamento, extraia: codigo (código do produto/modelo se disponível, senão string vazia), item (nome/descrição), quantidade, unidade (se disponível), observações (se houver)
 - Se houver categorias/seções (ex: CFTV, Controle de Acesso, Alarme), inclua a categoria
 - Retorne APENAS o JSON, sem texto adicional
 - Se não encontrar lista de equipamentos, retorne um array vazio

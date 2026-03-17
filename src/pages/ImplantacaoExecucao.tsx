@@ -179,6 +179,22 @@ export default function ImplantacaoExecucao() {
   const [usarEnderecoOrigem, setUsarEnderecoOrigem] = useState(false);
   const [pendenciaDeptVisitaTexto, setPendenciaDeptVisitaTexto] = useState('');
   const [pendenciaClienteVisitaTexto, setPendenciaClienteVisitaTexto] = useState('');
+  
+  // NOC Integration state
+  const [nocChamado, setNocChamado] = useState<{
+    id?: string;
+    chamado_id?: string;
+    chamado_numero?: string;
+    chamado_url?: string;
+    integration_status: string;
+    integration_message?: string;
+    opened_at?: string;
+    opened_by_name?: string;
+    item_6_1_status: string;
+    item_6_2_status: string;
+    item_6_3_status: string;
+  } | null>(null);
+  const [nocLoading, setNocLoading] = useState(false);
 
   const canEditDates = user?.role === 'admin' || user?.role === 'administrativo' || user?.role === 'implantacao';
 

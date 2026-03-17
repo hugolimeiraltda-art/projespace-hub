@@ -131,6 +131,7 @@ interface Project {
   implantacao_started_at: string | null;
   engineering_status: string | null;
   endereco_condominio: string | null;
+  observacoes_gerais: string | null;
 }
 
 interface ContratoInfo {

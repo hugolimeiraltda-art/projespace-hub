@@ -565,8 +565,9 @@ export default function ImplantacaoExecucao() {
       { title: '5.2 Laudo Vidraceiro', completed: etapas.laudo_vidraceiro, date: etapas.laudo_vidraceiro_at },
       { title: '5.3 Laudo Serralheiro', completed: etapas.laudo_serralheiro, date: etapas.laudo_serralheiro_at },
       { title: '5.4 Laudo Conclusão Supervisor', completed: etapas.laudo_conclusao_supervisor, date: etapas.laudo_conclusao_supervisor_at },
-      { title: '6.1 Check de Programação', completed: etapas.check_programacao, date: etapas.check_programacao_at },
-      { title: '6.2 Confirmação Ativação Financeira', completed: etapas.confirmacao_ativacao_financeira, date: etapas.confirmacao_ativacao_financeira_at },
+      { title: '6.1 Abertura Chamado NOC', completed: nocChamado?.item_6_1_status === 'success', date: nocChamado?.opened_at || null },
+      { title: '6.2 Check de Programação', completed: etapas.check_programacao, date: etapas.check_programacao_at },
+      { title: '6.3 Confirmação Ativação Financeira', completed: etapas.confirmacao_ativacao_financeira, date: etapas.confirmacao_ativacao_financeira_at },
     ];
 
     doc.setFontSize(14);

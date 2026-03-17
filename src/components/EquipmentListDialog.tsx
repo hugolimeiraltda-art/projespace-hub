@@ -569,8 +569,9 @@ export function EquipmentListDialog({ open, onOpenChange, projectId, projectName
                             />
                           </TableCell>
                           <TableCell className="text-muted-foreground">{eq.observacoes || '-'}</TableCell>
-                      </TableRow>
-                    ))}
+                        </TableRow>
+                      );
+                    })}
                   </TableBody>
                 </Table>
               </div>

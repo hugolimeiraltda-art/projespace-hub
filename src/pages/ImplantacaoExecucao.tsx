@@ -649,6 +649,55 @@ export default function ImplantacaoExecucao() {
     );
   }
 
+  const handleAbrirChamadoNoc = async () => {
+    if (!id || nocLoading) return;
+    setNocLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('noc-integration', {
+        body: { project_id: id },
+      });
+      if (error) throw error;
+      if (data.status === 'duplicate' || data.status === 'success') {
+        setNocChamado({
+          integration_status: 'success',
+          chamado_id: data.chamado_id,
+          chamado_numero: data.chamado_numero,
+          chamado_url: data.chamado_url,
+          opened_at: data.opened_at,
+          opened_by_name: data.opened_by_name,
+          item_6_1_status: 'success',
+          item_6_2_status: 'pending',
+          item_6_3_status: nocChamado?.item_6_3_status || 'blocked',
+        });
+        toast({
+          title: data.status === 'duplicate' ? 'Chamado já existente' : 'Chamado aberto com sucesso!',
+          description: `Chamado ${data.chamado_numero || 'NOC'} ${data.status === 'duplicate' ? 'já foi aberto anteriormente' : 'criado no EIXONOC'}.`,
+        });
+      } else {
+        setNocChamado({
+          integration_status: 'error',
+          integration_message: data.message,
+          item_6_1_status: 'error',
+          item_6_2_status: nocChamado?.item_6_2_status || 'blocked',
+          item_6_3_status: nocChamado?.item_6_3_status || 'blocked',
+        });
+        toast({ title: 'Erro ao abrir chamado', description: data.message || 'Erro no EIXONOC.', variant: 'destructive' });
+      }
+    } catch (err: any) {
+      console.error('NOC integration error:', err);
+      setNocChamado({
+        integration_status: 'error',
+        integration_message: err.message,
+        item_6_1_status: 'error',
+        item_6_2_status: nocChamado?.item_6_2_status || 'blocked',
+        item_6_3_status: nocChamado?.item_6_3_status || 'blocked',
+      });
+      toast({ title: 'Erro de conexão', description: 'Não foi possível conectar ao EIXONOC.', variant: 'destructive' });
+    } finally {
+      setNocLoading(false);
+    }
+  };
+
   const criarPendencia = async (tipo: string, descricao: string) => {
     if (!descricao.trim()) {
       toast({ title: 'Erro', description: 'Preencha a descrição da pendência.', variant: 'destructive' });

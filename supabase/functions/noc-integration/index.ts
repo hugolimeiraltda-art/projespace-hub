@@ -186,6 +186,7 @@ serve(async (req) => {
     const payload = {
       implantacao_id: etapas?.id,
       project_id,
+      transicao_noc: "abertura_secao_6",
       secao_atual: 6,
       tipo_implantacao: "padrao",
       prioridade: "normal",

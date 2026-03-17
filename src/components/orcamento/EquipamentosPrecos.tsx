@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
+import { Checkbox } from '@/components/ui/checkbox';
 import { ChevronDown, ChevronUp, ChevronRight, Package, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -28,14 +29,24 @@ interface Props {
   sessaoId?: string;
   initialData?: ItensData | null;
   initialItensExpandidos?: any[];
+  onEquipamentoIpChange?: (ipMap: Record<string, boolean>) => void;
 }
 
-export default function EquipamentosPrecos({ sessaoId, initialData, initialItensExpandidos }: Props) {
+export default function EquipamentosPrecos({ sessaoId, initialData, initialItensExpandidos, onEquipamentoIpChange }: Props) {
   const [itens, setItens] = useState<ItensData | null>(initialData || null);
   const [itensExpandidos, setItensExpandidos] = useState<any[]>(initialItensExpandidos || []);
   const [loading, setLoading] = useState(!initialData && !!sessaoId);
   const [open, setOpen] = useState(false);
   const [expandedKits, setExpandedKits] = useState<Set<string>>(new Set());
+  const [equipamentoIpMap, setEquipamentoIpMap] = useState<Record<string, boolean>>({});
+
+  const toggleEquipamentoIp = useCallback((key: string) => {
+    setEquipamentoIpMap(prev => {
+      const next = { ...prev, [key]: !prev[key] };
+      onEquipamentoIpChange?.(next);
+      return next;
+    });
+  }, [onEquipamentoIpChange]);
 
   useEffect(() => {
     if (initialData || !sessaoId) return;
@@ -135,6 +146,7 @@ export default function EquipamentosPrecos({ sessaoId, initialData, initialItens
                         <th className="text-left py-1.5 pr-2 w-10 font-medium text-xs">Qtd</th>
                         <th className="text-left py-1.5 pr-2 font-medium text-xs">Descrição</th>
                         <th className="text-left py-1.5 pr-2 w-16 font-medium text-xs">Código</th>
+                        <th className="text-center py-1.5 px-2 w-14 font-medium text-xs">IP</th>
                         <th className="text-right py-1.5 pl-2 w-24 font-medium text-xs">Locação</th>
                         <th className="text-right py-1.5 pl-2 w-24 font-medium text-xs">Instalação</th>
                       </tr>
@@ -145,6 +157,7 @@ export default function EquipamentosPrecos({ sessaoId, initialData, initialItens
                         const kitComponents = isKit ? getKitComponents(item.nome) : [];
                         const hasComponents = kitComponents.length > 0;
                         const key = `${group.label}-${i}`;
+                        const ipKey = `${group.label}-${item.codigo || item.nome}-${i}`;
                         const isExpanded = expandedKits.has(key);
                         return (
                           <> 
@@ -165,6 +178,13 @@ export default function EquipamentosPrecos({ sessaoId, initialData, initialItens
                               </td>
                               <td className="py-1.5 pr-2 text-xs font-medium truncate" title={item.nome}>{item.nome}</td>
                               <td className="py-1.5 pr-2 text-xs text-muted-foreground">{item.codigo || '-'}</td>
+                              <td className="text-center py-1.5 px-2" onClick={(e) => e.stopPropagation()}>
+                                <Checkbox
+                                  checked={!!equipamentoIpMap[ipKey]}
+                                  onCheckedChange={() => toggleEquipamentoIp(ipKey)}
+                                  className="h-3.5 w-3.5"
+                                />
+                              </td>
                               <td className="py-1.5 pl-2 text-right text-xs whitespace-nowrap">{formatBRL((item.valor_locacao || 0) * item.qtd)}</td>
                               <td className="py-1.5 pl-2 text-right text-xs whitespace-nowrap">{formatBRL((item.valor_instalacao || 0) * item.qtd)}</td>
                             </tr>
@@ -173,6 +193,7 @@ export default function EquipamentosPrecos({ sessaoId, initialData, initialItens
                                 <td className="py-1 pr-2 pl-5 text-[11px] text-muted-foreground">{comp.qtd}</td>
                                 <td className="py-1 pr-2 text-[11px] text-muted-foreground truncate" title={comp.nome}>↳ {comp.nome}</td>
                                 <td className="py-1 pr-2 text-[11px] text-muted-foreground">{comp.codigo || '-'}</td>
+                                <td className="text-center py-1 px-2"><span className="text-[10px] text-muted-foreground">—</span></td>
                                 <td className="py-1 pl-2 text-right text-[11px] text-muted-foreground whitespace-nowrap">{formatBRL((comp.valor_locacao || 0) * comp.qtd)}</td>
                                 <td className="py-1 pl-2 text-right text-[11px] text-muted-foreground whitespace-nowrap">{formatBRL((comp.valor_instalacao || 0) * comp.qtd)}</td>
                               </tr>

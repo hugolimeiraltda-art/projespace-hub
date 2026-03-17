@@ -878,6 +878,90 @@ export type Database = {
           },
         ]
       }
+      implantacao_noc_chamados: {
+        Row: {
+          chamado_id: string | null
+          chamado_numero: string | null
+          chamado_url: string | null
+          created_at: string
+          id: string
+          implantacao_id: string
+          integration_message: string | null
+          integration_status: string
+          item_6_1_status: string
+          item_6_2_status: string
+          item_6_3_status: string
+          opened_at: string | null
+          opened_by: string | null
+          opened_by_name: string | null
+          payload_snapshot: Json | null
+          project_id: string
+          request_id: string | null
+          response_snapshot: Json | null
+          transicao_noc: string
+          updated_at: string
+        }
+        Insert: {
+          chamado_id?: string | null
+          chamado_numero?: string | null
+          chamado_url?: string | null
+          created_at?: string
+          id?: string
+          implantacao_id: string
+          integration_message?: string | null
+          integration_status?: string
+          item_6_1_status?: string
+          item_6_2_status?: string
+          item_6_3_status?: string
+          opened_at?: string | null
+          opened_by?: string | null
+          opened_by_name?: string | null
+          payload_snapshot?: Json | null
+          project_id: string
+          request_id?: string | null
+          response_snapshot?: Json | null
+          transicao_noc?: string
+          updated_at?: string
+        }
+        Update: {
+          chamado_id?: string | null
+          chamado_numero?: string | null
+          chamado_url?: string | null
+          created_at?: string
+          id?: string
+          implantacao_id?: string
+          integration_message?: string | null
+          integration_status?: string
+          item_6_1_status?: string
+          item_6_2_status?: string
+          item_6_3_status?: string
+          opened_at?: string | null
+          opened_by?: string | null
+          opened_by_name?: string | null
+          payload_snapshot?: Json | null
+          project_id?: string
+          request_id?: string | null
+          response_snapshot?: Json | null
+          transicao_noc?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "implantacao_noc_chamados_implantacao_id_fkey"
+            columns: ["implantacao_id"]
+            isOneToOne: false
+            referencedRelation: "implantacao_etapas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "implantacao_noc_chamados_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       locais_estoque: {
         Row: {
           cidade: string

@@ -551,7 +551,7 @@ export function EquipmentListDialog({ open, onOpenChange, projectId, projectName
                       <TableHead className="w-[80px] text-center">Qtd</TableHead>
                       <TableHead className="w-[80px] text-center">Unidade</TableHead>
                       <TableHead className="w-[60px] text-center">IP</TableHead>
-                      <TableHead>Observações</TableHead>
+                      <TableHead className="w-[90px] text-center">Instalado?</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>

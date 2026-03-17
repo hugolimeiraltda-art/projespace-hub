@@ -25,6 +25,7 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get("SUPABASE_ANON_KEY")!;
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const nocApiUrl = Deno.env.get("EIXONOC_API_URL");
+    const nocApiKey = Deno.env.get("EIXONOC_API_KEY");
 
     if (!nocApiUrl) {
       return new Response(

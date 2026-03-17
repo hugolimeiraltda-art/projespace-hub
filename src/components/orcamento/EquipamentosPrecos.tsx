@@ -32,12 +32,21 @@ interface Props {
   onEquipamentoIpChange?: (ipMap: Record<string, boolean>) => void;
 }
 
-export default function EquipamentosPrecos({ sessaoId, initialData, initialItensExpandidos }: Props) {
+export default function EquipamentosPrecos({ sessaoId, initialData, initialItensExpandidos, onEquipamentoIpChange }: Props) {
   const [itens, setItens] = useState<ItensData | null>(initialData || null);
   const [itensExpandidos, setItensExpandidos] = useState<any[]>(initialItensExpandidos || []);
   const [loading, setLoading] = useState(!initialData && !!sessaoId);
   const [open, setOpen] = useState(false);
   const [expandedKits, setExpandedKits] = useState<Set<string>>(new Set());
+  const [equipamentoIpMap, setEquipamentoIpMap] = useState<Record<string, boolean>>({});
+
+  const toggleEquipamentoIp = useCallback((key: string) => {
+    setEquipamentoIpMap(prev => {
+      const next = { ...prev, [key]: !prev[key] };
+      onEquipamentoIpChange?.(next);
+      return next;
+    });
+  }, [onEquipamentoIpChange]);
 
   useEffect(() => {
     if (initialData || !sessaoId) return;

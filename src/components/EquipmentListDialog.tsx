@@ -5,6 +5,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2, Download, Package, AlertTriangle, FileText } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 
@@ -41,6 +42,7 @@ export function EquipmentListDialog({ open, onOpenChange, projectId, projectName
   const [error, setError] = useState<string | null>(null);
   const [loadTriggered, setLoadTriggered] = useState(false);
   const [loadingStep, setLoadingStep] = useState<string>('');
+  const [ipMap, setIpMap] = useState<Record<string, boolean>>({});
 
   // Auto-load when dialog opens
   useEffect(() => {
@@ -542,24 +544,34 @@ export function EquipmentListDialog({ open, onOpenChange, projectId, projectName
                 )}
                 <Table>
                   <TableHeader>
-                    <TableRow>
+                     <TableRow>
                       <TableHead className="w-[100px]">Código</TableHead>
                       <TableHead>Item</TableHead>
                       <TableHead className="w-[80px] text-center">Qtd</TableHead>
                       <TableHead className="w-[80px] text-center">Unidade</TableHead>
+                      <TableHead className="w-[60px] text-center">IP</TableHead>
                       <TableHead>Observações</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {items.map((eq, idx) => (
-                      <TableRow key={idx}>
-                        <TableCell className="text-xs text-muted-foreground font-mono">{eq.codigo || '-'}</TableCell>
-                        <TableCell className="font-medium">{eq.item}</TableCell>
-                        <TableCell className="text-center">{eq.quantidade}</TableCell>
-                        <TableCell className="text-center">{eq.unidade || 'un'}</TableCell>
-                        <TableCell className="text-muted-foreground">{eq.observacoes || '-'}</TableCell>
-                      </TableRow>
-                    ))}
+                    {items.map((eq, idx) => {
+                      const key = `${category}-${eq.codigo || eq.item}-${idx}`;
+                      return (
+                        <TableRow key={idx}>
+                          <TableCell className="text-xs text-muted-foreground font-mono">{eq.codigo || '-'}</TableCell>
+                          <TableCell className="font-medium">{eq.item}</TableCell>
+                          <TableCell className="text-center">{eq.quantidade}</TableCell>
+                          <TableCell className="text-center">{eq.unidade || 'un'}</TableCell>
+                          <TableCell className="text-center">
+                            <Checkbox
+                              checked={!!ipMap[key]}
+                              onCheckedChange={() => setIpMap(prev => ({ ...prev, [key]: !prev[key] }))}
+                            />
+                          </TableCell>
+                          <TableCell className="text-muted-foreground">{eq.observacoes || '-'}</TableCell>
+                        </TableRow>
+                      );
+                    })}
                   </TableBody>
                 </Table>
               </div>

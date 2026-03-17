@@ -362,6 +362,18 @@ export default function ImplantacaoExecucao() {
       if (secAttachments) {
         setSecoesComAnexo([...new Set(secAttachments.map(a => a.secao))]);
       }
+
+      // Fetch NOC chamado
+      const { data: nocData } = await supabase
+        .from('implantacao_noc_chamados')
+        .select('*')
+        .eq('project_id', id!)
+        .eq('transicao_noc', 'abertura_secao_6')
+        .maybeSingle();
+      
+      if (nocData) {
+        setNocChamado(nocData as any);
+      }
     } catch (error) {
       console.error('Error fetching data:', error);
       toast({

@@ -146,6 +146,7 @@ export default function EquipamentosPrecos({ sessaoId, initialData, initialItens
                         <th className="text-left py-1.5 pr-2 w-10 font-medium text-xs">Qtd</th>
                         <th className="text-left py-1.5 pr-2 font-medium text-xs">Descrição</th>
                         <th className="text-left py-1.5 pr-2 w-16 font-medium text-xs">Código</th>
+                        <th className="text-center py-1.5 px-2 w-14 font-medium text-xs">IP</th>
                         <th className="text-right py-1.5 pl-2 w-24 font-medium text-xs">Locação</th>
                         <th className="text-right py-1.5 pl-2 w-24 font-medium text-xs">Instalação</th>
                       </tr>

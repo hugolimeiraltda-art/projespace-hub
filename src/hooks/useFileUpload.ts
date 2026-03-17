@@ -36,19 +36,14 @@ export function useFileUpload() {
         return null;
       }
 
-      // Get signed URL (bucket is now private)
-      const { data: signedUrlData, error: signedUrlError } = await supabase.storage
+      // Get public URL (bucket is public)
+      const { data: publicUrlData } = supabase.storage
         .from('project-attachments')
-        .createSignedUrl(data.path, 60 * 60 * 24 * 365); // 1 year expiry
-
-      if (signedUrlError) {
-        console.error('Error getting signed URL:', signedUrlError);
-        return null;
-      }
+        .getPublicUrl(data.path);
 
       setUploadProgress(100);
       return {
-        url: signedUrlData.signedUrl,
+        url: publicUrlData.publicUrl,
         path: data.path,
       };
     } catch (error) {

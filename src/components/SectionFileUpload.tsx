@@ -269,12 +269,12 @@ export function SectionFileUpload({ projectId, secao, disabled }: SectionFileUpl
         continue;
       }
 
-      // Get signed URL
-      const { data: signedUrlData } = await supabase.storage
+      // Get public URL
+      const { data: publicUrlData } = supabase.storage
         .from('project-attachments')
-        .createSignedUrl(uploadData.path, 60 * 60 * 24 * 365);
+        .getPublicUrl(uploadData.path);
 
-      const fileUrl = signedUrlData?.signedUrl || '';
+      const fileUrl = publicUrlData?.publicUrl || '';
 
       // Save to DB
       const { data: insertData, error: insertError } = await supabase

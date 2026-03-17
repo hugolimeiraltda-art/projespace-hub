@@ -43,6 +43,7 @@ export function EquipmentListDialog({ open, onOpenChange, projectId, projectName
   const [loadTriggered, setLoadTriggered] = useState(false);
   const [loadingStep, setLoadingStep] = useState<string>('');
   const [ipMap, setIpMap] = useState<Record<string, boolean>>({});
+  const [instaladoMap, setInstaladoMap] = useState<Record<string, boolean>>({});
 
   // Auto-load when dialog opens
   useEffect(() => {
@@ -550,7 +551,7 @@ export function EquipmentListDialog({ open, onOpenChange, projectId, projectName
                       <TableHead className="w-[80px] text-center">Qtd</TableHead>
                       <TableHead className="w-[80px] text-center">Unidade</TableHead>
                       <TableHead className="w-[60px] text-center">IP</TableHead>
-                      <TableHead>Observações</TableHead>
+                      <TableHead className="w-[90px] text-center">Instalado?</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -568,7 +569,12 @@ export function EquipmentListDialog({ open, onOpenChange, projectId, projectName
                               onCheckedChange={() => setIpMap(prev => ({ ...prev, [key]: !prev[key] }))}
                             />
                           </TableCell>
-                          <TableCell className="text-muted-foreground">{eq.observacoes || '-'}</TableCell>
+                          <TableCell className="text-center">
+                            <Checkbox
+                              checked={!!instaladoMap[key]}
+                              onCheckedChange={() => setInstaladoMap(prev => ({ ...prev, [key]: !prev[key] }))}
+                            />
+                          </TableCell>
                         </TableRow>
                       );
                     })}

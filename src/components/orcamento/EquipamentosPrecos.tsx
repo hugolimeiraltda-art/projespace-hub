@@ -193,6 +193,7 @@ export default function EquipamentosPrecos({ sessaoId, initialData, initialItens
                                 <td className="py-1 pr-2 pl-5 text-[11px] text-muted-foreground">{comp.qtd}</td>
                                 <td className="py-1 pr-2 text-[11px] text-muted-foreground truncate" title={comp.nome}>↳ {comp.nome}</td>
                                 <td className="py-1 pr-2 text-[11px] text-muted-foreground">{comp.codigo || '-'}</td>
+                                <td className="text-center py-1 px-2"><span className="text-[10px] text-muted-foreground">—</span></td>
                                 <td className="py-1 pl-2 text-right text-[11px] text-muted-foreground whitespace-nowrap">{formatBRL((comp.valor_locacao || 0) * comp.qtd)}</td>
                                 <td className="py-1 pl-2 text-right text-[11px] text-muted-foreground whitespace-nowrap">{formatBRL((comp.valor_instalacao || 0) * comp.qtd)}</td>
                               </tr>

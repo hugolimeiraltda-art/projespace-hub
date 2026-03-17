@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { SaleFormSummary } from '@/components/SaleFormSummary';
+import { ProjetoIASection } from '@/components/ProjetoIASection';
 import { AIFeedbackDialog } from '@/components/AIFeedbackDialog';
 import { SaleCompletedForm, PORTARIA_VIRTUAL_LABELS, CFTV_ELEVADOR_LABELS, MODALIDADE_PORTARIA_LABELS, PortariaVirtualApp, CFTVElevador, ModalidadePortaria } from '@/types/project';
 import { Layout } from '@/components/Layout';

@@ -43,6 +43,7 @@ export function EquipmentListDialog({ open, onOpenChange, projectId, projectName
   const [loadTriggered, setLoadTriggered] = useState(false);
   const [loadingStep, setLoadingStep] = useState<string>('');
   const [ipMap, setIpMap] = useState<Record<string, boolean>>({});
+  const [instaladoMap, setInstaladoMap] = useState<Record<string, boolean>>({});
 
   // Auto-load when dialog opens
   useEffect(() => {

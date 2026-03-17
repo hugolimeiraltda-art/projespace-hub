@@ -1896,23 +1896,121 @@ export default function ImplantacaoExecucao() {
                 </CardHeader>
               </CollapsibleTrigger>
               <CollapsibleContent>
-                <CardContent className="pt-0 space-y-1">
-                  <SubItem 
-                    label="6.1 - Check e laudo de programação" 
-                    checked={etapas.check_programacao} 
-                    field="check_programacao"
-                    dateField="check_programacao_at"
-                    date={etapas.check_programacao_at}
-                    hasChecklist
-                    checklistType="check_programacao"
-                  />
-                  <SubItem 
-                    label="6.2 - Confirmação de ativação do Financeiro" 
-                    checked={etapas.confirmacao_ativacao_financeira} 
-                    field="confirmacao_ativacao_financeira"
-                    dateField="confirmacao_ativacao_financeira_at"
-                    date={etapas.confirmacao_ativacao_financeira_at}
-                  />
+                <CardContent className="pt-0 space-y-4">
+                  {/* 6.1 - Abertura de chamado no NOC */}
+                  <div className="py-3 px-4 rounded-md border">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className={cn(
+                        "w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold",
+                        nocChamado?.item_6_1_status === 'success'
+                          ? "bg-primary text-primary-foreground"
+                          : nocChamado?.item_6_1_status === 'error'
+                            ? "bg-destructive text-destructive-foreground"
+                            : "bg-muted text-muted-foreground"
+                      )}>
+                        {nocChamado?.item_6_1_status === 'success' ? <Check className="w-3 h-3" /> : '1'}
+                      </div>
+                      <span className={cn(
+                        "text-sm font-medium",
+                        nocChamado?.item_6_1_status === 'success' && "text-muted-foreground"
+                      )}>
+                        6.1 - Abertura de chamado no NOC
+                      </span>
+                    </div>
+
+                    {/* Before opening */}
+                    {(!nocChamado || nocChamado.item_6_1_status === 'pending' || nocChamado.item_6_1_status === 'error') && (
+                      <div className="ml-9 space-y-3">
+                        <Button
+                          onClick={handleAbrirChamadoNoc}
+                          disabled={nocLoading}
+                          className="w-full"
+                        >
+                          {nocLoading ? (
+                            <>
+                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-foreground mr-2" />
+                              Processando abertura...
+                            </>
+                          ) : (
+                            <>
+                              <ExternalLink className="w-4 h-4 mr-2" />
+                              Abrir chamado no EIXONOC
+                            </>
+                          )}
+                        </Button>
+
+                        {nocChamado?.item_6_1_status === 'error' && (
+                          <Alert variant="destructive">
+                            <AlertTriangle className="h-4 w-4" />
+                            <AlertDescription>
+                              {nocChamado.integration_message || 'Erro ao abrir chamado. Tente novamente.'}
+                            </AlertDescription>
+                          </Alert>
+                        )}
+                      </div>
+                    )}
+
+                    {/* After success */}
+                    {nocChamado?.item_6_1_status === 'success' && (
+                      <div className="ml-9 p-3 bg-muted/50 rounded-md border space-y-2">
+                        <div className="flex items-center gap-2 text-sm">
+                          <CheckCircle2 className="w-4 h-4 text-primary" />
+                          <span className="font-medium">Chamado aberto com sucesso</span>
+                        </div>
+                        {nocChamado.chamado_numero && (
+                          <p className="text-sm"><span className="text-muted-foreground">Chamado:</span> <span className="font-medium">{nocChamado.chamado_numero}</span></p>
+                        )}
+                        {nocChamado.opened_by_name && (
+                          <p className="text-sm"><span className="text-muted-foreground">Aberto por:</span> {nocChamado.opened_by_name}</p>
+                        )}
+                        {nocChamado.opened_at && (
+                          <p className="text-sm"><span className="text-muted-foreground">Em:</span> {format(parseISO(nocChamado.opened_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}</p>
+                        )}
+                        {nocChamado.chamado_url && (
+                          <a
+                            href={nocChamado.chamado_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-sm text-primary hover:underline"
+                          >
+                            <ExternalLink className="w-3 h-3" />
+                            Ver chamado
+                          </a>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* 6.2 - Check e laudo de programação */}
+                  <div className={cn(
+                    "transition-opacity",
+                    (!nocChamado || nocChamado.item_6_1_status !== 'success') && "opacity-50 pointer-events-none"
+                  )}>
+                    <SubItem 
+                      label="6.2 - Check e laudo de programação" 
+                      checked={etapas.check_programacao} 
+                      field="check_programacao"
+                      dateField="check_programacao_at"
+                      date={etapas.check_programacao_at}
+                      hasChecklist
+                      checklistType="check_programacao"
+                    />
+                  </div>
+
+                  {/* 6.3 - Confirmação de ativação do Financeiro */}
+                  <div className={cn(
+                    "transition-opacity",
+                    (!etapas.check_programacao) && "opacity-50 pointer-events-none"
+                  )}>
+                    <SubItem 
+                      label="6.3 - Confirmação de ativação do Financeiro" 
+                      checked={etapas.confirmacao_ativacao_financeira} 
+                      field="confirmacao_ativacao_financeira"
+                      dateField="confirmacao_ativacao_financeira_at"
+                      date={etapas.confirmacao_ativacao_financeira_at}
+                    />
+                  </div>
+
                   <div className="px-4 pt-4">
                     <Button onClick={generatePDF} variant="outline" className="w-full">
                       <FileDown className="w-4 h-4 mr-2" />

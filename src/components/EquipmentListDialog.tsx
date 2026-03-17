@@ -495,7 +495,7 @@ export function EquipmentListDialog({ open, onOpenChange, projectId, projectName
                     : 'text-muted-foreground/50'
                   }`}>
                     {isActive && <Loader2 className="w-3 h-3 animate-spin" />}
-                    {isDone && <span className="text-green-600">✓</span>}
+                    {isDone && <span className="text-primary">✓</span>}
                     {step}
                   </div>
                 );

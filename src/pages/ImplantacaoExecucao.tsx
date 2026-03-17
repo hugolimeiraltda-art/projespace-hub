@@ -179,6 +179,22 @@ export default function ImplantacaoExecucao() {
   const [usarEnderecoOrigem, setUsarEnderecoOrigem] = useState(false);
   const [pendenciaDeptVisitaTexto, setPendenciaDeptVisitaTexto] = useState('');
   const [pendenciaClienteVisitaTexto, setPendenciaClienteVisitaTexto] = useState('');
+  
+  // NOC Integration state
+  const [nocChamado, setNocChamado] = useState<{
+    id?: string;
+    chamado_id?: string;
+    chamado_numero?: string;
+    chamado_url?: string;
+    integration_status: string;
+    integration_message?: string;
+    opened_at?: string;
+    opened_by_name?: string;
+    item_6_1_status: string;
+    item_6_2_status: string;
+    item_6_3_status: string;
+  } | null>(null);
+  const [nocLoading, setNocLoading] = useState(false);
 
   const canEditDates = user?.role === 'admin' || user?.role === 'administrativo' || user?.role === 'implantacao';
 
@@ -345,6 +361,18 @@ export default function ImplantacaoExecucao() {
       
       if (secAttachments) {
         setSecoesComAnexo([...new Set(secAttachments.map(a => a.secao))]);
+      }
+
+      // Fetch NOC chamado
+      const { data: nocData } = await supabase
+        .from('implantacao_noc_chamados')
+        .select('*')
+        .eq('project_id', id!)
+        .eq('transicao_noc', 'abertura_secao_6')
+        .maybeSingle();
+      
+      if (nocData) {
+        setNocChamado(nocData as any);
       }
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -537,8 +565,9 @@ export default function ImplantacaoExecucao() {
       { title: '5.2 Laudo Vidraceiro', completed: etapas.laudo_vidraceiro, date: etapas.laudo_vidraceiro_at },
       { title: '5.3 Laudo Serralheiro', completed: etapas.laudo_serralheiro, date: etapas.laudo_serralheiro_at },
       { title: '5.4 Laudo Conclusão Supervisor', completed: etapas.laudo_conclusao_supervisor, date: etapas.laudo_conclusao_supervisor_at },
-      { title: '6.1 Check de Programação', completed: etapas.check_programacao, date: etapas.check_programacao_at },
-      { title: '6.2 Confirmação Ativação Financeira', completed: etapas.confirmacao_ativacao_financeira, date: etapas.confirmacao_ativacao_financeira_at },
+      { title: '6.1 Abertura Chamado NOC', completed: nocChamado?.item_6_1_status === 'success', date: nocChamado?.opened_at || null },
+      { title: '6.2 Check de Programação', completed: etapas.check_programacao, date: etapas.check_programacao_at },
+      { title: '6.3 Confirmação Ativação Financeira', completed: etapas.confirmacao_ativacao_financeira, date: etapas.confirmacao_ativacao_financeira_at },
     ];
 
     doc.setFontSize(14);
@@ -602,7 +631,7 @@ export default function ImplantacaoExecucao() {
       case 3: return etapas.ligacao_boas_vindas && etapas.cadastro_gear && etapas.sindico_app && etapas.conferencia_tags;
       case 4: return etapas.check_projeto && etapas.agendamento_visita_startup && etapas.laudo_visita_startup;
       case 5: return etapas.laudo_instalador && etapas.laudo_vidraceiro && etapas.laudo_serralheiro && etapas.laudo_conclusao_supervisor;
-      case 6: return etapas.check_programacao && etapas.confirmacao_ativacao_financeira;
+      case 6: return nocChamado?.item_6_1_status === 'success' && etapas.check_programacao && etapas.confirmacao_ativacao_financeira;
       case 7: return etapas.agendamento_visita_comercial && etapas.laudo_visita_comercial;
       case 8: return (etapas.operacao_assistida_interacoes?.length || 0) > 0;
       case 9: return etapas.concluido;
@@ -620,6 +649,55 @@ export default function ImplantacaoExecucao() {
       </Layout>
     );
   }
+
+  const handleAbrirChamadoNoc = async () => {
+    if (!id || nocLoading) return;
+    setNocLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('noc-integration', {
+        body: { project_id: id },
+      });
+      if (error) throw error;
+      if (data.status === 'duplicate' || data.status === 'success') {
+        setNocChamado({
+          integration_status: 'success',
+          chamado_id: data.chamado_id,
+          chamado_numero: data.chamado_numero,
+          chamado_url: data.chamado_url,
+          opened_at: data.opened_at,
+          opened_by_name: data.opened_by_name,
+          item_6_1_status: 'success',
+          item_6_2_status: 'pending',
+          item_6_3_status: nocChamado?.item_6_3_status || 'blocked',
+        });
+        toast({
+          title: data.status === 'duplicate' ? 'Chamado já existente' : 'Chamado aberto com sucesso!',
+          description: `Chamado ${data.chamado_numero || 'NOC'} ${data.status === 'duplicate' ? 'já foi aberto anteriormente' : 'criado no EIXONOC'}.`,
+        });
+      } else {
+        setNocChamado({
+          integration_status: 'error',
+          integration_message: data.message,
+          item_6_1_status: 'error',
+          item_6_2_status: nocChamado?.item_6_2_status || 'blocked',
+          item_6_3_status: nocChamado?.item_6_3_status || 'blocked',
+        });
+        toast({ title: 'Erro ao abrir chamado', description: data.message || 'Erro no EIXONOC.', variant: 'destructive' });
+      }
+    } catch (err: any) {
+      console.error('NOC integration error:', err);
+      setNocChamado({
+        integration_status: 'error',
+        integration_message: err.message,
+        item_6_1_status: 'error',
+        item_6_2_status: nocChamado?.item_6_2_status || 'blocked',
+        item_6_3_status: nocChamado?.item_6_3_status || 'blocked',
+      });
+      toast({ title: 'Erro de conexão', description: 'Não foi possível conectar ao EIXONOC.', variant: 'destructive' });
+    } finally {
+      setNocLoading(false);
+    }
+  };
 
   const criarPendencia = async (tipo: string, descricao: string) => {
     if (!descricao.trim()) {
@@ -1819,23 +1897,121 @@ export default function ImplantacaoExecucao() {
                 </CardHeader>
               </CollapsibleTrigger>
               <CollapsibleContent>
-                <CardContent className="pt-0 space-y-1">
-                  <SubItem 
-                    label="6.1 - Check e laudo de programação" 
-                    checked={etapas.check_programacao} 
-                    field="check_programacao"
-                    dateField="check_programacao_at"
-                    date={etapas.check_programacao_at}
-                    hasChecklist
-                    checklistType="check_programacao"
-                  />
-                  <SubItem 
-                    label="6.2 - Confirmação de ativação do Financeiro" 
-                    checked={etapas.confirmacao_ativacao_financeira} 
-                    field="confirmacao_ativacao_financeira"
-                    dateField="confirmacao_ativacao_financeira_at"
-                    date={etapas.confirmacao_ativacao_financeira_at}
-                  />
+                <CardContent className="pt-0 space-y-4">
+                  {/* 6.1 - Abertura de chamado no NOC */}
+                  <div className="py-3 px-4 rounded-md border">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className={cn(
+                        "w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold",
+                        nocChamado?.item_6_1_status === 'success'
+                          ? "bg-primary text-primary-foreground"
+                          : nocChamado?.item_6_1_status === 'error'
+                            ? "bg-destructive text-destructive-foreground"
+                            : "bg-muted text-muted-foreground"
+                      )}>
+                        {nocChamado?.item_6_1_status === 'success' ? <Check className="w-3 h-3" /> : '1'}
+                      </div>
+                      <span className={cn(
+                        "text-sm font-medium",
+                        nocChamado?.item_6_1_status === 'success' && "text-muted-foreground"
+                      )}>
+                        6.1 - Abertura de chamado no NOC
+                      </span>
+                    </div>
+
+                    {/* Before opening */}
+                    {(!nocChamado || nocChamado.item_6_1_status === 'pending' || nocChamado.item_6_1_status === 'error') && (
+                      <div className="ml-9 space-y-3">
+                        <Button
+                          onClick={handleAbrirChamadoNoc}
+                          disabled={nocLoading}
+                          className="w-full"
+                        >
+                          {nocLoading ? (
+                            <>
+                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-foreground mr-2" />
+                              Processando abertura...
+                            </>
+                          ) : (
+                            <>
+                              <ExternalLink className="w-4 h-4 mr-2" />
+                              Abrir chamado no EIXONOC
+                            </>
+                          )}
+                        </Button>
+
+                        {nocChamado?.item_6_1_status === 'error' && (
+                          <Alert variant="destructive">
+                            <AlertTriangle className="h-4 w-4" />
+                            <AlertDescription>
+                              {nocChamado.integration_message || 'Erro ao abrir chamado. Tente novamente.'}
+                            </AlertDescription>
+                          </Alert>
+                        )}
+                      </div>
+                    )}
+
+                    {/* After success */}
+                    {nocChamado?.item_6_1_status === 'success' && (
+                      <div className="ml-9 p-3 bg-muted/50 rounded-md border space-y-2">
+                        <div className="flex items-center gap-2 text-sm">
+                          <CheckCircle2 className="w-4 h-4 text-primary" />
+                          <span className="font-medium">Chamado aberto com sucesso</span>
+                        </div>
+                        {nocChamado.chamado_numero && (
+                          <p className="text-sm"><span className="text-muted-foreground">Chamado:</span> <span className="font-medium">{nocChamado.chamado_numero}</span></p>
+                        )}
+                        {nocChamado.opened_by_name && (
+                          <p className="text-sm"><span className="text-muted-foreground">Aberto por:</span> {nocChamado.opened_by_name}</p>
+                        )}
+                        {nocChamado.opened_at && (
+                          <p className="text-sm"><span className="text-muted-foreground">Em:</span> {format(parseISO(nocChamado.opened_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}</p>
+                        )}
+                        {nocChamado.chamado_url && (
+                          <a
+                            href={nocChamado.chamado_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-sm text-primary hover:underline"
+                          >
+                            <ExternalLink className="w-3 h-3" />
+                            Ver chamado
+                          </a>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* 6.2 - Check e laudo de programação */}
+                  <div className={cn(
+                    "transition-opacity",
+                    (!nocChamado || nocChamado.item_6_1_status !== 'success') && "opacity-50 pointer-events-none"
+                  )}>
+                    <SubItem 
+                      label="6.2 - Check e laudo de programação" 
+                      checked={etapas.check_programacao} 
+                      field="check_programacao"
+                      dateField="check_programacao_at"
+                      date={etapas.check_programacao_at}
+                      hasChecklist
+                      checklistType="check_programacao"
+                    />
+                  </div>
+
+                  {/* 6.3 - Confirmação de ativação do Financeiro */}
+                  <div className={cn(
+                    "transition-opacity",
+                    (!etapas.check_programacao) && "opacity-50 pointer-events-none"
+                  )}>
+                    <SubItem 
+                      label="6.3 - Confirmação de ativação do Financeiro" 
+                      checked={etapas.confirmacao_ativacao_financeira} 
+                      field="confirmacao_ativacao_financeira"
+                      dateField="confirmacao_ativacao_financeira_at"
+                      date={etapas.confirmacao_ativacao_financeira_at}
+                    />
+                  </div>
+
                   <div className="px-4 pt-4">
                     <Button onClick={generatePDF} variant="outline" className="w-full">
                       <FileDown className="w-4 h-4 mr-2" />

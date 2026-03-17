@@ -29,3 +29,6 @@ verify_jwt = false
 
 [functions.send-visit-report]
 verify_jwt = false
+
+[functions.noc-integration]
+verify_jwt = false

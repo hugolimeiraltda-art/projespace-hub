@@ -60,6 +60,7 @@ export function EquipmentListDialog({ open, onOpenChange, projectId, projectName
   const doLoadEquipmentList = async () => {
     setIsLoading(true);
     setError(null);
+    setLoadingStep('Buscando arquivos do projeto...');
 
     try {
       // Fetch LISTA_EQUIPAMENTOS attachments for this project

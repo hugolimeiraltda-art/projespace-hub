@@ -32,3 +32,6 @@ verify_jwt = false
 
 [functions.noc-integration]
 verify_jwt = false
+
+[functions.noc-project-view]
+verify_jwt = false

@@ -5,6 +5,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2, Download, Package, AlertTriangle, FileText } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 

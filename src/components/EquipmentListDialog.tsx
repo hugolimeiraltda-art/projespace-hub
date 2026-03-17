@@ -122,6 +122,7 @@ export function EquipmentListDialog({ open, onOpenChange, projectId, projectName
         return;
       }
 
+      setLoadingStep(`Analisando ${fileUrls.length} documento${fileUrls.length > 1 ? 's' : ''} com IA...`);
       // Call edge function to extract equipment list with timeout
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 120000); // 2min timeout

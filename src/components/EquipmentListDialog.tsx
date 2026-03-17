@@ -569,7 +569,12 @@ export function EquipmentListDialog({ open, onOpenChange, projectId, projectName
                               onCheckedChange={() => setIpMap(prev => ({ ...prev, [key]: !prev[key] }))}
                             />
                           </TableCell>
-                          <TableCell className="text-muted-foreground">{eq.observacoes || '-'}</TableCell>
+                          <TableCell className="text-center">
+                            <Checkbox
+                              checked={!!instaladoMap[key]}
+                              onCheckedChange={() => setInstaladoMap(prev => ({ ...prev, [key]: !prev[key] }))}
+                            />
+                          </TableCell>
                         </TableRow>
                       );
                     })}

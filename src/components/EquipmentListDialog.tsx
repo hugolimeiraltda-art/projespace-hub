@@ -40,6 +40,7 @@ export function EquipmentListDialog({ open, onOpenChange, projectId, projectName
   const [hasLoaded, setHasLoaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loadTriggered, setLoadTriggered] = useState(false);
+  const [loadingStep, setLoadingStep] = useState<string>('');
 
   // Auto-load when dialog opens
   useEffect(() => {

@@ -85,6 +85,7 @@ export function EquipmentListDialog({ open, onOpenChange, projectId, projectName
       }
 
       // Generate signed URLs for the attachments
+      setLoadingStep(`Gerando URLs de acesso (${attachments.length} arquivo${attachments.length > 1 ? 's' : ''})...`);
       const fileUrls: string[] = [];
       for (const att of attachments) {
         if (!att.arquivo_url || att.arquivo_url.startsWith('blob:') || att.arquivo_url.startsWith('data:')) continue;

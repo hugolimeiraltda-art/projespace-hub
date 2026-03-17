@@ -43,7 +43,7 @@ export function useFileUpload() {
 
       setUploadProgress(100);
       return {
-        url: signedUrlData.signedUrl,
+        url: publicUrlData.publicUrl,
         path: data.path,
       };
     } catch (error) {

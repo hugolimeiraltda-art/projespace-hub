@@ -139,6 +139,7 @@ interface ContratoInfo {
   mensalidade: string;
   prazo_contrato: string;
   taxa_instalacao: string;
+  filial: string;
 }
 
 export default function ImplantacaoExecucao() {

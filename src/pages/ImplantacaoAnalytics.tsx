@@ -200,6 +200,8 @@ export default function ImplantacaoAnalytics() {
       const label = format(monthDate, 'MMM/yy', { locale: ptBR });
       const isCurrentMonth = format(monthDate, 'MM/yyyy') === format(now, 'MM/yyyy');
       const isPast = monthDate < startOfMonth(now);
+      const monthNum = monthDate.getMonth() + 1;
+      const yearNum = monthDate.getFullYear();
 
       let totalMensalidade = 0;
       let totalTaxa = 0;
@@ -210,8 +212,6 @@ export default function ImplantacaoAnalytics() {
         const port = portfolioMap[p.id];
         if (!port) return;
 
-        // For past/current: use data_ativacao from portfolio
-        // For future: use prazo_entrega_projeto from project
         const activationDate = port.data_ativacao
           ? parseISO(port.data_ativacao)
           : p.prazo_entrega_projeto
@@ -228,6 +228,11 @@ export default function ImplantacaoAnalytics() {
         }
       });
 
+      // Find planned data for this month
+      const plan = plans.find(p => p.mes === monthNum && p.ano === yearNum);
+      const planejadoValor = plan ? Number(plan.valor_total) : 0;
+      const planejadoQtd = plan ? plan.qtd_contratos : 0;
+
       return {
         label,
         totalMensalidade,
@@ -237,9 +242,12 @@ export default function ImplantacaoAnalytics() {
         isCurrentMonth,
         isPast,
         isFuture: !isPast && !isCurrentMonth,
+        planejadoValor,
+        planejadoQtd,
+        hasPlan: !!plan,
       };
     });
-  }, [projects, portfolioMap]);
+  }, [projects, portfolioMap, plans]);
 
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (!active || !payload?.length) return null;

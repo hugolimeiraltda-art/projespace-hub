@@ -269,7 +269,7 @@ export default function ImplantacaoAnalytics() {
         totalMensalidade,
         totalTaxa,
         count,
-        projetos,
+        contratos,
         isCurrentMonth,
         isPast,
         isFuture: !isPast && !isCurrentMonth,

@@ -11,6 +11,8 @@ import { Progress } from '@/components/ui/progress';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { MapaRegional } from '@/components/MapaRegional';
+import { MapPin } from 'lucide-react';
 
 interface ProjectData {
   id: string;
@@ -280,6 +282,33 @@ export default function ImplantacaoAnalytics() {
     });
   }, [projects, portfolioMap, plans]);
 
+  // Regional activation data
+  const regionalData = useMemo(() => {
+    const regions: Record<string, { contratos: number; receita: number }> = {
+      SPO: { contratos: 0, receita: 0 },
+      BHZ: { contratos: 0, receita: 0 },
+      RJ: { contratos: 0, receita: 0 },
+      VIX: { contratos: 0, receita: 0 },
+    };
+
+    projects.forEach(p => {
+      const port = portfolioMap[p.id];
+      if (!port?.data_ativacao) return;
+      const praca = getPraca(port.filial, port.praca);
+      if (regions[praca]) {
+        regions[praca].contratos++;
+        regions[praca].receita += Number(port.mensalidade) || 0;
+      }
+    });
+
+    return [
+      { sigla: 'SPO', nome: 'São Paulo', ...regions.SPO },
+      { sigla: 'BHZ', nome: 'Belo Horizonte', ...regions.BHZ },
+      { sigla: 'RJ', nome: 'Rio de Janeiro', ...regions.RJ },
+      { sigla: 'VIX', nome: 'Vitória', ...regions.VIX },
+    ];
+  }, [projects, portfolioMap]);
+
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (!active || !payload?.length) return null;
     return (
@@ -526,6 +555,22 @@ export default function ImplantacaoAnalytics() {
             })()}
           </DialogContent>
         </Dialog>
+
+        {/* Regional Map */}
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base flex items-center gap-2">
+              <MapPin className="w-5 h-5 text-primary" />
+              Ativações por Regional
+            </CardTitle>
+            <p className="text-xs text-muted-foreground">Distribuição geográfica dos contratos ativados</p>
+          </CardHeader>
+          <CardContent>
+            <div className="max-w-2xl mx-auto">
+              <MapaRegional data={regionalData} />
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Charts Row 1 */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

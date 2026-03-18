@@ -96,14 +96,26 @@ export default function SucessoClienteDetalhe() {
   }, [searchParams, customer]);
 
   const fetchCustomer = async () => {
+    // Validate UUID format before querying
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!id || !uuidRegex.test(id)) {
+      navigate('/sucesso-cliente');
+      return;
+    }
+
     try {
       const { data, error } = await supabase
         .from('customer_portfolio')
         .select('*')
         .eq('id', id)
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
+      if (!data) {
+        toast({ title: 'Erro ao carregar cliente', description: 'Cliente não encontrado.', variant: 'destructive' });
+        navigate('/sucesso-cliente');
+        return;
+      }
       setCustomer(data);
     } catch (error) {
       console.error('Error fetching customer:', error);

@@ -36,6 +36,7 @@ import SucessoClienteDepoimentos from "./pages/SucessoClienteDepoimentos";
 import SucessoClienteSatisfacao from "./pages/SucessoClienteSatisfacao";
 import SucessoClienteInativos from "./pages/SucessoClienteInativos";
 import SucessoClienteRelatorios from "./pages/SucessoClienteRelatorios";
+import SucessoClienteAtivos from "./pages/SucessoClienteAtivos";
 import Manutencao from "./pages/Manutencao";
 import ManutencaoPreventivas from "./pages/ManutencaoPreventivas";
 import ManutencaoChamados from "./pages/ManutencaoChamados";

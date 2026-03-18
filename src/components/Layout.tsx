@@ -228,7 +228,7 @@ export function Layout({ children }: LayoutProps) {
             return (
               <div key={`${item.path}-${item.label}`}>
                 <Collapsible open={shouldBeExpanded} onOpenChange={() => toggleMenu(item.path)}>
-                  <div className="flex items-center">
+                  
                   <CollapsibleTrigger asChild>
                     <button
                       className={cn(

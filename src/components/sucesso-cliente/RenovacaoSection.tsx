@@ -15,14 +15,28 @@ interface RenovacaoSectionProps {
   customerId: string;
   dataAtivacao: string | null;
   dataTermino: string | null;
+  mensalidade: number | null;
   onUpdate: () => void;
 }
 
-export function RenovacaoSection({ customerId, dataAtivacao, dataTermino, onUpdate }: RenovacaoSectionProps) {
+const formatBRL = (value: number | null) => {
+  if (value == null) return '';
+  return value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+};
+
+const parseBRL = (str: string): number | null => {
+  if (!str) return null;
+  const cleaned = str.replace(/\./g, '').replace(',', '.');
+  const num = parseFloat(cleaned);
+  return isNaN(num) ? null : num;
+};
+
+export function RenovacaoSection({ customerId, dataAtivacao, dataTermino, mensalidade, onUpdate }: RenovacaoSectionProps) {
   const { toast } = useToast();
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [novaDataTermino, setNovaDataTermino] = useState('');
+  const [novaMensalidade, setNovaMensalidade] = useState('');
   const [observacoes, setObservacoes] = useState('');
 
   const calculateTermino = () => {
@@ -42,6 +56,18 @@ export function RenovacaoSection({ customerId, dataAtivacao, dataTermino, onUpda
     return <Badge className="bg-green-500">Vigente ({diasRestantes} dias)</Badge>;
   };
 
+  const handleStartEditing = () => {
+    setEditing(true);
+    setNovaMensalidade(mensalidade != null ? formatBRL(mensalidade) : '');
+  };
+
+  const handleMensalidadeBlur = () => {
+    const parsed = parseBRL(novaMensalidade);
+    if (parsed !== null) {
+      setNovaMensalidade(formatBRL(parsed));
+    }
+  };
+
   const handleRenovar = async () => {
     if (!novaDataTermino) {
       toast({ title: 'Erro', description: 'Informe a nova data de término.', variant: 'destructive' });
@@ -50,16 +76,26 @@ export function RenovacaoSection({ customerId, dataAtivacao, dataTermino, onUpda
 
     setSaving(true);
     try {
+      const updateData: Record<string, unknown> = {
+        data_termino: novaDataTermino,
+      };
+
+      const parsedMensalidade = parseBRL(novaMensalidade);
+      if (parsedMensalidade !== null) {
+        updateData.mensalidade = parsedMensalidade;
+      }
+
       const { error } = await supabase
         .from('customer_portfolio')
-        .update({ data_termino: novaDataTermino })
+        .update(updateData)
         .eq('id', customerId);
 
       if (error) throw error;
       
-      toast({ title: 'Contrato renovado', description: 'A data de término foi atualizada com sucesso.' });
+      toast({ title: 'Contrato renovado', description: 'Data de término e mensalidade atualizados com sucesso.' });
       setEditing(false);
       setNovaDataTermino('');
+      setNovaMensalidade('');
       setObservacoes('');
       onUpdate();
     } catch (error) {
@@ -80,8 +116,7 @@ export function RenovacaoSection({ customerId, dataAtivacao, dataTermino, onUpda
         {getStatusBadge()}
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Status atual */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           <div className="space-y-2">
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Calendar className="w-4 h-4" />
@@ -99,6 +134,16 @@ export function RenovacaoSection({ customerId, dataAtivacao, dataTermino, onUpda
             </div>
             <p className="font-medium">
               {terminoDate ? format(terminoDate, 'dd/MM/yyyy', { locale: ptBR }) : '-'}
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <CheckCircle className="w-4 h-4 text-green-500" />
+              Mensalidade Atual
+            </div>
+            <p className="font-medium">
+              {mensalidade != null ? `R$ ${formatBRL(mensalidade)}` : '-'}
             </p>
           </div>
 
@@ -134,6 +179,15 @@ export function RenovacaoSection({ customerId, dataAtivacao, dataTermino, onUpda
                   onChange={(e) => setNovaDataTermino(e.target.value)}
                 />
               </div>
+              <div>
+                <Label>Novo Valor da Mensalidade (R$)</Label>
+                <Input
+                  value={novaMensalidade}
+                  onChange={(e) => setNovaMensalidade(e.target.value)}
+                  onBlur={handleMensalidadeBlur}
+                  placeholder="Ex: 12.500,00"
+                />
+              </div>
             </div>
             <div>
               <Label>Observações</Label>
@@ -153,7 +207,7 @@ export function RenovacaoSection({ customerId, dataAtivacao, dataTermino, onUpda
           </div>
         ) : (
           <div className="mt-6">
-            <Button onClick={() => setEditing(true)} className="bg-amber-500 hover:bg-amber-600">
+            <Button onClick={handleStartEditing} className="bg-amber-500 hover:bg-amber-600">
               <RefreshCw className="w-4 h-4 mr-2" />
               Iniciar Processo de Renovação
             </Button>

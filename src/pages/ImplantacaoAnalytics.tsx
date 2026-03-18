@@ -77,7 +77,7 @@ export default function ImplantacaoAnalytics() {
           .order('created_at', { ascending: false }),
         supabase
           .from('customer_portfolio')
-          .select('project_id, mensalidade, taxa_ativacao, data_ativacao, contrato, razao_social')
+          .select('project_id, mensalidade, taxa_ativacao, data_ativacao, contrato, razao_social, filial, praca')
           .not('project_id', 'is', null),
       ]);
 

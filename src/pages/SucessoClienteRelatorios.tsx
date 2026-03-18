@@ -18,11 +18,13 @@ import {
 import {
   Users, UserCheck, UserX, TrendingDown, DollarSign,
   ThumbsUp, Headphones, RefreshCw, FileBarChart, Download,
-  Calendar,
+  Calendar, FileSpreadsheet, FileText,
 } from 'lucide-react';
 import { format, subMonths, subYears, startOfMonth, endOfMonth, eachMonthOfInterval, isWithinInterval, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Skeleton } from '@/components/ui/skeleton';
+import jsPDF from 'jspdf';
+import * as XLSX from 'xlsx';
 
 const PERIOD_OPTIONS = [
   { value: '3m', label: 'Últimos 3 meses' },

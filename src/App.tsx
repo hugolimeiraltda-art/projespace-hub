@@ -207,6 +207,14 @@ function AppRoutes() {
         element={<ProtectedRoute><SucessoClienteSatisfacao /></ProtectedRoute>} 
       />
       <Route 
+        path="/sucesso-cliente/inativos" 
+        element={<ProtectedRoute><SucessoClienteInativos /></ProtectedRoute>} 
+      />
+      <Route 
+        path="/sucesso-cliente/relatorios" 
+        element={<ProtectedRoute><SucessoClienteRelatorios /></ProtectedRoute>} 
+      />
+      <Route 
         path="/sucesso-cliente/:id" 
         element={<ProtectedRoute><SucessoClienteDetalhe /></ProtectedRoute>} 
       />

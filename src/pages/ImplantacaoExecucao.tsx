@@ -162,7 +162,7 @@ export default function ImplantacaoExecucao() {
   const [tempStartDate, setTempStartDate] = useState('');
   const [tempEndDate, setTempEndDate] = useState('');
   const [selectedNota, setSelectedNota] = useState<number | null>(null);
-  const [contratoInfo, setContratoInfo] = useState<ContratoInfo>({ contrato: '', alarme_codigo: '', mensalidade: '', prazo_contrato: '', taxa_instalacao: '' });
+  const [contratoInfo, setContratoInfo] = useState<ContratoInfo>({ contrato: '', alarme_codigo: '', mensalidade: '', prazo_contrato: '', taxa_instalacao: '', filial: '' });
   const [editingContrato, setEditingContrato] = useState(false);
   const [showAIFeedbackDialog, setShowAIFeedbackDialog] = useState(false);
   const [showEquipmentList, setShowEquipmentList] = useState(false);

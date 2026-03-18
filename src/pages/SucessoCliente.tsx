@@ -1243,7 +1243,7 @@ export default function SucessoCliente() {
                       className="cursor-pointer hover:bg-muted"
                       onClick={() => {
                         setExpiringDialogOpen(false);
-                        navigate(`/sucesso-cliente/${customer.id}`);
+                        navigate(`/sucesso-cliente/cliente/${customer.id}`);
                       }}
                     >
                       <TableCell className="font-medium text-primary">{customer.contrato}</TableCell>

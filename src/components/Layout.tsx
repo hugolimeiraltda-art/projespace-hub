@@ -1,4 +1,4 @@
-import { ReactNode, useState } from 'react';
+import { ReactNode, useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useMenuPermissions } from '@/hooks/useMenuPermissions';
@@ -148,8 +148,19 @@ export function Layout({ children }: LayoutProps) {
     if (path.startsWith('/manutencao')) initial.push('/manutencao');
     if (path.startsWith('/orcamentos') || path.startsWith('/orcamento')) initial.push('/orcamentos');
     if (path.startsWith('/startup-projetos') || path.startsWith('/implantacao')) initial.push('/startup-projetos');
+    if (path.startsWith('/sucesso-cliente')) initial.push('/sucesso-cliente');
     return initial;
   });
+
+  // Auto-expand parent menu when navigating to a sub-route
+  useEffect(() => {
+    const path = location.pathname;
+    const parentPaths = ['/projetos', '/manutencao', '/orcamentos', '/startup-projetos', '/sucesso-cliente', '/configuracoes'];
+    setExpandedMenus(prev => {
+      const toAdd = parentPaths.filter(p => path.startsWith(p) && !prev.includes(p));
+      return toAdd.length > 0 ? [...prev, ...toAdd] : prev;
+    });
+  }, [location.pathname]);
 
   const handleLogout = () => {
     logout();

@@ -14,6 +14,7 @@ import { ArrowLeft, MessageSquareWarning, Star, ThumbsUp, ClipboardCheck, Loader
 import { CustomerInfoSection } from '@/components/sucesso-cliente/CustomerInfoSection';
 import { CustomerHistorySection } from '@/components/sucesso-cliente/CustomerHistorySection';
 import { RenovacaoSection } from '@/components/sucesso-cliente/RenovacaoSection';
+import { CancelamentoSection } from '@/components/sucesso-cliente/CancelamentoSection';
 
 interface Customer {
   id: string;
@@ -265,6 +266,13 @@ export default function SucessoClienteDetalhe() {
           customerId={customer.id}
           dataAtivacao={customer.data_ativacao}
           dataTermino={customer.data_termino}
+          onUpdate={fetchCustomer}
+        />
+
+        {/* Cancelamento Section */}
+        <CancelamentoSection
+          customerId={customer.id}
+          mensalidade={customer.mensalidade}
           onUpdate={fetchCustomer}
         />
 

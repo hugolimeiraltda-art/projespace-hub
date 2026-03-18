@@ -36,6 +36,14 @@ interface PortfolioData {
   praca: string | null;
 }
 
+interface CancelamentoData {
+  id: string;
+  data_cancelamento: string;
+  valor_contrato: number | null;
+  motivo: string;
+  customer_id: string;
+}
+
 interface ContratoDetalhe {
   nome: string;
   contrato: string;
@@ -68,6 +76,7 @@ const getPraca = (filial?: string | null, praca?: string | null): string => {
 export default function ImplantacaoAnalytics() {
   const [projects, setProjects] = useState<ProjectData[]>([]);
   const [portfolio, setPortfolio] = useState<PortfolioData[]>([]);
+  const [cancelamentos, setCancelamentos] = useState<CancelamentoData[]>([]);
   const [plans, setPlans] = useState<PlanData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedMonth, setSelectedMonth] = useState<number | null>(null);
@@ -86,7 +95,7 @@ export default function ImplantacaoAnalytics() {
 
   const fetchData = async () => {
     try {
-      const [projectsRes, portfolioRes] = await Promise.all([
+      const [projectsRes, portfolioRes, cancelamentosRes] = await Promise.all([
         supabase
           .from('projects')
           .select('id, numero_projeto, cliente_condominio_nome, implantacao_status, implantacao_started_at, implantacao_completed_at, prazo_entrega_projeto, created_at')
@@ -96,10 +105,14 @@ export default function ImplantacaoAnalytics() {
           .from('customer_portfolio')
           .select('project_id, mensalidade, taxa_ativacao, data_ativacao, contrato, razao_social, filial, praca')
           .not('project_id', 'is', null),
+        supabase
+          .from('customer_cancelamentos')
+          .select('id, data_cancelamento, valor_contrato, motivo, customer_id'),
       ]);
 
       if (projectsRes.data) setProjects(projectsRes.data);
       if (portfolioRes.data) setPortfolio(portfolioRes.data);
+      if (cancelamentosRes.data) setCancelamentos(cancelamentosRes.data);
     } catch (error) {
       console.error('Error:', error);
     } finally {
@@ -261,6 +274,19 @@ export default function ImplantacaoAnalytics() {
         }
       });
 
+      // Cancelamentos do mês
+      let canceladosCount = 0;
+      let canceladosReceita = 0;
+      cancelamentos.forEach(c => {
+        const cancelDate = parseISO(c.data_cancelamento);
+        if (isWithinInterval(cancelDate, { start: monthStart, end: monthEnd })) {
+          canceladosCount++;
+          canceladosReceita += Number(c.valor_contrato) || 0;
+        }
+      });
+
+      const saldo = totalMensalidade - canceladosReceita;
+
       // Find planned data for this month
       const plan = plans.find(p => p.mes === monthNum && p.ano === yearNum);
       const planejadoValor = plan ? Number(plan.valor_total) : 0;
@@ -278,9 +304,12 @@ export default function ImplantacaoAnalytics() {
         planejadoValor,
         planejadoQtd,
         hasPlan: !!plan,
+        canceladosCount,
+        canceladosReceita,
+        saldo,
       };
     });
-  }, [projects, portfolioMap, plans]);
+  }, [projects, portfolioMap, plans, cancelamentos]);
 
   // Regional activation data
   const regionalData = useMemo(() => {
@@ -453,8 +482,32 @@ export default function ImplantacaoAnalytics() {
                         <span className="font-medium">{m.hasPlan ? `R$ ${m.planejadoValor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '—'}</span>
                       </div>
                       <div className="flex items-center justify-between text-[10px]">
-                        <span className="text-muted-foreground">Receita Realizada</span>
+                        <span className="text-muted-foreground">Receita Ativada</span>
                         <span className="font-bold text-foreground">R$ {m.totalMensalidade.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                      </div>
+                    </div>
+
+                    {/* Cancelamentos */}
+                    <div className="border-t border-border/50 pt-1.5 space-y-1">
+                      <div className="flex items-center justify-between text-[10px]">
+                        <span className="text-muted-foreground">Cancelados</span>
+                        <span className="font-semibold text-destructive">{m.canceladosCount}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-[10px]">
+                        <span className="text-muted-foreground">Receita Cancelada</span>
+                        <span className="font-semibold text-destructive">
+                          {m.canceladosReceita > 0 ? `-R$ ${m.canceladosReceita.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : 'R$ 0,00'}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Saldo */}
+                    <div className="border-t border-border/50 pt-1.5">
+                      <div className="flex items-center justify-between text-[10px]">
+                        <span className="font-semibold text-muted-foreground">Saldo</span>
+                        <span className={`font-bold ${m.saldo >= 0 ? 'text-chart-2' : 'text-destructive'}`}>
+                          R$ {m.saldo.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                        </span>
                       </div>
                     </div>
 

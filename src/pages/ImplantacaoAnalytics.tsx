@@ -36,6 +36,14 @@ interface PortfolioData {
   praca: string | null;
 }
 
+interface CancelamentoData {
+  id: string;
+  data_cancelamento: string;
+  valor_contrato: number | null;
+  motivo: string;
+  customer_id: string;
+}
+
 interface ContratoDetalhe {
   nome: string;
   contrato: string;

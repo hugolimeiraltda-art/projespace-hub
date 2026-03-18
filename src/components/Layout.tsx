@@ -5,7 +5,7 @@ import { useMenuPermissions } from '@/hooks/useMenuPermissions';
 import { Button } from '@/components/ui/button';
 import { NotificationsSidebarItem } from '@/components/NotificationsSidebarItem';
 import { cn } from '@/lib/utils';
-import { LayoutDashboard, FolderPlus, List, Settings, LogOut, User, ClipboardList, Users, Briefcase, ShoppingCart, Package, Heart, Wrench, ChevronDown, ChevronRight, AlertTriangle, Calendar, Bot, Boxes, Percent, Brain, BookOpen, FileText, Menu, X, BarChart3, PlayCircle, HeadphonesIcon } from 'lucide-react';
+import { LayoutDashboard, FolderPlus, List, Settings, LogOut, User, ClipboardList, Users, Briefcase, ShoppingCart, Package, Heart, Wrench, ChevronDown, ChevronRight, AlertTriangle, Calendar, Bot, Boxes, Percent, Brain, BookOpen, FileText, Menu, X, BarChart3, PlayCircle, HeadphonesIcon, TrendingUp } from 'lucide-react';
 import emiveLogo from '@/assets/emive-logo.png';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -56,6 +56,7 @@ const ALL_NAV_ITEMS: NavItem[] = [
     menuKey: 'implantacao',
     subItems: [
       { path: '/implantacao-dashboard', label: 'Dashboard', icon: BarChart3, menuKey: 'implantacao/dashboard' },
+      { path: '/implantacao-analytics', label: 'Analytics', icon: TrendingUp, menuKey: 'implantacao/analytics' },
       { path: '/startup-projetos?tab=em-implantacao', label: 'Em Implantação', icon: PlayCircle, menuKey: 'implantacao/em-implantacao' },
       { path: '/startup-projetos?tab=operacao-assistida', label: 'Operação Assistida', icon: HeadphonesIcon, menuKey: 'implantacao/operacao-assistida' },
       { path: '/startup-projetos?tab=pequenas-obras', label: 'Pequenas Obras', icon: Wrench, menuKey: 'implantacao/pequenas-obras' },

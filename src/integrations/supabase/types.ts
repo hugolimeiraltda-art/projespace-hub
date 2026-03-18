@@ -962,6 +962,42 @@ export type Database = {
           },
         ]
       }
+      implantacao_planejamento_ativacoes: {
+        Row: {
+          ano: number
+          created_at: string
+          created_by: string | null
+          created_by_name: string | null
+          id: string
+          mes: number
+          qtd_contratos: number
+          updated_at: string
+          valor_total: number
+        }
+        Insert: {
+          ano: number
+          created_at?: string
+          created_by?: string | null
+          created_by_name?: string | null
+          id?: string
+          mes: number
+          qtd_contratos?: number
+          updated_at?: string
+          valor_total?: number
+        }
+        Update: {
+          ano?: number
+          created_at?: string
+          created_by?: string | null
+          created_by_name?: string | null
+          id?: string
+          mes?: number
+          qtd_contratos?: number
+          updated_at?: string
+          valor_total?: number
+        }
+        Relationships: []
+      }
       locais_estoque: {
         Row: {
           cidade: string

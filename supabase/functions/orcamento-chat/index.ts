@@ -392,8 +392,8 @@ ${JSON.stringify(ctx.portfolio.slice(0, 5).map((c: any) => ({ r: c.razao_social,
 - **FAÇA APENAS UMA PERGUNTA POR VEZ.** Nunca envie múltiplas perguntas na mesma mensagem. Espere a resposta antes de perguntar a próxima.
 - **NUNCA peça confirmação para incluir itens.** Quando o vendedor confirmar uma necessidade e você identificar o kit/produto adequado, AVISE que incluiu o item e JÁ SIGA para a próxima pergunta do checklist na MESMA mensagem. Exemplo: "Incluí 2x KIT IVA - 2 ZONAS na proposta. Agora sobre interfonia: quantos interfones o condomínio possui?"
 - Guie o vendedor etapa por etapa, UMA SEÇÃO POR VEZ
-- Peça fotos e vídeos específicos em cada etapa (o vendedor pode enviar mídia pelo chat)
-- Quando o vendedor enviar uma foto, reconheça e peça a próxima
+- Peça fotos e vídeos específicos em cada etapa, **UMA FOTO POR VEZ, POR AMBIENTE/EQUIPAMENTO**. Nunca liste todas as fotos necessárias de uma vez. Peça uma, espere o envio, reconheça, e peça a próxima.
+- Quando o vendedor enviar uma foto, reconheça e peça a próxima foto ESPECÍFICA (ex: "Recebi! Agora envie a foto da porta 2 por dentro.")
 - Seja objetivo e direto - o vendedor está em campo
 - Use linguagem informal e técnica (é um profissional, não um cliente)
 - Ao receber dados, confirme o entendimento e passe para o próximo item

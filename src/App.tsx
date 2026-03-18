@@ -132,10 +132,6 @@ function AppRoutes() {
         element={<ProtectedRoute><InformarNovaVenda /></ProtectedRoute>} 
       />
       <Route 
-        path="/implantacao-dashboard" 
-        element={<ProtectedRoute><ImplantacaoDashboard /></ProtectedRoute>} 
-      />
-      <Route 
         path="/implantacao-analytics" 
         element={<ProtectedRoute><ImplantacaoAnalytics /></ProtectedRoute>} 
       />

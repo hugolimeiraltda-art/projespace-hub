@@ -500,7 +500,17 @@ export default function OrcamentoChat() {
 
       if (!resp.ok) {
         const err = await resp.json();
-        toast({ title: 'Erro', description: err.error, variant: 'destructive' });
+        if (resp.status === 422 && err.missing) {
+          // Missing mandatory data - show detailed warning
+          toast({
+            title: '⚠️ Informações obrigatórias pendentes',
+            description: err.missing.map((m: string) => `• ${m}`).join('\n'),
+            variant: 'destructive',
+            duration: 10000,
+          });
+        } else {
+          toast({ title: 'Erro', description: err.error, variant: 'destructive' });
+        }
         setGerandoProposta(false);
         return;
       }

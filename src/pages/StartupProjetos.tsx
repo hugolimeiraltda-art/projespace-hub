@@ -319,20 +319,71 @@ export default function StartupProjetos() {
     <Layout>
       <div className="p-6 md:p-8">
         {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center gap-3 mb-2">
-            <Rocket className="w-8 h-8 text-primary" />
-            <h1 className="text-2xl font-bold text-foreground">
-              {activeTab === 'em-implantacao' && 'Implantação de Projetos'}
-              {activeTab === 'operacao-assistida' && 'Operação Assistida'}
-              {activeTab === 'pequenas-obras' && 'Pequenas Obras'}
-            </h1>
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <div className="flex items-center gap-3 mb-2">
+              <Rocket className="w-8 h-8 text-primary" />
+              <h1 className="text-2xl font-bold text-foreground">
+                {activeTab === 'em-implantacao' && 'Implantação de Projetos'}
+                {activeTab === 'operacao-assistida' && 'Operação Assistida'}
+                {activeTab === 'pequenas-obras' && 'Pequenas Obras'}
+              </h1>
+            </div>
+            <p className="text-muted-foreground">
+              {activeTab === 'em-implantacao' && 'Gerencie a implantação dos projetos vendidos'}
+              {activeTab === 'operacao-assistida' && 'Acompanhe os projetos em fase de operação assistida'}
+              {activeTab === 'pequenas-obras' && 'Gerencie as pequenas obras e serviços'}
+            </p>
           </div>
-          <p className="text-muted-foreground">
-            {activeTab === 'em-implantacao' && 'Gerencie a implantação dos projetos vendidos'}
-            {activeTab === 'operacao-assistida' && 'Acompanhe os projetos em fase de operação assistida'}
-            {activeTab === 'pequenas-obras' && 'Gerencie as pequenas obras e serviços'}
-          </p>
+          {activeTab === 'em-implantacao' && (
+            <Dialog open={showNewObra} onOpenChange={setShowNewObra}>
+              <DialogTrigger asChild>
+                <Button><Plus className="mr-2 h-4 w-4" />Cadastrar Nova Obra</Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader><DialogTitle>Cadastrar Nova Obra</DialogTitle></DialogHeader>
+                <div className="space-y-4">
+                  <div>
+                    <Label>Nome do Condomínio *</Label>
+                    <Input value={newObraNome} onChange={e => setNewObraNome(e.target.value)} placeholder="Ex: Residencial Aurora" />
+                  </div>
+                  <div>
+                    <Label>Endereço</Label>
+                    <Input value={newObraEndereco} onChange={e => setNewObraEndereco(e.target.value)} placeholder="Rua, número, bairro" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label>Cidade</Label>
+                      <Input value={newObraCidade} onChange={e => setNewObraCidade(e.target.value)} placeholder="Cidade" />
+                    </div>
+                    <div>
+                      <Label>Estado</Label>
+                      <Select value={newObraEstado} onValueChange={setNewObraEstado}>
+                        <SelectTrigger><SelectValue placeholder="UF" /></SelectTrigger>
+                        <SelectContent>
+                          {['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO'].map(uf => (
+                            <SelectItem key={uf} value={uf}>{uf}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <div>
+                    <Label>Vendedor Responsável *</Label>
+                    <Select value={newObraVendedor} onValueChange={setNewObraVendedor}>
+                      <SelectTrigger><SelectValue placeholder="Selecione o vendedor" /></SelectTrigger>
+                      <SelectContent>
+                        {vendedoresList.map(v => <SelectItem key={v.id} value={v.id}>{v.nome}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <Button onClick={handleCreateObra} disabled={creatingObra} className="w-full">
+                    {creatingObra ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Criando...</> : 'Cadastrar Obra'}
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+          )}
         </div>
 
         {activeTab === 'em-implantacao' && (

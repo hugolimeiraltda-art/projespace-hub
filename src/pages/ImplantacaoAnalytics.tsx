@@ -282,6 +282,33 @@ export default function ImplantacaoAnalytics() {
     });
   }, [projects, portfolioMap, plans]);
 
+  // Regional activation data
+  const regionalData = useMemo(() => {
+    const regions: Record<string, { contratos: number; receita: number }> = {
+      SPO: { contratos: 0, receita: 0 },
+      BHZ: { contratos: 0, receita: 0 },
+      RJ: { contratos: 0, receita: 0 },
+      VIX: { contratos: 0, receita: 0 },
+    };
+
+    projects.forEach(p => {
+      const port = portfolioMap[p.id];
+      if (!port?.data_ativacao) return;
+      const praca = getPraca(port.filial, port.praca);
+      if (regions[praca]) {
+        regions[praca].contratos++;
+        regions[praca].receita += Number(port.mensalidade) || 0;
+      }
+    });
+
+    return [
+      { sigla: 'SPO', nome: 'São Paulo', ...regions.SPO },
+      { sigla: 'BHZ', nome: 'Belo Horizonte', ...regions.BHZ },
+      { sigla: 'RJ', nome: 'Rio de Janeiro', ...regions.RJ },
+      { sigla: 'VIX', nome: 'Vitória', ...regions.VIX },
+    ];
+  }, [projects, portfolioMap]);
+
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (!active || !payload?.length) return null;
     return (

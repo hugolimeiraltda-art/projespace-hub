@@ -206,69 +206,60 @@ export default function ImplantacaoDashboard() {
           </div>
         </div>
 
-        {/* Timeline List */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base flex items-center gap-2">
-              <PlayCircle className="w-5 h-5 text-primary" />
-              Timeline dos Projetos
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-0">
-            {filtered.length === 0 ? (
-              <div className="p-8 text-center text-muted-foreground">
-                Nenhum projeto encontrado.
-              </div>
-            ) : (
-              <div className="divide-y divide-border">
-                {filtered.map((project) => {
-                  const portfolio = portfolioMap[project.id];
-                  const cidadeEstado = [project.cliente_cidade, project.cliente_estado].filter(Boolean).join('/');
-                  return (
-                    <div
-                      key={project.id}
-                      className="px-4 py-5 hover:bg-muted/50 cursor-pointer transition-colors border-b border-border last:border-b-0"
-                      onClick={() => navigate(`/startup-projetos/${project.id}/execucao`)}
-                    >
-                      {/* Row 1: Project info */}
-                      <div className="flex items-center text-sm mb-2">
-                        <span className="font-semibold text-foreground w-[60px] shrink-0">#{project.numero_projeto}</span>
-                        <span className="text-muted-foreground font-medium w-[90px] shrink-0 truncate">{portfolio?.contrato || '—'}</span>
-                        <span className="font-medium text-foreground flex-1 min-w-0 truncate">{project.cliente_condominio_nome}</span>
-                        <span className="text-muted-foreground w-[140px] shrink-0 truncate">{cidadeEstado || '—'}</span>
-                        <span className="flex items-center gap-1.5 text-muted-foreground w-[170px] shrink-0">
-                          <Calendar className="w-3.5 h-3.5" />
-                          Início: {project.implantacao_started_at
-                            ? format(parseISO(project.implantacao_started_at), 'dd/MM/yyyy', { locale: ptBR })
-                            : '—'}
-                        </span>
-                        <span className="flex items-center gap-1.5 text-muted-foreground w-[190px] shrink-0">
-                          <Calendar className="w-3.5 h-3.5" />
-                          Previsão: {project.prazo_entrega_projeto
-                            ? format(parseISO(project.prazo_entrega_projeto), 'dd/MM/yyyy', { locale: ptBR })
-                            : '—'}
-                        </span>
-                        <span className="flex items-center gap-1.5 text-muted-foreground w-[130px] shrink-0">
-                          <DollarSign className="w-3.5 h-3.5" />
-                          {portfolio?.mensalidade != null
-                            ? `R$ ${portfolio.mensalidade.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
-                            : '—'}
-                        </span>
-                        <span className="text-muted-foreground w-[110px] shrink-0">
-                          Taxa: {portfolio?.taxa_ativacao != null
-                            ? `R$ ${portfolio.taxa_ativacao.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
-                            : '—'}
+        {/* Projects List */}
+        {filtered.length === 0 ? (
+          <Card>
+            <CardContent className="py-12 text-center text-muted-foreground">
+              Nenhum projeto encontrado.
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="space-y-3">
+            {filtered.map((project) => {
+              const portfolio = portfolioMap[project.id];
+              const cidadeEstado = [project.cliente_cidade, project.cliente_estado].filter(Boolean).join('/');
+              const progress = getProgress(project.id);
+              const progressPct = Math.round((progress / 7) * 100);
+
+              return (
+                <Card
+                  key={project.id}
+                  className="hover:shadow-md cursor-pointer transition-all"
+                  onClick={() => navigate(`/startup-projetos/${project.id}/execucao`)}
+                >
+                  <CardContent className="p-4">
+                    {/* Main info row */}
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-3 min-w-0 flex-1">
+                        <span className="text-sm font-semibold text-muted-foreground shrink-0">#{project.numero_projeto}</span>
+                        {portfolio?.contrato && (
+                          <Badge variant="outline" className="shrink-0 text-xs">{portfolio.contrato}</Badge>
+                        )}
+                        <h3 className="font-semibold text-foreground truncate">{project.cliente_condominio_nome}</h3>
+                        {cidadeEstado && (
+                          <span className="text-sm text-muted-foreground shrink-0">{cidadeEstado}</span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-4 shrink-0 text-sm text-muted-foreground">
+                        {portfolio?.mensalidade != null && (
+                          <span className="font-medium text-foreground">
+                            R$ {portfolio.mensalidade.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                          </span>
+                        )}
+                        <span className="text-xs font-medium text-primary bg-primary/10 px-2 py-0.5 rounded-full">
+                          {progressPct}%
                         </span>
                       </div>
-                      {/* Row 2: Timeline */}
-                      <ImplantacaoTimeline etapas={etapasMap[project.id] || null} compact />
                     </div>
-                  );
-                })}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+
+                    {/* Timeline */}
+                    <ImplantacaoTimeline etapas={etapasMap[project.id] || null} compact />
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        )}
       </div>
     </Layout>
   );

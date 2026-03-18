@@ -1220,6 +1220,7 @@ export default function ImplantacaoExecucao() {
                               if (!contratoInfo.mensalidade?.trim()) missingFields.push('Mensalidade');
                               if (!contratoInfo.prazo_contrato) missingFields.push('Prazo do Contrato');
                               if (!contratoInfo.taxa_instalacao?.trim()) missingFields.push('Taxa de Instalação');
+                              if (!contratoInfo.filial) missingFields.push('Praça');
 
                               if (missingFields.length > 0) {
                                 toast({

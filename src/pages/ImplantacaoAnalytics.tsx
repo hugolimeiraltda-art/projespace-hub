@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend, LineChart, Line } from 'recharts';
 import { BarChart3, Clock, DollarSign, TrendingUp, Calendar, Building } from 'lucide-react';
-import { format, parseISO, differenceInDays } from 'date-fns';
+import { format, parseISO, differenceInDays, startOfMonth, addMonths, subMonths, isWithinInterval, endOfMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 interface ProjectData {

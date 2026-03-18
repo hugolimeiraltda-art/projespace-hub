@@ -325,13 +325,11 @@ export default function ImplantacaoAnalytics() {
       VIX: { contratos: 0, receita: 0 },
     };
 
-    projects.forEach(p => {
-      const port = portfolioMap[p.id];
-      if (!port?.data_ativacao) return;
-      const praca = getPraca(port.filial, port.praca);
+    allPortfolio.forEach(p => {
+      const praca = getPraca(p.filial, p.praca);
       if (regions[praca]) {
         regions[praca].contratos++;
-        regions[praca].receita += Number(port.mensalidade) || 0;
+        regions[praca].receita += Number(p.mensalidade) || 0;
       }
     });
 
@@ -341,7 +339,7 @@ export default function ImplantacaoAnalytics() {
       { sigla: 'RJ', nome: 'Rio de Janeiro', ...regions.RJ },
       { sigla: 'VIX', nome: 'Vitória', ...regions.VIX },
     ];
-  }, [projects, portfolioMap]);
+  }, [allPortfolio]);
 
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (!active || !payload?.length) return null;

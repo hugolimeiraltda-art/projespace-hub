@@ -15,6 +15,7 @@ import { CustomerInfoSection } from '@/components/sucesso-cliente/CustomerInfoSe
 import { CustomerHistorySection } from '@/components/sucesso-cliente/CustomerHistorySection';
 import { RenovacaoSection } from '@/components/sucesso-cliente/RenovacaoSection';
 import { CancelamentoSection } from '@/components/sucesso-cliente/CancelamentoSection';
+import { AdministradoresCondominio } from '@/components/AdministradoresCondominio';
 
 interface Customer {
   id: string;
@@ -94,6 +95,18 @@ export default function SucessoClienteDetalhe() {
       }
     }
   }, [searchParams, customer]);
+
+  // Scroll to section based on hash
+  useEffect(() => {
+    if (!customer) return;
+    const hash = window.location.hash.replace('#', '');
+    if (hash) {
+      setTimeout(() => {
+        const el = document.getElementById(hash);
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 300);
+    }
+  }, [customer]);
 
   const fetchCustomer = async () => {
     // Skip known static sub-routes that React Router should handle
@@ -280,20 +293,29 @@ export default function SucessoClienteDetalhe() {
         <CustomerHistorySection key={historyKey} customerId={customer.id} />
 
         {/* Renovação Section */}
-        <RenovacaoSection
-          customerId={customer.id}
-          dataAtivacao={customer.data_ativacao}
-          dataTermino={customer.data_termino}
-          mensalidade={customer.mensalidade}
-          onUpdate={fetchCustomer}
-        />
+        <div id="renovacao">
+          <RenovacaoSection
+            customerId={customer.id}
+            dataAtivacao={customer.data_ativacao}
+            dataTermino={customer.data_termino}
+            mensalidade={customer.mensalidade}
+            onUpdate={fetchCustomer}
+          />
+        </div>
+
+        {/* Administradores / Mandatos Section */}
+        <div id="administradores">
+          <AdministradoresCondominio customerId={customer.id} canEdit={true} />
+        </div>
 
         {/* Cancelamento Section */}
-        <CancelamentoSection
-          customerId={customer.id}
-          mensalidade={customer.mensalidade}
-          onUpdate={fetchCustomer}
-        />
+        <div id="cancelamento">
+          <CancelamentoSection
+            customerId={customer.id}
+            mensalidade={customer.mensalidade}
+            onUpdate={fetchCustomer}
+          />
+        </div>
 
         {/* New Reclamação Dialog */}
         <Dialog open={reclamacaoDialogOpen} onOpenChange={setReclamacaoDialogOpen}>

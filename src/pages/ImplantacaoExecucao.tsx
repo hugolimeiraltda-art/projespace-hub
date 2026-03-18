@@ -139,6 +139,7 @@ interface ContratoInfo {
   mensalidade: string;
   prazo_contrato: string;
   taxa_instalacao: string;
+  filial: string;
 }
 
 export default function ImplantacaoExecucao() {
@@ -161,7 +162,7 @@ export default function ImplantacaoExecucao() {
   const [tempStartDate, setTempStartDate] = useState('');
   const [tempEndDate, setTempEndDate] = useState('');
   const [selectedNota, setSelectedNota] = useState<number | null>(null);
-  const [contratoInfo, setContratoInfo] = useState<ContratoInfo>({ contrato: '', alarme_codigo: '', mensalidade: '', prazo_contrato: '', taxa_instalacao: '' });
+  const [contratoInfo, setContratoInfo] = useState<ContratoInfo>({ contrato: '', alarme_codigo: '', mensalidade: '', prazo_contrato: '', taxa_instalacao: '', filial: '' });
   const [editingContrato, setEditingContrato] = useState(false);
   const [showAIFeedbackDialog, setShowAIFeedbackDialog] = useState(false);
   const [showEquipmentList, setShowEquipmentList] = useState(false);
@@ -253,7 +254,7 @@ export default function ImplantacaoExecucao() {
       // Fetch customer_portfolio data for contract info
       const { data: portfolioData } = await supabase
         .from('customer_portfolio')
-        .select('contrato, alarme_codigo, mensalidade, taxa_ativacao, data_termino, endereco')
+        .select('contrato, alarme_codigo, mensalidade, taxa_ativacao, data_termino, endereco, filial')
         .eq('project_id', id)
         .maybeSingle();
 
@@ -277,6 +278,7 @@ export default function ImplantacaoExecucao() {
           mensalidade: portfolioData.mensalidade ? String(portfolioData.mensalidade) : '',
           prazo_contrato: prazoValue,
           taxa_instalacao: portfolioData.taxa_ativacao ? String(portfolioData.taxa_ativacao) : '',
+          filial: portfolioData.filial || '',
         });
         if (portfolioData.endereco) {
           setEnderecoInstalacao(portfolioData.endereco);
@@ -1218,6 +1220,7 @@ export default function ImplantacaoExecucao() {
                               if (!contratoInfo.mensalidade?.trim()) missingFields.push('Mensalidade');
                               if (!contratoInfo.prazo_contrato) missingFields.push('Prazo do Contrato');
                               if (!contratoInfo.taxa_instalacao?.trim()) missingFields.push('Taxa de Instalação');
+                              if (!contratoInfo.filial) missingFields.push('Praça');
 
                               if (missingFields.length > 0) {
                                 toast({
@@ -1242,6 +1245,7 @@ export default function ImplantacaoExecucao() {
                                   mensalidade: parseFloat(contratoInfo.mensalidade.replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
                                   taxa_ativacao: parseFloat(contratoInfo.taxa_instalacao.replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
                                   data_termino: dataTermino.toISOString().split('T')[0],
+                                  filial: contratoInfo.filial,
                                 };
 
                                 // Check if customer_portfolio exists for this project
@@ -1386,6 +1390,27 @@ export default function ImplantacaoExecucao() {
                           />
                         ) : (
                           <p className="text-sm mt-1 font-medium">{contratoInfo.taxa_instalacao ? `R$ ${contratoInfo.taxa_instalacao}` : '-'}</p>
+                        )}
+                      </div>
+                      <div>
+                        <Label htmlFor="filial" className="text-sm">Praça *</Label>
+                        {editingContrato ? (
+                          <Select
+                            value={contratoInfo.filial}
+                            onValueChange={(value) => setContratoInfo({ ...contratoInfo, filial: value })}
+                          >
+                            <SelectTrigger className={cn("mt-1", !contratoInfo.filial && "border-destructive")}>
+                              <SelectValue placeholder="Selecione a praça" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="BHZ">BHZ - Belo Horizonte</SelectItem>
+                              <SelectItem value="SPO">SPO - São Paulo</SelectItem>
+                              <SelectItem value="RJ">RJ - Rio de Janeiro</SelectItem>
+                              <SelectItem value="VIX">VIX - Vitória</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        ) : (
+                          <p className="text-sm mt-1 font-medium">{contratoInfo.filial || '-'}</p>
                         )}
                       </div>
                     </div>

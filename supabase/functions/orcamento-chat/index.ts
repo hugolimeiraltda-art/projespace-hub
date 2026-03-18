@@ -569,6 +569,43 @@ serve(async (req) => {
         .from("orcamento_mensagens").select("role, content")
         .eq("sessao_id", sessao.id).order("created_at", { ascending: true });
 
+      // Validate mandatory data completeness
+      const conversationText = (allMsgs || []).map((m: any) => m.content?.toLowerCase() || '').join(' ');
+      const missingItems: string[] = [];
+
+      // Check mandatory fields in conversation
+      const hasProduct = /portaria\s*(digital|remota|assistida|expressa)/i.test(conversationText);
+      if (!hasProduct) missingItems.push('Tipo de produto (Digital, Remota, Assistida ou Expressa)');
+
+      const hasBlocos = /(\d+)\s*(bloco|torre)/i.test(conversationText) || /bloco.*(\d+)/i.test(conversationText);
+      if (!hasBlocos) missingItems.push('Quantidade de blocos/torres');
+
+      const hasUnidades = /(\d+)\s*(unidade|apartamento|apto|casa)/i.test(conversationText) || /unidade.*(\d+)/i.test(conversationText) || /apartamento.*(\d+)/i.test(conversationText);
+      if (!hasUnidades) missingItems.push('Quantidade de unidades/apartamentos');
+
+      const hasPortasPedestre = /porta.*pedestre|pedestre.*porta|(\d+)\s*porta/i.test(conversationText);
+      if (!hasPortasPedestre) missingItems.push('Portas de pedestre');
+
+      const hasPortoes = /port[ãa]o|portões|portoes|cancela|deslizante|pivotante|basculante|guilhotina/i.test(conversationText);
+      if (!hasPortoes) missingItems.push('Portões de veículos');
+
+      const hasCFTV = /c[aâ]mera|cftv|dvr|nvr/i.test(conversationText);
+      if (!hasCFTV) missingItems.push('Informações de CFTV/câmeras');
+
+      const hasInterfonia = /interfon|h[ií]brida|digital.*telefon|telefon.*digital|comunic|ata.*khomp/i.test(conversationText);
+      if (!hasInterfonia) missingItems.push('Tipo de interfonia');
+
+      if (missingItems.length > 0) {
+        return new Response(JSON.stringify({
+          error: "Informações obrigatórias pendentes",
+          missing: missingItems,
+          message: `Não é possível gerar a pré-proposta. Faltam informações obrigatórias:\n\n${missingItems.map(i => `• ${i}`).join('\n')}\n\nVolte ao chat e responda as perguntas pendentes.`
+        }), {
+          status: 422,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
       // Fetch session photos
       const { data: midias } = await supabase
         .from("orcamento_midias").select("arquivo_url, nome_arquivo, tipo, descricao")

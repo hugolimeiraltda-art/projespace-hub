@@ -1466,7 +1466,7 @@ export default function SucessoCliente() {
                             <TableCell className="max-w-48 truncate">{nps.ponto_fraco || '-'}</TableCell>
                             <TableCell>{formatDate(nps.created_at)}</TableCell>
                             <TableCell>
-                              <Button variant="ghost" size="sm" onClick={() => navigate(`/sucesso-cliente/${nps.customer_id}`)}>
+                              <Button variant="ghost" size="sm" onClick={() => navigate(`/sucesso-cliente/cliente/${nps.customer_id}`)}>
                                 <ExternalLink className="w-4 h-4" />
                               </Button>
                             </TableCell>

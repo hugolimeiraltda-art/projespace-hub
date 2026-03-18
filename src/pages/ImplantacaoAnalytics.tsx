@@ -8,6 +8,9 @@ import { format, parseISO, differenceInDays, startOfMonth, addMonths, subMonths,
 import { ptBR } from 'date-fns/locale';
 import { PlanejamentoAtivacoes } from '@/components/PlanejamentoAtivacoes';
 import { Progress } from '@/components/ui/progress';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
 
 interface ProjectData {
   id: string;

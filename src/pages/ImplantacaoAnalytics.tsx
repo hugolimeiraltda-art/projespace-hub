@@ -274,6 +274,19 @@ export default function ImplantacaoAnalytics() {
         }
       });
 
+      // Cancelamentos do mês
+      let canceladosCount = 0;
+      let canceladosReceita = 0;
+      cancelamentos.forEach(c => {
+        const cancelDate = parseISO(c.data_cancelamento);
+        if (isWithinInterval(cancelDate, { start: monthStart, end: monthEnd })) {
+          canceladosCount++;
+          canceladosReceita += Number(c.valor_contrato) || 0;
+        }
+      });
+
+      const saldo = totalMensalidade - canceladosReceita;
+
       // Find planned data for this month
       const plan = plans.find(p => p.mes === monthNum && p.ano === yearNum);
       const planejadoValor = plan ? Number(plan.valor_total) : 0;
@@ -291,9 +304,12 @@ export default function ImplantacaoAnalytics() {
         planejadoValor,
         planejadoQtd,
         hasPlan: !!plan,
+        canceladosCount,
+        canceladosReceita,
+        saldo,
       };
     });
-  }, [projects, portfolioMap, plans]);
+  }, [projects, portfolioMap, plans, cancelamentos]);
 
   // Regional activation data
   const regionalData = useMemo(() => {

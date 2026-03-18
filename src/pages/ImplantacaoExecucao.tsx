@@ -1392,6 +1392,27 @@ export default function ImplantacaoExecucao() {
                           <p className="text-sm mt-1 font-medium">{contratoInfo.taxa_instalacao ? `R$ ${contratoInfo.taxa_instalacao}` : '-'}</p>
                         )}
                       </div>
+                      <div>
+                        <Label htmlFor="filial" className="text-sm">Praça *</Label>
+                        {editingContrato ? (
+                          <Select
+                            value={contratoInfo.filial}
+                            onValueChange={(value) => setContratoInfo({ ...contratoInfo, filial: value })}
+                          >
+                            <SelectTrigger className={cn("mt-1", !contratoInfo.filial && "border-destructive")}>
+                              <SelectValue placeholder="Selecione a praça" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="BHZ">BHZ - Belo Horizonte</SelectItem>
+                              <SelectItem value="SPO">SPO - São Paulo</SelectItem>
+                              <SelectItem value="RJ">RJ - Rio de Janeiro</SelectItem>
+                              <SelectItem value="VIX">VIX - Vitória</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        ) : (
+                          <p className="text-sm mt-1 font-medium">{contratoInfo.filial || '-'}</p>
+                        )}
+                      </div>
                     </div>
                   </div>
 

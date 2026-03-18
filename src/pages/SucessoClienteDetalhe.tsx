@@ -15,6 +15,7 @@ import { CustomerInfoSection } from '@/components/sucesso-cliente/CustomerInfoSe
 import { CustomerHistorySection } from '@/components/sucesso-cliente/CustomerHistorySection';
 import { RenovacaoSection } from '@/components/sucesso-cliente/RenovacaoSection';
 import { CancelamentoSection } from '@/components/sucesso-cliente/CancelamentoSection';
+import { AdministradoresCondominio } from '@/components/AdministradoresCondominio';
 
 interface Customer {
   id: string;

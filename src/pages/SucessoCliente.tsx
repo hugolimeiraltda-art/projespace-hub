@@ -1765,7 +1765,7 @@ export default function SucessoCliente() {
                     className="cursor-pointer hover:bg-muted"
                     onClick={() => {
                       setCustomerSelectDialogOpen(false);
-                      navigate(`/sucesso-cliente/${customer.id}?action=${customerSelectAction}`);
+                      navigate(`/sucesso-cliente/cliente/${customer.id}?action=${customerSelectAction}`);
                     }}
                   >
                     <TableCell className="font-medium text-primary">{customer.contrato}</TableCell>

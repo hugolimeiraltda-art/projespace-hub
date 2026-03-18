@@ -231,7 +231,7 @@ export default function ImplantacaoAnalytics() {
       let totalMensalidade = 0;
       let totalTaxa = 0;
       let count = 0;
-      const projetos: string[] = [];
+      const contratos: ContratoDetalhe[] = [];
 
       projects.forEach(p => {
         const port = portfolioMap[p.id];
@@ -249,7 +249,13 @@ export default function ImplantacaoAnalytics() {
           totalMensalidade += Number(port.mensalidade) || 0;
           totalTaxa += Number(port.taxa_ativacao) || 0;
           count++;
-          projetos.push(p.cliente_condominio_nome);
+          contratos.push({
+            nome: p.cliente_condominio_nome,
+            contrato: port.contrato || '—',
+            mensalidade: Number(port.mensalidade) || 0,
+            dataAtivacao: port.data_ativacao || p.prazo_entrega_projeto || null,
+            praca: getPraca(port.filial, port.praca),
+          });
         }
       });
 

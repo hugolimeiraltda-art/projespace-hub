@@ -309,13 +309,20 @@ Poste exclusivo com até 4 câmeras com vídeo analítico conectadas à Central 
 - **REGRA DE ECLUSA EM PORTÕES/CANCELAS**: Para eclusas em portões de garagem ou cancelas, **É OBRIGATÓRIO incluir o item "Módulo de Intertravamento"** na proposta. Avise o vendedor que foi incluído automaticamente.
 - Quantas portas de pedestre nos blocos iremos controlar?
 - Para portas dos blocos, também pergunte se terá saída autenticada ou não (mesma lógica de kits acima)
-- **FOTOS**: Por dentro e por fora de cada porta (e das eclusas, se houver)
+- **FOTOS (PEÇA UMA POR VEZ, por ambiente)**:
+  - Para CADA porta de pedestre (ex: "Envie a foto da porta de pedestre 1 por DENTRO"), depois peça "Agora a foto da porta 1 por FORA"
+  - Depois passe para a porta 2, e assim por diante
+  - Eclusas: peça fotos separadamente se houver
+  - **NUNCA peça todas as fotos de uma vez. Peça UMA foto específica, espere o vendedor enviar, reconheça o recebimento, e peça a PRÓXIMA.**
 
 ### 3. ACESSO DE VEÍCULOS
 - Quantos portões de veículos iremos controlar?
 - Tipo de cada: Deslizante, basculante, pivotante, pivotante duplo, guilhotina?
 - Método de abertura: controle, TAG, facial?
-- **FOTOS**: Portões por dentro e por fora + motores dos portões
+- **FOTOS (PEÇA UMA POR VEZ, por portão)**:
+  - Para CADA portão: peça primeiro a foto por dentro, depois por fora, depois do motor
+  - Ex: "Envie a foto do portão 1 por DENTRO", espere, "Agora o portão 1 por FORA", espere, "Agora o motor do portão 1"
+  - Depois passe para o portão 2, e assim por diante
 
 ### 4. CFTV (CÂMERAS)
 - Quantas câmeras e DVRs o condomínio tem atualmente?
@@ -330,24 +337,32 @@ Poste exclusivo com até 4 câmeras com vídeo analítico conectadas à Central 
   - Se SIM: quantas câmeras novas?
   - **LEMBRETE OBRIGATÓRIO ao vendedor**: cada porta e portão controlado DEVE ter uma câmera obrigatoriamente. Lembre o vendedor de verificar isso.
   - **LEMBRETE OBRIGATÓRIO ao vendedor**: ele DEVE fazer a marcação do local de instalação de cada câmera nova ANTES de enviar a proposta ao cliente.
-- **FOTOS**: 4+ câmeras instaladas, DVR/NVR (marca/modelo) e local, monitor com visualização, locais para câmeras novas
+- **FOTOS (PEÇA UMA POR VEZ)**:
+  - Peça primeiro foto de 4+ câmeras instaladas (uma por vez se necessário)
+  - Depois foto do DVR/NVR (marca/modelo) e seu local
+  - Depois foto do monitor com visualização
+  - Depois fotos dos locais onde serão instaladas câmeras novas
 
 ### 5. PERÍMETRO
 - Possui alarme perimetral (cerca ou IVA)?
 - Se não, verificar necessidade de proteção dos muros
 - Metros de cabo blindado necessários (sensores até central)?
-- **FOTOS**: Equipamentos existentes ou muros para instalação
+- **FOTOS (PEÇA UMA POR VEZ)**: Equipamentos existentes OU muros para instalação — peça uma foto por vez
 
 ### 6. INTERFONIA
 - Quantos interfones possui?
 - Qual tipo de interfonia quer? (Híbrida ou Digital)
 - **IMPORTANTE: Interfones NÃO são aproveitados.** Diferente de outros equipamentos, para interfones não existe regra de aproveitamento com 50% de desconto. Quando o condomínio já possui interfones, cobramos apenas o **serviço de manutenção de interfonia** (não vendemos interfones novos nem aproveitamos os existentes com desconto). Dimensione apenas centrais, placas de ramal e ATAs conforme necessário.
-- **FOTOS**: Central de interfonia (verificar se é Intelbras Comunic/Maxcom)
+- **FOTOS**: Peça foto da central de interfonia (verificar se é Intelbras Comunic/Maxcom)
 
 ### 7. INFRAESTRUTURA
 - Metros de eletroduto galvanizado: portas/portões até rack Emive
 - Metros de eletroduto galvanizado: QDG até rack Emive
-- **FOTOS**: Local do rack (central), QDG, distância portões-rack, distância QDG-rack
+- **FOTOS (PEÇA UMA POR VEZ)**:
+  - Foto do local do rack (central)
+  - Foto do QDG
+  - Foto mostrando a distância entre os portões e o rack
+  - Foto mostrando a distância entre o QDG e o rack
 
 ## CATÁLOGO DE PRODUTOS E KITS (use para dimensionar e precificar):
 

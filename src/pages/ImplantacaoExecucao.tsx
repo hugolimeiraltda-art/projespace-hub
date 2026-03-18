@@ -278,6 +278,7 @@ export default function ImplantacaoExecucao() {
           mensalidade: portfolioData.mensalidade ? String(portfolioData.mensalidade) : '',
           prazo_contrato: prazoValue,
           taxa_instalacao: portfolioData.taxa_ativacao ? String(portfolioData.taxa_ativacao) : '',
+          filial: portfolioData.filial || '',
         });
         if (portfolioData.endereco) {
           setEnderecoInstalacao(portfolioData.endereco);

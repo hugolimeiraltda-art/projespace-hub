@@ -293,20 +293,29 @@ export default function SucessoClienteDetalhe() {
         <CustomerHistorySection key={historyKey} customerId={customer.id} />
 
         {/* Renovação Section */}
-        <RenovacaoSection
-          customerId={customer.id}
-          dataAtivacao={customer.data_ativacao}
-          dataTermino={customer.data_termino}
-          mensalidade={customer.mensalidade}
-          onUpdate={fetchCustomer}
-        />
+        <div id="renovacao">
+          <RenovacaoSection
+            customerId={customer.id}
+            dataAtivacao={customer.data_ativacao}
+            dataTermino={customer.data_termino}
+            mensalidade={customer.mensalidade}
+            onUpdate={fetchCustomer}
+          />
+        </div>
+
+        {/* Administradores / Mandatos Section */}
+        <div id="administradores">
+          <AdministradoresCondominio customerId={customer.id} />
+        </div>
 
         {/* Cancelamento Section */}
-        <CancelamentoSection
-          customerId={customer.id}
-          mensalidade={customer.mensalidade}
-          onUpdate={fetchCustomer}
-        />
+        <div id="cancelamento">
+          <CancelamentoSection
+            customerId={customer.id}
+            mensalidade={customer.mensalidade}
+            onUpdate={fetchCustomer}
+          />
+        </div>
 
         {/* New Reclamação Dialog */}
         <Dialog open={reclamacaoDialogOpen} onOpenChange={setReclamacaoDialogOpen}>

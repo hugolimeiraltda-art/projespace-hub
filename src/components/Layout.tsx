@@ -229,11 +229,10 @@ export function Layout({ children }: LayoutProps) {
               <div key={`${item.path}-${item.label}`}>
                 <Collapsible open={shouldBeExpanded} onOpenChange={() => toggleMenu(item.path)}>
                   <div className="flex items-center">
-                    <Link
-                      to={item.path}
-                      onClick={handleNavClick}
+                  <CollapsibleTrigger asChild>
+                    <button
                       className={cn(
-                        'flex items-center flex-1 gap-3 px-3 py-2.5 rounded-l-lg text-sm font-medium transition-colors',
+                        'flex items-center flex-1 gap-3 px-3 py-2.5 rounded-l-lg text-sm font-medium transition-colors text-left',
                         isParentActive || isAnySubActive
                           ? 'bg-primary text-primary-foreground'
                           : 'text-muted-foreground hover:bg-accent hover:text-foreground'
@@ -241,7 +240,8 @@ export function Layout({ children }: LayoutProps) {
                     >
                       <Icon className="w-5 h-5" />
                       {item.label}
-                    </Link>
+                    </button>
+                  </CollapsibleTrigger>
                     <CollapsibleTrigger asChild>
                       <button
                         className={cn(

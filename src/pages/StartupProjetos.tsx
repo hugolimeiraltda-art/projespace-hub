@@ -96,7 +96,74 @@ export default function StartupProjetos() {
 
   useEffect(() => {
     fetchProjects();
+    fetchVendedores();
   }, []);
+
+  const fetchVendedores = async () => {
+    try {
+      const { data: userRoles } = await supabase
+        .from('user_roles')
+        .select('user_id')
+        .in('role', ['vendedor', 'admin', 'gerente_comercial', 'implantacao']);
+      if (userRoles && userRoles.length > 0) {
+        const userIds = userRoles.map(ur => ur.user_id);
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('id, nome, email')
+          .in('id', userIds)
+          .order('nome');
+        if (profiles) setVendedoresList(profiles);
+      }
+    } catch (e) {
+      console.error('Error fetching vendedores:', e);
+    }
+  };
+
+  const handleCreateObra = async () => {
+    if (!newObraNome.trim()) {
+      toast({ title: 'Informe o nome do condomínio', variant: 'destructive' });
+      return;
+    }
+    if (!newObraVendedor) {
+      toast({ title: 'Selecione o vendedor responsável', variant: 'destructive' });
+      return;
+    }
+    setCreatingObra(true);
+    try {
+      const vendedor = vendedoresList.find(v => v.id === newObraVendedor);
+      const { data: newProject, error } = await supabase
+        .from('projects')
+        .insert({
+          created_by_user_id: user!.id,
+          vendedor_nome: vendedor?.nome || user!.nome,
+          vendedor_email: vendedor?.email || user!.email,
+          cliente_condominio_nome: newObraNome.trim(),
+          cliente_cidade: newObraCidade.trim() || null,
+          cliente_estado: newObraEstado || null,
+          endereco_condominio: newObraEndereco.trim() || null,
+          status: 'APROVADO_PROJETO',
+          sale_status: 'CONCLUIDO',
+          implantacao_status: 'A_EXECUTAR',
+        })
+        .select('id')
+        .single();
+
+      if (error) {
+        toast({ title: 'Erro ao criar obra', description: error.message, variant: 'destructive' });
+        return;
+      }
+
+      toast({ title: 'Obra cadastrada com sucesso!' });
+      setShowNewObra(false);
+      setNewObraNome(''); setNewObraCidade(''); setNewObraEstado(''); setNewObraEndereco(''); setNewObraVendedor('');
+      fetchProjects();
+    } catch (e) {
+      console.error('Error creating obra:', e);
+      toast({ title: 'Erro inesperado', variant: 'destructive' });
+    } finally {
+      setCreatingObra(false);
+    }
+  };
 
   const fetchProjects = async () => {
     try {

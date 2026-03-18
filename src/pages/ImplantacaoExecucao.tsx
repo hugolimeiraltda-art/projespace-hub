@@ -1245,6 +1245,7 @@ export default function ImplantacaoExecucao() {
                                   mensalidade: parseFloat(contratoInfo.mensalidade.replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
                                   taxa_ativacao: parseFloat(contratoInfo.taxa_instalacao.replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
                                   data_termino: dataTermino.toISOString().split('T')[0],
+                                  filial: contratoInfo.filial,
                                 };
 
                                 // Check if customer_portfolio exists for this project

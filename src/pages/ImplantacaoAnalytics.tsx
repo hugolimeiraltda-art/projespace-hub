@@ -52,6 +52,17 @@ interface PlanData {
 
 const COLORS = ['hsl(var(--primary))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))', 'hsl(var(--chart-5))'];
 
+const PRACA_MAP: Record<string, string> = {
+  'BHZ': 'BHZ', 'Belo Horizonte': 'BHZ', 'Belo Horizonte-MG': 'BHZ',
+  'RIO': 'RJ', 'Rio de Janeiro': 'RJ', 'Rio de Janeiro-RJ': 'RJ',
+  'VIX': 'VIX', 'Vitória': 'VIX', 'Vitória-ES': 'VIX',
+  'SPO': 'SPO', 'São Paulo': 'SPO', 'São Paulo-SP': 'SPO',
+};
+const getPraca = (filial?: string | null, praca?: string | null): string => {
+  const val = praca || filial || '';
+  return PRACA_MAP[val] || val || '—';
+};
+
 export default function ImplantacaoAnalytics() {
   const [projects, setProjects] = useState<ProjectData[]>([]);
   const [portfolio, setPortfolio] = useState<PortfolioData[]>([]);

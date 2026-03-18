@@ -96,10 +96,16 @@ export default function SucessoClienteDetalhe() {
   }, [searchParams, customer]);
 
   const fetchCustomer = async () => {
+    // Skip known static sub-routes that React Router should handle
+    const staticSubRoutes = ['ativos', 'inativos', 'chamados', 'nps', 'depoimentos', 'satisfacao', 'relatorios'];
+    if (!id || staticSubRoutes.includes(id)) {
+      return; // Don't redirect - let React Router handle these
+    }
+    
     // Validate UUID format before querying
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    if (!id || !uuidRegex.test(id)) {
-      navigate('/sucesso-cliente');
+    if (!uuidRegex.test(id)) {
+      navigate('/sucesso-cliente', { replace: true });
       return;
     }
 

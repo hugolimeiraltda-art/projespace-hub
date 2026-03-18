@@ -309,6 +309,58 @@ export default function ImplantacaoAnalytics() {
           </Card>
         </div>
 
+        {/* Revenue Activation by Month */}
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base flex items-center gap-2">
+              <DollarSign className="w-5 h-5 text-primary" />
+              Receita Ativada por Mês
+            </CardTitle>
+            <p className="text-xs text-muted-foreground">Mês anterior, atual e próximos 3 meses (previsão baseada no prazo de entrega)</p>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+              {revenueByMonthData.map((m, i) => (
+                <div
+                  key={i}
+                  className={`rounded-lg border p-4 space-y-2 ${
+                    m.isCurrentMonth
+                      ? 'border-primary bg-primary/5 ring-1 ring-primary/20'
+                      : m.isFuture
+                        ? 'border-dashed border-muted-foreground/30 bg-muted/30'
+                        : 'border-border'
+                  }`}
+                >
+                  <p className={`text-xs font-semibold uppercase tracking-wider ${m.isCurrentMonth ? 'text-primary' : 'text-muted-foreground'}`}>
+                    {m.label}
+                    {m.isCurrentMonth && <span className="ml-1 text-[10px] bg-primary text-primary-foreground px-1.5 py-0.5 rounded-full">atual</span>}
+                    {m.isFuture && <span className="ml-1 text-[10px] text-muted-foreground">(prev.)</span>}
+                  </p>
+                  <p className="text-lg font-bold text-foreground">
+                    R$ {m.totalMensalidade.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                  </p>
+                  <div className="flex items-center justify-between text-xs text-muted-foreground">
+                    <span>{m.count} projeto{m.count !== 1 ? 's' : ''}</span>
+                    {m.totalTaxa > 0 && (
+                      <span className="text-chart-2">Taxa: R$ {m.totalTaxa.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                    )}
+                  </div>
+                  {m.projetos.length > 0 && (
+                    <div className="pt-1 border-t border-border/50 space-y-0.5">
+                      {m.projetos.slice(0, 3).map((nome, j) => (
+                        <p key={j} className="text-[11px] text-muted-foreground truncate">{nome}</p>
+                      ))}
+                      {m.projetos.length > 3 && (
+                        <p className="text-[11px] text-muted-foreground">+{m.projetos.length - 3} mais</p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Charts Row 1 */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Time to Activation */}

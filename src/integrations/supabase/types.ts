@@ -14,6 +14,57 @@ export type Database = {
   }
   public: {
     Tables: {
+      clientes_inativos: {
+        Row: {
+          cidade: string | null
+          contrato: string
+          created_at: string
+          created_by: string | null
+          created_by_name: string | null
+          data_cancelamento: string
+          data_entrada: string | null
+          endereco: string | null
+          filial: string | null
+          id: string
+          motivo: string
+          observacoes: string | null
+          razao_social: string
+          updated_at: string
+        }
+        Insert: {
+          cidade?: string | null
+          contrato: string
+          created_at?: string
+          created_by?: string | null
+          created_by_name?: string | null
+          data_cancelamento: string
+          data_entrada?: string | null
+          endereco?: string | null
+          filial?: string | null
+          id?: string
+          motivo: string
+          observacoes?: string | null
+          razao_social: string
+          updated_at?: string
+        }
+        Update: {
+          cidade?: string | null
+          contrato?: string
+          created_at?: string
+          created_by?: string | null
+          created_by_name?: string | null
+          data_cancelamento?: string
+          data_entrada?: string | null
+          endereco?: string | null
+          filial?: string | null
+          id?: string
+          motivo?: string
+          observacoes?: string | null
+          razao_social?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       customer_administradores: {
         Row: {
           atende_celular: boolean | null

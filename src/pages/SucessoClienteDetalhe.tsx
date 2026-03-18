@@ -284,6 +284,7 @@ export default function SucessoClienteDetalhe() {
           customerId={customer.id}
           dataAtivacao={customer.data_ativacao}
           dataTermino={customer.data_termino}
+          mensalidade={customer.mensalidade}
           onUpdate={fetchCustomer}
         />
 

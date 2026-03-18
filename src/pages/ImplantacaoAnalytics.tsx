@@ -622,7 +622,9 @@ export default function ImplantacaoAnalytics() {
             <p className="text-xs text-muted-foreground">Distribuição geográfica dos contratos ativados</p>
           </CardHeader>
           <CardContent>
-            <MapaRegional data={regionalData} />
+            <div className="max-w-2xl mx-auto">
+              <MapaRegional data={regionalData} />
+            </div>
           </CardContent>
         </Card>
 

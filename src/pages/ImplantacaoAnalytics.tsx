@@ -164,6 +164,64 @@ export default function ImplantacaoAnalytics() {
       .map(([month, total]) => ({ month, total: Math.round(total) }));
   }, [projects, portfolioMap]);
 
+  // Revenue activation by month: previous, current, next 3 months
+  const revenueByMonthData = useMemo(() => {
+    const now = new Date();
+    const months = [
+      subMonths(now, 1),
+      now,
+      addMonths(now, 1),
+      addMonths(now, 2),
+      addMonths(now, 3),
+    ];
+
+    return months.map(monthDate => {
+      const monthStart = startOfMonth(monthDate);
+      const monthEnd = endOfMonth(monthDate);
+      const label = format(monthDate, 'MMM/yy', { locale: ptBR });
+      const isCurrentMonth = format(monthDate, 'MM/yyyy') === format(now, 'MM/yyyy');
+      const isPast = monthDate < startOfMonth(now);
+
+      let totalMensalidade = 0;
+      let totalTaxa = 0;
+      let count = 0;
+      const projetos: string[] = [];
+
+      projects.forEach(p => {
+        const port = portfolioMap[p.id];
+        if (!port) return;
+
+        // For past/current: use data_ativacao from portfolio
+        // For future: use prazo_entrega_projeto from project
+        const activationDate = port.data_ativacao
+          ? parseISO(port.data_ativacao)
+          : p.prazo_entrega_projeto
+            ? parseISO(p.prazo_entrega_projeto)
+            : null;
+
+        if (!activationDate) return;
+
+        if (isWithinInterval(activationDate, { start: monthStart, end: monthEnd })) {
+          totalMensalidade += Number(port.mensalidade) || 0;
+          totalTaxa += Number(port.taxa_ativacao) || 0;
+          count++;
+          projetos.push(p.cliente_condominio_nome);
+        }
+      });
+
+      return {
+        label,
+        totalMensalidade,
+        totalTaxa,
+        count,
+        projetos,
+        isCurrentMonth,
+        isPast,
+        isFuture: !isPast && !isCurrentMonth,
+      };
+    });
+  }, [projects, portfolioMap]);
+
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (!active || !payload?.length) return null;
     return (

@@ -269,6 +269,13 @@ export default function SucessoClienteDetalhe() {
           onUpdate={fetchCustomer}
         />
 
+        {/* Cancelamento Section */}
+        <CancelamentoSection
+          customerId={customer.id}
+          mensalidade={customer.mensalidade}
+          onUpdate={fetchCustomer}
+        />
+
         {/* New Reclamação Dialog */}
         <Dialog open={reclamacaoDialogOpen} onOpenChange={setReclamacaoDialogOpen}>
           <DialogContent className="max-w-lg">

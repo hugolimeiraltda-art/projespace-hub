@@ -612,21 +612,67 @@ export default function ImplantacaoAnalytics() {
           </DialogContent>
         </Dialog>
 
-        {/* Regional Map */}
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base flex items-center gap-2">
-              <MapPin className="w-5 h-5 text-primary" />
-              Ativações por Regional
-            </CardTitle>
-            <p className="text-xs text-muted-foreground">Distribuição geográfica dos contratos ativados</p>
-          </CardHeader>
-          <CardContent>
-            <div className="max-w-3xl">
+        {/* Regional Map + Side Analytics */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base flex items-center gap-2">
+                <MapPin className="w-5 h-5 text-primary" />
+                Ativações por Regional
+              </CardTitle>
+              <p className="text-xs text-muted-foreground">Distribuição geográfica dos contratos ativados</p>
+            </CardHeader>
+            <CardContent>
               <MapaRegional data={regionalData} />
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base flex items-center gap-2">
+                <BarChart3 className="w-5 h-5 text-primary" />
+                Status das Implantações
+              </CardTitle>
+              <p className="text-xs text-muted-foreground">Distribuição por etapa e receita por regional</p>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Status Pie Chart */}
+              <div>
+                <ResponsiveContainer width="100%" height={220}>
+                  <PieChart>
+                    <Pie data={statusData} cx="50%" cy="50%" outerRadius={80} dataKey="value" label={({ name, value }) => `${name}: ${value}`}>
+                      {statusData.map((_, i) => (
+                        <Cell key={i} fill={COLORS[i % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+
+              {/* Revenue by region summary */}
+              <div className="space-y-2">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Receita por Regional</p>
+                {regionalData.map(r => {
+                  const totalReceita = regionalData.reduce((s, d) => s + d.receita, 0);
+                  const pct = totalReceita > 0 ? Math.round((r.receita / totalReceita) * 100) : 0;
+                  return (
+                    <div key={r.sigla} className="flex items-center gap-3">
+                      <span className="text-xs font-semibold w-8">{r.sigla}</span>
+                      <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
+                        <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${pct}%` }} />
+                      </div>
+                      <span className="text-xs font-medium w-24 text-right">
+                        R$ {r.receita.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      </span>
+                      <span className="text-[10px] text-muted-foreground w-8 text-right">{pct}%</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
 
         {/* Charts Row 1 */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

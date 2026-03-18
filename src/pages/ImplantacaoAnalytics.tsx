@@ -11,6 +11,8 @@ import { Progress } from '@/components/ui/progress';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { MapaRegional } from '@/components/MapaRegional';
+import { MapPin } from 'lucide-react';
 
 interface ProjectData {
   id: string;

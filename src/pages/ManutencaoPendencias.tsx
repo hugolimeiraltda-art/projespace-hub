@@ -467,7 +467,7 @@ export default function ManutencaoPendencias() {
 
   const handleViewCustomer = (customerId: string | null) => {
     if (customerId) {
-      window.open(`/sucesso-cliente/${customerId}`, '_blank');
+      window.open(`/sucesso-cliente/cliente/${customerId}`, '_blank');
     }
   };
 

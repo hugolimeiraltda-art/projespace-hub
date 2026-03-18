@@ -176,7 +176,7 @@ export default function SucessoClienteChamados() {
                           <TableCell>{getStatusBadge(chamado.status)}</TableCell>
                           <TableCell>{formatDate(chamado.created_at)}</TableCell>
                           <TableCell>
-                            <Button variant="ghost" size="sm" onClick={() => navigate(`/sucesso-cliente/${chamado.customer_id}`)}>
+                            <Button variant="ghost" size="sm" onClick={() => navigate(`/sucesso-cliente/cliente/${chamado.customer_id}`)}>
                               <ExternalLink className="w-4 h-4" />
                             </Button>
                           </TableCell>

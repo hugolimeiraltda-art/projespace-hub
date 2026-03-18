@@ -1909,7 +1909,7 @@ export default function SucessoCliente() {
                         size="sm"
                         onClick={() => {
                           setPendenciaDetailDialogOpen(false);
-                          navigate(`/sucesso-cliente/${selectedPendencia.customer_id}`);
+                          navigate(`/sucesso-cliente/cliente/${selectedPendencia.customer_id}`);
                         }}
                       >
                         <ExternalLink className="w-4 h-4 mr-2" />

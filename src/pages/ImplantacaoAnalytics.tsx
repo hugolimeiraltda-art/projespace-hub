@@ -539,7 +539,7 @@ export default function ImplantacaoAnalytics() {
 
         {/* Detail Dialog */}
         <Dialog open={selectedMonth !== null} onOpenChange={(open) => !open && setSelectedMonth(null)}>
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="max-w-6xl">
             {selectedMonth !== null && revenueByMonthData[selectedMonth] && (() => {
               const m = revenueByMonthData[selectedMonth];
               return (

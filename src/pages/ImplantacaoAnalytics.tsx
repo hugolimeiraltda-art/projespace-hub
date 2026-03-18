@@ -42,7 +42,15 @@ const COLORS = ['hsl(var(--primary))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3
 export default function ImplantacaoAnalytics() {
   const [projects, setProjects] = useState<ProjectData[]>([]);
   const [portfolio, setPortfolio] = useState<PortfolioData[]>([]);
+  const [plans, setPlans] = useState<PlanData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  const fetchPlans = useCallback(async () => {
+    const { data } = await supabase
+      .from('implantacao_planejamento_ativacoes')
+      .select('*');
+    if (data) setPlans(data);
+  }, []);
 
   useEffect(() => {
     fetchData();

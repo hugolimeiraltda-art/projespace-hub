@@ -68,6 +68,7 @@ export default function ImplantacaoAnalytics() {
   const [portfolio, setPortfolio] = useState<PortfolioData[]>([]);
   const [plans, setPlans] = useState<PlanData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedMonth, setSelectedMonth] = useState<number | null>(null);
 
   const fetchPlans = useCallback(async () => {
     const { data } = await supabase

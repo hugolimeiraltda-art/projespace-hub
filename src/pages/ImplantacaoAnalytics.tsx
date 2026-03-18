@@ -95,7 +95,7 @@ export default function ImplantacaoAnalytics() {
 
   const fetchData = async () => {
     try {
-      const [projectsRes, portfolioRes] = await Promise.all([
+      const [projectsRes, portfolioRes, cancelamentosRes] = await Promise.all([
         supabase
           .from('projects')
           .select('id, numero_projeto, cliente_condominio_nome, implantacao_status, implantacao_started_at, implantacao_completed_at, prazo_entrega_projeto, created_at')
@@ -105,10 +105,14 @@ export default function ImplantacaoAnalytics() {
           .from('customer_portfolio')
           .select('project_id, mensalidade, taxa_ativacao, data_ativacao, contrato, razao_social, filial, praca')
           .not('project_id', 'is', null),
+        supabase
+          .from('customer_cancelamentos')
+          .select('id, data_cancelamento, valor_contrato, motivo, customer_id'),
       ]);
 
       if (projectsRes.data) setProjects(projectsRes.data);
       if (portfolioRes.data) setPortfolio(portfolioRes.data);
+      if (cancelamentosRes.data) setCancelamentos(cancelamentosRes.data);
     } catch (error) {
       console.error('Error:', error);
     } finally {

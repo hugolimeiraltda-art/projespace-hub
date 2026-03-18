@@ -232,29 +232,17 @@ export function Layout({ children }: LayoutProps) {
                   <CollapsibleTrigger asChild>
                     <button
                       className={cn(
-                        'flex items-center flex-1 gap-3 px-3 py-2.5 rounded-l-lg text-sm font-medium transition-colors text-left',
+                        'flex items-center w-full gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors text-left',
                         isParentActive || isAnySubActive
                           ? 'bg-primary text-primary-foreground'
                           : 'text-muted-foreground hover:bg-accent hover:text-foreground'
                       )}
                     >
                       <Icon className="w-5 h-5" />
-                      {item.label}
+                      <span className="flex-1">{item.label}</span>
+                      {shouldBeExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
                     </button>
                   </CollapsibleTrigger>
-                    <CollapsibleTrigger asChild>
-                      <button
-                        className={cn(
-                          'px-2 py-2.5 rounded-r-lg text-sm font-medium transition-colors',
-                          isParentActive || isAnySubActive
-                            ? 'bg-primary text-primary-foreground'
-                            : 'text-muted-foreground hover:bg-accent hover:text-foreground'
-                        )}
-                      >
-                        {shouldBeExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
-                      </button>
-                    </CollapsibleTrigger>
-                  </div>
                   <CollapsibleContent>
                     <div className="mt-1 ml-4 space-y-1 border-l border-border pl-3">
                       {item.subItems.map(subItem => {

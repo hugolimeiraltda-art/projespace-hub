@@ -84,6 +84,16 @@ export default function StartupProjetos() {
   const [portfolioMap, setPortfolioMap] = useState<Record<string, { mensalidade: number | null; taxa_ativacao: number | null }>>({});
   const [etapasMap, setEtapasMap] = useState<Record<string, ImplantacaoEtapasData>>({});
 
+  // New obra dialog state
+  const [showNewObra, setShowNewObra] = useState(false);
+  const [newObraNome, setNewObraNome] = useState('');
+  const [newObraCidade, setNewObraCidade] = useState('');
+  const [newObraEstado, setNewObraEstado] = useState('');
+  const [newObraEndereco, setNewObraEndereco] = useState('');
+  const [newObraVendedor, setNewObraVendedor] = useState('');
+  const [creatingObra, setCreatingObra] = useState(false);
+  const [vendedoresList, setVendedoresList] = useState<{ id: string; nome: string; email: string }[]>([]);
+
   useEffect(() => {
     fetchProjects();
   }, []);

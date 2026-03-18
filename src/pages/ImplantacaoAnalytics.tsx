@@ -8,6 +8,9 @@ import { format, parseISO, differenceInDays, startOfMonth, addMonths, subMonths,
 import { ptBR } from 'date-fns/locale';
 import { PlanejamentoAtivacoes } from '@/components/PlanejamentoAtivacoes';
 import { Progress } from '@/components/ui/progress';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
 
 interface ProjectData {
   id: string;
@@ -27,6 +30,16 @@ interface PortfolioData {
   data_ativacao: string | null;
   contrato: string | null;
   razao_social: string;
+  filial: string | null;
+  praca: string | null;
+}
+
+interface ContratoDetalhe {
+  nome: string;
+  contrato: string;
+  mensalidade: number;
+  dataAtivacao: string | null;
+  praca: string;
 }
 
 interface PlanData {
@@ -39,11 +52,23 @@ interface PlanData {
 
 const COLORS = ['hsl(var(--primary))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))', 'hsl(var(--chart-5))'];
 
+const PRACA_MAP: Record<string, string> = {
+  'BHZ': 'BHZ', 'Belo Horizonte': 'BHZ', 'Belo Horizonte-MG': 'BHZ',
+  'RIO': 'RJ', 'Rio de Janeiro': 'RJ', 'Rio de Janeiro-RJ': 'RJ',
+  'VIX': 'VIX', 'Vitória': 'VIX', 'Vitória-ES': 'VIX',
+  'SPO': 'SPO', 'São Paulo': 'SPO', 'São Paulo-SP': 'SPO',
+};
+const getPraca = (filial?: string | null, praca?: string | null): string => {
+  const val = praca || filial || '';
+  return PRACA_MAP[val] || val || '—';
+};
+
 export default function ImplantacaoAnalytics() {
   const [projects, setProjects] = useState<ProjectData[]>([]);
   const [portfolio, setPortfolio] = useState<PortfolioData[]>([]);
   const [plans, setPlans] = useState<PlanData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedMonth, setSelectedMonth] = useState<number | null>(null);
 
   const fetchPlans = useCallback(async () => {
     const { data } = await supabase
@@ -67,7 +92,7 @@ export default function ImplantacaoAnalytics() {
           .order('created_at', { ascending: false }),
         supabase
           .from('customer_portfolio')
-          .select('project_id, mensalidade, taxa_ativacao, data_ativacao, contrato, razao_social')
+          .select('project_id, mensalidade, taxa_ativacao, data_ativacao, contrato, razao_social, filial, praca')
           .not('project_id', 'is', null),
       ]);
 
@@ -206,7 +231,7 @@ export default function ImplantacaoAnalytics() {
       let totalMensalidade = 0;
       let totalTaxa = 0;
       let count = 0;
-      const projetos: string[] = [];
+      const contratos: ContratoDetalhe[] = [];
 
       projects.forEach(p => {
         const port = portfolioMap[p.id];
@@ -224,7 +249,13 @@ export default function ImplantacaoAnalytics() {
           totalMensalidade += Number(port.mensalidade) || 0;
           totalTaxa += Number(port.taxa_ativacao) || 0;
           count++;
-          projetos.push(p.cliente_condominio_nome);
+          contratos.push({
+            nome: p.cliente_condominio_nome,
+            contrato: port.contrato || '—',
+            mensalidade: Number(port.mensalidade) || 0,
+            dataAtivacao: port.data_ativacao || p.prazo_entrega_projeto || null,
+            praca: getPraca(port.filial, port.praca),
+          });
         }
       });
 
@@ -238,7 +269,7 @@ export default function ImplantacaoAnalytics() {
         totalMensalidade,
         totalTaxa,
         count,
-        projetos,
+        contratos,
         isCurrentMonth,
         isPast,
         isFuture: !isPast && !isCurrentMonth,
@@ -359,7 +390,8 @@ export default function ImplantacaoAnalytics() {
                 return (
                   <div
                     key={i}
-                    className={`rounded-lg border p-4 space-y-2 ${
+                    onClick={() => setSelectedMonth(i)}
+                    className={`rounded-lg border p-4 space-y-2 cursor-pointer transition-shadow hover:shadow-md ${
                       m.isCurrentMonth
                         ? 'border-primary bg-primary/5 ring-1 ring-primary/20'
                         : m.isFuture
@@ -373,59 +405,45 @@ export default function ImplantacaoAnalytics() {
                       {m.isFuture && <span className="ml-1 text-[10px] text-muted-foreground">(prev.)</span>}
                     </p>
 
-                    {/* Realizado */}
-                    <div>
-                      <p className="text-[10px] text-muted-foreground uppercase">Realizado</p>
-                      <p className="text-lg font-bold text-foreground">
-                        R$ {m.totalMensalidade.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                      </p>
-                      <p className="text-xs text-muted-foreground">{m.count} contrato{m.count !== 1 ? 's' : ''}</p>
+                    {/* Contratos: Previsto vs Realizado */}
+                    <div className="grid grid-cols-2 gap-2 text-center">
+                      <div>
+                        <p className="text-[10px] text-muted-foreground uppercase">Previsto</p>
+                        <p className="text-sm font-semibold text-muted-foreground">{m.hasPlan ? m.planejadoQtd : '—'}</p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] text-muted-foreground uppercase">Realizado</p>
+                        <p className="text-sm font-bold text-foreground">{m.count}</p>
+                      </div>
                     </div>
 
-                    {/* Planejado */}
+                    {/* Receita: Prevista vs Realizada */}
+                    <div className="border-t border-border/50 pt-1.5 space-y-1">
+                      <div className="flex items-center justify-between text-[10px] text-muted-foreground">
+                        <span>Receita Prevista</span>
+                        <span className="font-medium">{m.hasPlan ? `R$ ${m.planejadoValor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '—'}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-[10px]">
+                        <span className="text-muted-foreground">Receita Realizada</span>
+                        <span className="font-bold text-foreground">R$ {m.totalMensalidade.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                      </div>
+                    </div>
+
+                    {/* Progress bars */}
                     {m.hasPlan && (
-                      <div className="pt-1.5 border-t border-border/50 space-y-1.5">
-                        <div>
-                          <p className="text-[10px] text-muted-foreground uppercase">Orçado</p>
-                          <p className="text-sm font-medium text-muted-foreground">
-                            R$ {m.planejadoValor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                          </p>
-                          <p className="text-[11px] text-muted-foreground">{m.planejadoQtd} contrato{m.planejadoQtd !== 1 ? 's' : ''}</p>
+                      <div className="border-t border-border/50 pt-1.5 space-y-1">
+                        <div className="flex items-center justify-between text-[10px]">
+                          <span className="text-muted-foreground">Atingimento</span>
+                          <span className={`font-semibold ${pctValor >= 100 ? 'text-chart-2' : pctValor >= 50 ? 'text-primary' : 'text-destructive'}`}>
+                            {pctValor}%
+                          </span>
                         </div>
-                        <div className="space-y-1">
-                          <div className="flex items-center justify-between text-[10px]">
-                            <span className="text-muted-foreground">Valor</span>
-                            <span className={`font-semibold ${pctValor >= 100 ? 'text-chart-2' : pctValor >= 50 ? 'text-primary' : 'text-destructive'}`}>
-                              {pctValor}%
-                            </span>
-                          </div>
-                          <Progress value={pctValor} className="h-1.5" />
-                        </div>
-                        <div className="space-y-1">
-                          <div className="flex items-center justify-between text-[10px]">
-                            <span className="text-muted-foreground">Contratos</span>
-                            <span className={`font-semibold ${pctQtd >= 100 ? 'text-chart-2' : pctQtd >= 50 ? 'text-primary' : 'text-destructive'}`}>
-                              {pctQtd}%
-                            </span>
-                          </div>
-                          <Progress value={pctQtd} className="h-1.5" />
-                        </div>
+                        <Progress value={pctValor} className="h-1.5" />
                       </div>
                     )}
 
                     {!m.hasPlan && (
                       <p className="text-[10px] text-muted-foreground italic pt-1 border-t border-border/50">Sem planejamento</p>
-                    )}
-
-                    {m.projetos.length > 0 && (
-                      <div className="pt-1 border-t border-border/50 space-y-0.5">
-                        {m.projetos.slice(0, 3).map((nome, j) => (
-                          <p key={j} className="text-[11px] text-muted-foreground truncate">{nome}</p>
-                        ))}
-                        {m.projetos.length > 3 && (
-                          <p className="text-[11px] text-muted-foreground">+{m.projetos.length - 3} mais</p>
-                        )}
-                      </div>
                     )}
                   </div>
                 );
@@ -433,6 +451,81 @@ export default function ImplantacaoAnalytics() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Detail Dialog */}
+        <Dialog open={selectedMonth !== null} onOpenChange={(open) => !open && setSelectedMonth(null)}>
+          <DialogContent className="max-w-2xl">
+            {selectedMonth !== null && revenueByMonthData[selectedMonth] && (() => {
+              const m = revenueByMonthData[selectedMonth];
+              return (
+                <>
+                  <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2">
+                      Contratos Ativados — {m.label.toUpperCase()}
+                      {m.isCurrentMonth && <Badge variant="default" className="text-[10px]">Atual</Badge>}
+                      {m.isFuture && <Badge variant="secondary" className="text-[10px]">Previsão</Badge>}
+                    </DialogTitle>
+                  </DialogHeader>
+
+                  {/* Summary */}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+                    <div className="text-center p-2 rounded-lg bg-muted/50">
+                      <p className="text-[10px] text-muted-foreground uppercase">Contratos Previstos</p>
+                      <p className="text-lg font-bold">{m.hasPlan ? m.planejadoQtd : '—'}</p>
+                    </div>
+                    <div className="text-center p-2 rounded-lg bg-muted/50">
+                      <p className="text-[10px] text-muted-foreground uppercase">Contratos Realizados</p>
+                      <p className="text-lg font-bold">{m.count}</p>
+                    </div>
+                    <div className="text-center p-2 rounded-lg bg-muted/50">
+                      <p className="text-[10px] text-muted-foreground uppercase">Receita Prevista</p>
+                      <p className="text-sm font-bold">{m.hasPlan ? `R$ ${m.planejadoValor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '—'}</p>
+                    </div>
+                    <div className="text-center p-2 rounded-lg bg-muted/50">
+                      <p className="text-[10px] text-muted-foreground uppercase">Receita Realizada</p>
+                      <p className="text-sm font-bold">R$ {m.totalMensalidade.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                    </div>
+                  </div>
+
+                  {m.contratos.length > 0 ? (
+                    <div className="border rounded-lg overflow-hidden">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Condomínio</TableHead>
+                            <TableHead>Contrato</TableHead>
+                            <TableHead>Data</TableHead>
+                            <TableHead>Praça</TableHead>
+                            <TableHead className="text-right">Receita</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {m.contratos.map((c, j) => (
+                            <TableRow key={j}>
+                              <TableCell className="text-sm font-medium">{c.nome}</TableCell>
+                              <TableCell className="text-sm text-muted-foreground">{c.contrato}</TableCell>
+                              <TableCell className="text-sm text-muted-foreground">
+                                {c.dataAtivacao ? format(parseISO(c.dataAtivacao), 'dd/MM/yyyy') : '—'}
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant="outline" className="text-[10px]">{c.praca}</Badge>
+                              </TableCell>
+                              <TableCell className="text-sm text-right font-medium">
+                                R$ {c.mensalidade.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  ) : (
+                    <p className="text-center text-muted-foreground py-8">Nenhum contrato ativado neste mês</p>
+                  )}
+                </>
+              );
+            })()}
+          </DialogContent>
+        </Dialog>
 
         {/* Charts Row 1 */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

@@ -298,11 +298,210 @@ export default function SucessoClienteRelatorios() {
     return { totalGeral, totalAtivos, totalInativos, receitaTotal, ticketMedio, npsNotas, chamadosAbertos };
   }, [customers, inativos, npsData, chamados]);
 
+  const periodLabel = PERIOD_OPTIONS.find(o => o.value === period)?.label || period;
+
   const chartLineConfig: ChartConfig = {
     total: { label: 'Total', color: COLORS[3] },
     ativos: { label: 'Ativos', color: COLORS[1] },
     inativos: { label: 'Inativos', color: COLORS[2] },
   };
+
+  // ===== EXPORT EXCEL =====
+  function exportExcel() {
+    const wb = XLSX.utils.book_new();
+
+    // KPIs
+    const kpiSheet = XLSX.utils.json_to_sheet([{
+      'Total de Clientes': kpis.totalGeral,
+      'Clientes Ativos': kpis.totalAtivos,
+      'Clientes Inativos': kpis.totalInativos,
+      'Receita Mensal (R$)': kpis.receitaTotal,
+      'Ticket Médio (R$)': kpis.ticketMedio,
+      'NPS Médio': kpis.npsNotas,
+      'Chamados Abertos': kpis.chamadosAbertos,
+    }]);
+    XLSX.utils.book_append_sheet(wb, kpiSheet, 'Resumo KPIs');
+
+    // Total Clients
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(totalClientsChart.map(r => ({
+      'Mês': r.month, 'Total': r.total, 'Ativos': r.ativos, 'Inativos': r.inativos,
+    }))), 'Evolução Total');
+
+    // Active Clients
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(activeClientsChart.map(r => ({
+      'Mês': r.month, 'Novos': r.novos, 'Acumulado': r.acumulado,
+    }))), 'Clientes Ativos');
+
+    // Inactive Clients
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(inactiveClientsChart.map(r => ({
+      'Mês': r.month, 'Cancelamentos': r.cancelamentos,
+    }))), 'Clientes Inativos');
+
+    // Motivos
+    if (motivosPie.length > 0) {
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(motivosPie.map(r => ({
+        'Motivo': r.name, 'Quantidade': r.value,
+      }))), 'Motivos Cancelamento');
+    }
+
+    // Churn
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(churnChart.map(r => ({
+      'Mês': r.month, 'Churn (%)': r.churn, 'Cancelados': r.cancelados,
+    }))), 'Taxa de Churn');
+
+    // Revenue
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(revenueChart.map(r => ({
+      'Mês': r.month, 'Receita (R$)': r.receita, 'Ticket Médio (R$)': r.ticket,
+    }))), 'Receita');
+
+    // NPS
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(npsChart.map(r => ({
+      'Mês': r.month, 'Média': r.media, 'NPS Score': r.nps, 'Respostas': r.respostas,
+    }))), 'NPS');
+
+    // Chamados
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(chamadosChart.map(r => ({
+      'Mês': r.month, 'Abertos': r.abertos, 'Resolvidos': r.resolvidos,
+    }))), 'Chamados');
+
+    // Renovações
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(renovacoesChart.map(r => ({
+      'Mês': r.month, 'Vencendo': r.vencendo, 'Renovados': r.renovados,
+    }))), 'Renovações');
+
+    const fileName = `Relatorio_Sucesso_Cliente_${format(new Date(), 'yyyy-MM-dd')}.xlsx`;
+    XLSX.writeFile(wb, fileName);
+    toast({ title: 'Excel exportado!', description: fileName });
+  }
+
+  // ===== EXPORT PDF =====
+  function exportPdf() {
+    const doc = new jsPDF('landscape', 'mm', 'a4');
+    const pw = doc.internal.pageSize.getWidth();
+    const ph = doc.internal.pageSize.getHeight();
+    let y = 15;
+
+    // Title
+    doc.setFontSize(16);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Relatório de Sucesso do Cliente', 15, y);
+    y += 7;
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Período: ${periodLabel} | Gerado em: ${format(new Date(), "dd/MM/yyyy 'às' HH:mm")}`, 15, y);
+    y += 12;
+
+    // KPIs
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Indicadores Gerais', 15, y);
+    y += 8;
+
+    const kpiItems = [
+      ['Total de Clientes', String(kpis.totalGeral)],
+      ['Clientes Ativos', String(kpis.totalAtivos)],
+      ['Clientes Inativos', String(kpis.totalInativos)],
+      ['Receita Mensal', formatCurrency(kpis.receitaTotal)],
+      ['Ticket Médio', formatCurrency(kpis.ticketMedio)],
+      ['NPS Médio', String(kpis.npsNotas)],
+      ['Chamados Abertos', String(kpis.chamadosAbertos)],
+    ];
+
+    doc.setFontSize(9);
+    kpiItems.forEach(([label, value], i) => {
+      const col = i % 4;
+      const row = Math.floor(i / 4);
+      const x = 15 + col * 68;
+      const yy = y + row * 12;
+      doc.setFillColor(245, 245, 245);
+      doc.roundedRect(x, yy - 4, 64, 10, 2, 2, 'F');
+      doc.setFont('helvetica', 'normal');
+      doc.text(label, x + 3, yy + 2);
+      doc.setFont('helvetica', 'bold');
+      doc.text(value, x + 61, yy + 2, { align: 'right' });
+    });
+    y += Math.ceil(kpiItems.length / 4) * 12 + 8;
+
+    // Helper to add a data table
+    function addTable(title: string, headers: string[], rows: string[][]) {
+      if (y > ph - 30) { doc.addPage(); y = 15; }
+      doc.setFontSize(11);
+      doc.setFont('helvetica', 'bold');
+      doc.text(title, 15, y);
+      y += 6;
+
+      const colW = (pw - 30) / headers.length;
+      // Header row
+      doc.setFillColor(51, 51, 51);
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(8);
+      doc.rect(15, y - 4, pw - 30, 6, 'F');
+      headers.forEach((h, i) => {
+        doc.text(h, 17 + i * colW, y);
+      });
+      doc.setTextColor(0, 0, 0);
+      doc.setFont('helvetica', 'normal');
+      y += 5;
+
+      rows.forEach((row, ri) => {
+        if (y > ph - 15) { doc.addPage(); y = 15; }
+        if (ri % 2 === 0) {
+          doc.setFillColor(248, 248, 248);
+          doc.rect(15, y - 3.5, pw - 30, 5, 'F');
+        }
+        row.forEach((cell, ci) => {
+          doc.text(String(cell ?? ''), 17 + ci * colW, y);
+        });
+        y += 5;
+      });
+      y += 6;
+    }
+
+    // Tables
+    addTable('Evolução Total de Clientes', ['Mês', 'Total', 'Ativos', 'Inativos'],
+      totalClientsChart.map(r => [r.month, String(r.total), String(r.ativos), String(r.inativos)]));
+
+    addTable('Clientes Ativos - Novos por Mês', ['Mês', 'Novos', 'Acumulado'],
+      activeClientsChart.map(r => [r.month, String(r.novos), String(r.acumulado)]));
+
+    addTable('Clientes Inativos por Mês', ['Mês', 'Cancelamentos'],
+      inactiveClientsChart.map(r => [r.month, String(r.cancelamentos)]));
+
+    if (motivosPie.length > 0) {
+      addTable('Motivos de Cancelamento', ['Motivo', 'Quantidade'],
+        motivosPie.map(r => [r.name, String(r.value)]));
+    }
+
+    addTable('Taxa de Churn', ['Mês', 'Churn (%)', 'Cancelados'],
+      churnChart.map(r => [r.month, String(r.churn), String(r.cancelados)]));
+
+    addTable('Receita Mensal', ['Mês', 'Receita (R$)', 'Ticket Médio (R$)'],
+      revenueChart.map(r => [r.month, formatCurrency(r.receita), formatCurrency(r.ticket)]));
+
+    addTable('NPS', ['Mês', 'Média', 'NPS Score', 'Respostas'],
+      npsChart.map(r => [r.month, String(r.media ?? '-'), String(r.nps ?? '-'), String(r.respostas)]));
+
+    addTable('Chamados', ['Mês', 'Abertos', 'Resolvidos'],
+      chamadosChart.map(r => [r.month, String(r.abertos), String(r.resolvidos)]));
+
+    addTable('Renovações', ['Mês', 'Vencendo', 'Renovados'],
+      renovacoesChart.map(r => [r.month, String(r.vencendo), String(r.renovados)]));
+
+    const fileName = `Relatorio_Sucesso_Cliente_${format(new Date(), 'yyyy-MM-dd')}.pdf`;
+
+    // iOS compatibility
+    if (/iPhone|iPad/i.test(navigator.userAgent) && navigator.share) {
+      const blob = doc.output('blob');
+      const file = new File([blob], fileName, { type: 'application/pdf' });
+      navigator.share({ files: [file] }).catch(() => {
+        const dataUri = doc.output('datauristring');
+        window.open(dataUri, '_blank');
+      });
+    } else {
+      doc.save(fileName);
+    }
+    toast({ title: 'PDF exportado!', description: fileName });
+  }
 
   if (loading) {
     return (
@@ -328,6 +527,14 @@ export default function SucessoClienteRelatorios() {
             <p className="text-muted-foreground">Análise completa de sucesso do cliente</p>
           </div>
           <div className="flex items-center gap-3">
+            <Button variant="outline" size="sm" onClick={exportPdf} className="gap-2">
+              <FileText className="h-4 w-4" />
+              PDF
+            </Button>
+            <Button variant="outline" size="sm" onClick={exportExcel} className="gap-2">
+              <FileSpreadsheet className="h-4 w-4" />
+              Excel
+            </Button>
             <Calendar className="h-4 w-4 text-muted-foreground" />
             <Select value={period} onValueChange={setPeriod}>
               <SelectTrigger className="w-[200px]">

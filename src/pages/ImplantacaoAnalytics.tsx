@@ -1,0 +1,362 @@
+import { useState, useEffect, useMemo } from 'react';
+import { Layout } from '@/components/Layout';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { supabase } from '@/integrations/supabase/client';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend, LineChart, Line } from 'recharts';
+import { BarChart3, Clock, DollarSign, TrendingUp, Calendar, Building } from 'lucide-react';
+import { format, parseISO, differenceInDays } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+
+interface ProjectData {
+  id: string;
+  numero_projeto: number;
+  cliente_condominio_nome: string;
+  implantacao_status: string | null;
+  implantacao_started_at: string | null;
+  implantacao_completed_at: string | null;
+  prazo_entrega_projeto: string | null;
+  created_at: string;
+}
+
+interface PortfolioData {
+  project_id: string | null;
+  mensalidade: number | null;
+  taxa_ativacao: number | null;
+  data_ativacao: string | null;
+  contrato: string | null;
+  razao_social: string;
+}
+
+const COLORS = ['hsl(var(--primary))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))', 'hsl(var(--chart-5))'];
+
+export default function ImplantacaoAnalytics() {
+  const [projects, setProjects] = useState<ProjectData[]>([]);
+  const [portfolio, setPortfolio] = useState<PortfolioData[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const fetchData = async () => {
+    try {
+      const [projectsRes, portfolioRes] = await Promise.all([
+        supabase
+          .from('projects')
+          .select('id, numero_projeto, cliente_condominio_nome, implantacao_status, implantacao_started_at, implantacao_completed_at, prazo_entrega_projeto, created_at')
+          .eq('sale_status', 'CONCLUIDO')
+          .order('created_at', { ascending: false }),
+        supabase
+          .from('customer_portfolio')
+          .select('project_id, mensalidade, taxa_ativacao, data_ativacao, contrato, razao_social')
+          .not('project_id', 'is', null),
+      ]);
+
+      if (projectsRes.data) setProjects(projectsRes.data);
+      if (portfolioRes.data) setPortfolio(portfolioRes.data);
+    } catch (error) {
+      console.error('Error:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const portfolioMap = useMemo(() => {
+    const map: Record<string, PortfolioData> = {};
+    portfolio.forEach(p => {
+      if (p.project_id) map[p.project_id] = p;
+    });
+    return map;
+  }, [portfolio]);
+
+  // Chart 1: Days between entry and activation (or predicted)
+  const timeToActivationData = useMemo(() => {
+    return projects
+      .filter(p => p.implantacao_started_at)
+      .map(p => {
+        const port = portfolioMap[p.id];
+        const startDate = parseISO(p.implantacao_started_at!);
+        const endDate = port?.data_ativacao
+          ? parseISO(port.data_ativacao)
+          : p.prazo_entrega_projeto
+            ? parseISO(p.prazo_entrega_projeto)
+            : null;
+
+        const dias = endDate ? differenceInDays(endDate, startDate) : null;
+        const nome = p.cliente_condominio_nome.length > 15
+          ? p.cliente_condominio_nome.substring(0, 15) + '...'
+          : p.cliente_condominio_nome;
+
+        return {
+          nome,
+          nomeCompleto: p.cliente_condominio_nome,
+          dias: dias !== null ? Math.abs(dias) : 0,
+          ativado: !!port?.data_ativacao,
+          numero: p.numero_projeto,
+        };
+      })
+      .filter(d => d.dias > 0)
+      .sort((a, b) => b.dias - a.dias)
+      .slice(0, 15);
+  }, [projects, portfolioMap]);
+
+  // Chart 2: Revenue (mensalidade) by project
+  const revenueData = useMemo(() => {
+    return projects
+      .map(p => {
+        const port = portfolioMap[p.id];
+        if (!port?.mensalidade) return null;
+        const nome = p.cliente_condominio_nome.length > 15
+          ? p.cliente_condominio_nome.substring(0, 15) + '...'
+          : p.cliente_condominio_nome;
+        return {
+          nome,
+          nomeCompleto: p.cliente_condominio_nome,
+          mensalidade: Number(port.mensalidade),
+          numero: p.numero_projeto,
+        };
+      })
+      .filter(Boolean)
+      .sort((a, b) => b!.mensalidade - a!.mensalidade)
+      .slice(0, 15) as { nome: string; nomeCompleto: string; mensalidade: number; numero: number }[];
+  }, [projects, portfolioMap]);
+
+  // Chart 3: Status distribution
+  const statusData = useMemo(() => {
+    const counts: Record<string, number> = {
+      'A Executar': 0,
+      'Em Execução': 0,
+      'Concluído': 0,
+    };
+    projects.forEach(p => {
+      if (p.implantacao_status === 'CONCLUIDO_IMPLANTACAO') counts['Concluído']++;
+      else if (p.implantacao_status === 'EM_EXECUCAO') counts['Em Execução']++;
+      else counts['A Executar']++;
+    });
+    return Object.entries(counts).map(([name, value]) => ({ name, value }));
+  }, [projects]);
+
+  // Summary metrics
+  const metrics = useMemo(() => {
+    const totalMensalidade = portfolio.reduce((sum, p) => sum + (Number(p.mensalidade) || 0), 0);
+    const totalTaxa = portfolio.reduce((sum, p) => sum + (Number(p.taxa_ativacao) || 0), 0);
+    const avgDays = timeToActivationData.length > 0
+      ? Math.round(timeToActivationData.reduce((sum, d) => sum + d.dias, 0) / timeToActivationData.length)
+      : 0;
+    return { totalMensalidade, totalTaxa, avgDays, totalProjects: projects.length };
+  }, [portfolio, timeToActivationData, projects]);
+
+  // Chart 4: Monthly revenue evolution
+  const monthlyRevenueData = useMemo(() => {
+    const monthMap: Record<string, number> = {};
+    projects.forEach(p => {
+      const port = portfolioMap[p.id];
+      if (!port?.mensalidade || !p.implantacao_started_at) return;
+      const month = format(parseISO(p.implantacao_started_at), 'MM/yyyy');
+      monthMap[month] = (monthMap[month] || 0) + Number(port.mensalidade);
+    });
+    return Object.entries(monthMap)
+      .sort(([a], [b]) => {
+        const [ma, ya] = a.split('/').map(Number);
+        const [mb, yb] = b.split('/').map(Number);
+        return ya !== yb ? ya - yb : ma - mb;
+      })
+      .map(([month, total]) => ({ month, total: Math.round(total) }));
+  }, [projects, portfolioMap]);
+
+  const CustomTooltip = ({ active, payload, label }: any) => {
+    if (!active || !payload?.length) return null;
+    return (
+      <div className="bg-popover border border-border rounded-lg p-3 shadow-lg">
+        <p className="font-medium text-sm text-foreground">{payload[0]?.payload?.nomeCompleto || label}</p>
+        {payload.map((p: any, i: number) => (
+          <p key={i} className="text-sm text-muted-foreground">
+            {p.name === 'dias' ? `${p.value} dias` :
+              p.name === 'mensalidade' || p.name === 'total' ? `R$ ${p.value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` :
+                p.value}
+          </p>
+        ))}
+      </div>
+    );
+  };
+
+  if (isLoading) {
+    return (
+      <Layout>
+        <div className="p-8 text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto" />
+          <p className="mt-4 text-muted-foreground">Carregando analytics...</p>
+        </div>
+      </Layout>
+    );
+  }
+
+  return (
+    <Layout>
+      <div className="p-6 md:p-8 space-y-6">
+        {/* Header */}
+        <div>
+          <div className="flex items-center gap-3 mb-2">
+            <TrendingUp className="w-8 h-8 text-primary" />
+            <h1 className="text-2xl font-bold text-foreground">Analytics de Implantação</h1>
+          </div>
+          <p className="text-muted-foreground">Métricas de tempo, receita e desempenho da implantação</p>
+        </div>
+
+        {/* KPI Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Card>
+            <CardContent className="pt-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Total Projetos</p>
+                  <p className="text-2xl font-bold">{metrics.totalProjects}</p>
+                </div>
+                <Building className="w-8 h-8 text-muted-foreground" />
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Tempo Médio (dias)</p>
+                  <p className="text-2xl font-bold">{metrics.avgDays}</p>
+                </div>
+                <Clock className="w-8 h-8 text-muted-foreground" />
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Receita Mensal Total</p>
+                  <p className="text-xl font-bold">R$ {metrics.totalMensalidade.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                </div>
+                <DollarSign className="w-8 h-8 text-muted-foreground" />
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Taxa Ativação Total</p>
+                  <p className="text-xl font-bold">R$ {metrics.totalTaxa.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                </div>
+                <Calendar className="w-8 h-8 text-muted-foreground" />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Charts Row 1 */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Time to Activation */}
+          <Card className="lg:col-span-2">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base">Tempo entre Entrada e Ativação (dias)</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {timeToActivationData.length > 0 ? (
+                <ResponsiveContainer width="100%" height={320}>
+                  <BarChart data={timeToActivationData} layout="vertical" margin={{ left: 10, right: 20 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                    <XAxis type="number" tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }} />
+                    <YAxis dataKey="nome" type="category" width={120} tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} />
+                    <Tooltip content={<CustomTooltip />} />
+                    <Bar dataKey="dias" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="h-[320px] flex items-center justify-center text-muted-foreground">
+                  Sem dados disponíveis
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Status Distribution */}
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base">Distribuição por Status</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={320}>
+                <PieChart>
+                  <Pie
+                    data={statusData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={100}
+                    paddingAngle={4}
+                    dataKey="value"
+                    label={({ name, value }) => `${name}: ${value}`}
+                  >
+                    {statusData.map((_, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                </PieChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Charts Row 2 */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Revenue by Project */}
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base">Mensalidade por Projeto (R$)</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {revenueData.length > 0 ? (
+                <ResponsiveContainer width="100%" height={350}>
+                  <BarChart data={revenueData} layout="vertical" margin={{ left: 10, right: 20 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                    <XAxis type="number" tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }} tickFormatter={(v) => `R$ ${(v / 1000).toFixed(1)}k`} />
+                    <YAxis dataKey="nome" type="category" width={120} tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} />
+                    <Tooltip content={<CustomTooltip />} />
+                    <Bar dataKey="mensalidade" fill="hsl(var(--chart-2))" radius={[0, 4, 4, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="h-[350px] flex items-center justify-center text-muted-foreground">
+                  Sem dados disponíveis
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Monthly Revenue Evolution */}
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base">Evolução da Receita por Mês</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {monthlyRevenueData.length > 0 ? (
+                <ResponsiveContainer width="100%" height={350}>
+                  <LineChart data={monthlyRevenueData} margin={{ left: 10, right: 20 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                    <XAxis dataKey="month" tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }} />
+                    <YAxis tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }} tickFormatter={(v) => `R$ ${(v / 1000).toFixed(1)}k`} />
+                    <Tooltip content={<CustomTooltip />} />
+                    <Line type="monotone" dataKey="total" stroke="hsl(var(--primary))" strokeWidth={2} dot={{ fill: 'hsl(var(--primary))' }} />
+                  </LineChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="h-[350px] flex items-center justify-center text-muted-foreground">
+                  Sem dados disponíveis
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </Layout>
+  );
+}

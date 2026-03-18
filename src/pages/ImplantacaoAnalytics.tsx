@@ -556,6 +556,22 @@ export default function ImplantacaoAnalytics() {
           </DialogContent>
         </Dialog>
 
+        {/* Regional Map */}
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base flex items-center gap-2">
+              <MapPin className="w-5 h-5 text-primary" />
+              Ativações por Regional
+            </CardTitle>
+            <p className="text-xs text-muted-foreground">Distribuição geográfica dos contratos ativados</p>
+          </CardHeader>
+          <CardContent>
+            <div className="max-w-2xl mx-auto">
+              <MapaRegional data={regionalData} />
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Charts Row 1 */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Time to Activation */}

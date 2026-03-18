@@ -76,6 +76,7 @@ const getPraca = (filial?: string | null, praca?: string | null): string => {
 export default function ImplantacaoAnalytics() {
   const [projects, setProjects] = useState<ProjectData[]>([]);
   const [portfolio, setPortfolio] = useState<PortfolioData[]>([]);
+  const [allPortfolio, setAllPortfolio] = useState<PortfolioData[]>([]);
   const [cancelamentos, setCancelamentos] = useState<CancelamentoData[]>([]);
   const [plans, setPlans] = useState<PlanData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -95,7 +96,7 @@ export default function ImplantacaoAnalytics() {
 
   const fetchData = async () => {
     try {
-      const [projectsRes, portfolioRes, cancelamentosRes] = await Promise.all([
+      const [projectsRes, portfolioRes, allPortfolioRes, cancelamentosRes] = await Promise.all([
         supabase
           .from('projects')
           .select('id, numero_projeto, cliente_condominio_nome, implantacao_status, implantacao_started_at, implantacao_completed_at, prazo_entrega_projeto, created_at')
@@ -106,12 +107,16 @@ export default function ImplantacaoAnalytics() {
           .select('project_id, mensalidade, taxa_ativacao, data_ativacao, contrato, razao_social, filial, praca')
           .not('project_id', 'is', null),
         supabase
+          .from('customer_portfolio')
+          .select('project_id, mensalidade, taxa_ativacao, data_ativacao, contrato, razao_social, filial, praca'),
+        supabase
           .from('customer_cancelamentos')
           .select('id, data_cancelamento, valor_contrato, motivo, customer_id'),
       ]);
 
       if (projectsRes.data) setProjects(projectsRes.data);
       if (portfolioRes.data) setPortfolio(portfolioRes.data);
+      if (allPortfolioRes.data) setAllPortfolio(allPortfolioRes.data);
       if (cancelamentosRes.data) setCancelamentos(cancelamentosRes.data);
     } catch (error) {
       console.error('Error:', error);
@@ -320,13 +325,11 @@ export default function ImplantacaoAnalytics() {
       VIX: { contratos: 0, receita: 0 },
     };
 
-    projects.forEach(p => {
-      const port = portfolioMap[p.id];
-      if (!port?.data_ativacao) return;
-      const praca = getPraca(port.filial, port.praca);
+    allPortfolio.forEach(p => {
+      const praca = getPraca(p.filial, p.praca);
       if (regions[praca]) {
         regions[praca].contratos++;
-        regions[praca].receita += Number(port.mensalidade) || 0;
+        regions[praca].receita += Number(p.mensalidade) || 0;
       }
     });
 
@@ -336,7 +339,7 @@ export default function ImplantacaoAnalytics() {
       { sigla: 'RJ', nome: 'Rio de Janeiro', ...regions.RJ },
       { sigla: 'VIX', nome: 'Vitória', ...regions.VIX },
     ];
-  }, [projects, portfolioMap]);
+  }, [allPortfolio]);
 
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (!active || !payload?.length) return null;

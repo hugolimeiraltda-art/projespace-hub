@@ -96,7 +96,7 @@ const ALL_NAV_ITEMS: NavItem[] = [
     icon: Heart,
     menuKey: 'sucesso-cliente',
     subItems: [
-      { path: '/sucesso-cliente', label: 'Clientes Ativos', icon: Heart, menuKey: 'sucesso-cliente' },
+      { path: '/sucesso-cliente', label: 'Dashboard', icon: Heart, menuKey: 'sucesso-cliente' },
       { path: '/sucesso-cliente/inativos', label: 'Clientes Inativos', icon: UserX, menuKey: 'sucesso-cliente' },
       { path: '/sucesso-cliente/relatorios', label: 'Relatórios', icon: FileBarChart, menuKey: 'sucesso-cliente' },
     ],

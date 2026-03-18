@@ -56,6 +56,7 @@ const ALL_NAV_ITEMS: NavItem[] = [
     menuKey: 'implantacao',
     subItems: [
       { path: '/implantacao-dashboard', label: 'Dashboard', icon: BarChart3, menuKey: 'implantacao/dashboard' },
+      { path: '/implantacao-analytics', label: 'Analytics', icon: TrendingUp, menuKey: 'implantacao/analytics' },
       { path: '/startup-projetos?tab=em-implantacao', label: 'Em Implantação', icon: PlayCircle, menuKey: 'implantacao/em-implantacao' },
       { path: '/startup-projetos?tab=operacao-assistida', label: 'Operação Assistida', icon: HeadphonesIcon, menuKey: 'implantacao/operacao-assistida' },
       { path: '/startup-projetos?tab=pequenas-obras', label: 'Pequenas Obras', icon: Wrench, menuKey: 'implantacao/pequenas-obras' },

@@ -24,6 +24,7 @@ import StartupProjetos from "./pages/StartupProjetos";
 import ImplantacaoExecucao from "./pages/ImplantacaoExecucao";
 import ImplantacaoChecklist from "./pages/ImplantacaoChecklist";
 import ImplantacaoDashboard from "./pages/ImplantacaoDashboard";
+import ImplantacaoAnalytics from "./pages/ImplantacaoAnalytics";
 import CarteiraClientes from "./pages/CarteiraClientes";
 import CustomerDetail from "./pages/CustomerDetail";
 import ControleEstoque from "./pages/ControleEstoque";

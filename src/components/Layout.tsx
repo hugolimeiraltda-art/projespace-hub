@@ -5,7 +5,7 @@ import { useMenuPermissions } from '@/hooks/useMenuPermissions';
 import { Button } from '@/components/ui/button';
 import { NotificationsSidebarItem } from '@/components/NotificationsSidebarItem';
 import { cn } from '@/lib/utils';
-import { LayoutDashboard, FolderPlus, List, Settings, LogOut, User, ClipboardList, Users, Briefcase, ShoppingCart, Package, Heart, Wrench, ChevronDown, ChevronRight, AlertTriangle, Calendar, Bot, Boxes, Percent, Brain, BookOpen, FileText, Menu, X, BarChart3, PlayCircle, HeadphonesIcon, TrendingUp } from 'lucide-react';
+import { LayoutDashboard, FolderPlus, List, Settings, LogOut, User, ClipboardList, Users, Briefcase, ShoppingCart, Package, Heart, Wrench, ChevronDown, ChevronRight, AlertTriangle, Calendar, Bot, Boxes, Percent, Brain, BookOpen, FileText, Menu, X, BarChart3, PlayCircle, HeadphonesIcon, TrendingUp, UserX, FileBarChart } from 'lucide-react';
 import emiveLogo from '@/assets/emive-logo.png';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useIsMobile } from '@/hooks/use-mobile';

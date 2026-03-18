@@ -29,6 +29,14 @@ interface PortfolioData {
   razao_social: string;
 }
 
+interface PlanData {
+  id: string;
+  mes: number;
+  ano: number;
+  qtd_contratos: number;
+  valor_total: number;
+}
+
 const COLORS = ['hsl(var(--primary))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))', 'hsl(var(--chart-5))'];
 
 export default function ImplantacaoAnalytics() {

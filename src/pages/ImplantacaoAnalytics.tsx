@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Layout } from '@/components/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
@@ -6,6 +6,8 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { BarChart3, Clock, DollarSign, TrendingUp, Calendar, Building } from 'lucide-react';
 import { format, parseISO, differenceInDays, startOfMonth, addMonths, subMonths, isWithinInterval, endOfMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { PlanejamentoAtivacoes } from '@/components/PlanejamentoAtivacoes';
+import { Progress } from '@/components/ui/progress';
 
 interface ProjectData {
   id: string;
@@ -27,16 +29,33 @@ interface PortfolioData {
   razao_social: string;
 }
 
+interface PlanData {
+  id: string;
+  mes: number;
+  ano: number;
+  qtd_contratos: number;
+  valor_total: number;
+}
+
 const COLORS = ['hsl(var(--primary))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))', 'hsl(var(--chart-5))'];
 
 export default function ImplantacaoAnalytics() {
   const [projects, setProjects] = useState<ProjectData[]>([]);
   const [portfolio, setPortfolio] = useState<PortfolioData[]>([]);
+  const [plans, setPlans] = useState<PlanData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  const fetchPlans = useCallback(async () => {
+    const { data } = await supabase
+      .from('implantacao_planejamento_ativacoes')
+      .select('*');
+    if (data) setPlans(data);
+  }, []);
 
   useEffect(() => {
     fetchData();
-  }, []);
+    fetchPlans();
+  }, [fetchPlans]);
 
   const fetchData = async () => {
     try {
@@ -181,6 +200,8 @@ export default function ImplantacaoAnalytics() {
       const label = format(monthDate, 'MMM/yy', { locale: ptBR });
       const isCurrentMonth = format(monthDate, 'MM/yyyy') === format(now, 'MM/yyyy');
       const isPast = monthDate < startOfMonth(now);
+      const monthNum = monthDate.getMonth() + 1;
+      const yearNum = monthDate.getFullYear();
 
       let totalMensalidade = 0;
       let totalTaxa = 0;
@@ -191,8 +212,6 @@ export default function ImplantacaoAnalytics() {
         const port = portfolioMap[p.id];
         if (!port) return;
 
-        // For past/current: use data_ativacao from portfolio
-        // For future: use prazo_entrega_projeto from project
         const activationDate = port.data_ativacao
           ? parseISO(port.data_ativacao)
           : p.prazo_entrega_projeto
@@ -209,6 +228,11 @@ export default function ImplantacaoAnalytics() {
         }
       });
 
+      // Find planned data for this month
+      const plan = plans.find(p => p.mes === monthNum && p.ano === yearNum);
+      const planejadoValor = plan ? Number(plan.valor_total) : 0;
+      const planejadoQtd = plan ? plan.qtd_contratos : 0;
+
       return {
         label,
         totalMensalidade,
@@ -218,9 +242,12 @@ export default function ImplantacaoAnalytics() {
         isCurrentMonth,
         isPast,
         isFuture: !isPast && !isCurrentMonth,
+        planejadoValor,
+        planejadoQtd,
+        hasPlan: !!plan,
       };
     });
-  }, [projects, portfolioMap]);
+  }, [projects, portfolioMap, plans]);
 
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (!active || !payload?.length) return null;
@@ -312,51 +339,97 @@ export default function ImplantacaoAnalytics() {
         {/* Revenue Activation by Month */}
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-base flex items-center gap-2">
-              <DollarSign className="w-5 h-5 text-primary" />
-              Receita Ativada por Mês
-            </CardTitle>
-            <p className="text-xs text-muted-foreground">Mês anterior, atual e próximos 3 meses (previsão baseada no prazo de entrega)</p>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <DollarSign className="w-5 h-5 text-primary" />
+                  Receita Ativada por Mês
+                </CardTitle>
+                <p className="text-xs text-muted-foreground mt-1">Comparação entre orçado (planejado) e realizado</p>
+              </div>
+              <PlanejamentoAtivacoes onUpdate={fetchPlans} />
+            </div>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-              {revenueByMonthData.map((m, i) => (
-                <div
-                  key={i}
-                  className={`rounded-lg border p-4 space-y-2 ${
-                    m.isCurrentMonth
-                      ? 'border-primary bg-primary/5 ring-1 ring-primary/20'
-                      : m.isFuture
-                        ? 'border-dashed border-muted-foreground/30 bg-muted/30'
-                        : 'border-border'
-                  }`}
-                >
-                  <p className={`text-xs font-semibold uppercase tracking-wider ${m.isCurrentMonth ? 'text-primary' : 'text-muted-foreground'}`}>
-                    {m.label}
-                    {m.isCurrentMonth && <span className="ml-1 text-[10px] bg-primary text-primary-foreground px-1.5 py-0.5 rounded-full">atual</span>}
-                    {m.isFuture && <span className="ml-1 text-[10px] text-muted-foreground">(prev.)</span>}
-                  </p>
-                  <p className="text-lg font-bold text-foreground">
-                    R$ {m.totalMensalidade.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                  </p>
-                  <div className="flex items-center justify-between text-xs text-muted-foreground">
-                    <span>{m.count} projeto{m.count !== 1 ? 's' : ''}</span>
-                    {m.totalTaxa > 0 && (
-                      <span className="text-chart-2">Taxa: R$ {m.totalTaxa.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+              {revenueByMonthData.map((m, i) => {
+                const pctValor = m.planejadoValor > 0 ? Math.min(100, Math.round((m.totalMensalidade / m.planejadoValor) * 100)) : 0;
+                const pctQtd = m.planejadoQtd > 0 ? Math.min(100, Math.round((m.count / m.planejadoQtd) * 100)) : 0;
+
+                return (
+                  <div
+                    key={i}
+                    className={`rounded-lg border p-4 space-y-2 ${
+                      m.isCurrentMonth
+                        ? 'border-primary bg-primary/5 ring-1 ring-primary/20'
+                        : m.isFuture
+                          ? 'border-dashed border-muted-foreground/30 bg-muted/30'
+                          : 'border-border'
+                    }`}
+                  >
+                    <p className={`text-xs font-semibold uppercase tracking-wider ${m.isCurrentMonth ? 'text-primary' : 'text-muted-foreground'}`}>
+                      {m.label}
+                      {m.isCurrentMonth && <span className="ml-1 text-[10px] bg-primary text-primary-foreground px-1.5 py-0.5 rounded-full">atual</span>}
+                      {m.isFuture && <span className="ml-1 text-[10px] text-muted-foreground">(prev.)</span>}
+                    </p>
+
+                    {/* Realizado */}
+                    <div>
+                      <p className="text-[10px] text-muted-foreground uppercase">Realizado</p>
+                      <p className="text-lg font-bold text-foreground">
+                        R$ {m.totalMensalidade.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      </p>
+                      <p className="text-xs text-muted-foreground">{m.count} contrato{m.count !== 1 ? 's' : ''}</p>
+                    </div>
+
+                    {/* Planejado */}
+                    {m.hasPlan && (
+                      <div className="pt-1.5 border-t border-border/50 space-y-1.5">
+                        <div>
+                          <p className="text-[10px] text-muted-foreground uppercase">Orçado</p>
+                          <p className="text-sm font-medium text-muted-foreground">
+                            R$ {m.planejadoValor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                          </p>
+                          <p className="text-[11px] text-muted-foreground">{m.planejadoQtd} contrato{m.planejadoQtd !== 1 ? 's' : ''}</p>
+                        </div>
+                        <div className="space-y-1">
+                          <div className="flex items-center justify-between text-[10px]">
+                            <span className="text-muted-foreground">Valor</span>
+                            <span className={`font-semibold ${pctValor >= 100 ? 'text-chart-2' : pctValor >= 50 ? 'text-primary' : 'text-destructive'}`}>
+                              {pctValor}%
+                            </span>
+                          </div>
+                          <Progress value={pctValor} className="h-1.5" />
+                        </div>
+                        <div className="space-y-1">
+                          <div className="flex items-center justify-between text-[10px]">
+                            <span className="text-muted-foreground">Contratos</span>
+                            <span className={`font-semibold ${pctQtd >= 100 ? 'text-chart-2' : pctQtd >= 50 ? 'text-primary' : 'text-destructive'}`}>
+                              {pctQtd}%
+                            </span>
+                          </div>
+                          <Progress value={pctQtd} className="h-1.5" />
+                        </div>
+                      </div>
+                    )}
+
+                    {!m.hasPlan && (
+                      <p className="text-[10px] text-muted-foreground italic pt-1 border-t border-border/50">Sem planejamento</p>
+                    )}
+
+                    {m.projetos.length > 0 && (
+                      <div className="pt-1 border-t border-border/50 space-y-0.5">
+                        {m.projetos.slice(0, 3).map((nome, j) => (
+                          <p key={j} className="text-[11px] text-muted-foreground truncate">{nome}</p>
+                        ))}
+                        {m.projetos.length > 3 && (
+                          <p className="text-[11px] text-muted-foreground">+{m.projetos.length - 3} mais</p>
+                        )}
+                      </div>
                     )}
                   </div>
-                  {m.projetos.length > 0 && (
-                    <div className="pt-1 border-t border-border/50 space-y-0.5">
-                      {m.projetos.slice(0, 3).map((nome, j) => (
-                        <p key={j} className="text-[11px] text-muted-foreground truncate">{nome}</p>
-                      ))}
-                      {m.projetos.length > 3 && (
-                        <p className="text-[11px] text-muted-foreground">+{m.projetos.length - 3} mais</p>
-                      )}
-                    </div>
-                  )}
-                </div>
-              ))}
+                );
+              })}
             </div>
           </CardContent>
         </Card>

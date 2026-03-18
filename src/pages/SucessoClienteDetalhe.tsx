@@ -95,6 +95,18 @@ export default function SucessoClienteDetalhe() {
     }
   }, [searchParams, customer]);
 
+  // Scroll to section based on hash
+  useEffect(() => {
+    if (!customer) return;
+    const hash = window.location.hash.replace('#', '');
+    if (hash) {
+      setTimeout(() => {
+        const el = document.getElementById(hash);
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 300);
+    }
+  }, [customer]);
+
   const fetchCustomer = async () => {
     // Skip known static sub-routes that React Router should handle
     const staticSubRoutes = ['ativos', 'inativos', 'chamados', 'nps', 'depoimentos', 'satisfacao', 'relatorios'];

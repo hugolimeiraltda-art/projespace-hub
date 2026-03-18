@@ -88,6 +88,56 @@ export type Database = {
           },
         ]
       }
+      customer_cancelamentos: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          created_by_name: string | null
+          customer_id: string
+          data_cancelamento: string
+          data_visita_retirada: string | null
+          id: string
+          motivo: string
+          observacoes: string | null
+          updated_at: string
+          valor_contrato: number | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          created_by_name?: string | null
+          customer_id: string
+          data_cancelamento: string
+          data_visita_retirada?: string | null
+          id?: string
+          motivo: string
+          observacoes?: string | null
+          updated_at?: string
+          valor_contrato?: number | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          created_by_name?: string | null
+          customer_id?: string
+          data_cancelamento?: string
+          data_visita_retirada?: string | null
+          id?: string
+          motivo?: string
+          observacoes?: string | null
+          updated_at?: string
+          valor_contrato?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_cancelamentos_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customer_portfolio"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       customer_chamados: {
         Row: {
           assunto: string

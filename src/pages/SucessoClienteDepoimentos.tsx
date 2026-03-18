@@ -131,7 +131,7 @@ export default function SucessoClienteDepoimentos() {
                       (tab === 'elogios' && d.tipo === 'elogio') ||
                       (tab === 'sugestoes' && d.tipo === 'sugestao'))
                     .map((dep) => (
-                    <Card key={dep.id} className="cursor-pointer hover:shadow-md" onClick={() => navigate(`/sucesso-cliente/${dep.customer_id}`)}>
+                    <Card key={dep.id} className="cursor-pointer hover:shadow-md" onClick={() => navigate(`/sucesso-cliente/cliente/${dep.customer_id}`)}>
                       <CardContent className="pt-4">
                         <div className="flex justify-between items-start mb-2">
                           <div>

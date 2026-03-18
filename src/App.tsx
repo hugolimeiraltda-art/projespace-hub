@@ -220,7 +220,7 @@ function AppRoutes() {
         element={<ProtectedRoute><SucessoClienteRelatorios /></ProtectedRoute>} 
       />
       <Route 
-        path="/sucesso-cliente/:id" 
+        path="/sucesso-cliente/cliente/:id" 
         element={<ProtectedRoute><SucessoClienteDetalhe /></ProtectedRoute>} 
       />
       {/* Manutenção routes */}

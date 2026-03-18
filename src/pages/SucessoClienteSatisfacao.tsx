@@ -203,7 +203,7 @@ export default function SucessoClienteSatisfacao() {
                     </TableCell>
                     <TableCell>{formatDate(sat.created_at)}</TableCell>
                     <TableCell>
-                      <Button variant="ghost" size="sm" onClick={() => navigate(`/sucesso-cliente/${sat.customer_id}`)}>
+                      <Button variant="ghost" size="sm" onClick={() => navigate(`/sucesso-cliente/cliente/${sat.customer_id}`)}>
                         <ExternalLink className="w-4 h-4" />
                       </Button>
                     </TableCell>

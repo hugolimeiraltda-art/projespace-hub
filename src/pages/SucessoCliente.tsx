@@ -1195,9 +1195,9 @@ export default function SucessoCliente() {
                   <TableRow 
                     key={customer.id}
                     className="cursor-pointer hover:bg-muted"
-                    onClick={() => {
-                      setCustomersDialogOpen(false);
-                      navigate(`/sucesso-cliente/${customer.id}`);
+                      onClick={() => {
+                        setCustomersDialogOpen(false);
+                        navigate(`/sucesso-cliente/cliente/${customer.id}`);
                     }}
                   >
                     <TableCell className="font-medium text-primary">{customer.contrato}</TableCell>
@@ -1243,7 +1243,7 @@ export default function SucessoCliente() {
                       className="cursor-pointer hover:bg-muted"
                       onClick={() => {
                         setExpiringDialogOpen(false);
-                        navigate(`/sucesso-cliente/${customer.id}`);
+                        navigate(`/sucesso-cliente/cliente/${customer.id}`);
                       }}
                     >
                       <TableCell className="font-medium text-primary">{customer.contrato}</TableCell>
@@ -1331,7 +1331,7 @@ export default function SucessoCliente() {
                             <TableCell>{getStatusBadge(chamado.status)}</TableCell>
                             <TableCell>{formatDate(chamado.created_at)}</TableCell>
                             <TableCell>
-                              <Button variant="ghost" size="sm" onClick={() => navigate(`/sucesso-cliente/${chamado.customer_id}`)}>
+                              <Button variant="ghost" size="sm" onClick={() => navigate(`/sucesso-cliente/cliente/${chamado.customer_id}`)}>
                                 <ExternalLink className="w-4 h-4" />
                               </Button>
                             </TableCell>
@@ -1466,7 +1466,7 @@ export default function SucessoCliente() {
                             <TableCell className="max-w-48 truncate">{nps.ponto_fraco || '-'}</TableCell>
                             <TableCell>{formatDate(nps.created_at)}</TableCell>
                             <TableCell>
-                              <Button variant="ghost" size="sm" onClick={() => navigate(`/sucesso-cliente/${nps.customer_id}`)}>
+                              <Button variant="ghost" size="sm" onClick={() => navigate(`/sucesso-cliente/cliente/${nps.customer_id}`)}>
                                 <ExternalLink className="w-4 h-4" />
                               </Button>
                             </TableCell>
@@ -1713,7 +1713,7 @@ export default function SucessoCliente() {
                       </TableCell>
                       <TableCell>{formatDate(sat.created_at)}</TableCell>
                       <TableCell>
-                        <Button variant="ghost" size="sm" onClick={() => navigate(`/sucesso-cliente/${sat.customer_id}`)}>
+                        <Button variant="ghost" size="sm" onClick={() => navigate(`/sucesso-cliente/cliente/${sat.customer_id}`)}>
                           <ExternalLink className="w-4 h-4" />
                         </Button>
                       </TableCell>
@@ -1765,7 +1765,7 @@ export default function SucessoCliente() {
                     className="cursor-pointer hover:bg-muted"
                     onClick={() => {
                       setCustomerSelectDialogOpen(false);
-                      navigate(`/sucesso-cliente/${customer.id}?action=${customerSelectAction}`);
+                      navigate(`/sucesso-cliente/cliente/${customer.id}?action=${customerSelectAction}`);
                     }}
                   >
                     <TableCell className="font-medium text-primary">{customer.contrato}</TableCell>
@@ -1909,7 +1909,7 @@ export default function SucessoCliente() {
                         size="sm"
                         onClick={() => {
                           setPendenciaDetailDialogOpen(false);
-                          navigate(`/sucesso-cliente/${selectedPendencia.customer_id}`);
+                          navigate(`/sucesso-cliente/cliente/${selectedPendencia.customer_id}`);
                         }}
                       >
                         <ExternalLink className="w-4 h-4 mr-2" />

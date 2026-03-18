@@ -179,7 +179,7 @@ export default function SucessoClienteNPS() {
                           <TableCell className="max-w-40 truncate">{nps.comentario || '-'}</TableCell>
                           <TableCell>{formatDate(nps.created_at)}</TableCell>
                           <TableCell>
-                            <Button variant="ghost" size="sm" onClick={() => navigate(`/sucesso-cliente/${nps.customer_id}`)}>
+                            <Button variant="ghost" size="sm" onClick={() => navigate(`/sucesso-cliente/cliente/${nps.customer_id}`)}>
                               <ExternalLink className="w-4 h-4" />
                             </Button>
                           </TableCell>

@@ -162,7 +162,7 @@ export default function SucessoClienteAtivos() {
                           <TableCell>
                             <button
                               className="text-left hover:text-primary hover:underline transition-colors font-medium"
-                              onClick={() => navigate(`/sucesso-cliente/${c.id}`)}
+                              onClick={() => navigate(`/sucesso-cliente/cliente/${c.id}`)}
                             >
                               {c.razao_social}
                             </button>
@@ -185,7 +185,7 @@ export default function SucessoClienteAtivos() {
                             {status ? (
                               <Badge variant={status.variant}>{status.label}</Badge>
                             ) : (
-                              <Badge className="bg-emerald-500/15 text-emerald-700 border-emerald-200 hover:bg-emerald-500/25">Vigente</Badge>
+                              <Badge variant="secondary">Vigente</Badge>
                             )}
                           </TableCell>
                           <TableCell className="text-right">
@@ -196,25 +196,25 @@ export default function SucessoClienteAtivos() {
                                 </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end" className="w-56">
-                                <DropdownMenuItem onClick={() => navigate(`/sucesso-cliente/${c.id}`)}>
+                                <DropdownMenuItem onClick={() => navigate(`/sucesso-cliente/cliente/${c.id}`)}>
                                   <Eye className="h-4 w-4 mr-2" />
                                   Ver Detalhes
                                 </DropdownMenuItem>
                                 <DropdownMenuSeparator />
-                                <DropdownMenuItem onClick={() => navigate(`/sucesso-cliente/${c.id}#renovacao`)}>
+                                <DropdownMenuItem onClick={() => navigate(`/sucesso-cliente/cliente/${c.id}#renovacao`)}>
                                   <RefreshCw className="h-4 w-4 mr-2" />
                                   Renovar Contrato
                                 </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => navigate(`/sucesso-cliente/${c.id}#administradores`)}>
+                                <DropdownMenuItem onClick={() => navigate(`/sucesso-cliente/cliente/${c.id}#administradores`)}>
                                   <UserCheck className="h-4 w-4 mr-2" />
                                   Mandatos de Síndicos
                                 </DropdownMenuItem>
                                 <DropdownMenuSeparator />
-                                <DropdownMenuItem onClick={() => navigate(`/sucesso-cliente/${c.id}?action=reclamacao`)}>
+                                <DropdownMenuItem onClick={() => navigate(`/sucesso-cliente/cliente/${c.id}?action=reclamacao`)}>
                                   <MessageSquareWarning className="h-4 w-4 mr-2" />
                                   Abrir Chamado / Reclamação
                                 </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => navigate(`/sucesso-cliente/${c.id}?action=depoimento`)}>
+                                <DropdownMenuItem onClick={() => navigate(`/sucesso-cliente/cliente/${c.id}?action=depoimento`)}>
                                   <ThumbsUp className="h-4 w-4 mr-2" />
                                   Registrar Depoimento / Elogio
                                 </DropdownMenuItem>

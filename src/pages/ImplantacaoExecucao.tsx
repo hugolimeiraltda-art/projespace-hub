@@ -254,7 +254,7 @@ export default function ImplantacaoExecucao() {
       // Fetch customer_portfolio data for contract info
       const { data: portfolioData } = await supabase
         .from('customer_portfolio')
-        .select('contrato, alarme_codigo, mensalidade, taxa_ativacao, data_termino, endereco')
+        .select('contrato, alarme_codigo, mensalidade, taxa_ativacao, data_termino, endereco, filial')
         .eq('project_id', id)
         .maybeSingle();
 

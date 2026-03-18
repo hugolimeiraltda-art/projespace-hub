@@ -305,7 +305,7 @@ export default function SucessoClienteDetalhe() {
 
         {/* Administradores / Mandatos Section */}
         <div id="administradores">
-          <AdministradoresCondominio customerId={customer.id} />
+          <AdministradoresCondominio customerId={customer.id} canEdit={true} />
         </div>
 
         {/* Cancelamento Section */}

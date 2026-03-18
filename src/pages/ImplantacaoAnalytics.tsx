@@ -482,8 +482,32 @@ export default function ImplantacaoAnalytics() {
                         <span className="font-medium">{m.hasPlan ? `R$ ${m.planejadoValor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '—'}</span>
                       </div>
                       <div className="flex items-center justify-between text-[10px]">
-                        <span className="text-muted-foreground">Receita Realizada</span>
+                        <span className="text-muted-foreground">Receita Ativada</span>
                         <span className="font-bold text-foreground">R$ {m.totalMensalidade.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                      </div>
+                    </div>
+
+                    {/* Cancelamentos */}
+                    <div className="border-t border-border/50 pt-1.5 space-y-1">
+                      <div className="flex items-center justify-between text-[10px]">
+                        <span className="text-muted-foreground">Cancelados</span>
+                        <span className="font-semibold text-destructive">{m.canceladosCount}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-[10px]">
+                        <span className="text-muted-foreground">Receita Cancelada</span>
+                        <span className="font-semibold text-destructive">
+                          {m.canceladosReceita > 0 ? `-R$ ${m.canceladosReceita.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : 'R$ 0,00'}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Saldo */}
+                    <div className="border-t border-border/50 pt-1.5">
+                      <div className="flex items-center justify-between text-[10px]">
+                        <span className="font-semibold text-muted-foreground">Saldo</span>
+                        <span className={`font-bold ${m.saldo >= 0 ? 'text-chart-2' : 'text-destructive'}`}>
+                          R$ {m.saldo.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                        </span>
                       </div>
                     </div>
 

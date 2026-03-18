@@ -27,6 +27,16 @@ interface PortfolioData {
   data_ativacao: string | null;
   contrato: string | null;
   razao_social: string;
+  filial: string | null;
+  praca: string | null;
+}
+
+interface ContratoDetalhe {
+  nome: string;
+  contrato: string;
+  mensalidade: number;
+  dataAtivacao: string | null;
+  praca: string;
 }
 
 interface PlanData {

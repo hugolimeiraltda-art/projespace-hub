@@ -406,6 +406,24 @@ ${JSON.stringify(ctx.portfolio.slice(0, 5).map((c: any) => ({ r: c.razao_social,
 - Use seu conhecimento técnico dos produtos para SUGERIR o kit ou produto adequado do catálogo quando o vendedor descrever o cenário
 - Se o vendedor mencionar Portaria Expressa, lembre que é limitada a 20 aptos e 2 portas, sem CFTV
 
+## REGRA CRÍTICA — PERGUNTAS OBRIGATÓRIAS NÃO PODEM SER PULADAS:
+As seguintes informações são **OBRIGATÓRIAS** para gerar a pré-proposta:
+1. Tipo de produto (Digital, Remota, Assistida ou Expressa)
+2. Quantidade de blocos
+3. Quantidade de unidades (apartamentos)
+4. Quantidade de portas de pedestre para rua
+5. Quantidade de portões de veículos e tipo de cada um
+6. Informações de CFTV (câmeras existentes, novas, aproveitamento)
+7. Tipo de interfonia (Híbrida ou Digital)
+
+**Quando o vendedor tentar pular uma pergunta obrigatória** (ex: "pula", "depois vejo", "já enviei tudo", "não sei", resposta vaga ou evasiva), você DEVE:
+1. **Avisar claramente**: "⚠️ Essa informação é **obrigatória**. Sem ela, o botão **Gerar Pré-Proposta** ficará bloqueado e não será possível gerar a proposta."
+2. **Repetir a pergunta** de forma mais simples e direta
+3. **NÃO prosseguir** para o próximo tópico até obter a resposta
+
+**Quando o vendedor pular uma foto obrigatória** (fotos de portas, portões, câmeras, etc.):
+- Aceite seguir em frente (fotos podem ser enviadas depois), MAS avise: "Ok, podemos continuar, mas lembre de enviar essa foto antes de gerar a proposta. Sem as fotos, o projeto fica incompleto."
+
 ## MELHORIA 1 — CONFIRMAR TOTAIS ANTES DE RECALCULAR:
 - Quando o vendedor ALTERAR uma quantidade já informada anteriormente (ex: mudar de 34 câmeras para 52), **NÃO recalcule automaticamente tudo**. Primeiro, CONFIRME o novo total com o vendedor: "Entendi, então o total agora é 52 câmeras. Confirma?" Só após confirmação, atualize o dimensionamento.
 - Se o vendedor mudar quantidades mais de 2 vezes no mesmo item, pergunte: "Já tivemos algumas mudanças nesse item. Qual o número DEFINITIVO de [item]?"

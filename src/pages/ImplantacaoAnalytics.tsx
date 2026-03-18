@@ -54,7 +54,8 @@ export default function ImplantacaoAnalytics() {
 
   useEffect(() => {
     fetchData();
-  }, []);
+    fetchPlans();
+  }, [fetchPlans]);
 
   const fetchData = async () => {
     try {

@@ -347,7 +347,7 @@ export function CarteiraClientesTable({ customers, onDelete }: CarteiraClientesT
           <TableBody>
             {filteredAndSortedCustomers.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={10} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={11} className="text-center py-8 text-muted-foreground">
                   Nenhum cliente encontrado com os filtros aplicados
                 </TableCell>
               </TableRow>
@@ -358,6 +358,19 @@ export function CarteiraClientesTable({ customers, onDelete }: CarteiraClientesT
                   className="cursor-pointer hover:bg-muted/50"
                   onClick={() => navigate(`/carteira-clientes/${customer.id}`)}
                 >
+                  <TableCell className="p-1">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setDeleteCustomer(customer);
+                      }}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </TableCell>
                   <TableCell className="font-medium text-primary hover:underline">
                     {customer.contrato}
                   </TableCell>

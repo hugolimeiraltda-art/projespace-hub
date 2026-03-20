@@ -23,6 +23,7 @@ interface ProjectData {
   implantacao_completed_at: string | null;
   prazo_entrega_projeto: string | null;
   created_at: string;
+  tipo_obra: string;
 }
 
 interface PortfolioData {

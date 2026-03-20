@@ -1238,66 +1238,45 @@ export default function ImplantacaoExecucao() {
                                 setIsSaving(true);
                                 
                                 const contratoTrimmed = contratoInfo.contrato.trim();
-                                
-                                // Calculate data_termino from prazo_contrato
                                 const prazoMeses = parseInt(contratoInfo.prazo_contrato) || 12;
                                 const dataTermino = new Date();
                                 dataTermino.setMonth(dataTermino.getMonth() + prazoMeses);
-                                
-                                const portfolioPayload = {
-                                  contrato: contratoTrimmed,
-                                  alarme_codigo: contratoInfo.alarme_codigo.trim(),
-                                  mensalidade: parseFloat(contratoInfo.mensalidade.replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
-                                  taxa_ativacao: parseFloat(contratoInfo.taxa_instalacao.replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
-                                  data_termino: dataTermino.toISOString().split('T')[0],
-                                  filial: contratoInfo.filial,
-                                };
 
-                                // Check if customer_portfolio exists for this project OR by contract number
-                                const { data: existingByProject } = await supabase
-                                  .from('customer_portfolio')
-                                  .select('id')
-                                  .eq('project_id', id)
-                                  .maybeSingle();
+                                const mensalidade = parseFloat(contratoInfo.mensalidade.replace(/[^\d.,]/g, '').replace(',', '.')) || 0;
+                                const taxaAtivacao = parseFloat(contratoInfo.taxa_instalacao.replace(/[^\d.,]/g, '').replace(',', '.')) || 0;
+                                const enderecoProjeto = project?.cliente_cidade && project?.cliente_estado
+                                  ? `${project.cliente_cidade}, ${project.cliente_estado}`
+                                  : null;
 
-                                const existingRecord = existingByProject;
+                                const { data, error } = await supabase.functions.invoke('merge-customer-portfolio', {
+                                  body: {
+                                    projectId: id,
+                                    contrato: contratoTrimmed,
+                                    alarme_codigo: contratoInfo.alarme_codigo.trim() || null,
+                                    mensalidade,
+                                    taxa_ativacao: taxaAtivacao,
+                                    data_termino: dataTermino.toISOString().split('T')[0],
+                                    filial: contratoInfo.filial || null,
+                                    razao_social: project?.cliente_condominio_nome || null,
+                                    endereco: enderecoProjeto,
+                                    status_implantacao: 'EM_IMPLANTACAO',
+                                  },
+                                });
 
-                                // If no record found by project_id, check by contract number
-                                if (!existingRecord) {
-                                  const { data: existingByContrato } = await supabase
-                                    .from('customer_portfolio')
-                                    .select('id')
-                                    .eq('contrato', contratoTrimmed)
-                                    .maybeSingle();
-                                  
-                                  if (existingByContrato) {
-                                    // Update existing record and link to this project
-                                    const { error: updateError } = await supabase
-                                      .from('customer_portfolio')
-                                      .update({ ...portfolioPayload, project_id: id, status_implantacao: 'EM_IMPLANTACAO' })
-                                      .eq('id', existingByContrato.id);
-                                    if (updateError) throw updateError;
-                                  } else {
-                                    // Create new customer_portfolio entry
-                                    const { error: insertError } = await supabase
-                                      .from('customer_portfolio')
-                                      .insert({
-                                        ...portfolioPayload,
-                                        project_id: id,
-                                        razao_social: project?.cliente_condominio_nome || '',
-                                        endereco: project?.cliente_cidade && project?.cliente_estado 
-                                          ? `${project.cliente_cidade}, ${project.cliente_estado}` 
-                                          : null,
-                                        status_implantacao: 'EM_IMPLANTACAO',
-                                      });
-                                    if (insertError) throw insertError;
+                                if (error) {
+                                  let message = error.message;
+                                  if (typeof error === 'object' && error && 'context' in error) {
+                                    const context = (error as { context?: Response }).context;
+                                    if (context) {
+                                      const body = await context.json().catch(() => null);
+                                      if (body?.error) message = body.error;
+                                    }
                                   }
-                                } else {
-                                  const { error: updateError } = await supabase
-                                    .from('customer_portfolio')
-                                    .update(portfolioPayload)
-                                    .eq('id', existingRecord.id);
-                                  if (updateError) throw updateError;
+                                  throw new Error(message);
+                                }
+
+                                if (data?.error) {
+                                  throw new Error(data.error);
                                 }
 
                                 toast({
@@ -1309,7 +1288,7 @@ export default function ImplantacaoExecucao() {
                                 console.error('Error saving contrato info:', error);
                                 toast({
                                   title: 'Erro',
-                                  description: 'Não foi possível salvar.',
+                                  description: error instanceof Error ? error.message : 'Não foi possível salvar.',
                                   variant: 'destructive',
                                 });
                               } finally {

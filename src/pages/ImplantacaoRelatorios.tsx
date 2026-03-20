@@ -403,7 +403,7 @@ export default function ImplantacaoRelatorios() {
                 <TableCell className="text-right text-green-600 font-medium">{r.ativacoes}</TableCell>
                 <TableCell className="text-right text-orange-500">{r.churnPrevisto}</TableCell>
                 <TableCell className="text-right text-destructive">{r.cancelamentos}</TableCell>
-                <TableCell className="text-right font-semibold">{r.saldo}</TableCell>
+                <TableCell className={`text-right font-semibold ${r.saldo < 0 ? 'text-destructive' : ''}`}>{r.saldo}</TableCell>
                 <TableCell className="text-right">{formatCurrency(r.receitaPrevista)}</TableCell>
                 <TableCell className="text-right">{formatCurrency(r.receitaAtivada)}</TableCell>
                 <TableCell className="text-right">{formatCurrency(r.vendaPrevista)}</TableCell>

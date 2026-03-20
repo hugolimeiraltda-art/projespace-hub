@@ -604,31 +604,35 @@ export default function ImplantacaoAnalytics() {
                           <TableRow>
                             <TableHead>Condomínio</TableHead>
                             <TableHead>Tipo</TableHead>
-                            <TableHead>Contrato</TableHead>
-                            <TableHead>Data</TableHead>
-                            <TableHead>Praça</TableHead>
-                            <TableHead className="text-right">Receita</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {m.contratos.map((c, j) => (
-                            <TableRow key={j}>
-                              <TableCell className="text-sm font-medium">{c.nome}</TableCell>
-                              <TableCell>
-                                <Badge variant="outline" className={`text-[10px] ${c.tipoObra === 'acrescimo' ? 'border-chart-4 text-chart-4' : ''}`}>
-                                  {c.tipoObra === 'acrescimo' ? 'Acréscimo' : 'Novo Contrato'}
-                                </Badge>
-                              </TableCell>
-                              <TableCell className="text-sm text-muted-foreground">{c.contrato}</TableCell>
-                              <TableCell className="text-sm text-muted-foreground">
-                                {c.dataAtivacao ? format(parseISO(c.dataAtivacao), 'dd/MM/yyyy') : '—'}
-                              </TableCell>
-                              <TableCell>
-                                <Badge variant="outline" className="text-[10px]">{c.praca}</Badge>
-                              </TableCell>
-                              <TableCell className="text-sm text-right font-medium">
-                                R$ {c.mensalidade.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                              </TableCell>
+                             <TableHead>Contrato</TableHead>
+                             <TableHead>Data</TableHead>
+                             <TableHead>Praça</TableHead>
+                             <TableHead className="text-right">Venda</TableHead>
+                             <TableHead className="text-right">Mensalidade</TableHead>
+                           </TableRow>
+                         </TableHeader>
+                         <TableBody>
+                           {m.contratos.map((c, j) => (
+                             <TableRow key={j}>
+                               <TableCell className="text-sm font-medium">{c.nome}</TableCell>
+                               <TableCell>
+                                 <Badge variant="outline" className={`text-[10px] ${c.tipoObra === 'acrescimo' ? 'border-chart-4 text-chart-4' : ''}`}>
+                                   {c.tipoObra === 'acrescimo' ? 'Acréscimo' : 'Novo Contrato'}
+                                 </Badge>
+                               </TableCell>
+                               <TableCell className="text-sm text-muted-foreground">{c.contrato}</TableCell>
+                               <TableCell className="text-sm text-muted-foreground">
+                                 {c.dataAtivacao ? format(parseISO(c.dataAtivacao), 'dd/MM/yyyy') : '—'}
+                               </TableCell>
+                               <TableCell>
+                                 <Badge variant="outline" className="text-[10px]">{c.praca}</Badge>
+                               </TableCell>
+                               <TableCell className="text-sm text-right font-medium">
+                                 R$ {c.taxaAtivacao.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                               </TableCell>
+                               <TableCell className="text-sm text-right font-medium">
+                                 R$ {c.mensalidade.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                               </TableCell>
                             </TableRow>
                           ))}
                         </TableBody>

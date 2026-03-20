@@ -34,6 +34,8 @@ import {
   Loader2,
   Trash2,
   ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -98,6 +100,7 @@ export default function StartupProjetos() {
   const [newObraTipo, setNewObraTipo] = useState<'nova' | 'acrescimo'>('nova');
   const [tipoObraFilter, setTipoObraFilter] = useState<'todas' | 'nova' | 'acrescimo'>('todas');
   const [sortField, setSortField] = useState<'created_at' | 'cliente_condominio_nome' | 'implantacao_started_at' | 'prazo_entrega_projeto'>('created_at');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const [creatingObra, setCreatingObra] = useState(false);
   const [vendedoresList, setVendedoresList] = useState<{ id: string; nome: string; email: string }[]>([]);
 
@@ -342,12 +345,15 @@ export default function StartupProjetos() {
     
     return matchesSearch && matchesStatus && matchesTipoObra;
   }).sort((a, b) => {
+    let result: number;
     if (sortField === 'cliente_condominio_nome') {
-      return a.cliente_condominio_nome.localeCompare(b.cliente_condominio_nome);
+      result = a.cliente_condominio_nome.localeCompare(b.cliente_condominio_nome);
+    } else {
+      const valA = a[sortField] || '';
+      const valB = b[sortField] || '';
+      result = valA.localeCompare(valB);
     }
-    const valA = a[sortField] || '';
-    const valB = b[sortField] || '';
-    return valB.localeCompare(valA); // descending for dates
+    return sortDirection === 'asc' ? result : -result;
   });
 
   const statusCounts = {
@@ -566,6 +572,19 @@ export default function StartupProjetos() {
                   <SelectItem value="cliente_condominio_nome">Nome (A-Z)</SelectItem>
                 </SelectContent>
               </Select>
+
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => setSortDirection(d => d === 'asc' ? 'desc' : 'asc')}
+                title={sortDirection === 'asc' ? 'Crescente' : 'Decrescente'}
+              >
+                {sortDirection === 'asc' ? (
+                  <ArrowUp className="w-4 h-4" />
+                ) : (
+                  <ArrowDown className="w-4 h-4" />
+                )}
+              </Button>
             </div>
 
             {/* Projects List */}

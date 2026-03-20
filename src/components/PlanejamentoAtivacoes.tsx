@@ -172,7 +172,7 @@ export function PlanejamentoAtivacoes({ onUpdate }: Props) {
               </Select>
             </div>
           </div>
-          <div className="grid grid-cols-4 gap-3">
+          <div className="grid grid-cols-5 gap-3">
             <div>
               <Label>Qtd Ativações</Label>
               <Input value={qtd} onChange={e => setQtd(e.target.value.replace(/[^0-9,]/g, ''))} placeholder="0" />
@@ -184,6 +184,10 @@ export function PlanejamentoAtivacoes({ onUpdate }: Props) {
             <div>
               <Label>Ticket Médio (R$)</Label>
               <Input value={ticketMedio} onChange={e => setTicketMedio(e.target.value)} placeholder="0,00" />
+            </div>
+            <div>
+              <Label>Valor Venda (R$)</Label>
+              <Input value={valorVenda} onChange={e => setValorVenda(e.target.value)} placeholder="0,00" />
             </div>
             <div>
               <Label>Valor Total (R$)</Label>

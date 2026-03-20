@@ -481,6 +481,18 @@ export default function ImplantacaoAnalytics() {
                       </div>
                     </div>
 
+                    {/* Tipo de Obra breakdown */}
+                    {m.count > 0 && (
+                      <div className="flex gap-2 text-[10px]">
+                        <span className="bg-primary/10 text-primary px-1.5 py-0.5 rounded font-medium">
+                          {m.contratos.filter(c => c.tipoObra === 'nova').length} Nova{m.contratos.filter(c => c.tipoObra === 'nova').length !== 1 ? 's' : ''}
+                        </span>
+                        <span className="bg-chart-4/10 text-chart-4 px-1.5 py-0.5 rounded font-medium">
+                          {m.contratos.filter(c => c.tipoObra === 'acrescimo').length} Acrésc.
+                        </span>
+                      </div>
+                    )}
+
                     {/* Receita: Prevista vs Realizada */}
                     <div className="border-t border-border/50 pt-1.5 space-y-1">
                       <div className="flex items-center justify-between text-[10px] text-muted-foreground">

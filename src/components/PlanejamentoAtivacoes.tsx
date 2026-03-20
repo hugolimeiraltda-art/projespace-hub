@@ -178,8 +178,8 @@ export function PlanejamentoAtivacoes({ onUpdate }: Props) {
               <Input
                 value={
                   qtd && ticketMedio
-                    ? (Number(qtd) * Number(ticketMedio.replace(/\./g, '').replace(',', '.'))).toLocaleString('pt-BR', { minimumFractionDigits: 2 })
-                    : '0,00'
+                    ? `R$ ${(Math.round(parseNumber(qtd)) * parseNumber(ticketMedio)).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
+                    : 'R$ 0,00'
                 }
                 readOnly
                 className="bg-muted cursor-not-allowed"

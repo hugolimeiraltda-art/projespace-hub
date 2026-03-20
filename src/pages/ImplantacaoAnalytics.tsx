@@ -23,6 +23,7 @@ interface ProjectData {
   implantacao_completed_at: string | null;
   prazo_entrega_projeto: string | null;
   created_at: string;
+  tipo_obra: string;
 }
 
 interface PortfolioData {
@@ -50,6 +51,7 @@ interface ContratoDetalhe {
   mensalidade: number;
   dataAtivacao: string | null;
   praca: string;
+  tipoObra: string;
 }
 
 interface PlanData {
@@ -99,7 +101,7 @@ export default function ImplantacaoAnalytics() {
       const [projectsRes, portfolioRes, allPortfolioRes, cancelamentosRes] = await Promise.all([
         supabase
           .from('projects')
-          .select('id, numero_projeto, cliente_condominio_nome, implantacao_status, implantacao_started_at, implantacao_completed_at, prazo_entrega_projeto, created_at')
+          .select('id, numero_projeto, cliente_condominio_nome, implantacao_status, implantacao_started_at, implantacao_completed_at, prazo_entrega_projeto, created_at, tipo_obra')
           .eq('sale_status', 'CONCLUIDO')
           .order('created_at', { ascending: false }),
         supabase
@@ -275,6 +277,7 @@ export default function ImplantacaoAnalytics() {
             mensalidade: Number(port.mensalidade) || 0,
             dataAtivacao: port.data_ativacao || p.prazo_entrega_projeto || null,
             praca: getPraca(port.filial, port.praca),
+            tipoObra: p.tipo_obra || 'nova',
           });
         }
       });
@@ -478,6 +481,18 @@ export default function ImplantacaoAnalytics() {
                       </div>
                     </div>
 
+                    {/* Tipo de Obra breakdown */}
+                    {m.count > 0 && (
+                      <div className="flex gap-2 text-[10px]">
+                        <span className="bg-primary/10 text-primary px-1.5 py-0.5 rounded font-medium">
+                          {m.contratos.filter(c => c.tipoObra === 'nova').length} Nova{m.contratos.filter(c => c.tipoObra === 'nova').length !== 1 ? 's' : ''}
+                        </span>
+                        <span className="bg-chart-4/10 text-chart-4 px-1.5 py-0.5 rounded font-medium">
+                          {m.contratos.filter(c => c.tipoObra === 'acrescimo').length} Acrésc.
+                        </span>
+                      </div>
+                    )}
+
                     {/* Receita: Prevista vs Realizada */}
                     <div className="border-t border-border/50 pt-1.5 space-y-1">
                       <div className="flex items-center justify-between text-[10px] text-muted-foreground">
@@ -578,6 +593,7 @@ export default function ImplantacaoAnalytics() {
                         <TableHeader>
                           <TableRow>
                             <TableHead>Condomínio</TableHead>
+                            <TableHead>Tipo</TableHead>
                             <TableHead>Contrato</TableHead>
                             <TableHead>Data</TableHead>
                             <TableHead>Praça</TableHead>
@@ -588,6 +604,11 @@ export default function ImplantacaoAnalytics() {
                           {m.contratos.map((c, j) => (
                             <TableRow key={j}>
                               <TableCell className="text-sm font-medium">{c.nome}</TableCell>
+                              <TableCell>
+                                <Badge variant="outline" className={`text-[10px] ${c.tipoObra === 'acrescimo' ? 'border-chart-4 text-chart-4' : ''}`}>
+                                  {c.tipoObra === 'acrescimo' ? 'Acréscimo' : 'Novo Contrato'}
+                                </Badge>
+                              </TableCell>
                               <TableCell className="text-sm text-muted-foreground">{c.contrato}</TableCell>
                               <TableCell className="text-sm text-muted-foreground">
                                 {c.dataAtivacao ? format(parseISO(c.dataAtivacao), 'dd/MM/yyyy') : '—'}

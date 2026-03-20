@@ -553,6 +553,19 @@ export default function StartupProjetos() {
                   </Button>
                 ))}
               </div>
+
+              <Select value={sortField} onValueChange={(v) => setSortField(v as typeof sortField)}>
+                <SelectTrigger className="w-full sm:w-[220px]">
+                  <ArrowUpDown className="w-4 h-4 mr-2" />
+                  <SelectValue placeholder="Ordenar por" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="created_at">Data de Entrada</SelectItem>
+                  <SelectItem value="implantacao_started_at">Data de Início</SelectItem>
+                  <SelectItem value="prazo_entrega_projeto">Previsão Ativação</SelectItem>
+                  <SelectItem value="cliente_condominio_nome">Nome (A-Z)</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             {/* Projects List */}

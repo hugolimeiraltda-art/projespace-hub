@@ -34,11 +34,8 @@ const getPraca = (filial?: string | null, praca?: string | null): string => {
 const formatCurrency = (v: number) =>
   new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
 
-const PERIOD_OPTIONS = [
-  { value: '3m', label: 'Últimos 3 meses' },
-  { value: '6m', label: 'Últimos 6 meses' },
-  { value: '12m', label: 'Último ano' },
-];
+
+
 
 type ReportType = 'resumo_mensal' | 'por_praca' | 'historico' | 'indicadores';
 

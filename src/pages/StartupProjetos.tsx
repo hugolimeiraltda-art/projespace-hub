@@ -527,6 +527,23 @@ export default function StartupProjetos() {
                   <SelectItem value="EM_EXECUCAO">Em Execução</SelectItem>
                 </SelectContent>
               </Select>
+
+              <div className="flex gap-2">
+                {[
+                  { value: 'todas' as const, label: 'Todas' },
+                  { value: 'nova' as const, label: 'Obras Novas' },
+                  { value: 'acrescimo' as const, label: 'Acréscimos' },
+                ].map((tab) => (
+                  <Button
+                    key={tab.value}
+                    variant={tipoObraFilter === tab.value ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setTipoObraFilter(tab.value)}
+                  >
+                    {tab.label}
+                  </Button>
+                ))}
+              </div>
             </div>
 
             {/* Projects List */}

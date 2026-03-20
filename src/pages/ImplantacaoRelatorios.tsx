@@ -121,6 +121,13 @@ export default function ImplantacaoRelatorios() {
   }, [cancelamentos, dataInicio, dataFim]);
 
   // ========== RESUMO MENSAL ==========
+  // Build a map from project_id -> project for fallback date logic
+  const projectMap = useMemo(() => {
+    const map: Record<string, any> = {};
+    projects.forEach(p => { map[p.id] = p; });
+    return map;
+  }, [projects]);
+
   const resumoMensal = useMemo(() => {
     return periodMonths.map(month => {
       const ms = startOfMonth(month);
@@ -128,9 +135,12 @@ export default function ImplantacaoRelatorios() {
       const mesNum = month.getMonth() + 1;
       const anoNum = month.getFullYear();
 
+      // Use data_ativacao, falling back to prazo_entrega_projeto (same logic as Analytics)
       const ativacoes = filteredPortfolio.filter(p => {
-        if (!p.data_ativacao) return false;
-        const d = parseISO(p.data_ativacao);
+        const proj = p.project_id ? projectMap[p.project_id] : null;
+        const dateStr = p.data_ativacao || proj?.prazo_entrega_projeto;
+        if (!dateStr) return false;
+        const d = parseISO(dateStr);
         return isWithinInterval(d, { start: ms, end: me });
       });
 
@@ -154,7 +164,7 @@ export default function ImplantacaoRelatorios() {
         ativacoes: ativacoes.length,
         cancelamentos: canc.length,
         churnPrevisto: churnPrev,
-        saldo: ativacoes.length - previsto,
+        saldo: Math.round((ativacoes.length - previsto) * 100) / 100,
         receitaAtivada,
         vendaAtivada,
         receitaCancelada,
@@ -165,7 +175,7 @@ export default function ImplantacaoRelatorios() {
         atingimento: previsto > 0 ? Math.round((ativacoes.length / previsto) * 100) : (ativacoes.length > 0 ? 100 : 0),
       };
     });
-  }, [periodMonths, filteredPortfolio, cancelamentos, plans, selectedPraca]);
+  }, [periodMonths, filteredPortfolio, cancelamentos, plans, selectedPraca, projectMap]);
 
   // ========== POR PRAÇA ==========
   const relatorioPraca = useMemo(() => {
@@ -176,8 +186,10 @@ export default function ImplantacaoRelatorios() {
       const projPraca = projects.filter(p => getPraca(p.filial) === praca);
       const portPraca = portfolio.filter(p => getPraca(p.filial, p.praca) === praca);
       const ativadosNoPeriodo = portPraca.filter(p => {
-        if (!p.data_ativacao) return false;
-        const d = parseISO(p.data_ativacao);
+        const proj = p.project_id ? projectMap[p.project_id] : null;
+        const dateStr = p.data_ativacao || proj?.prazo_entrega_projeto;
+        if (!dateStr) return false;
+        const d = parseISO(dateStr);
         return isWithinInterval(d, { start: startOfMonth(start), end: endOfMonth(end) });
       });
       const receitaTotal = ativadosNoPeriodo.reduce((s, p) => s + (p.mensalidade || 0), 0);

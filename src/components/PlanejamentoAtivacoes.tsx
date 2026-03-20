@@ -14,6 +14,7 @@ interface PlanData {
   mes: number;
   ano: number;
   qtd_contratos: number;
+  qtd_churn: number;
   valor_total: number;
   praca: string;
   ticket_medio: number;

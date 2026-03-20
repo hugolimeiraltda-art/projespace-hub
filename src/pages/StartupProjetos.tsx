@@ -341,6 +341,13 @@ export default function StartupProjetos() {
     const matchesTipoObra = tipoObraFilter === 'todas' || project.tipo_obra === tipoObraFilter;
     
     return matchesSearch && matchesStatus && matchesTipoObra;
+  }).sort((a, b) => {
+    if (sortField === 'cliente_condominio_nome') {
+      return a.cliente_condominio_nome.localeCompare(b.cliente_condominio_nome);
+    }
+    const valA = a[sortField] || '';
+    const valB = b[sortField] || '';
+    return valB.localeCompare(valA); // descending for dates
   });
 
   const statusCounts = {

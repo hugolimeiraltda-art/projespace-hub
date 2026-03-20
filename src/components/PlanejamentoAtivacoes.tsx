@@ -65,8 +65,8 @@ export function PlanejamentoAtivacoes({ onUpdate }: Props) {
       return;
     }
     const ticketNum = parseNumber(ticketMedio);
-    const qtdInt = Math.round(parseNumber(qtd));
-    const valorTotal = qtdInt * ticketNum;
+    const qtdNum = parseNumber(qtd);
+    const valorTotal = qtdNum * ticketNum;
     setSaving(true);
     const { data: userData } = await supabase.auth.getUser();
     const { data: profile } = await supabase

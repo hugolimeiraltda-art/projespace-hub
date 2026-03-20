@@ -154,7 +154,7 @@ export function PlanejamentoAtivacoes({ onUpdate }: Props) {
               </Select>
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-3 gap-3">
             <div>
               <Label>Qtd Contratos</Label>
               <Input type="number" min="0" value={qtd} onChange={e => setQtd(e.target.value)} placeholder="0" />
@@ -162,6 +162,10 @@ export function PlanejamentoAtivacoes({ onUpdate }: Props) {
             <div>
               <Label>Valor Total (R$)</Label>
               <Input value={valor} onChange={e => setValor(e.target.value)} placeholder="0,00" />
+            </div>
+            <div>
+              <Label>Ticket Médio (R$)</Label>
+              <Input value={ticketMedio} onChange={e => setTicketMedio(e.target.value)} placeholder="0,00" />
             </div>
           </div>
           <Button onClick={handleAdd} disabled={saving} className="w-full gap-2">

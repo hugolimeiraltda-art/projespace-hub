@@ -1071,6 +1071,7 @@ export type Database = {
           created_by_name: string | null
           id: string
           mes: number
+          praca: string | null
           qtd_contratos: number
           updated_at: string
           valor_total: number
@@ -1082,6 +1083,7 @@ export type Database = {
           created_by_name?: string | null
           id?: string
           mes: number
+          praca?: string | null
           qtd_contratos?: number
           updated_at?: string
           valor_total?: number
@@ -1093,6 +1095,7 @@ export type Database = {
           created_by_name?: string | null
           id?: string
           mes?: number
+          praca?: string | null
           qtd_contratos?: number
           updated_at?: string
           valor_total?: number

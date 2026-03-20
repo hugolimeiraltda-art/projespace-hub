@@ -758,7 +758,7 @@ export default function CarteiraClientes() {
                 <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
               </div>
             ) : (
-              <CarteiraClientesTable customers={customers} />
+              <CarteiraClientesTable customers={customers} onDelete={fetchCustomers} />
             )}
           </CardContent>
         </Card>

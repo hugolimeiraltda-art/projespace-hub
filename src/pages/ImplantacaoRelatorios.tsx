@@ -11,7 +11,7 @@ import {
   ArrowLeft, FileText, FileSpreadsheet, Download, Calendar, Building,
   TrendingUp, BarChart3, MapPin, Clock,
 } from 'lucide-react';
-import { format, parseISO, differenceInDays, startOfMonth, endOfMonth, eachMonthOfInterval, isWithinInterval, subMonths } from 'date-fns';
+import { format, parseISO, differenceInDays, differenceInMonths, startOfMonth, endOfMonth, eachMonthOfInterval, isWithinInterval, subMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';

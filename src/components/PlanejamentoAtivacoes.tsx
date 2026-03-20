@@ -55,10 +55,12 @@ export function PlanejamentoAtivacoes({ onUpdate }: Props) {
   };
 
   const handleAdd = async () => {
-    if (!qtd || !valor) {
-      toast.error('Preencha quantidade e valor');
+    if (!qtd || !ticketMedio) {
+      toast.error('Preencha quantidade e ticket médio');
       return;
     }
+    const ticketNum = Number(ticketMedio.replace(/\./g, '').replace(',', '.'));
+    const valorTotal = Number(qtd) * ticketNum;
     setSaving(true);
     const { data: userData } = await supabase.auth.getUser();
     const { data: profile } = await supabase

@@ -54,13 +54,19 @@ export function PlanejamentoAtivacoes({ onUpdate }: Props) {
     if (data) setPlans(data as PlanData[]);
   };
 
+  const parseNumber = (val: string) => {
+    const cleaned = val.replace(/[R$\s]/g, '').replace(/\./g, '').replace(',', '.');
+    return Number(cleaned) || 0;
+  };
+
   const handleAdd = async () => {
     if (!qtd || !ticketMedio) {
       toast.error('Preencha quantidade e ticket médio');
       return;
     }
-    const ticketNum = Number(ticketMedio.replace(/\./g, '').replace(',', '.'));
-    const valorTotal = Number(qtd) * ticketNum;
+    const ticketNum = parseNumber(ticketMedio);
+    const qtdInt = Math.round(parseNumber(qtd));
+    const valorTotal = qtdInt * ticketNum;
     setSaving(true);
     const { data: userData } = await supabase.auth.getUser();
     const { data: profile } = await supabase

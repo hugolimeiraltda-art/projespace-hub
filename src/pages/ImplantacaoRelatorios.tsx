@@ -165,13 +165,19 @@ export default function ImplantacaoRelatorios() {
 
   // ========== POR PRAÇA ==========
   const relatorioPraca = useMemo(() => {
-    const pracas = ['BHZ', 'RJ', 'VIX', 'SPO'];
+    const pracas = selectedPraca === 'TODOS' ? ['BHZ', 'RJ', 'VIX', 'SPO'] : [selectedPraca];
+    const start = parseISO(dataInicio);
+    const end = parseISO(dataFim);
     return pracas.map(praca => {
       const projPraca = projects.filter(p => getPraca(p.filial) === praca);
       const portPraca = portfolio.filter(p => getPraca(p.filial, p.praca) === praca);
-      const ativados = portPraca.filter(p => p.data_ativacao);
-      const receitaTotal = portPraca.reduce((s, p) => s + (p.mensalidade || 0), 0);
-      const taxaTotal = portPraca.reduce((s, p) => s + (p.taxa_ativacao || 0), 0);
+      const ativadosNoPeriodo = portPraca.filter(p => {
+        if (!p.data_ativacao) return false;
+        const d = parseISO(p.data_ativacao);
+        return isWithinInterval(d, { start: startOfMonth(start), end: endOfMonth(end) });
+      });
+      const receitaTotal = ativadosNoPeriodo.reduce((s, p) => s + (p.mensalidade || 0), 0);
+      const taxaTotal = ativadosNoPeriodo.reduce((s, p) => s + (p.taxa_ativacao || 0), 0);
       const emAndamento = projPraca.filter(p => p.implantacao_status === 'EM_EXECUCAO').length;
       const concluidos = projPraca.filter(p => p.implantacao_status === 'CONCLUIDO').length;
 
@@ -180,40 +186,47 @@ export default function ImplantacaoRelatorios() {
         totalProjetos: projPraca.length,
         emAndamento,
         concluidos,
-        clientesAtivos: ativados.length,
+        clientesAtivos: ativadosNoPeriodo.length,
         receitaMensal: receitaTotal,
         taxaAtivacao: taxaTotal,
       };
     });
-  }, [projects, portfolio]);
+  }, [projects, portfolio, selectedPraca, dataInicio, dataFim]);
 
   // ========== HISTÓRICO ==========
   const historicoProjetos = useMemo(() => {
-    return projects.map(p => {
-      const port = portfolio.find(pt => pt.project_id === p.id);
-      const dias = p.implantacao_started_at && p.implantacao_completed_at
-        ? differenceInDays(parseISO(p.implantacao_completed_at), parseISO(p.implantacao_started_at))
-        : null;
-      return {
-        projeto: p.numero_projeto,
-        cliente: p.cliente_condominio_nome,
-        status: p.implantacao_status || '—',
-        tipoObra: p.tipo_obra || '—',
-        praca: getPraca(p.filial),
-        dataEntrada: p.created_at ? format(parseISO(p.created_at), 'dd/MM/yyyy') : '—',
-        inicioObra: p.implantacao_started_at ? format(parseISO(p.implantacao_started_at), 'dd/MM/yyyy') : '—',
-        conclusao: p.implantacao_completed_at ? format(parseISO(p.implantacao_completed_at), 'dd/MM/yyyy') : '—',
-        diasObra: dias,
-        mensalidade: port?.mensalidade || 0,
-        taxaAtivacao: port?.taxa_ativacao || 0,
-      };
-    });
-  }, [projects, portfolio]);
+    const start = parseISO(dataInicio);
+    const end = parseISO(dataFim);
+    return filteredProjects
+      .filter(p => {
+        const d = parseISO(p.created_at);
+        return isWithinInterval(d, { start: startOfMonth(start), end: endOfMonth(end) });
+      })
+      .map(p => {
+        const port = portfolio.find(pt => pt.project_id === p.id);
+        const dias = p.implantacao_started_at && p.implantacao_completed_at
+          ? differenceInDays(parseISO(p.implantacao_completed_at), parseISO(p.implantacao_started_at))
+          : null;
+        return {
+          projeto: p.numero_projeto,
+          cliente: p.cliente_condominio_nome,
+          status: p.implantacao_status || '—',
+          tipoObra: p.tipo_obra || '—',
+          praca: getPraca(p.filial),
+          dataEntrada: p.created_at ? format(parseISO(p.created_at), 'dd/MM/yyyy') : '—',
+          inicioObra: p.implantacao_started_at ? format(parseISO(p.implantacao_started_at), 'dd/MM/yyyy') : '—',
+          conclusao: p.implantacao_completed_at ? format(parseISO(p.implantacao_completed_at), 'dd/MM/yyyy') : '—',
+          diasObra: dias,
+          mensalidade: port?.mensalidade || 0,
+          taxaAtivacao: port?.taxa_ativacao || 0,
+        };
+      });
+  }, [filteredProjects, portfolio, dataInicio, dataFim]);
 
   // ========== INDICADORES ==========
   const indicadores = useMemo(() => {
-    const concluidos = projects.filter(p => p.implantacao_status === 'CONCLUIDO');
-    const emExecucao = projects.filter(p => p.implantacao_status === 'EM_EXECUCAO');
+    const concluidos = filteredProjects.filter(p => p.implantacao_status === 'CONCLUIDO');
+    const emExecucao = filteredProjects.filter(p => p.implantacao_status === 'EM_EXECUCAO');
     const dias = concluidos
       .map(p => p.implantacao_started_at && p.implantacao_completed_at
         ? differenceInDays(parseISO(p.implantacao_completed_at), parseISO(p.implantacao_started_at))
@@ -223,7 +236,7 @@ export default function ImplantacaoRelatorios() {
     const tempoMedio = dias.length ? Math.round(dias.reduce((a, b) => a + b, 0) / dias.length) : 0;
     const tempoMin = dias.length ? Math.min(...dias) : 0;
     const tempoMax = dias.length ? Math.max(...dias) : 0;
-    const taxaConclusao = projects.length ? Math.round((concluidos.length / projects.length) * 100) : 0;
+    const taxaConclusao = filteredProjects.length ? Math.round((concluidos.length / filteredProjects.length) * 100) : 0;
 
     const dentroSLA = concluidos.filter(p => {
       if (!p.prazo_entrega_projeto || !p.implantacao_completed_at) return false;
@@ -231,11 +244,11 @@ export default function ImplantacaoRelatorios() {
     }).length;
     const slaRate = concluidos.length ? Math.round((dentroSLA / concluidos.length) * 100) : 0;
 
-    const receitaTotal = portfolio.reduce((s, p) => s + (p.mensalidade || 0), 0);
-    const taxaTotal = portfolio.reduce((s, p) => s + (p.taxa_ativacao || 0), 0);
+    const receitaTotal = filteredPortfolio.reduce((s, p) => s + (p.mensalidade || 0), 0);
+    const taxaTotal = filteredPortfolio.reduce((s, p) => s + (p.taxa_ativacao || 0), 0);
 
     return {
-      totalProjetos: projects.length,
+      totalProjetos: filteredProjects.length,
       concluidos: concluidos.length,
       emExecucao: emExecucao.length,
       tempoMedio, tempoMin, tempoMax,
@@ -243,7 +256,7 @@ export default function ImplantacaoRelatorios() {
       slaRate, dentroSLA,
       receitaTotal, taxaTotal,
     };
-  }, [projects, portfolio]);
+  }, [filteredProjects, filteredPortfolio]);
 
   // ========== EXPORT FUNCTIONS ==========
   const exportPDF = () => {

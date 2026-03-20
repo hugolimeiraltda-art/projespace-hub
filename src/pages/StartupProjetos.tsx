@@ -149,6 +149,7 @@ export default function StartupProjetos() {
           status: 'APROVADO_PROJETO',
           sale_status: 'CONCLUIDO',
           implantacao_status: 'A_EXECUTAR',
+          tipo_obra: newObraTipo,
         })
         .select('id')
         .single();

@@ -520,22 +520,30 @@ export default function ImplantacaoRelatorios() {
           })}
         </div>
 
-        {/* Period filter (for resumo mensal) */}
-        {selectedReport === 'resumo_mensal' && (
-          <div className="flex items-center gap-3">
-            <span className="text-sm text-muted-foreground">Período:</span>
-            <Select value={period} onValueChange={setPeriod}>
-              <SelectTrigger className="w-48">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {PERIOD_OPTIONS.map(o => (
-                  <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+        {/* Period filter */}
+        <div className="flex items-center gap-4 flex-wrap">
+          <div className="flex items-center gap-2">
+            <Label className="text-sm text-muted-foreground whitespace-nowrap">De:</Label>
+            <Input
+              type="date"
+              value={dataInicio}
+              onChange={e => setDataInicio(e.target.value)}
+              className="w-44"
+            />
           </div>
-        )}
+          <div className="flex items-center gap-2">
+            <Label className="text-sm text-muted-foreground whitespace-nowrap">Até:</Label>
+            <Input
+              type="date"
+              value={dataFim}
+              onChange={e => setDataFim(e.target.value)}
+              className="w-44"
+            />
+          </div>
+          {periodoErro && (
+            <span className="text-sm text-destructive font-medium">{periodoErro}</span>
+          )}
+        </div>
 
         {/* Data table */}
         <Card>

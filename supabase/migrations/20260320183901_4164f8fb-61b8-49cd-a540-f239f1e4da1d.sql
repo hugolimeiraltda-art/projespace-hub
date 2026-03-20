@@ -1,0 +1,1 @@
+UPDATE customer_portfolio SET data_ativacao = NULL WHERE contrato = 'SP91' AND status_implantacao = 'EM_IMPLANTACAO';

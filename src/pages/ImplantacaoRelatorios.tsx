@@ -68,7 +68,7 @@ export default function ImplantacaoRelatorios() {
     setLoading(true);
     const [projRes, portRes, cancRes, planRes] = await Promise.all([
       supabase.from('projects').select('id, numero_projeto, cliente_condominio_nome, implantacao_status, implantacao_started_at, implantacao_completed_at, prazo_entrega_projeto, created_at, tipo_obra').eq('sale_status', 'CONCLUIDO'),
-      supabase.from('customer_portfolio').select('project_id, mensalidade, taxa_ativacao, data_ativacao, contrato, razao_social, filial, praca'),
+      supabase.from('customer_portfolio').select('project_id, mensalidade, taxa_ativacao, data_ativacao, contrato, razao_social, filial, praca, status_implantacao'),
       supabase.from('customer_cancelamentos').select('id, data_cancelamento, valor_contrato, motivo, customer_id'),
       supabase.from('implantacao_planejamento_ativacoes').select('*'),
     ]);
@@ -139,6 +139,19 @@ export default function ImplantacaoRelatorios() {
     return map;
   }, [projects]);
 
+  // Helper: get the effective activation date for a portfolio record.
+  // Only use data_ativacao when the project is CONCLUIDO (actually activated).
+  // For projects still in progress, use prazo_entrega_projeto as projected date.
+  const getEffectiveDate = (portRecord: any): string | null => {
+    const proj = portRecord.project_id ? projectMap[portRecord.project_id] : null;
+    const isCompleted = proj?.implantacao_status === 'CONCLUIDO' || portRecord.status_implantacao === 'ATIVO';
+    if (isCompleted && portRecord.data_ativacao) {
+      return portRecord.data_ativacao;
+    }
+    // Fallback to prazo_entrega_projeto for non-completed projects
+    return proj?.prazo_entrega_projeto || portRecord.data_ativacao || null;
+  };
+
   const resumoMensal = useMemo(() => {
     return periodMonths.map(month => {
       const ms = startOfMonth(month);
@@ -146,10 +159,9 @@ export default function ImplantacaoRelatorios() {
       const mesNum = month.getMonth() + 1;
       const anoNum = month.getFullYear();
 
-      // Use data_ativacao, falling back to prazo_entrega_projeto (same logic as Analytics)
+      // Use getEffectiveDate: only data_ativacao for completed, prazo_entrega_projeto otherwise
       const ativacoes = filteredPortfolio.filter(p => {
-        const proj = p.project_id ? projectMap[p.project_id] : null;
-        const dateStr = p.data_ativacao || proj?.prazo_entrega_projeto;
+        const dateStr = getEffectiveDate(p);
         if (!dateStr) return false;
         const d = parseISO(dateStr);
         return isWithinInterval(d, { start: ms, end: me });
@@ -200,8 +212,7 @@ export default function ImplantacaoRelatorios() {
       });
       const portPraca = portfolio.filter(p => getPraca(p.filial, p.praca) === praca);
       const ativadosNoPeriodo = portPraca.filter(p => {
-        const proj = p.project_id ? projectMap[p.project_id] : null;
-        const dateStr = p.data_ativacao || proj?.prazo_entrega_projeto;
+        const dateStr = getEffectiveDate(p);
         if (!dateStr) return false;
         const d = parseISO(dateStr);
         return isWithinInterval(d, { start: startOfMonth(start), end: endOfMonth(end) });

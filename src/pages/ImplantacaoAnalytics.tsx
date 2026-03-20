@@ -37,6 +37,7 @@ interface PortfolioData {
   razao_social: string;
   filial: string | null;
   praca: string | null;
+  status_implantacao: string | null;
 }
 
 interface CancelamentoData {
@@ -110,11 +111,11 @@ export default function ImplantacaoAnalytics() {
           .order('created_at', { ascending: false }),
         supabase
           .from('customer_portfolio')
-          .select('project_id, mensalidade, taxa_ativacao, data_ativacao, contrato, razao_social, filial, praca')
+          .select('project_id, mensalidade, taxa_ativacao, data_ativacao, contrato, razao_social, filial, praca, status_implantacao')
           .not('project_id', 'is', null),
         supabase
           .from('customer_portfolio')
-          .select('project_id, mensalidade, taxa_ativacao, data_ativacao, contrato, razao_social, filial, praca'),
+          .select('project_id, mensalidade, taxa_ativacao, data_ativacao, contrato, razao_social, filial, praca, status_implantacao'),
         supabase
           .from('customer_cancelamentos')
           .select('id, data_cancelamento, valor_contrato, motivo, customer_id'),
@@ -263,11 +264,13 @@ export default function ImplantacaoAnalytics() {
         const port = portfolioMap[p.id];
         if (!port) return;
 
-        const activationDate = port.data_ativacao
+        // Only use data_ativacao for completed projects; otherwise use prazo_entrega_projeto
+        const isCompleted = p.implantacao_status === 'CONCLUIDO' || port.status_implantacao === 'ATIVO';
+        const activationDate = (isCompleted && port.data_ativacao)
           ? parseISO(port.data_ativacao)
           : p.prazo_entrega_projeto
             ? parseISO(p.prazo_entrega_projeto)
-            : null;
+            : (port.data_ativacao ? parseISO(port.data_ativacao) : null);
 
         if (!activationDate) return;
 

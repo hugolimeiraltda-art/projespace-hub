@@ -110,7 +110,20 @@ export default function StartupProjetos() {
   useEffect(() => {
     fetchProjects();
     fetchVendedores();
+    fetchCustomers();
   }, [activeTab]);
+
+  const fetchCustomers = async () => {
+    try {
+      const { data } = await supabase
+        .from('customer_portfolio')
+        .select('id, razao_social, contrato, endereco, filial')
+        .order('razao_social');
+      if (data) setCustomersList(data);
+    } catch (e) {
+      console.error('Error fetching customers:', e);
+    }
+  };
 
   const fetchVendedores = async () => {
     try {

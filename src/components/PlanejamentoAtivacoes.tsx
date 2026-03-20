@@ -37,7 +37,7 @@ export function PlanejamentoAtivacoes({ onUpdate }: Props) {
   const [ano, setAno] = useState(String(new Date().getFullYear()));
   const [praca, setPraca] = useState('GERAL');
   const [qtd, setQtd] = useState('');
-  const [valor, setValor] = useState('');
+  
   const [ticketMedio, setTicketMedio] = useState('');
   const [saving, setSaving] = useState(false);
 
@@ -55,10 +55,12 @@ export function PlanejamentoAtivacoes({ onUpdate }: Props) {
   };
 
   const handleAdd = async () => {
-    if (!qtd || !valor) {
-      toast.error('Preencha quantidade e valor');
+    if (!qtd || !ticketMedio) {
+      toast.error('Preencha quantidade e ticket médio');
       return;
     }
+    const ticketNum = Number(ticketMedio.replace(/\./g, '').replace(',', '.'));
+    const valorTotal = Number(qtd) * ticketNum;
     setSaving(true);
     const { data: userData } = await supabase.auth.getUser();
     const { data: profile } = await supabase
@@ -74,8 +76,8 @@ export function PlanejamentoAtivacoes({ onUpdate }: Props) {
         ano: Number(ano),
         praca,
         qtd_contratos: Number(qtd),
-        valor_total: Number(valor.replace(/\./g, '').replace(',', '.')),
-        ticket_medio: Number((ticketMedio || '0').replace(/\./g, '').replace(',', '.')),
+        valor_total: valorTotal,
+        ticket_medio: ticketNum,
         created_by: userData.user?.id,
         created_by_name: profile?.nome || '',
         updated_at: new Date().toISOString(),
@@ -86,7 +88,7 @@ export function PlanejamentoAtivacoes({ onUpdate }: Props) {
     } else {
       toast.success('Planejamento salvo');
       setQtd('');
-      setValor('');
+      
       setTicketMedio('');
       fetchPlans();
       onUpdate();
@@ -162,12 +164,21 @@ export function PlanejamentoAtivacoes({ onUpdate }: Props) {
               <Input type="number" min="0" value={qtd} onChange={e => setQtd(e.target.value)} placeholder="0" />
             </div>
             <div>
-              <Label>Valor Total (R$)</Label>
-              <Input value={valor} onChange={e => setValor(e.target.value)} placeholder="0,00" />
-            </div>
-            <div>
               <Label>Ticket Médio (R$)</Label>
               <Input value={ticketMedio} onChange={e => setTicketMedio(e.target.value)} placeholder="0,00" />
+            </div>
+            <div>
+              <Label>Valor Total (R$)</Label>
+              <Input
+                value={
+                  qtd && ticketMedio
+                    ? (Number(qtd) * Number(ticketMedio.replace(/\./g, '').replace(',', '.'))).toLocaleString('pt-BR', { minimumFractionDigits: 2 })
+                    : '0,00'
+                }
+                readOnly
+                className="bg-muted cursor-not-allowed"
+                placeholder="0,00"
+              />
             </div>
           </div>
           <Button onClick={handleAdd} disabled={saving} className="w-full gap-2">
@@ -177,13 +188,13 @@ export function PlanejamentoAtivacoes({ onUpdate }: Props) {
           {plans.length > 0 && (
             <div className="border rounded-lg overflow-hidden">
               <Table>
-                <TableHeader>
+                 <TableHeader>
                   <TableRow>
                     <TableHead>Mês/Ano</TableHead>
                     <TableHead>Praça</TableHead>
                     <TableHead className="text-right">Contratos</TableHead>
-                    <TableHead className="text-right">Valor</TableHead>
                     <TableHead className="text-right">Ticket Médio</TableHead>
+                    <TableHead className="text-right">Valor Total</TableHead>
                     <TableHead className="w-10" />
                   </TableRow>
                 </TableHeader>
@@ -193,8 +204,8 @@ export function PlanejamentoAtivacoes({ onUpdate }: Props) {
                       <TableCell className="text-sm">{MESES[p.mes - 1]}/{p.ano}</TableCell>
                       <TableCell className="text-sm">{p.praca || 'GERAL'}</TableCell>
                       <TableCell className="text-right text-sm">{p.qtd_contratos}</TableCell>
-                      <TableCell className="text-right text-sm">R$ {Number(p.valor_total).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</TableCell>
                       <TableCell className="text-right text-sm">R$ {Number(p.ticket_medio || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</TableCell>
+                      <TableCell className="text-right text-sm">R$ {Number(p.valor_total).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</TableCell>
                       <TableCell>
                         <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleDelete(p.id)}>
                           <Trash2 className="w-3.5 h-3.5 text-destructive" />

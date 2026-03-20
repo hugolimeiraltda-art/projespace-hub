@@ -175,6 +175,8 @@ export default function ImplantacaoExecucao() {
   const [tempOpAssistidaEnd, setTempOpAssistidaEnd] = useState('');
   const [pendenciaDeptTexto, setPendenciaDeptTexto] = useState('');
   const [pendenciaClienteTexto, setPendenciaClienteTexto] = useState('');
+  const [pendenciaDeptEntregaTexto, setPendenciaDeptEntregaTexto] = useState('');
+  const [pendenciaClienteEntregaTexto, setPendenciaClienteEntregaTexto] = useState('');
   const [criandoPendencia, setCriandoPendencia] = useState(false);
   const [enderecoInstalacao, setEnderecoInstalacao] = useState('');
   const [editingEndereco, setEditingEndereco] = useState(false);

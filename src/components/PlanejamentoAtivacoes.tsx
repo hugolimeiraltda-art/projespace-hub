@@ -84,6 +84,7 @@ export function PlanejamentoAtivacoes({ onUpdate }: Props) {
         ano: Number(ano),
         praca,
         qtd_contratos: qtdNum,
+        qtd_churn: churnNum,
         valor_total: valorTotal,
         ticket_medio: ticketNum,
         created_by: userData.user?.id,

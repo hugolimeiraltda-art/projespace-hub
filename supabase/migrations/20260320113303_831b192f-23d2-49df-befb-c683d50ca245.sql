@@ -1,0 +1,1 @@
+ALTER TABLE public.projects ADD COLUMN tipo_obra text NOT NULL DEFAULT 'nova' CHECK (tipo_obra IN ('nova', 'acrescimo'));

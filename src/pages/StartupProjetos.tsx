@@ -343,12 +343,15 @@ export default function StartupProjetos() {
     
     return matchesSearch && matchesStatus && matchesTipoObra;
   }).sort((a, b) => {
+    let result: number;
     if (sortField === 'cliente_condominio_nome') {
-      return a.cliente_condominio_nome.localeCompare(b.cliente_condominio_nome);
+      result = a.cliente_condominio_nome.localeCompare(b.cliente_condominio_nome);
+    } else {
+      const valA = a[sortField] || '';
+      const valB = b[sortField] || '';
+      result = valA.localeCompare(valB);
     }
-    const valA = a[sortField] || '';
-    const valB = b[sortField] || '';
-    return valB.localeCompare(valA); // descending for dates
+    return sortDirection === 'asc' ? result : -result;
   });
 
   const statusCounts = {

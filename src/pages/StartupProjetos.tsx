@@ -603,10 +603,24 @@ export default function StartupProjetos() {
                                 <User className="w-4 h-4" />
                                 {project.vendedor_nome}
                               </span>
-                              <span className="flex items-center gap-1">
-                                <Calendar className="w-4 h-4" />
-                                {format(parseISO(project.updated_at), "dd/MM/yyyy", { locale: ptBR })}
-                              </span>
+                              {project.implantacao_started_at && (
+                                <span className="flex items-center gap-1">
+                                  <Calendar className="w-4 h-4" />
+                                  Início: {format(parseISO(project.implantacao_started_at), "dd/MM/yyyy", { locale: ptBR })}
+                                </span>
+                              )}
+                              {project.prazo_entrega_projeto && (
+                                <span className="flex items-center gap-1">
+                                  <Calendar className="w-4 h-4" />
+                                  Previsão: {format(parseISO(project.prazo_entrega_projeto), "dd/MM/yyyy", { locale: ptBR })}
+                                </span>
+                              )}
+                              {!project.implantacao_started_at && !project.prazo_entrega_projeto && (
+                                <span className="flex items-center gap-1">
+                                  <Calendar className="w-4 h-4" />
+                                  {format(parseISO(project.created_at), "dd/MM/yyyy", { locale: ptBR })}
+                                </span>
+                              )}
                             </div>
                           </div>
 

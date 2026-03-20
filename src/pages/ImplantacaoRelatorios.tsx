@@ -383,6 +383,8 @@ export default function ImplantacaoRelatorios() {
               <TableHead className="text-right">Saldo</TableHead>
               <TableHead className="text-right">Rec. Prevista</TableHead>
               <TableHead className="text-right">Rec. Ativada</TableHead>
+              <TableHead className="text-right">Venda Prevista</TableHead>
+              <TableHead className="text-right">Venda Realizada</TableHead>
               <TableHead className="text-right">Saldo Receita</TableHead>
               <TableHead className="text-right">Atingimento</TableHead>
             </TableRow>
@@ -397,6 +399,8 @@ export default function ImplantacaoRelatorios() {
                 <TableCell className="text-right font-semibold">{r.saldo}</TableCell>
                 <TableCell className="text-right">{formatCurrency(r.receitaPrevista)}</TableCell>
                 <TableCell className="text-right">{formatCurrency(r.receitaAtivada)}</TableCell>
+                <TableCell className="text-right">{formatCurrency(r.vendaPrevista)}</TableCell>
+                <TableCell className="text-right">{formatCurrency(r.vendaAtivada)}</TableCell>
                 <TableCell className="text-right font-semibold">{formatCurrency(r.saldoReceita)}</TableCell>
                 <TableCell className="text-right">
                   {r.atingimento !== null ? (

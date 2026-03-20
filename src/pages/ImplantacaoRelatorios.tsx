@@ -153,16 +153,16 @@ export default function ImplantacaoRelatorios() {
         mes: format(month, 'MMM/yyyy', { locale: ptBR }),
         ativacoes: ativacoes.length,
         cancelamentos: canc.length,
-        churnPrevisto: plan?.qtd_churn || 0,
+        churnPrevisto: churnPrev,
         saldo: ativacoes.length - canc.length,
         receitaAtivada,
         vendaAtivada,
         receitaCancelada,
         saldoReceita: receitaAtivada - receitaCancelada,
-        previsto: plan?.qtd_contratos || 0,
+        previsto,
         receitaPrevista,
         vendaPrevista,
-        atingimento: plan?.qtd_contratos ? Math.round((ativacoes.length / plan.qtd_contratos) * 100) : null,
+        atingimento: previsto ? Math.round((ativacoes.length / previsto) * 100) : null,
       };
     });
   }, [periodMonths, filteredPortfolio, cancelamentos, plans, selectedPraca]);

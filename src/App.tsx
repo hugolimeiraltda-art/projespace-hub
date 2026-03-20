@@ -25,6 +25,7 @@ import ImplantacaoExecucao from "./pages/ImplantacaoExecucao";
 import ImplantacaoChecklist from "./pages/ImplantacaoChecklist";
 import ImplantacaoDashboard from "./pages/ImplantacaoDashboard";
 import ImplantacaoAnalytics from "./pages/ImplantacaoAnalytics";
+import ImplantacaoRelatorios from "./pages/ImplantacaoRelatorios";
 import CarteiraClientes from "./pages/CarteiraClientes";
 import CustomerDetail from "./pages/CustomerDetail";
 import ControleEstoque from "./pages/ControleEstoque";
@@ -134,6 +135,10 @@ function AppRoutes() {
       <Route 
         path="/implantacao-analytics" 
         element={<ProtectedRoute><ImplantacaoAnalytics /></ProtectedRoute>} 
+      />
+      <Route 
+        path="/implantacao-relatorios" 
+        element={<ProtectedRoute><ImplantacaoRelatorios /></ProtectedRoute>} 
       />
       <Route 
         path="/startup-projetos" 

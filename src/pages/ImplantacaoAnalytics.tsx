@@ -1,9 +1,11 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Layout } from '@/components/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend, LineChart, Line } from 'recharts';
-import { BarChart3, Clock, DollarSign, TrendingUp, Calendar, Building } from 'lucide-react';
+import { BarChart3, Clock, DollarSign, TrendingUp, Calendar, Building, FileBarChart } from 'lucide-react';
 import { format, parseISO, differenceInDays, startOfMonth, addMonths, subMonths, isWithinInterval, endOfMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { PlanejamentoAtivacoes } from '@/components/PlanejamentoAtivacoes';
@@ -76,6 +78,7 @@ const getPraca = (filial?: string | null, praca?: string | null): string => {
 };
 
 export default function ImplantacaoAnalytics() {
+  const navigate = useNavigate();
   const [projects, setProjects] = useState<ProjectData[]>([]);
   const [portfolio, setPortfolio] = useState<PortfolioData[]>([]);
   const [allPortfolio, setAllPortfolio] = useState<PortfolioData[]>([]);
@@ -375,12 +378,17 @@ export default function ImplantacaoAnalytics() {
     <Layout>
       <div className="p-6 md:p-8 space-y-6">
         {/* Header */}
-        <div>
-          <div className="flex items-center gap-3 mb-2">
-            <TrendingUp className="w-8 h-8 text-primary" />
-            <h1 className="text-2xl font-bold text-foreground">Analytics de Implantação</h1>
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="flex items-center gap-3 mb-2">
+              <TrendingUp className="w-8 h-8 text-primary" />
+              <h1 className="text-2xl font-bold text-foreground">Analytics de Implantação</h1>
+            </div>
+            <p className="text-muted-foreground">Métricas de tempo, receita e desempenho da implantação</p>
           </div>
-          <p className="text-muted-foreground">Métricas de tempo, receita e desempenho da implantação</p>
+          <Button variant="outline" size="sm" className="gap-2" onClick={() => navigate('/implantacao-relatorios')}>
+            <FileBarChart className="w-4 h-4" /> Relatórios
+          </Button>
         </div>
 
         {/* KPI Cards */}

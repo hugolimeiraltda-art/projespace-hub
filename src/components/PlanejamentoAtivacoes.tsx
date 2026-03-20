@@ -18,6 +18,7 @@ interface PlanData {
   valor_total: number;
   praca: string;
   ticket_medio: number;
+  valor_venda: number;
 }
 
 interface Props {
@@ -40,6 +41,7 @@ export function PlanejamentoAtivacoes({ onUpdate }: Props) {
   const [qtd, setQtd] = useState('');
   const [qtdChurn, setQtdChurn] = useState('');
   const [ticketMedio, setTicketMedio] = useState('');
+  const [valorVenda, setValorVenda] = useState('');
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -68,6 +70,7 @@ export function PlanejamentoAtivacoes({ onUpdate }: Props) {
     const ticketNum = parseNumber(ticketMedio);
     const qtdNum = parseNumber(qtd);
     const churnNum = parseNumber(qtdChurn);
+    const vendaNum = parseNumber(valorVenda);
     const valorTotal = (qtdNum - churnNum) * ticketNum;
     setSaving(true);
     const { data: userData } = await supabase.auth.getUser();
@@ -87,6 +90,7 @@ export function PlanejamentoAtivacoes({ onUpdate }: Props) {
         qtd_churn: churnNum,
         valor_total: valorTotal,
         ticket_medio: ticketNum,
+        valor_venda: vendaNum,
         created_by: userData.user?.id,
         created_by_name: profile?.nome || '',
         updated_at: new Date().toISOString(),
@@ -99,6 +103,7 @@ export function PlanejamentoAtivacoes({ onUpdate }: Props) {
       setQtd('');
       setQtdChurn('');
       setTicketMedio('');
+      setValorVenda('');
       fetchPlans();
       onUpdate();
     }
@@ -167,7 +172,7 @@ export function PlanejamentoAtivacoes({ onUpdate }: Props) {
               </Select>
             </div>
           </div>
-          <div className="grid grid-cols-4 gap-3">
+          <div className="grid grid-cols-5 gap-3">
             <div>
               <Label>Qtd Ativações</Label>
               <Input value={qtd} onChange={e => setQtd(e.target.value.replace(/[^0-9,]/g, ''))} placeholder="0" />
@@ -179,6 +184,10 @@ export function PlanejamentoAtivacoes({ onUpdate }: Props) {
             <div>
               <Label>Ticket Médio (R$)</Label>
               <Input value={ticketMedio} onChange={e => setTicketMedio(e.target.value)} placeholder="0,00" />
+            </div>
+            <div>
+              <Label>Valor Venda (R$)</Label>
+              <Input value={valorVenda} onChange={e => setValorVenda(e.target.value)} placeholder="0,00" />
             </div>
             <div>
               <Label>Valor Total (R$)</Label>
@@ -208,9 +217,10 @@ export function PlanejamentoAtivacoes({ onUpdate }: Props) {
                     <TableHead className="text-right">Ativações</TableHead>
                     <TableHead className="text-right">Churn</TableHead>
                     <TableHead className="text-right">Saldo</TableHead>
-                    <TableHead className="text-right">Ticket Médio</TableHead>
-                    <TableHead className="text-right">Valor Total</TableHead>
-                    <TableHead className="w-10" />
+                     <TableHead className="text-right">Ticket Médio</TableHead>
+                     <TableHead className="text-right">Valor Venda</TableHead>
+                     <TableHead className="text-right">Valor Total</TableHead>
+                     <TableHead className="w-10" />
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -221,8 +231,9 @@ export function PlanejamentoAtivacoes({ onUpdate }: Props) {
                       <TableCell className="text-right text-sm">{p.qtd_contratos}</TableCell>
                       <TableCell className="text-right text-sm text-destructive">{p.qtd_churn || 0}</TableCell>
                       <TableCell className="text-right text-sm font-medium">{(p.qtd_contratos - (p.qtd_churn || 0))}</TableCell>
-                      <TableCell className="text-right text-sm">R$ {Number(p.ticket_medio || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</TableCell>
-                      <TableCell className="text-right text-sm">R$ {Number(p.valor_total).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</TableCell>
+                       <TableCell className="text-right text-sm">R$ {Number(p.ticket_medio || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</TableCell>
+                       <TableCell className="text-right text-sm">R$ {Number(p.valor_venda || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</TableCell>
+                       <TableCell className="text-right text-sm">R$ {Number(p.valor_total).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</TableCell>
                       <TableCell>
                         <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleDelete(p.id)}>
                           <Trash2 className="w-3.5 h-3.5 text-destructive" />

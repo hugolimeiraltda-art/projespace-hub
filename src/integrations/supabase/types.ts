@@ -1077,6 +1077,7 @@ export type Database = {
           ticket_medio: number | null
           updated_at: string
           valor_total: number
+          valor_venda: number | null
         }
         Insert: {
           ano: number
@@ -1091,6 +1092,7 @@ export type Database = {
           ticket_medio?: number | null
           updated_at?: string
           valor_total?: number
+          valor_venda?: number | null
         }
         Update: {
           ano?: number
@@ -1105,6 +1107,7 @@ export type Database = {
           ticket_medio?: number | null
           updated_at?: string
           valor_total?: number
+          valor_venda?: number | null
         }
         Relationships: []
       }

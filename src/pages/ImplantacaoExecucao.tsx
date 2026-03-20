@@ -101,6 +101,7 @@ interface ImplantacaoEtapas {
   concluido: boolean;
   concluido_at: string | null;
   observacoes_manutencao: string | null;
+  data_ativacao_realizada: string | null;
   etapa_atual: number;
   // Step 10: Satisfaction Survey
   pesquisa_satisfacao_realizada: boolean;
@@ -2040,7 +2041,18 @@ export default function ImplantacaoExecucao() {
                       dateField="confirmacao_ativacao_financeira_at"
                       date={etapas.confirmacao_ativacao_financeira_at}
                     />
-                  </div>
+                   </div>
+
+                   {/* Data de Ativação Realizada */}
+                   <div className="px-4 pt-2">
+                     <Label className="text-sm font-medium">Data de Ativação Realizada</Label>
+                     <Input 
+                       type="date"
+                       value={etapas.data_ativacao_realizada || ''}
+                       onChange={(e) => updateEtapa('data_ativacao_realizada', e.target.value || null)}
+                       className="w-48 mt-1"
+                     />
+                   </div>
 
                   <div className="px-4 pt-4">
                     <Button onClick={generatePDF} variant="outline" className="w-full">

@@ -99,7 +99,7 @@ export default function StartupProjetos() {
   useEffect(() => {
     fetchProjects();
     fetchVendedores();
-  }, []);
+  }, [activeTab]);
 
   const fetchVendedores = async () => {
     try {

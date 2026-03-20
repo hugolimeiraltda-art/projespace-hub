@@ -127,7 +127,7 @@ export function PlanejamentoAtivacoes({ onUpdate }: Props) {
           Planejamento
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-3xl">
         <DialogHeader>
           <DialogTitle>Planejamento de Ativações</DialogTitle>
         </DialogHeader>

@@ -76,6 +76,19 @@ interface Indicadores {
   taxaTotal: number;
 }
 
+interface EstratificadoMes {
+  mes: string;
+  clientes: {
+    cliente: string;
+    contrato: string;
+    praca: string;
+    mensalidade: number;
+    taxaAtivacao: number;
+    dataAtivacao: string;
+    status: string;
+  }[];
+}
+
 interface PdfExportData {
   selectedReport: string;
   reportLabel: string;
@@ -85,6 +98,7 @@ interface PdfExportData {
   relatorioPraca: RelatorioPraca[];
   historicoProjetos: HistoricoProjeto[];
   indicadores: Indicadores;
+  estratificadoMensal?: EstratificadoMes[];
 }
 
 // Helper class for drawing

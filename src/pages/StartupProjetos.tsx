@@ -414,6 +414,16 @@ export default function StartupProjetos() {
                       </Select>
                     </div>
                   </div>
+                   <div>
+                    <Label>Tipo de Obra *</Label>
+                    <Select value={newObraTipo} onValueChange={(v) => setNewObraTipo(v as 'nova' | 'acrescimo')}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="nova">Novo Contrato</SelectItem>
+                        <SelectItem value="acrescimo">Acréscimo</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                   <div>
                     <Label>Vendedor Responsável *</Label>
                     <Select value={newObraVendedor} onValueChange={setNewObraVendedor}>

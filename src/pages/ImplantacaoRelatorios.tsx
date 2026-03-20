@@ -67,7 +67,7 @@ export default function ImplantacaoRelatorios() {
   const fetchData = async () => {
     setLoading(true);
     const [projRes, portRes, cancRes, planRes] = await Promise.all([
-      supabase.from('projects').select('id, numero_projeto, cliente_condominio_nome, implantacao_status, implantacao_started_at, implantacao_completed_at, prazo_entrega_projeto, created_at, tipo_obra, filial').eq('sale_status', 'CONCLUIDO'),
+      supabase.from('projects').select('id, numero_projeto, cliente_condominio_nome, implantacao_status, implantacao_started_at, implantacao_completed_at, prazo_entrega_projeto, created_at, tipo_obra').eq('sale_status', 'CONCLUIDO'),
       supabase.from('customer_portfolio').select('project_id, mensalidade, taxa_ativacao, data_ativacao, contrato, razao_social, filial, praca'),
       supabase.from('customer_cancelamentos').select('id, data_cancelamento, valor_contrato, motivo, customer_id'),
       supabase.from('implantacao_planejamento_ativacoes').select('*'),
@@ -78,6 +78,14 @@ export default function ImplantacaoRelatorios() {
     setPlans(planRes.data || []);
     setLoading(false);
   };
+
+  const portfolioByProjectId = useMemo(() => {
+    const map: Record<string, any> = {};
+    portfolio.forEach((p) => {
+      if (p.project_id) map[p.project_id] = p;
+    });
+    return map;
+  }, [portfolio]);
 
   useEffect(() => {
     if (dataInicio && dataFim) {
@@ -107,8 +115,11 @@ export default function ImplantacaoRelatorios() {
 
   const filteredProjects = useMemo(() => {
     if (selectedPraca === 'TODOS') return projects;
-    return projects.filter(p => getPraca(p.filial) === selectedPraca);
-  }, [projects, selectedPraca]);
+    return projects.filter((p) => {
+      const port = portfolioByProjectId[p.id];
+      return getPraca(port?.filial, port?.praca) === selectedPraca;
+    });
+  }, [projects, selectedPraca, portfolioByProjectId]);
 
   const filteredCancelamentos = useMemo(() => {
     // Filter cancelamentos by period

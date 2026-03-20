@@ -90,6 +90,7 @@ export function PlanejamentoAtivacoes({ onUpdate }: Props) {
         qtd_churn: churnNum,
         valor_total: valorTotal,
         ticket_medio: ticketNum,
+        valor_venda: vendaNum,
         created_by: userData.user?.id,
         created_by_name: profile?.nome || '',
         updated_at: new Date().toISOString(),

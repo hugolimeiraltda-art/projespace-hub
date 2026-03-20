@@ -279,6 +279,7 @@ export default function ImplantacaoAnalytics() {
             nome: p.cliente_condominio_nome,
             contrato: port.contrato || '—',
             mensalidade: Number(port.mensalidade) || 0,
+            taxaAtivacao: Number(port.taxa_ativacao) || 0,
             dataAtivacao: port.data_ativacao || p.prazo_entrega_projeto || null,
             praca: getPraca(port.filial, port.praca),
             tipoObra: p.tipo_obra || 'nova',

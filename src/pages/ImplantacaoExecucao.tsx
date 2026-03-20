@@ -2135,8 +2135,53 @@ export default function ImplantacaoExecucao() {
                       Envie o checklist de entrega técnica assinado pelo cliente. O sistema verificará se há pendências registradas.
                     </p>
                     <SectionFileUpload projectId={id || null} secao="implantacao_entrega_tecnica" />
-                  </div>
-                </CardContent>
+                   </div>
+
+                   {/* 7.4 - Pendência de Departamento */}
+                   <div className="px-4 py-3 space-y-2 border-t border-border">
+                     <span className="text-sm font-medium">7.4 - Abrir Pendência de Departamento</span>
+                     <Textarea
+                       placeholder="Descreva a pendência de departamento..."
+                       value={pendenciaDeptEntregaTexto}
+                       onChange={(e) => setPendenciaDeptEntregaTexto(e.target.value)}
+                       className="min-h-[60px]"
+                     />
+                     <Button
+                       size="sm"
+                       onClick={() => {
+                         criarPendencia('DEPT_INSTALACAO', pendenciaDeptEntregaTexto);
+                         setPendenciaDeptEntregaTexto('');
+                       }}
+                       disabled={criandoPendencia || !pendenciaDeptEntregaTexto.trim()}
+                     >
+                       <Plus className="w-4 h-4 mr-1" />
+                       Abrir Pendência Departamento
+                     </Button>
+                   </div>
+
+                   {/* 7.5 - Pendência de Cliente */}
+                   <div className="px-4 py-3 space-y-2 border-t border-border">
+                     <span className="text-sm font-medium">7.5 - Abrir Pendência Externa (Cliente)</span>
+                     <Textarea
+                       placeholder="Descreva a pendência do cliente..."
+                       value={pendenciaClienteEntregaTexto}
+                       onChange={(e) => setPendenciaClienteEntregaTexto(e.target.value)}
+                       className="min-h-[60px]"
+                     />
+                     <Button
+                       size="sm"
+                       variant="outline"
+                       onClick={() => {
+                         criarPendencia('CLIENTE_INSTALACAO', pendenciaClienteEntregaTexto);
+                         setPendenciaClienteEntregaTexto('');
+                       }}
+                       disabled={criandoPendencia || !pendenciaClienteEntregaTexto.trim()}
+                     >
+                       <Plus className="w-4 h-4 mr-1" />
+                       Abrir Pendência Cliente
+                     </Button>
+                   </div>
+                 </CardContent>
               </CollapsibleContent>
             </Collapsible>
           </Card>

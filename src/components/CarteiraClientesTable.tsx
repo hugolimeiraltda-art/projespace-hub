@@ -430,6 +430,45 @@ export function CarteiraClientesTable({ customers, onDelete }: CarteiraClientesT
       <div className="text-sm text-muted-foreground">
         Exibindo {filteredAndSortedCustomers.length} de {customers.length} clientes
       </div>
+
+      <AlertDialog open={!!deleteCustomer} onOpenChange={(open) => !open && setDeleteCustomer(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir cliente</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir o cliente <strong>{deleteCustomer?.razao_social}</strong> (Contrato: {deleteCustomer?.contrato})? Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={deleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={async () => {
+                if (!deleteCustomer) return;
+                setDeleting(true);
+                try {
+                  const { error } = await supabase
+                    .from('customer_portfolio')
+                    .delete()
+                    .eq('id', deleteCustomer.id);
+                  if (error) throw error;
+                  toast({ title: 'Cliente excluído', description: `${deleteCustomer.razao_social} foi removido.` });
+                  setDeleteCustomer(null);
+                  onDelete?.();
+                } catch (error) {
+                  console.error(error);
+                  toast({ title: 'Erro', description: 'Não foi possível excluir o cliente.', variant: 'destructive' });
+                } finally {
+                  setDeleting(false);
+                }
+              }}
+            >
+              {deleting ? 'Excluindo...' : 'Excluir'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

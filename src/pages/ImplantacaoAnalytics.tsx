@@ -337,6 +337,8 @@ export default function ImplantacaoAnalytics() {
     };
 
     allPortfolio.forEach(p => {
+      // Only count actually activated clients
+      if (p.status_implantacao !== 'ATIVO') return;
       const praca = getPraca(p.filial, p.praca);
       if (regions[praca]) {
         regions[praca].contratos++;

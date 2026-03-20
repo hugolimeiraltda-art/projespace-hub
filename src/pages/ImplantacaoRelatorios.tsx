@@ -408,7 +408,7 @@ export default function ImplantacaoRelatorios() {
                 <TableCell className="text-right">{formatCurrency(r.receitaAtivada)}</TableCell>
                 <TableCell className="text-right">{formatCurrency(r.vendaPrevista)}</TableCell>
                 <TableCell className="text-right">{formatCurrency(r.vendaAtivada)}</TableCell>
-                <TableCell className="text-right font-semibold">{formatCurrency(r.saldoReceita)}</TableCell>
+                <TableCell className={`text-right font-semibold ${r.saldoReceita < 0 ? 'text-destructive' : 'text-emerald-600'}`}>{formatCurrency(r.saldoReceita)}</TableCell>
                 <TableCell className="text-right">
                   {r.atingimento !== null ? (
                     <Badge variant={r.atingimento >= 100 ? 'default' : r.atingimento >= 50 ? 'secondary' : 'destructive'}>

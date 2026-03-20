@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useImplantacaoIntegration } from '@/hooks/useImplantacaoIntegration';
@@ -31,6 +32,7 @@ import {
   Settings,
   Plus,
   Loader2,
+  Trash2,
 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -162,6 +164,32 @@ export default function StartupProjetos() {
       toast({ title: 'Erro inesperado', variant: 'destructive' });
     } finally {
       setCreatingObra(false);
+    }
+  };
+
+  const handleDeleteProject = async (projectId: string, projectName: string) => {
+    try {
+      // Delete related records first
+      await Promise.all([
+        supabase.from('implantacao_etapas').delete().eq('project_id', projectId),
+        supabase.from('implantacao_checklists').delete().eq('project_id', projectId),
+        supabase.from('sale_forms').delete().eq('project_id', projectId),
+        supabase.from('tap_forms').delete().eq('project_id', projectId),
+        supabase.from('sale_form_attachments').delete().eq('project_id', projectId),
+        supabase.from('project_notifications').delete().eq('project_id', projectId),
+        supabase.from('implantacao_noc_chamados').delete().eq('project_id', projectId),
+      ]);
+
+      const { error } = await supabase.from('projects').delete().eq('id', projectId);
+      if (error) {
+        toast({ title: 'Erro ao excluir projeto', description: error.message, variant: 'destructive' });
+        return;
+      }
+      toast({ title: 'Projeto excluído', description: `"${projectName}" foi removido com sucesso.` });
+      fetchProjects();
+    } catch (e) {
+      console.error('Error deleting project:', e);
+      toast({ title: 'Erro inesperado ao excluir', variant: 'destructive' });
     }
   };
 
@@ -587,6 +615,39 @@ export default function StartupProjetos() {
                               <Eye className="w-4 h-4 mr-2" />
                               Ver Detalhes
                             </Button>
+
+                            {user?.role === 'admin' && (
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="border-destructive/50 text-destructive hover:bg-destructive/10"
+                                    onClick={(e) => e.stopPropagation()}
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>Excluir projeto</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      Tem certeza que deseja excluir o projeto <strong>"{project.cliente_condominio_nome}"</strong>? 
+                                      Esta ação não pode ser desfeita. Todos os dados relacionados (etapas, checklists, formulários) serão removidos.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                    <AlertDialogAction
+                                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                      onClick={() => handleDeleteProject(project.id, project.cliente_condominio_nome)}
+                                    >
+                                      Excluir
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                            )}
                           </div>
                         </div>
 

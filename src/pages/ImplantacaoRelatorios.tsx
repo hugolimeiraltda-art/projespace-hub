@@ -194,7 +194,10 @@ export default function ImplantacaoRelatorios() {
     const start = parseISO(dataInicio);
     const end = parseISO(dataFim);
     return pracas.map(praca => {
-      const projPraca = projects.filter(p => getPraca(p.filial) === praca);
+      const projPraca = projects.filter((p) => {
+        const port = portfolioByProjectId[p.id];
+        return getPraca(port?.filial, port?.praca) === praca;
+      });
       const portPraca = portfolio.filter(p => getPraca(p.filial, p.praca) === praca);
       const ativadosNoPeriodo = portPraca.filter(p => {
         const proj = p.project_id ? projectMap[p.project_id] : null;
@@ -218,7 +221,7 @@ export default function ImplantacaoRelatorios() {
         taxaAtivacao: taxaTotal,
       };
     });
-  }, [projects, portfolio, selectedPraca, dataInicio, dataFim]);
+  }, [projects, portfolio, selectedPraca, dataInicio, dataFim, portfolioByProjectId, projectMap]);
 
   // ========== HISTÓRICO ==========
   const historicoProjetos = useMemo(() => {
@@ -239,7 +242,7 @@ export default function ImplantacaoRelatorios() {
           cliente: p.cliente_condominio_nome,
           status: p.implantacao_status || '—',
           tipoObra: p.tipo_obra || '—',
-          praca: getPraca(p.filial),
+          praca: getPraca(port?.filial, port?.praca),
           dataEntrada: p.created_at ? format(parseISO(p.created_at), 'dd/MM/yyyy') : '—',
           inicioObra: p.implantacao_started_at ? format(parseISO(p.implantacao_started_at), 'dd/MM/yyyy') : '—',
           conclusao: p.implantacao_completed_at ? format(parseISO(p.implantacao_completed_at), 'dd/MM/yyyy') : '—',

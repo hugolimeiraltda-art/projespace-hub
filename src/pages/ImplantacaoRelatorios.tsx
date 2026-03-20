@@ -325,7 +325,7 @@ export default function ImplantacaoRelatorios() {
     if (selectedReport === 'resumo_mensal') {
       const ws = XLSX.utils.json_to_sheet(resumoMensal.map(r => ({
         'Mês': r.mes, 'Previsto': r.previsto, 'Ativações': r.ativacoes,
-        'Cancelamentos': r.cancelamentos, 'Saldo': r.saldo,
+        'Churn Previsto': r.churnPrevisto, 'Churn Real': r.cancelamentos, 'Saldo': r.saldo,
         'Receita Prevista': r.receitaPrevista, 'Receita Ativada': r.receitaAtivada,
         'Venda Prevista': r.vendaPrevista, 'Venda Realizada': r.vendaAtivada,
         'Receita Cancelada': r.receitaCancelada, 'Saldo Receita': r.saldoReceita,

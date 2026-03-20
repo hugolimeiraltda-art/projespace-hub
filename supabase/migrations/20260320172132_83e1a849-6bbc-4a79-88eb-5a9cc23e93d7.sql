@@ -1,0 +1,1 @@
+ALTER TABLE public.implantacao_etapas ADD COLUMN IF NOT EXISTS data_ativacao_realizada date NULL;

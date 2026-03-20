@@ -263,11 +263,13 @@ export default function ImplantacaoAnalytics() {
         const port = portfolioMap[p.id];
         if (!port) return;
 
-        const activationDate = port.data_ativacao
+        // Only use data_ativacao for completed projects; otherwise use prazo_entrega_projeto
+        const isCompleted = p.implantacao_status === 'CONCLUIDO' || port.status_implantacao === 'ATIVO';
+        const activationDate = (isCompleted && port.data_ativacao)
           ? parseISO(port.data_ativacao)
           : p.prazo_entrega_projeto
             ? parseISO(p.prazo_entrega_projeto)
-            : null;
+            : (port.data_ativacao ? parseISO(port.data_ativacao) : null);
 
         if (!activationDate) return;
 

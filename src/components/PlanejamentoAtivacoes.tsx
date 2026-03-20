@@ -231,8 +231,9 @@ export function PlanejamentoAtivacoes({ onUpdate }: Props) {
                       <TableCell className="text-right text-sm">{p.qtd_contratos}</TableCell>
                       <TableCell className="text-right text-sm text-destructive">{p.qtd_churn || 0}</TableCell>
                       <TableCell className="text-right text-sm font-medium">{(p.qtd_contratos - (p.qtd_churn || 0))}</TableCell>
-                      <TableCell className="text-right text-sm">R$ {Number(p.ticket_medio || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</TableCell>
-                      <TableCell className="text-right text-sm">R$ {Number(p.valor_total).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</TableCell>
+                       <TableCell className="text-right text-sm">R$ {Number(p.ticket_medio || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</TableCell>
+                       <TableCell className="text-right text-sm">R$ {Number(p.valor_venda || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</TableCell>
+                       <TableCell className="text-right text-sm">R$ {Number(p.valor_total).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</TableCell>
                       <TableCell>
                         <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleDelete(p.id)}>
                           <Trash2 className="w-3.5 h-3.5 text-destructive" />

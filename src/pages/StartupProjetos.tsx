@@ -365,12 +365,14 @@ export default function StartupProjetos() {
                 {activeTab === 'em-implantacao' && 'Implantação de Projetos'}
                 {activeTab === 'operacao-assistida' && 'Operação Assistida'}
                 {activeTab === 'pequenas-obras' && 'Pequenas Obras'}
+                {activeTab === 'historico' && 'Histórico de Implantações'}
               </h1>
             </div>
             <p className="text-muted-foreground">
               {activeTab === 'em-implantacao' && 'Gerencie a implantação dos projetos vendidos'}
               {activeTab === 'operacao-assistida' && 'Acompanhe os projetos em fase de operação assistida'}
               {activeTab === 'pequenas-obras' && 'Gerencie as pequenas obras e serviços'}
+              {activeTab === 'historico' && 'Obras concluídas com sucesso'}
             </p>
           </div>
           {activeTab === 'em-implantacao' && (

@@ -158,7 +158,7 @@ export default function ImplantacaoRelatorios() {
         receitaAtivada,
         vendaAtivada,
         receitaCancelada,
-        saldoReceita: receitaAtivada - receitaCancelada,
+        saldoReceita: receitaAtivada - receitaPrevista,
         previsto,
         receitaPrevista,
         vendaPrevista,

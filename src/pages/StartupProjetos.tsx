@@ -263,7 +263,7 @@ export default function StartupProjetos() {
       });
       setEtapasMap(eMap);
 
-      setProjects(projectsRes.data || []);
+      setProjects((projectsRes.data || []) as StartupProject[]);
     } catch (error) {
       console.error('Error:', error);
     } finally {

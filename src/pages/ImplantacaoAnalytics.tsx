@@ -377,12 +377,17 @@ export default function ImplantacaoAnalytics() {
     <Layout>
       <div className="p-6 md:p-8 space-y-6">
         {/* Header */}
-        <div>
-          <div className="flex items-center gap-3 mb-2">
-            <TrendingUp className="w-8 h-8 text-primary" />
-            <h1 className="text-2xl font-bold text-foreground">Analytics de Implantação</h1>
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="flex items-center gap-3 mb-2">
+              <TrendingUp className="w-8 h-8 text-primary" />
+              <h1 className="text-2xl font-bold text-foreground">Analytics de Implantação</h1>
+            </div>
+            <p className="text-muted-foreground">Métricas de tempo, receita e desempenho da implantação</p>
           </div>
-          <p className="text-muted-foreground">Métricas de tempo, receita e desempenho da implantação</p>
+          <Button variant="outline" size="sm" className="gap-2" onClick={() => navigate('/implantacao-relatorios')}>
+            <FileBarChart className="w-4 h-4" /> Relatórios
+          </Button>
         </div>
 
         {/* KPI Cards */}

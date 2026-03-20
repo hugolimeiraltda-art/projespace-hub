@@ -99,7 +99,7 @@ export default function StartupProjetos() {
   useEffect(() => {
     fetchProjects();
     fetchVendedores();
-  }, []);
+  }, [activeTab]);
 
   const fetchVendedores = async () => {
     try {
@@ -197,13 +197,22 @@ export default function StartupProjetos() {
   const fetchProjects = async () => {
     try {
       setIsLoading(true);
+      
+      let projectsQuery = supabase
+        .from('projects')
+        .select('id, numero_projeto, cliente_condominio_nome, cliente_cidade, cliente_estado, vendedor_nome, created_at, updated_at, implantacao_status, implantacao_started_at, implantacao_completed_at, prazo_entrega_projeto')
+        .eq('sale_status', 'CONCLUIDO');
+      
+      if (activeTab === 'historico') {
+        projectsQuery = projectsQuery.eq('implantacao_status', 'CONCLUIDO_IMPLANTACAO');
+      } else {
+        projectsQuery = projectsQuery.neq('implantacao_status', 'CONCLUIDO_IMPLANTACAO');
+      }
+      
+      projectsQuery = projectsQuery.order('updated_at', { ascending: false });
+
       const [projectsRes, portfolioRes, etapasRes] = await Promise.all([
-        supabase
-          .from('projects')
-          .select('id, numero_projeto, cliente_condominio_nome, cliente_cidade, cliente_estado, vendedor_nome, created_at, updated_at, implantacao_status, implantacao_started_at, implantacao_completed_at, prazo_entrega_projeto')
-          .eq('sale_status', 'CONCLUIDO')
-          .neq('implantacao_status', 'CONCLUIDO_IMPLANTACAO')
-          .order('updated_at', { ascending: false }),
+        projectsQuery,
         supabase
           .from('customer_portfolio')
           .select('project_id, mensalidade, taxa_ativacao')
@@ -356,12 +365,14 @@ export default function StartupProjetos() {
                 {activeTab === 'em-implantacao' && 'Implantação de Projetos'}
                 {activeTab === 'operacao-assistida' && 'Operação Assistida'}
                 {activeTab === 'pequenas-obras' && 'Pequenas Obras'}
+                {activeTab === 'historico' && 'Histórico de Implantações'}
               </h1>
             </div>
             <p className="text-muted-foreground">
               {activeTab === 'em-implantacao' && 'Gerencie a implantação dos projetos vendidos'}
               {activeTab === 'operacao-assistida' && 'Acompanhe os projetos em fase de operação assistida'}
               {activeTab === 'pequenas-obras' && 'Gerencie as pequenas obras e serviços'}
+              {activeTab === 'historico' && 'Obras concluídas com sucesso'}
             </p>
           </div>
           {activeTab === 'em-implantacao' && (
@@ -687,6 +698,87 @@ export default function StartupProjetos() {
               </p>
             </CardContent>
           </Card>
+        )}
+
+        {activeTab === 'historico' && (
+          <>
+            <div className="mb-6">
+              <div className="relative max-w-md">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  placeholder="Buscar por nome, vendedor ou número..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+            </div>
+
+            {filteredProjects.length === 0 ? (
+              <Card>
+                <CardContent className="py-12 text-center">
+                  <CheckCircle2 className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-foreground mb-2">Nenhuma obra concluída</h3>
+                  <p className="text-muted-foreground">
+                    {searchTerm ? 'Tente ajustar os filtros de busca.' : 'As obras concluídas aparecerão aqui.'}
+                  </p>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="space-y-4">
+                <p className="text-sm text-muted-foreground">{filteredProjects.length} obra(s) concluída(s)</p>
+                {filteredProjects.map((project) => (
+                  <Card key={project.id} className="hover:shadow-md transition-shadow">
+                    <CardContent className="p-4">
+                      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className="text-sm text-muted-foreground">#{project.numero_projeto}</span>
+                            <Badge className="border bg-green-100 text-green-800 border-green-300">
+                              <CheckCircle2 className="w-3 h-3 mr-1" />
+                              Concluído
+                            </Badge>
+                          </div>
+                          <h3 className="text-lg font-semibold text-foreground mb-1">
+                            {project.cliente_condominio_nome}
+                          </h3>
+                          <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
+                            <span className="flex items-center gap-1">
+                              <Building className="w-4 h-4" />
+                              {project.cliente_cidade}, {project.cliente_estado}
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <User className="w-4 h-4" />
+                              {project.vendedor_nome}
+                            </span>
+                            {project.implantacao_completed_at && (
+                              <span className="flex items-center gap-1">
+                                <Calendar className="w-4 h-4" />
+                                Concluído em {format(parseISO(project.implantacao_completed_at), "dd/MM/yyyy", { locale: ptBR })}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => navigate(`/startup-projetos/${project.id}/execucao`)}
+                          >
+                            <Eye className="w-4 h-4 mr-2" />
+                            Ver Detalhes
+                          </Button>
+                        </div>
+                      </div>
+                      <div className="mt-3 pt-3 border-t border-border">
+                        <ImplantacaoTimeline etapas={etapasMap[project.id] || null} />
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </>
         )}
       </div>
     </Layout>

@@ -373,26 +373,38 @@ function buildResumoMensal(b: PdfBuilder, data: PdfExportData) {
     { label: 'Atingimento', value: `${atingGlobal}%`, color: atingGlobal >= 100 ? COLORS.success : atingGlobal >= 50 ? COLORS.warning : COLORS.danger, bg: atingGlobal >= 100 ? COLORS.successLight : atingGlobal >= 50 ? COLORS.warningLight : COLORS.dangerLight },
   ]);
 
-  // Insights
-  if (totSaldoRec > 0) {
-    drawInsightBox(b, `Receita ativada superou a previsão em ${formatCurrency(totSaldoRec)} no período`, 'success');
+  // Insights — coherent: compare both metrics together
+  if (atingGlobal >= 100) {
+    drawInsightBox(b, `Meta de ativações atingida! ${totAtiv} ativações de ${totPrev} previstas (${atingGlobal}%)`, 'success');
+  } else if (atingGlobal >= 50) {
+    drawInsightBox(b, `Atingimento de ${atingGlobal}% — faltam ${Math.ceil(totPrev - totAtiv)} ativações para atingir a meta`, 'warning');
+  } else if (totPrev > 0) {
+    drawInsightBox(b, `Atingimento de ${atingGlobal}% está muito abaixo da meta — atenção necessária`, 'danger');
+  }
+
+  if (totSaldoRec > 0 && atingGlobal < 100) {
+    drawInsightBox(b, `Apesar de ${atingGlobal}% de atingimento em volume, a receita superou a previsão em ${formatCurrency(totSaldoRec)} (ticket médio acima do planejado)`, 'info');
+  } else if (totSaldoRec > 0) {
+    drawInsightBox(b, `Receita ativada superou a previsão em ${formatCurrency(totSaldoRec)}`, 'success');
   } else if (totSaldoRec < 0) {
     drawInsightBox(b, `Receita ativada ficou ${formatCurrency(Math.abs(totSaldoRec))} abaixo da previsão`, 'danger');
   }
-  if (atingGlobal < 50) {
-    drawInsightBox(b, `Atingimento de ${atingGlobal}% está abaixo da meta — atenção necessária`, 'warning');
-  } else if (atingGlobal >= 100) {
-    drawInsightBox(b, `Meta de ativações atingida! ${totAtiv} ativações de ${totPrev} previstas`, 'success');
+
+  if (totChurn > 0) {
+    const churnPrevTotal = rm.reduce((s, r) => s + r.churnPrevisto, 0);
+    if (totChurn > churnPrevTotal) {
+      drawInsightBox(b, `Churn real (${totChurn}) superou o previsto (${churnPrevTotal}) — investigar causas`, 'danger');
+    }
   }
 
-  // Bar chart: ativações por mês
+  // Bar chart: ativações por mês (previsto vs realizado)
   const maxAtiv = Math.max(...rm.map(r => Math.max(r.ativacoes, r.previsto)), 1);
   drawBarChart(b, rm.map(r => ({
     label: r.mes,
     value: r.ativacoes,
     maxValue: maxAtiv,
     color: r.ativacoes >= r.previsto ? COLORS.success : COLORS.warning,
-  })), 'Ativações por Mês');
+  })), 'Ativações por Mês (Realizado)');
 
   // Table
   drawSectionTitle(b, 'Detalhamento Mensal');
@@ -422,6 +434,55 @@ function buildResumoMensal(b: PdfBuilder, data: PdfExportData) {
   b.text('TOTAL', b.margin + 3, b.y + 7, { color: COLORS.primary, size: 8, bold: true });
   b.text(`${totAtiv} ativ.  |  ${formatCurrency(totRecAtiv)} receita  |  ${formatCurrency(totSaldoRec)} saldo  |  ${atingGlobal}% ating.`, b.pageW - b.margin - 3, b.y + 7, { color: COLORS.primary, size: 7, bold: true, align: 'right' });
   b.y += 14;
+
+  // ========== ESTRATIFICADO (page 2+) ==========
+  if (data.estratificadoMensal && data.estratificadoMensal.length > 0) {
+    b.doc.addPage();
+    b.y = 20;
+    
+    // Page 2 header
+    b.drawRect(0, 0, b.pageW, 24, COLORS.primary);
+    b.text('ESTRATIFICADO — Detalhamento por Cliente', b.margin + 2, 15, { color: COLORS.white, size: 14, bold: true });
+    b.text(data.periodo, b.pageW - b.margin - 2, 15, { color: [180, 210, 240], size: 9, align: 'right' });
+    b.y = 32;
+
+    data.estratificadoMensal.forEach(mesData => {
+      // Month sub-header
+      b.checkPage(30);
+      b.drawRect(b.margin, b.y, b.contentW, 10, COLORS.primaryLight, 2);
+      b.text(mesData.mes.toUpperCase(), b.margin + 4, b.y + 7, { color: COLORS.primary, size: 9, bold: true });
+      const mesReceita = mesData.clientes.reduce((s, c) => s + c.mensalidade, 0);
+      b.text(`${mesData.clientes.length} cliente(s)  |  ${formatCurrency(mesReceita)} receita`, b.pageW - b.margin - 4, b.y + 7, { color: COLORS.primary, size: 8, align: 'right' });
+      b.y += 14;
+
+      drawTable(b, {
+        headers: ['Cliente', 'Contrato', 'Praça', 'Status', 'Data Ativação', 'Mensalidade', 'Taxa Ativação'],
+        colWidths: [22, 10, 8, 8, 12, 12, 12],
+        aligns: ['left', 'left', 'left', 'left', 'left', 'right', 'right'],
+        rows: mesData.clientes.map(c => ({
+          cells: [
+            c.cliente, c.contrato, c.praca, c.status, c.dataAtivacao,
+            formatCurrency(c.mensalidade), formatCurrency(c.taxaAtivacao),
+          ],
+          colors: [
+            null, null, null,
+            c.status === 'Ativado' ? COLORS.success : COLORS.warning,
+            null, null, null,
+          ],
+        })),
+      });
+      b.y += 4;
+    });
+
+    // Summary at the bottom
+    b.checkPage(20);
+    const allClientes = data.estratificadoMensal.flatMap(m => m.clientes);
+    const totalAtivados = allClientes.filter(c => c.status === 'Ativado').length;
+    const totalPrevistos = allClientes.filter(c => c.status === 'Previsto').length;
+    const totalReceitaEstr = allClientes.reduce((s, c) => s + c.mensalidade, 0);
+    
+    drawInsightBox(b, `Total: ${allClientes.length} clientes — ${totalAtivados} ativados e ${totalPrevistos} previstos — Receita: ${formatCurrency(totalReceitaEstr)}`, 'info');
+  }
 }
 
 // ============ REPORT: POR PRACA ============

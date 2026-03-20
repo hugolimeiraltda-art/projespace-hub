@@ -213,7 +213,7 @@ export default function StartupProjetos() {
         projectsQuery = projectsQuery.neq('implantacao_status', 'CONCLUIDO_IMPLANTACAO');
       }
       
-      projectsQuery = projectsQuery.order('updated_at', { ascending: false });
+      projectsQuery = projectsQuery.order('created_at', { ascending: false });
 
       const [projectsRes, portfolioRes, etapasRes] = await Promise.all([
         projectsQuery,

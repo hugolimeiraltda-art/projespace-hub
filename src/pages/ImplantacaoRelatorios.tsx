@@ -562,7 +562,7 @@ export default function ImplantacaoRelatorios() {
           })}
         </div>
 
-        {/* Period filter */}
+        {/* Period & Praça filter */}
         <div className="flex items-center gap-4 flex-wrap">
           <div className="flex items-center gap-2">
             <Label className="text-sm text-muted-foreground whitespace-nowrap">De:</Label>
@@ -581,6 +581,21 @@ export default function ImplantacaoRelatorios() {
               onChange={e => setDataFim(e.target.value)}
               className="w-44"
             />
+          </div>
+          <div className="flex items-center gap-2">
+            <Filter className="w-4 h-4 text-muted-foreground" />
+            <Select value={selectedPraca} onValueChange={setSelectedPraca}>
+              <SelectTrigger className="w-40">
+                <SelectValue placeholder="Praça" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="TODOS">Todas as Praças</SelectItem>
+                <SelectItem value="BHZ">BHZ</SelectItem>
+                <SelectItem value="RJ">RJ</SelectItem>
+                <SelectItem value="VIX">VIX</SelectItem>
+                <SelectItem value="SPO">SPO</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           {periodoErro && (
             <span className="text-sm text-destructive font-medium">{periodoErro}</span>

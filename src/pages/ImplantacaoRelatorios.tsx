@@ -330,6 +330,10 @@ export default function ImplantacaoRelatorios() {
       relatorioPraca,
       historicoProjetos,
       indicadores,
+      estratificadoMensal: resumoMensalComDetalhe.map(m => ({
+        mes: m.mes,
+        clientes: m.detalheAtivacoes,
+      })).filter(m => m.clientes.length > 0),
     });
     toast.success('PDF gerado com sucesso');
   };

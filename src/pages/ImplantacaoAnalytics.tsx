@@ -301,7 +301,7 @@ export default function ImplantacaoAnalytics() {
         }
       });
 
-      const saldo = totalMensalidade - canceladosReceita;
+      const saldo = (totalMensalidade + canceladosReceita) - planejadoValor;
 
       // Find planned data for this month
       const plan = plans.find(p => p.mes === monthNum && p.ano === yearNum);

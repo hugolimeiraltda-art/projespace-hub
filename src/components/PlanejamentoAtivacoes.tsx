@@ -167,10 +167,14 @@ export function PlanejamentoAtivacoes({ onUpdate }: Props) {
               </Select>
             </div>
           </div>
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-4 gap-3">
             <div>
-              <Label>Qtd Contratos</Label>
+              <Label>Qtd Ativações</Label>
               <Input value={qtd} onChange={e => setQtd(e.target.value.replace(/[^0-9,]/g, ''))} placeholder="0" />
+            </div>
+            <div>
+              <Label>Qtd Churn</Label>
+              <Input value={qtdChurn} onChange={e => setQtdChurn(e.target.value.replace(/[^0-9,]/g, ''))} placeholder="0" />
             </div>
             <div>
               <Label>Ticket Médio (R$)</Label>
@@ -180,8 +184,8 @@ export function PlanejamentoAtivacoes({ onUpdate }: Props) {
               <Label>Valor Total (R$)</Label>
               <Input
                 value={
-                  qtd && ticketMedio
-                    ? `R$ ${(parseNumber(qtd) * parseNumber(ticketMedio)).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
+                  (qtd || qtdChurn) && ticketMedio
+                    ? `R$ ${((parseNumber(qtd) - parseNumber(qtdChurn)) * parseNumber(ticketMedio)).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
                     : 'R$ 0,00'
                 }
                 readOnly

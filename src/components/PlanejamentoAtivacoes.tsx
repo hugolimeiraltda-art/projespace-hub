@@ -103,6 +103,7 @@ export function PlanejamentoAtivacoes({ onUpdate }: Props) {
       setQtd('');
       setQtdChurn('');
       setTicketMedio('');
+      setValorVenda('');
       fetchPlans();
       onUpdate();
     }

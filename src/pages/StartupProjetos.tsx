@@ -94,6 +94,8 @@ export default function StartupProjetos() {
   const [newObraEstado, setNewObraEstado] = useState('');
   const [newObraEndereco, setNewObraEndereco] = useState('');
   const [newObraVendedor, setNewObraVendedor] = useState('');
+  const [newObraTipo, setNewObraTipo] = useState<'nova' | 'acrescimo'>('nova');
+  const [tipoObraFilter, setTipoObraFilter] = useState<'todas' | 'nova' | 'acrescimo'>('todas');
   const [creatingObra, setCreatingObra] = useState(false);
   const [vendedoresList, setVendedoresList] = useState<{ id: string; nome: string; email: string }[]>([]);
 

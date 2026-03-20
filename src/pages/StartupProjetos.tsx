@@ -178,6 +178,7 @@ export default function StartupProjetos() {
         supabase.from('sale_form_attachments').delete().eq('project_id', projectId),
         supabase.from('project_notifications').delete().eq('project_id', projectId),
         supabase.from('implantacao_noc_chamados').delete().eq('project_id', projectId),
+        supabase.from('customer_portfolio').delete().eq('project_id', projectId),
       ]);
 
       const { error } = await supabase.from('projects').delete().eq('id', projectId);

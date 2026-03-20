@@ -1,0 +1,1 @@
+ALTER TABLE public.implantacao_planejamento_ativacoes ADD COLUMN ticket_medio numeric DEFAULT 0;

@@ -613,6 +613,49 @@ export default function ImplantacaoRelatorios() {
           )}
         </div>
 
+        {/* Summary KPIs for the period */}
+        {selectedReport === 'resumo_mensal' && resumoMensal.length > 0 && (() => {
+          const totPrevisto = resumoMensal.reduce((s, r) => s + r.previsto, 0);
+          const totAtivacoes = resumoMensal.reduce((s, r) => s + r.ativacoes, 0);
+          const totRecPrev = resumoMensal.reduce((s, r) => s + r.receitaPrevista, 0);
+          const totRecAtiv = resumoMensal.reduce((s, r) => s + r.receitaAtivada, 0);
+          const totVendaPrev = resumoMensal.reduce((s, r) => s + r.vendaPrevista, 0);
+          const totVendaReal = resumoMensal.reduce((s, r) => s + r.vendaAtivada, 0);
+          const totSaldo = resumoMensal.reduce((s, r) => s + r.saldoReceita, 0);
+          return (
+            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
+              <Card className="p-3">
+                <p className="text-xs text-muted-foreground">Ativações</p>
+                <p className="text-lg font-bold">{totAtivacoes} <span className="text-xs font-normal text-muted-foreground">/ {totPrevisto} prev.</span></p>
+              </Card>
+              <Card className="p-3">
+                <p className="text-xs text-muted-foreground">Rec. Prevista</p>
+                <p className="text-lg font-bold">{formatCurrency(totRecPrev)}</p>
+              </Card>
+              <Card className="p-3">
+                <p className="text-xs text-muted-foreground">Rec. Ativada</p>
+                <p className="text-lg font-bold text-emerald-600">{formatCurrency(totRecAtiv)}</p>
+              </Card>
+              <Card className="p-3">
+                <p className="text-xs text-muted-foreground">Venda Prevista</p>
+                <p className="text-lg font-bold">{formatCurrency(totVendaPrev)}</p>
+              </Card>
+              <Card className="p-3">
+                <p className="text-xs text-muted-foreground">Venda Realizada</p>
+                <p className="text-lg font-bold text-emerald-600">{formatCurrency(totVendaReal)}</p>
+              </Card>
+              <Card className="p-3">
+                <p className="text-xs text-muted-foreground">Saldo Receita</p>
+                <p className={`text-lg font-bold ${totSaldo >= 0 ? 'text-emerald-600' : 'text-destructive'}`}>{formatCurrency(totSaldo)}</p>
+              </Card>
+              <Card className="p-3">
+                <p className="text-xs text-muted-foreground">Atingimento</p>
+                <p className="text-lg font-bold">{totPrevisto > 0 ? Math.round((totAtivacoes / totPrevisto) * 100) : (totAtivacoes > 0 ? 100 : 0)}%</p>
+              </Card>
+            </div>
+          );
+        })()}
+
         {/* Data table */}
         <Card>
           <CardHeader className="pb-3">

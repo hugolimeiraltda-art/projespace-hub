@@ -585,6 +585,9 @@ export default function StartupProjetos() {
                                   {IMPLANTACAO_STATUS_LABELS[project.implantacao_status]}
                                 </Badge>
                               )}
+                              <Badge variant="outline" className="text-xs">
+                                {project.tipo_obra === 'acrescimo' ? 'Acréscimo' : 'Novo Contrato'}
+                              </Badge>
                             </div>
                             
                             <h3 className="text-lg font-semibold text-foreground mb-1">

@@ -1,0 +1,547 @@
+import { useState, useEffect, useMemo } from 'react';
+import { Layout } from '@/components/Layout';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+import { useNavigate } from 'react-router-dom';
+import {
+  ArrowLeft, FileText, FileSpreadsheet, Download, Calendar, Building,
+  TrendingUp, BarChart3, MapPin, Clock,
+} from 'lucide-react';
+import { format, parseISO, differenceInDays, startOfMonth, endOfMonth, eachMonthOfInterval, isWithinInterval, subMonths } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
+import jsPDF from 'jspdf';
+import * as XLSX from 'xlsx';
+
+const PRACA_MAP: Record<string, string> = {
+  'BHZ': 'BHZ', 'Belo Horizonte': 'BHZ', 'Belo Horizonte-MG': 'BHZ',
+  'RIO': 'RJ', 'Rio de Janeiro': 'RJ', 'Rio de Janeiro-RJ': 'RJ',
+  'VIX': 'VIX', 'Vitória': 'VIX', 'Vitória-ES': 'VIX',
+  'SPO': 'SPO', 'São Paulo': 'SPO', 'São Paulo-SP': 'SPO',
+};
+
+const getPraca = (filial?: string | null, praca?: string | null): string => {
+  const val = praca || filial || '';
+  return PRACA_MAP[val] || val || '—';
+};
+
+const formatCurrency = (v: number) =>
+  new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
+
+const PERIOD_OPTIONS = [
+  { value: '3m', label: 'Últimos 3 meses' },
+  { value: '6m', label: 'Últimos 6 meses' },
+  { value: '12m', label: 'Último ano' },
+];
+
+type ReportType = 'resumo_mensal' | 'por_praca' | 'historico' | 'indicadores';
+
+const REPORT_TYPES: { value: ReportType; label: string; desc: string; icon: typeof BarChart3 }[] = [
+  { value: 'resumo_mensal', label: 'Resumo Mensal de Ativações', desc: 'Ativações, churn, receita por mês com comparativo planejado vs realizado', icon: Calendar },
+  { value: 'por_praca', label: 'Relatório por Praça', desc: 'Detalhamento de KPIs separado por BHZ, RIO, VIX, SPO', icon: MapPin },
+  { value: 'historico', label: 'Histórico de Projetos', desc: 'Lista completa dos projetos com datas, status e valores', icon: Building },
+  { value: 'indicadores', label: 'Indicadores de Desempenho', desc: 'Tempo médio, taxa de conclusão, SLA por período', icon: TrendingUp },
+];
+
+export default function ImplantacaoRelatorios() {
+  const navigate = useNavigate();
+  const [selectedReport, setSelectedReport] = useState<ReportType>('resumo_mensal');
+  const [period, setPeriod] = useState('6m');
+  const [loading, setLoading] = useState(true);
+  const [projects, setProjects] = useState<any[]>([]);
+  const [portfolio, setPortfolio] = useState<any[]>([]);
+  const [cancelamentos, setCancelamentos] = useState<any[]>([]);
+  const [plans, setPlans] = useState<any[]>([]);
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const fetchData = async () => {
+    setLoading(true);
+    const [projRes, portRes, cancRes, planRes] = await Promise.all([
+      supabase.from('projects').select('id, numero_projeto, cliente_condominio_nome, implantacao_status, implantacao_started_at, implantacao_completed_at, prazo_entrega_projeto, created_at, tipo_obra, filial').eq('sale_status', 'CONCLUIDO'),
+      supabase.from('customer_portfolio').select('project_id, mensalidade, taxa_ativacao, data_ativacao, contrato, razao_social, filial, praca'),
+      supabase.from('customer_cancelamentos').select('id, data_cancelamento, valor_contrato, motivo, customer_id'),
+      supabase.from('implantacao_planejamento_ativacoes').select('*'),
+    ]);
+    setProjects(projRes.data || []);
+    setPortfolio(portRes.data || []);
+    setCancelamentos(cancRes.data || []);
+    setPlans(planRes.data || []);
+    setLoading(false);
+  };
+
+  const periodMonths = useMemo(() => {
+    const n = parseInt(period);
+    const end = new Date();
+    const start = subMonths(end, n);
+    return eachMonthOfInterval({ start: startOfMonth(start), end: endOfMonth(end) });
+  }, [period]);
+
+  // ========== RESUMO MENSAL ==========
+  const resumoMensal = useMemo(() => {
+    return periodMonths.map(month => {
+      const ms = startOfMonth(month);
+      const me = endOfMonth(month);
+      const mesNum = month.getMonth() + 1;
+      const anoNum = month.getFullYear();
+
+      const ativacoes = portfolio.filter(p => {
+        if (!p.data_ativacao) return false;
+        const d = parseISO(p.data_ativacao);
+        return isWithinInterval(d, { start: ms, end: me });
+      });
+
+      const canc = cancelamentos.filter(c => {
+        const d = parseISO(c.data_cancelamento);
+        return isWithinInterval(d, { start: ms, end: me });
+      });
+
+      const plan = plans.find(p => p.mes === mesNum && p.ano === anoNum && (p.praca === 'GERAL' || !p.praca));
+      const receitaAtivada = ativacoes.reduce((s, a) => s + (a.mensalidade || 0), 0);
+      const receitaCancelada = canc.reduce((s, c) => s + (c.valor_contrato || 0), 0);
+
+      return {
+        mes: format(month, 'MMM/yyyy', { locale: ptBR }),
+        ativacoes: ativacoes.length,
+        cancelamentos: canc.length,
+        saldo: ativacoes.length - canc.length,
+        receitaAtivada,
+        receitaCancelada,
+        saldoReceita: receitaAtivada - receitaCancelada,
+        previsto: plan?.qtd_contratos || 0,
+        receitaPrevista: plan?.valor_total || 0,
+        atingimento: plan?.qtd_contratos ? Math.round((ativacoes.length / plan.qtd_contratos) * 100) : null,
+      };
+    });
+  }, [periodMonths, portfolio, cancelamentos, plans]);
+
+  // ========== POR PRAÇA ==========
+  const relatorioPraca = useMemo(() => {
+    const pracas = ['BHZ', 'RJ', 'VIX', 'SPO'];
+    return pracas.map(praca => {
+      const projPraca = projects.filter(p => getPraca(p.filial) === praca);
+      const portPraca = portfolio.filter(p => getPraca(p.filial, p.praca) === praca);
+      const ativados = portPraca.filter(p => p.data_ativacao);
+      const receitaTotal = portPraca.reduce((s, p) => s + (p.mensalidade || 0), 0);
+      const taxaTotal = portPraca.reduce((s, p) => s + (p.taxa_ativacao || 0), 0);
+      const emAndamento = projPraca.filter(p => p.implantacao_status === 'EM_EXECUCAO').length;
+      const concluidos = projPraca.filter(p => p.implantacao_status === 'CONCLUIDO').length;
+
+      return {
+        praca,
+        totalProjetos: projPraca.length,
+        emAndamento,
+        concluidos,
+        clientesAtivos: ativados.length,
+        receitaMensal: receitaTotal,
+        taxaAtivacao: taxaTotal,
+      };
+    });
+  }, [projects, portfolio]);
+
+  // ========== HISTÓRICO ==========
+  const historicoProjetos = useMemo(() => {
+    return projects.map(p => {
+      const port = portfolio.find(pt => pt.project_id === p.id);
+      const dias = p.implantacao_started_at && p.implantacao_completed_at
+        ? differenceInDays(parseISO(p.implantacao_completed_at), parseISO(p.implantacao_started_at))
+        : null;
+      return {
+        projeto: p.numero_projeto,
+        cliente: p.cliente_condominio_nome,
+        status: p.implantacao_status || '—',
+        tipoObra: p.tipo_obra || '—',
+        praca: getPraca(p.filial),
+        dataEntrada: p.created_at ? format(parseISO(p.created_at), 'dd/MM/yyyy') : '—',
+        inicioObra: p.implantacao_started_at ? format(parseISO(p.implantacao_started_at), 'dd/MM/yyyy') : '—',
+        conclusao: p.implantacao_completed_at ? format(parseISO(p.implantacao_completed_at), 'dd/MM/yyyy') : '—',
+        diasObra: dias,
+        mensalidade: port?.mensalidade || 0,
+        taxaAtivacao: port?.taxa_ativacao || 0,
+      };
+    });
+  }, [projects, portfolio]);
+
+  // ========== INDICADORES ==========
+  const indicadores = useMemo(() => {
+    const concluidos = projects.filter(p => p.implantacao_status === 'CONCLUIDO');
+    const emExecucao = projects.filter(p => p.implantacao_status === 'EM_EXECUCAO');
+    const dias = concluidos
+      .map(p => p.implantacao_started_at && p.implantacao_completed_at
+        ? differenceInDays(parseISO(p.implantacao_completed_at), parseISO(p.implantacao_started_at))
+        : null)
+      .filter(Boolean) as number[];
+
+    const tempoMedio = dias.length ? Math.round(dias.reduce((a, b) => a + b, 0) / dias.length) : 0;
+    const tempoMin = dias.length ? Math.min(...dias) : 0;
+    const tempoMax = dias.length ? Math.max(...dias) : 0;
+    const taxaConclusao = projects.length ? Math.round((concluidos.length / projects.length) * 100) : 0;
+
+    const dentroSLA = concluidos.filter(p => {
+      if (!p.prazo_entrega_projeto || !p.implantacao_completed_at) return false;
+      return parseISO(p.implantacao_completed_at) <= parseISO(p.prazo_entrega_projeto);
+    }).length;
+    const slaRate = concluidos.length ? Math.round((dentroSLA / concluidos.length) * 100) : 0;
+
+    const receitaTotal = portfolio.reduce((s, p) => s + (p.mensalidade || 0), 0);
+    const taxaTotal = portfolio.reduce((s, p) => s + (p.taxa_ativacao || 0), 0);
+
+    return {
+      totalProjetos: projects.length,
+      concluidos: concluidos.length,
+      emExecucao: emExecucao.length,
+      tempoMedio, tempoMin, tempoMax,
+      taxaConclusao,
+      slaRate, dentroSLA,
+      receitaTotal, taxaTotal,
+    };
+  }, [projects, portfolio]);
+
+  // ========== EXPORT FUNCTIONS ==========
+  const exportPDF = () => {
+    const doc = new jsPDF({ orientation: 'landscape' });
+    const title = REPORT_TYPES.find(r => r.value === selectedReport)!.label;
+    doc.setFontSize(16);
+    doc.text(title, 14, 20);
+    doc.setFontSize(9);
+    doc.text(`Gerado em ${format(new Date(), 'dd/MM/yyyy HH:mm')}`, 14, 28);
+
+    let y = 38;
+    const lh = 7;
+    const pageH = doc.internal.pageSize.height - 20;
+
+    const addRow = (cols: string[], bold = false) => {
+      if (y > pageH) { doc.addPage(); y = 20; }
+      doc.setFont('helvetica', bold ? 'bold' : 'normal');
+      const colW = (doc.internal.pageSize.width - 28) / cols.length;
+      cols.forEach((c, i) => doc.text(String(c), 14 + i * colW, y));
+      y += lh;
+    };
+
+    if (selectedReport === 'resumo_mensal') {
+      addRow(['Mês', 'Previsto', 'Ativações', 'Churn', 'Saldo', 'Rec. Prevista', 'Rec. Ativada', 'Ating.'], true);
+      resumoMensal.forEach(r => addRow([
+        r.mes, String(r.previsto), String(r.ativacoes), String(r.cancelamentos),
+        String(r.saldo), formatCurrency(r.receitaPrevista), formatCurrency(r.receitaAtivada),
+        r.atingimento !== null ? `${r.atingimento}%` : '—',
+      ]));
+    } else if (selectedReport === 'por_praca') {
+      addRow(['Praça', 'Projetos', 'Em Andamento', 'Concluídos', 'Clientes', 'Receita Mensal', 'Taxa Ativação'], true);
+      relatorioPraca.forEach(r => addRow([
+        r.praca, String(r.totalProjetos), String(r.emAndamento), String(r.concluidos),
+        String(r.clientesAtivos), formatCurrency(r.receitaMensal), formatCurrency(r.taxaAtivacao),
+      ]));
+    } else if (selectedReport === 'historico') {
+      addRow(['Projeto', 'Cliente', 'Status', 'Praça', 'Entrada', 'Início', 'Conclusão', 'Dias', 'Mensalidade'], true);
+      historicoProjetos.forEach(r => addRow([
+        String(r.projeto), r.cliente.substring(0, 20), r.status, r.praca,
+        r.dataEntrada, r.inicioObra, r.conclusao, r.diasObra !== null ? String(r.diasObra) : '—',
+        formatCurrency(r.mensalidade),
+      ]));
+    } else {
+      const ind = indicadores;
+      addRow(['Indicador', 'Valor'], true);
+      addRow(['Total de Projetos', String(ind.totalProjetos)]);
+      addRow(['Concluídos', String(ind.concluidos)]);
+      addRow(['Em Execução', String(ind.emExecucao)]);
+      addRow(['Tempo Médio (dias)', String(ind.tempoMedio)]);
+      addRow(['Tempo Mínimo (dias)', String(ind.tempoMin)]);
+      addRow(['Tempo Máximo (dias)', String(ind.tempoMax)]);
+      addRow(['Taxa de Conclusão', `${ind.taxaConclusao}%`]);
+      addRow(['Dentro do SLA', `${ind.slaRate}% (${ind.dentroSLA}/${ind.concluidos})`]);
+      addRow(['Receita Mensal Total', formatCurrency(ind.receitaTotal)]);
+      addRow(['Taxa Ativação Total', formatCurrency(ind.taxaTotal)]);
+    }
+
+    doc.save(`implantacao_${selectedReport}_${format(new Date(), 'yyyyMMdd')}.pdf`);
+    toast.success('PDF gerado com sucesso');
+  };
+
+  const exportExcel = () => {
+    const wb = XLSX.utils.book_new();
+
+    if (selectedReport === 'resumo_mensal') {
+      const ws = XLSX.utils.json_to_sheet(resumoMensal.map(r => ({
+        'Mês': r.mes, 'Previsto': r.previsto, 'Ativações': r.ativacoes,
+        'Cancelamentos': r.cancelamentos, 'Saldo': r.saldo,
+        'Receita Prevista': r.receitaPrevista, 'Receita Ativada': r.receitaAtivada,
+        'Receita Cancelada': r.receitaCancelada, 'Saldo Receita': r.saldoReceita,
+        'Atingimento (%)': r.atingimento,
+      })));
+      XLSX.utils.book_append_sheet(wb, ws, 'Resumo Mensal');
+    } else if (selectedReport === 'por_praca') {
+      const ws = XLSX.utils.json_to_sheet(relatorioPraca.map(r => ({
+        'Praça': r.praca, 'Total Projetos': r.totalProjetos, 'Em Andamento': r.emAndamento,
+        'Concluídos': r.concluidos, 'Clientes Ativos': r.clientesAtivos,
+        'Receita Mensal': r.receitaMensal, 'Taxa Ativação': r.taxaAtivacao,
+      })));
+      XLSX.utils.book_append_sheet(wb, ws, 'Por Praça');
+    } else if (selectedReport === 'historico') {
+      const ws = XLSX.utils.json_to_sheet(historicoProjetos.map(r => ({
+        'Projeto': r.projeto, 'Cliente': r.cliente, 'Status': r.status,
+        'Tipo Obra': r.tipoObra, 'Praça': r.praca, 'Data Entrada': r.dataEntrada,
+        'Início Obra': r.inicioObra, 'Conclusão': r.conclusao,
+        'Dias de Obra': r.diasObra, 'Mensalidade': r.mensalidade, 'Taxa Ativação': r.taxaAtivacao,
+      })));
+      XLSX.utils.book_append_sheet(wb, ws, 'Histórico');
+    } else {
+      const ind = indicadores;
+      const ws = XLSX.utils.aoa_to_sheet([
+        ['Indicador', 'Valor'],
+        ['Total de Projetos', ind.totalProjetos],
+        ['Concluídos', ind.concluidos],
+        ['Em Execução', ind.emExecucao],
+        ['Tempo Médio (dias)', ind.tempoMedio],
+        ['Tempo Mínimo (dias)', ind.tempoMin],
+        ['Tempo Máximo (dias)', ind.tempoMax],
+        ['Taxa de Conclusão (%)', ind.taxaConclusao],
+        ['Dentro do SLA (%)', ind.slaRate],
+        ['Receita Mensal Total', ind.receitaTotal],
+        ['Taxa Ativação Total', ind.taxaTotal],
+      ]);
+      XLSX.utils.book_append_sheet(wb, ws, 'Indicadores');
+    }
+
+    XLSX.writeFile(wb, `implantacao_${selectedReport}_${format(new Date(), 'yyyyMMdd')}.xlsx`);
+    toast.success('Excel gerado com sucesso');
+  };
+
+  // ========== RENDER TABLE ==========
+  const renderTable = () => {
+    if (loading) return <Skeleton className="h-64 w-full" />;
+
+    if (selectedReport === 'resumo_mensal') {
+      return (
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Mês</TableHead>
+              <TableHead className="text-right">Previsto</TableHead>
+              <TableHead className="text-right">Ativações</TableHead>
+              <TableHead className="text-right">Churn</TableHead>
+              <TableHead className="text-right">Saldo</TableHead>
+              <TableHead className="text-right">Rec. Prevista</TableHead>
+              <TableHead className="text-right">Rec. Ativada</TableHead>
+              <TableHead className="text-right">Saldo Receita</TableHead>
+              <TableHead className="text-right">Atingimento</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {resumoMensal.map((r, i) => (
+              <TableRow key={i}>
+                <TableCell className="font-medium">{r.mes}</TableCell>
+                <TableCell className="text-right">{r.previsto}</TableCell>
+                <TableCell className="text-right text-green-600 font-medium">{r.ativacoes}</TableCell>
+                <TableCell className="text-right text-destructive">{r.cancelamentos}</TableCell>
+                <TableCell className="text-right font-semibold">{r.saldo}</TableCell>
+                <TableCell className="text-right">{formatCurrency(r.receitaPrevista)}</TableCell>
+                <TableCell className="text-right">{formatCurrency(r.receitaAtivada)}</TableCell>
+                <TableCell className="text-right font-semibold">{formatCurrency(r.saldoReceita)}</TableCell>
+                <TableCell className="text-right">
+                  {r.atingimento !== null ? (
+                    <Badge variant={r.atingimento >= 100 ? 'default' : r.atingimento >= 50 ? 'secondary' : 'destructive'}>
+                      {r.atingimento}%
+                    </Badge>
+                  ) : '—'}
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      );
+    }
+
+    if (selectedReport === 'por_praca') {
+      return (
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Praça</TableHead>
+              <TableHead className="text-right">Total Projetos</TableHead>
+              <TableHead className="text-right">Em Andamento</TableHead>
+              <TableHead className="text-right">Concluídos</TableHead>
+              <TableHead className="text-right">Clientes Ativos</TableHead>
+              <TableHead className="text-right">Receita Mensal</TableHead>
+              <TableHead className="text-right">Taxa Ativação</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {relatorioPraca.map((r, i) => (
+              <TableRow key={i}>
+                <TableCell className="font-medium">{r.praca}</TableCell>
+                <TableCell className="text-right">{r.totalProjetos}</TableCell>
+                <TableCell className="text-right">{r.emAndamento}</TableCell>
+                <TableCell className="text-right">{r.concluidos}</TableCell>
+                <TableCell className="text-right">{r.clientesAtivos}</TableCell>
+                <TableCell className="text-right">{formatCurrency(r.receitaMensal)}</TableCell>
+                <TableCell className="text-right">{formatCurrency(r.taxaAtivacao)}</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      );
+    }
+
+    if (selectedReport === 'historico') {
+      return (
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Projeto</TableHead>
+              <TableHead>Cliente</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Tipo</TableHead>
+              <TableHead>Praça</TableHead>
+              <TableHead>Entrada</TableHead>
+              <TableHead>Início</TableHead>
+              <TableHead>Conclusão</TableHead>
+              <TableHead className="text-right">Dias</TableHead>
+              <TableHead className="text-right">Mensalidade</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {historicoProjetos.map((r, i) => (
+              <TableRow key={i}>
+                <TableCell className="font-medium">#{r.projeto}</TableCell>
+                <TableCell className="max-w-[200px] truncate">{r.cliente}</TableCell>
+                <TableCell>
+                  <Badge variant={r.status === 'CONCLUIDO' ? 'default' : 'secondary'}>
+                    {r.status === 'CONCLUIDO' ? 'Concluído' : r.status === 'EM_EXECUCAO' ? 'Em Execução' : r.status}
+                  </Badge>
+                </TableCell>
+                <TableCell>{r.tipoObra}</TableCell>
+                <TableCell>{r.praca}</TableCell>
+                <TableCell className="text-sm">{r.dataEntrada}</TableCell>
+                <TableCell className="text-sm">{r.inicioObra}</TableCell>
+                <TableCell className="text-sm">{r.conclusao}</TableCell>
+                <TableCell className="text-right">{r.diasObra ?? '—'}</TableCell>
+                <TableCell className="text-right">{formatCurrency(r.mensalidade)}</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      );
+    }
+
+    // Indicadores
+    const ind = indicadores;
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {[
+          { label: 'Total de Projetos', value: ind.totalProjetos, icon: <Building className="w-5 h-5" /> },
+          { label: 'Concluídos', value: ind.concluidos, icon: <BarChart3 className="w-5 h-5" /> },
+          { label: 'Em Execução', value: ind.emExecucao, icon: <Clock className="w-5 h-5" /> },
+          { label: 'Tempo Médio (dias)', value: ind.tempoMedio, icon: <Clock className="w-5 h-5" /> },
+          { label: 'Tempo Mínimo', value: `${ind.tempoMin} dias`, icon: <TrendingUp className="w-5 h-5" /> },
+          { label: 'Tempo Máximo', value: `${ind.tempoMax} dias`, icon: <TrendingUp className="w-5 h-5" /> },
+          { label: 'Taxa de Conclusão', value: `${ind.taxaConclusao}%`, icon: <BarChart3 className="w-5 h-5" /> },
+          { label: 'Dentro do SLA', value: `${ind.slaRate}%`, icon: <Calendar className="w-5 h-5" /> },
+          { label: 'Receita Mensal Total', value: formatCurrency(ind.receitaTotal), icon: <TrendingUp className="w-5 h-5" /> },
+          { label: 'Taxa Ativação Total', value: formatCurrency(ind.taxaTotal), icon: <TrendingUp className="w-5 h-5" /> },
+        ].map((item, i) => (
+          <Card key={i}>
+            <CardContent className="p-4 flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-primary/10 text-primary">{item.icon}</div>
+              <div>
+                <p className="text-sm text-muted-foreground">{item.label}</p>
+                <p className="text-xl font-bold">{item.value}</p>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    );
+  };
+
+  return (
+    <Layout>
+      <div className="p-6 md:p-8 space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Button variant="ghost" size="icon" onClick={() => navigate('/implantacao-analytics')}>
+              <ArrowLeft className="w-5 h-5" />
+            </Button>
+            <div>
+              <h1 className="text-2xl font-bold">Relatórios de Implantação</h1>
+              <p className="text-muted-foreground text-sm">Exporte dados em PDF ou Excel</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={exportPDF} className="gap-2">
+              <FileText className="w-4 h-4" /> PDF
+            </Button>
+            <Button variant="outline" size="sm" onClick={exportExcel} className="gap-2">
+              <FileSpreadsheet className="w-4 h-4" /> Excel
+            </Button>
+          </div>
+        </div>
+
+        {/* Report selector */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          {REPORT_TYPES.map(rt => {
+            const Icon = rt.icon;
+            return (
+              <Card
+                key={rt.value}
+                className={`cursor-pointer transition-all hover:shadow-md ${selectedReport === rt.value ? 'ring-2 ring-primary border-primary' : ''}`}
+                onClick={() => setSelectedReport(rt.value)}
+              >
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className={`p-2 rounded-lg ${selectedReport === rt.value ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
+                      <Icon className="w-4 h-4" />
+                    </div>
+                    <h3 className="font-medium text-sm">{rt.label}</h3>
+                  </div>
+                  <p className="text-xs text-muted-foreground">{rt.desc}</p>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+
+        {/* Period filter (for resumo mensal) */}
+        {selectedReport === 'resumo_mensal' && (
+          <div className="flex items-center gap-3">
+            <span className="text-sm text-muted-foreground">Período:</span>
+            <Select value={period} onValueChange={setPeriod}>
+              <SelectTrigger className="w-48">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {PERIOD_OPTIONS.map(o => (
+                  <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+
+        {/* Data table */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg">
+              {REPORT_TYPES.find(r => r.value === selectedReport)?.label}
+            </CardTitle>
+            <CardDescription>
+              {REPORT_TYPES.find(r => r.value === selectedReport)?.desc}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto">
+              {renderTable()}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </Layout>
+  );
+}

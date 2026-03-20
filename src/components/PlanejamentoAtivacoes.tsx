@@ -217,9 +217,10 @@ export function PlanejamentoAtivacoes({ onUpdate }: Props) {
                     <TableHead className="text-right">Ativações</TableHead>
                     <TableHead className="text-right">Churn</TableHead>
                     <TableHead className="text-right">Saldo</TableHead>
-                    <TableHead className="text-right">Ticket Médio</TableHead>
-                    <TableHead className="text-right">Valor Total</TableHead>
-                    <TableHead className="w-10" />
+                     <TableHead className="text-right">Ticket Médio</TableHead>
+                     <TableHead className="text-right">Valor Venda</TableHead>
+                     <TableHead className="text-right">Valor Total</TableHead>
+                     <TableHead className="w-10" />
                   </TableRow>
                 </TableHeader>
                 <TableBody>

@@ -447,11 +447,67 @@ export default function StartupProjetos() {
                   </div>
                    <div>
                     <Label>Tipo de Obra *</Label>
-                    <Select value={newObraTipo} onValueChange={(v) => setNewObraTipo(v as 'nova' | 'acrescimo')}>
+                    <Select value={newObraTipo} onValueChange={(v) => {
+                      setNewObraTipo(v as 'nova' | 'acrescimo');
+                      setSelectedCustomerId('');
+                      setCustomerSearch('');
+                    }}>
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="nova">Novo Contrato</SelectItem>
                         <SelectItem value="acrescimo">Acréscimo</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  {/* Customer selection for pre-fill */}
+                  <div>
+                    <Label>Cliente Existente {newObraTipo === 'acrescimo' ? '*' : '(opcional)'}</Label>
+                    <Select value={selectedCustomerId} onValueChange={(customerId) => {
+                      setSelectedCustomerId(customerId);
+                      const customer = customersList.find(c => c.id === customerId);
+                      if (customer) {
+                        setNewObraNome(customer.razao_social);
+                        if (customer.endereco) {
+                          const parts = customer.endereco.split(',').map(p => p.trim());
+                          if (parts.length >= 2) {
+                            const estado = parts[parts.length - 1];
+                            const cidade = parts.slice(0, -1).join(', ');
+                            if (estado.length === 2) {
+                              setNewObraCidade(cidade);
+                              setNewObraEstado(estado);
+                            } else {
+                              setNewObraEndereco(customer.endereco);
+                            }
+                          } else {
+                            setNewObraEndereco(customer.endereco);
+                          }
+                        }
+                      }
+                    }}>
+                      <SelectTrigger><SelectValue placeholder="Selecione um cliente da carteira" /></SelectTrigger>
+                      <SelectContent>
+                        <div className="p-2">
+                          <Input
+                            placeholder="Buscar cliente..."
+                            value={customerSearch}
+                            onChange={(e) => setCustomerSearch(e.target.value)}
+                            className="mb-2"
+                            onClick={(e) => e.stopPropagation()}
+                            onKeyDown={(e) => e.stopPropagation()}
+                          />
+                        </div>
+                        {customersList
+                          .filter(c => {
+                            if (!customerSearch) return true;
+                            const search = customerSearch.toLowerCase();
+                            return c.razao_social.toLowerCase().includes(search) || c.contrato.toLowerCase().includes(search);
+                          })
+                          .slice(0, 50)
+                          .map(c => (
+                            <SelectItem key={c.id} value={c.id}>
+                              {c.contrato} - {c.razao_social}
+                            </SelectItem>
+                          ))}
                       </SelectContent>
                     </Select>
                   </div>

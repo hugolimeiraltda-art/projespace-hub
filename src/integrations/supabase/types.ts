@@ -2300,6 +2300,7 @@ export type Database = {
           prazo_entrega_projeto: string | null
           sale_status: Database["public"]["Enums"]["sale_status"]
           status: Database["public"]["Enums"]["project_status"]
+          tipo_obra: string
           updated_at: string
           vendedor_email: string
           vendedor_nome: string
@@ -2334,6 +2335,7 @@ export type Database = {
           prazo_entrega_projeto?: string | null
           sale_status?: Database["public"]["Enums"]["sale_status"]
           status?: Database["public"]["Enums"]["project_status"]
+          tipo_obra?: string
           updated_at?: string
           vendedor_email: string
           vendedor_nome: string
@@ -2368,6 +2370,7 @@ export type Database = {
           prazo_entrega_projeto?: string | null
           sale_status?: Database["public"]["Enums"]["sale_status"]
           status?: Database["public"]["Enums"]["project_status"]
+          tipo_obra?: string
           updated_at?: string
           vendedor_email?: string
           vendedor_nome?: string

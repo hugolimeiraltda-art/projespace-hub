@@ -52,6 +52,7 @@ interface StartupProject {
   implantacao_started_at: string | null;
   implantacao_completed_at: string | null;
   prazo_entrega_projeto: string | null;
+  tipo_obra: 'nova' | 'acrescimo';
 }
 
 const IMPLANTACAO_STATUS_LABELS: Record<ImplantacaoStatus, string> = {
@@ -93,6 +94,8 @@ export default function StartupProjetos() {
   const [newObraEstado, setNewObraEstado] = useState('');
   const [newObraEndereco, setNewObraEndereco] = useState('');
   const [newObraVendedor, setNewObraVendedor] = useState('');
+  const [newObraTipo, setNewObraTipo] = useState<'nova' | 'acrescimo'>('nova');
+  const [tipoObraFilter, setTipoObraFilter] = useState<'todas' | 'nova' | 'acrescimo'>('todas');
   const [creatingObra, setCreatingObra] = useState(false);
   const [vendedoresList, setVendedoresList] = useState<{ id: string; nome: string; email: string }[]>([]);
 
@@ -146,6 +149,7 @@ export default function StartupProjetos() {
           status: 'APROVADO_PROJETO',
           sale_status: 'CONCLUIDO',
           implantacao_status: 'A_EXECUTAR',
+          tipo_obra: newObraTipo,
         })
         .select('id')
         .single();
@@ -157,7 +161,7 @@ export default function StartupProjetos() {
 
       toast({ title: 'Obra cadastrada com sucesso!' });
       setShowNewObra(false);
-      setNewObraNome(''); setNewObraCidade(''); setNewObraEstado(''); setNewObraEndereco(''); setNewObraVendedor('');
+      setNewObraNome(''); setNewObraCidade(''); setNewObraEstado(''); setNewObraEndereco(''); setNewObraVendedor(''); setNewObraTipo('nova');
       fetchProjects();
     } catch (e) {
       console.error('Error creating obra:', e);
@@ -200,7 +204,7 @@ export default function StartupProjetos() {
       
       let projectsQuery = supabase
         .from('projects')
-        .select('id, numero_projeto, cliente_condominio_nome, cliente_cidade, cliente_estado, vendedor_nome, created_at, updated_at, implantacao_status, implantacao_started_at, implantacao_completed_at, prazo_entrega_projeto')
+        .select('id, numero_projeto, cliente_condominio_nome, cliente_cidade, cliente_estado, vendedor_nome, created_at, updated_at, implantacao_status, implantacao_started_at, implantacao_completed_at, prazo_entrega_projeto, tipo_obra')
         .eq('sale_status', 'CONCLUIDO');
       
       if (activeTab === 'historico') {
@@ -259,7 +263,7 @@ export default function StartupProjetos() {
       });
       setEtapasMap(eMap);
 
-      setProjects(projectsRes.data || []);
+      setProjects((projectsRes.data || []) as StartupProject[]);
     } catch (error) {
       console.error('Error:', error);
     } finally {
@@ -332,7 +336,9 @@ export default function StartupProjetos() {
     const effectiveStatus = project.implantacao_status || 'A_EXECUTAR';
     const matchesStatus = statusFilter === 'TODOS' || effectiveStatus === statusFilter;
     
-    return matchesSearch && matchesStatus;
+    const matchesTipoObra = tipoObraFilter === 'todas' || project.tipo_obra === tipoObraFilter;
+    
+    return matchesSearch && matchesStatus && matchesTipoObra;
   });
 
   const statusCounts = {
@@ -407,6 +413,16 @@ export default function StartupProjetos() {
                         </SelectContent>
                       </Select>
                     </div>
+                  </div>
+                   <div>
+                    <Label>Tipo de Obra *</Label>
+                    <Select value={newObraTipo} onValueChange={(v) => setNewObraTipo(v as 'nova' | 'acrescimo')}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="nova">Novo Contrato</SelectItem>
+                        <SelectItem value="acrescimo">Acréscimo</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div>
                     <Label>Vendedor Responsável *</Label>
@@ -485,6 +501,23 @@ export default function StartupProjetos() {
               </Card>
             </div>
 
+            {/* Tipo de Obra Tabs */}
+            <div className="flex gap-2 mb-6">
+              {[
+                { value: 'todas' as const, label: 'Todas' },
+                { value: 'nova' as const, label: 'Obras Novas' },
+                { value: 'acrescimo' as const, label: 'Acréscimos' },
+              ].map((tab) => (
+                <Button
+                  key={tab.value}
+                  variant={tipoObraFilter === tab.value ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setTipoObraFilter(tab.value)}
+                >
+                  {tab.label}
+                </Button>
+              ))}
+            </div>
             {/* Search and Filter */}
             <div className="mb-6 flex flex-col sm:flex-row gap-4">
               <div className="relative flex-1 max-w-md">
@@ -552,6 +585,9 @@ export default function StartupProjetos() {
                                   {IMPLANTACAO_STATUS_LABELS[project.implantacao_status]}
                                 </Badge>
                               )}
+                              <Badge variant="outline" className="text-xs">
+                                {project.tipo_obra === 'acrescimo' ? 'Acréscimo' : 'Novo Contrato'}
+                              </Badge>
                             </div>
                             
                             <h3 className="text-lg font-semibold text-foreground mb-1">

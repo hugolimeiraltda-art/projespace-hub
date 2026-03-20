@@ -34,6 +34,8 @@ import {
   Loader2,
   Trash2,
   ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';

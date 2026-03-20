@@ -111,11 +111,11 @@ export default function ImplantacaoAnalytics() {
           .order('created_at', { ascending: false }),
         supabase
           .from('customer_portfolio')
-          .select('project_id, mensalidade, taxa_ativacao, data_ativacao, contrato, razao_social, filial, praca')
+          .select('project_id, mensalidade, taxa_ativacao, data_ativacao, contrato, razao_social, filial, praca, status_implantacao')
           .not('project_id', 'is', null),
         supabase
           .from('customer_portfolio')
-          .select('project_id, mensalidade, taxa_ativacao, data_ativacao, contrato, razao_social, filial, praca'),
+          .select('project_id, mensalidade, taxa_ativacao, data_ativacao, contrato, razao_social, filial, praca, status_implantacao'),
         supabase
           .from('customer_cancelamentos')
           .select('id, data_cancelamento, valor_contrato, motivo, customer_id'),

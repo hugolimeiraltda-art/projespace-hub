@@ -50,6 +50,7 @@ const REPORT_TYPES: { value: ReportType; label: string; desc: string; icon: type
 export default function ImplantacaoRelatorios() {
   const navigate = useNavigate();
   const [selectedReport, setSelectedReport] = useState<ReportType>('resumo_mensal');
+  const [selectedPraca, setSelectedPraca] = useState<string>('TODOS');
   const [dataInicio, setDataInicio] = useState(() => format(subMonths(new Date(), 6), 'yyyy-MM-dd'));
   const [dataFim, setDataFim] = useState(() => format(new Date(), 'yyyy-MM-dd'));
   const [periodoErro, setPeriodoErro] = useState('');

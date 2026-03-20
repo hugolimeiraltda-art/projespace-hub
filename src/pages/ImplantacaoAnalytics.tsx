@@ -277,6 +277,7 @@ export default function ImplantacaoAnalytics() {
             mensalidade: Number(port.mensalidade) || 0,
             dataAtivacao: port.data_ativacao || p.prazo_entrega_projeto || null,
             praca: getPraca(port.filial, port.praca),
+            tipoObra: p.tipo_obra || 'nova',
           });
         }
       });

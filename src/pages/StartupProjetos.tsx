@@ -103,6 +103,9 @@ export default function StartupProjetos() {
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const [creatingObra, setCreatingObra] = useState(false);
   const [vendedoresList, setVendedoresList] = useState<{ id: string; nome: string; email: string }[]>([]);
+  const [customersList, setCustomersList] = useState<{ id: string; razao_social: string; contrato: string; endereco: string | null; filial: string | null }[]>([]);
+  const [selectedCustomerId, setSelectedCustomerId] = useState<string>('');
+  const [customerSearch, setCustomerSearch] = useState('');
 
   useEffect(() => {
     fetchProjects();

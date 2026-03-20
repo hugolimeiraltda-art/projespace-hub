@@ -162,12 +162,21 @@ export function PlanejamentoAtivacoes({ onUpdate }: Props) {
               <Input type="number" min="0" value={qtd} onChange={e => setQtd(e.target.value)} placeholder="0" />
             </div>
             <div>
-              <Label>Valor Total (R$)</Label>
-              <Input value={valor} onChange={e => setValor(e.target.value)} placeholder="0,00" />
-            </div>
-            <div>
               <Label>Ticket Médio (R$)</Label>
               <Input value={ticketMedio} onChange={e => setTicketMedio(e.target.value)} placeholder="0,00" />
+            </div>
+            <div>
+              <Label>Valor Total (R$)</Label>
+              <Input
+                value={
+                  qtd && ticketMedio
+                    ? (Number(qtd) * Number(ticketMedio.replace(/\./g, '').replace(',', '.'))).toLocaleString('pt-BR', { minimumFractionDigits: 2 })
+                    : '0,00'
+                }
+                readOnly
+                className="bg-muted cursor-not-allowed"
+                placeholder="0,00"
+              />
             </div>
           </div>
           <Button onClick={handleAdd} disabled={saving} className="w-full gap-2">

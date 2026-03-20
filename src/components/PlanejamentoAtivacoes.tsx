@@ -37,6 +37,7 @@ export function PlanejamentoAtivacoes({ onUpdate }: Props) {
   const [praca, setPraca] = useState('GERAL');
   const [qtd, setQtd] = useState('');
   const [valor, setValor] = useState('');
+  const [ticketMedio, setTicketMedio] = useState('');
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {

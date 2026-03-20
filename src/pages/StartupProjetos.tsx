@@ -580,9 +580,9 @@ export default function StartupProjetos() {
                 title={sortDirection === 'asc' ? 'Crescente' : 'Decrescente'}
               >
                 {sortDirection === 'asc' ? (
-                  <ArrowUpDown className="w-4 h-4" />
+                  <ArrowUp className="w-4 h-4" />
                 ) : (
-                  <ArrowUpDown className="w-4 h-4 rotate-180" />
+                  <ArrowDown className="w-4 h-4" />
                 )}
               </Button>
             </div>

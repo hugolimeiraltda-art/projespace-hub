@@ -205,7 +205,9 @@ export function PlanejamentoAtivacoes({ onUpdate }: Props) {
                   <TableRow>
                     <TableHead>Mês/Ano</TableHead>
                     <TableHead>Praça</TableHead>
-                    <TableHead className="text-right">Contratos</TableHead>
+                    <TableHead className="text-right">Ativações</TableHead>
+                    <TableHead className="text-right">Churn</TableHead>
+                    <TableHead className="text-right">Saldo</TableHead>
                     <TableHead className="text-right">Ticket Médio</TableHead>
                     <TableHead className="text-right">Valor Total</TableHead>
                     <TableHead className="w-10" />
@@ -217,6 +219,8 @@ export function PlanejamentoAtivacoes({ onUpdate }: Props) {
                       <TableCell className="text-sm">{MESES[p.mes - 1]}/{p.ano}</TableCell>
                       <TableCell className="text-sm">{p.praca || 'GERAL'}</TableCell>
                       <TableCell className="text-right text-sm">{p.qtd_contratos}</TableCell>
+                      <TableCell className="text-right text-sm text-destructive">{p.qtd_churn || 0}</TableCell>
+                      <TableCell className="text-right text-sm font-medium">{(p.qtd_contratos - (p.qtd_churn || 0))}</TableCell>
                       <TableCell className="text-right text-sm">R$ {Number(p.ticket_medio || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</TableCell>
                       <TableCell className="text-right text-sm">R$ {Number(p.valor_total).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</TableCell>
                       <TableCell>

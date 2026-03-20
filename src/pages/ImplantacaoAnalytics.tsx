@@ -101,7 +101,7 @@ export default function ImplantacaoAnalytics() {
       const [projectsRes, portfolioRes, allPortfolioRes, cancelamentosRes] = await Promise.all([
         supabase
           .from('projects')
-          .select('id, numero_projeto, cliente_condominio_nome, implantacao_status, implantacao_started_at, implantacao_completed_at, prazo_entrega_projeto, created_at')
+          .select('id, numero_projeto, cliente_condominio_nome, implantacao_status, implantacao_started_at, implantacao_completed_at, prazo_entrega_projeto, created_at, tipo_obra')
           .eq('sale_status', 'CONCLUIDO')
           .order('created_at', { ascending: false }),
         supabase

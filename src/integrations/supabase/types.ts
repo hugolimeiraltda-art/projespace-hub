@@ -1073,6 +1073,7 @@ export type Database = {
           mes: number
           praca: string | null
           qtd_contratos: number
+          ticket_medio: number | null
           updated_at: string
           valor_total: number
         }
@@ -1085,6 +1086,7 @@ export type Database = {
           mes: number
           praca?: string | null
           qtd_contratos?: number
+          ticket_medio?: number | null
           updated_at?: string
           valor_total?: number
         }
@@ -1097,6 +1099,7 @@ export type Database = {
           mes?: number
           praca?: string | null
           qtd_contratos?: number
+          ticket_medio?: number | null
           updated_at?: string
           valor_total?: number
         }

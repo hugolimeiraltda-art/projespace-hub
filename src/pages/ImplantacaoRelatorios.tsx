@@ -76,12 +76,25 @@ export default function ImplantacaoRelatorios() {
     setLoading(false);
   };
 
+  useEffect(() => {
+    if (dataInicio && dataFim) {
+      const meses = differenceInMonths(parseISO(dataFim), parseISO(dataInicio));
+      if (meses > 24) {
+        setPeriodoErro('Período máximo de 24 meses');
+      } else if (parseISO(dataFim) < parseISO(dataInicio)) {
+        setPeriodoErro('Data final deve ser maior que a inicial');
+      } else {
+        setPeriodoErro('');
+      }
+    }
+  }, [dataInicio, dataFim]);
+
   const periodMonths = useMemo(() => {
-    const n = parseInt(period);
-    const end = new Date();
-    const start = subMonths(end, n);
+    const start = parseISO(dataInicio);
+    const end = parseISO(dataFim);
+    if (end < start) return [];
     return eachMonthOfInterval({ start: startOfMonth(start), end: endOfMonth(end) });
-  }, [period]);
+  }, [dataInicio, dataFim]);
 
   // ========== RESUMO MENSAL ==========
   const resumoMensal = useMemo(() => {

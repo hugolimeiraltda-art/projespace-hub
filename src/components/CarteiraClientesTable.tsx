@@ -331,6 +331,7 @@ export function CarteiraClientesTable({ customers, onDelete }: CarteiraClientesT
         <Table>
           <TableHeader>
             <TableRow className="bg-muted/30">
+              <TableHead className="w-[40px]"></TableHead>
               <TableHead className="min-w-[100px]">{renderColumnHeader('contrato', 'Contrato')}</TableHead>
               <TableHead className="min-w-[200px]">{renderColumnHeader('razao_social', 'Razão Social')}</TableHead>
               <TableHead className="min-w-[80px]">{renderColumnHeader('filial', 'Filial')}</TableHead>

@@ -32,6 +32,7 @@ import {
   Settings,
   Plus,
   Loader2,
+  Trash2,
 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';

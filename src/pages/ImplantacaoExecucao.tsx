@@ -1239,24 +1239,6 @@ export default function ImplantacaoExecucao() {
                                 
                                 const contratoTrimmed = contratoInfo.contrato.trim();
                                 
-                                // Check if another customer already has this contract number
-                                const { data: duplicateCheck } = await supabase
-                                  .from('customer_portfolio')
-                                  .select('id, project_id')
-                                  .eq('contrato', contratoTrimmed)
-                                  .maybeSingle();
-                                
-                                // If duplicate exists and it's not this project's customer
-                                if (duplicateCheck && duplicateCheck.project_id !== id) {
-                                  toast({
-                                    title: 'Contrato duplicado',
-                                    description: `O contrato "${contratoTrimmed}" já está cadastrado para outro cliente.`,
-                                    variant: 'destructive',
-                                  });
-                                  setIsSaving(false);
-                                  return;
-                                }
-                                
                                 // Calculate data_termino from prazo_contrato
                                 const prazoMeses = parseInt(contratoInfo.prazo_contrato) || 12;
                                 const dataTermino = new Date();
@@ -1271,33 +1253,51 @@ export default function ImplantacaoExecucao() {
                                   filial: contratoInfo.filial,
                                 };
 
-                                // Check if customer_portfolio exists for this project
-                                const { data: existing } = await supabase
+                                // Check if customer_portfolio exists for this project OR by contract number
+                                const { data: existingByProject } = await supabase
                                   .from('customer_portfolio')
                                   .select('id')
                                   .eq('project_id', id)
                                   .maybeSingle();
 
-                                if (existing) {
+                                const existingRecord = existingByProject;
+
+                                // If no record found by project_id, check by contract number
+                                if (!existingRecord) {
+                                  const { data: existingByContrato } = await supabase
+                                    .from('customer_portfolio')
+                                    .select('id')
+                                    .eq('contrato', contratoTrimmed)
+                                    .maybeSingle();
+                                  
+                                  if (existingByContrato) {
+                                    // Update existing record and link to this project
+                                    const { error: updateError } = await supabase
+                                      .from('customer_portfolio')
+                                      .update({ ...portfolioPayload, project_id: id, status_implantacao: 'EM_IMPLANTACAO' })
+                                      .eq('id', existingByContrato.id);
+                                    if (updateError) throw updateError;
+                                  } else {
+                                    // Create new customer_portfolio entry
+                                    const { error: insertError } = await supabase
+                                      .from('customer_portfolio')
+                                      .insert({
+                                        ...portfolioPayload,
+                                        project_id: id,
+                                        razao_social: project?.cliente_condominio_nome || '',
+                                        endereco: project?.cliente_cidade && project?.cliente_estado 
+                                          ? `${project.cliente_cidade}, ${project.cliente_estado}` 
+                                          : null,
+                                        status_implantacao: 'EM_IMPLANTACAO',
+                                      });
+                                    if (insertError) throw insertError;
+                                  }
+                                } else {
                                   const { error: updateError } = await supabase
                                     .from('customer_portfolio')
                                     .update(portfolioPayload)
-                                    .eq('id', existing.id);
+                                    .eq('id', existingRecord.id);
                                   if (updateError) throw updateError;
-                                } else {
-                                  // Create new customer_portfolio entry
-                                  const { error: insertError } = await supabase
-                                    .from('customer_portfolio')
-                                    .insert({
-                                      ...portfolioPayload,
-                                      project_id: id,
-                                      razao_social: project?.cliente_condominio_nome || '',
-                                      endereco: project?.cliente_cidade && project?.cliente_estado 
-                                        ? `${project.cliente_cidade}, ${project.cliente_estado}` 
-                                        : null,
-                                      status_implantacao: 'EM_IMPLANTACAO',
-                                    });
-                                  if (insertError) throw insertError;
                                 }
 
                                 toast({

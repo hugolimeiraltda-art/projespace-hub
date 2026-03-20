@@ -159,10 +159,9 @@ export default function ImplantacaoRelatorios() {
       const mesNum = month.getMonth() + 1;
       const anoNum = month.getFullYear();
 
-      // Use data_ativacao, falling back to prazo_entrega_projeto (same logic as Analytics)
+      // Use getEffectiveDate: only data_ativacao for completed, prazo_entrega_projeto otherwise
       const ativacoes = filteredPortfolio.filter(p => {
-        const proj = p.project_id ? projectMap[p.project_id] : null;
-        const dateStr = p.data_ativacao || proj?.prazo_entrega_projeto;
+        const dateStr = getEffectiveDate(p);
         if (!dateStr) return false;
         const d = parseISO(dateStr);
         return isWithinInterval(d, { start: ms, end: me });

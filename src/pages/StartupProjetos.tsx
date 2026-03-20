@@ -97,6 +97,7 @@ export default function StartupProjetos() {
   const [newObraVendedor, setNewObraVendedor] = useState('');
   const [newObraTipo, setNewObraTipo] = useState<'nova' | 'acrescimo'>('nova');
   const [tipoObraFilter, setTipoObraFilter] = useState<'todas' | 'nova' | 'acrescimo'>('todas');
+  const [sortField, setSortField] = useState<'created_at' | 'cliente_condominio_nome' | 'implantacao_started_at' | 'prazo_entrega_projeto'>('created_at');
   const [creatingObra, setCreatingObra] = useState(false);
   const [vendedoresList, setVendedoresList] = useState<{ id: string; nome: string; email: string }[]>([]);
 

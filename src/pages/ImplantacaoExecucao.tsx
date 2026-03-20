@@ -1237,13 +1237,33 @@ export default function ImplantacaoExecucao() {
                               try {
                                 setIsSaving(true);
                                 
+                                const contratoTrimmed = contratoInfo.contrato.trim();
+                                
+                                // Check if another customer already has this contract number
+                                const { data: duplicateCheck } = await supabase
+                                  .from('customer_portfolio')
+                                  .select('id, project_id')
+                                  .eq('contrato', contratoTrimmed)
+                                  .maybeSingle();
+                                
+                                // If duplicate exists and it's not this project's customer
+                                if (duplicateCheck && duplicateCheck.project_id !== id) {
+                                  toast({
+                                    title: 'Contrato duplicado',
+                                    description: `O contrato "${contratoTrimmed}" já está cadastrado para outro cliente.`,
+                                    variant: 'destructive',
+                                  });
+                                  setIsSaving(false);
+                                  return;
+                                }
+                                
                                 // Calculate data_termino from prazo_contrato
                                 const prazoMeses = parseInt(contratoInfo.prazo_contrato) || 12;
                                 const dataTermino = new Date();
                                 dataTermino.setMonth(dataTermino.getMonth() + prazoMeses);
                                 
                                 const portfolioPayload = {
-                                  contrato: contratoInfo.contrato.trim(),
+                                  contrato: contratoTrimmed,
                                   alarme_codigo: contratoInfo.alarme_codigo.trim(),
                                   mensalidade: parseFloat(contratoInfo.mensalidade.replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
                                   taxa_ativacao: parseFloat(contratoInfo.taxa_instalacao.replace(/[^\d.,]/g, '').replace(',', '.')) || 0,

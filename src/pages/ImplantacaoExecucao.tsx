@@ -101,6 +101,7 @@ interface ImplantacaoEtapas {
   concluido: boolean;
   concluido_at: string | null;
   observacoes_manutencao: string | null;
+  data_ativacao_realizada: string | null;
   etapa_atual: number;
   // Step 10: Satisfaction Survey
   pesquisa_satisfacao_realizada: boolean;

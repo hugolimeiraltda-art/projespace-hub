@@ -15,6 +15,7 @@ interface PlanData {
   ano: number;
   qtd_contratos: number;
   valor_total: number;
+  praca: string;
 }
 
 interface Props {
@@ -26,11 +27,14 @@ const MESES = [
   'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro',
 ];
 
+const PRACAS = ['GERAL', 'BHZ', 'RIO', 'VIX', 'SPO'];
+
 export function PlanejamentoAtivacoes({ onUpdate }: Props) {
   const [open, setOpen] = useState(false);
   const [plans, setPlans] = useState<PlanData[]>([]);
   const [mes, setMes] = useState(String(new Date().getMonth() + 1));
   const [ano, setAno] = useState(String(new Date().getFullYear()));
+  const [praca, setPraca] = useState('GERAL');
   const [qtd, setQtd] = useState('');
   const [valor, setValor] = useState('');
   const [saving, setSaving] = useState(false);
@@ -45,7 +49,7 @@ export function PlanejamentoAtivacoes({ onUpdate }: Props) {
       .select('*')
       .order('ano', { ascending: true })
       .order('mes', { ascending: true });
-    if (data) setPlans(data);
+    if (data) setPlans(data as PlanData[]);
   };
 
   const handleAdd = async () => {
@@ -66,12 +70,13 @@ export function PlanejamentoAtivacoes({ onUpdate }: Props) {
       .upsert({
         mes: Number(mes),
         ano: Number(ano),
+        praca,
         qtd_contratos: Number(qtd),
         valor_total: Number(valor.replace(/\./g, '').replace(',', '.')),
         created_by: userData.user?.id,
         created_by_name: profile?.nome || '',
         updated_at: new Date().toISOString(),
-      }, { onConflict: 'mes,ano' });
+      }, { onConflict: 'mes,ano,praca' });
 
     if (error) {
       toast.error('Erro ao salvar: ' + error.message);
@@ -112,7 +117,7 @@ export function PlanejamentoAtivacoes({ onUpdate }: Props) {
           <DialogTitle>Planejamento de Ativações</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-3 gap-3">
             <div>
               <Label>Mês</Label>
               <Select value={mes} onValueChange={setMes}>
@@ -131,6 +136,17 @@ export function PlanejamentoAtivacoes({ onUpdate }: Props) {
                 <SelectContent>
                   {years.map(y => (
                     <SelectItem key={y} value={String(y)}>{y}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Praça</Label>
+              <Select value={praca} onValueChange={setPraca}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {PRACAS.map(p => (
+                    <SelectItem key={p} value={p}>{p}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -156,6 +172,7 @@ export function PlanejamentoAtivacoes({ onUpdate }: Props) {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Mês/Ano</TableHead>
+                    <TableHead>Praça</TableHead>
                     <TableHead className="text-right">Contratos</TableHead>
                     <TableHead className="text-right">Valor</TableHead>
                     <TableHead className="w-10" />
@@ -165,6 +182,7 @@ export function PlanejamentoAtivacoes({ onUpdate }: Props) {
                   {plans.map(p => (
                     <TableRow key={p.id}>
                       <TableCell className="text-sm">{MESES[p.mes - 1]}/{p.ano}</TableCell>
+                      <TableCell className="text-sm">{p.praca || 'GERAL'}</TableCell>
                       <TableCell className="text-right text-sm">{p.qtd_contratos}</TableCell>
                       <TableCell className="text-right text-sm">R$ {Number(p.valor_total).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</TableCell>
                       <TableCell>

@@ -75,6 +75,7 @@ export function PlanejamentoAtivacoes({ onUpdate }: Props) {
         praca,
         qtd_contratos: Number(qtd),
         valor_total: Number(valor.replace(/\./g, '').replace(',', '.')),
+        ticket_medio: Number((ticketMedio || '0').replace(/\./g, '').replace(',', '.')),
         created_by: userData.user?.id,
         created_by_name: profile?.nome || '',
         updated_at: new Date().toISOString(),
@@ -86,6 +87,7 @@ export function PlanejamentoAtivacoes({ onUpdate }: Props) {
       toast.success('Planejamento salvo');
       setQtd('');
       setValor('');
+      setTicketMedio('');
       fetchPlans();
       onUpdate();
     }

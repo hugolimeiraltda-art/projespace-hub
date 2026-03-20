@@ -186,8 +186,10 @@ export default function ImplantacaoRelatorios() {
       const projPraca = projects.filter(p => getPraca(p.filial) === praca);
       const portPraca = portfolio.filter(p => getPraca(p.filial, p.praca) === praca);
       const ativadosNoPeriodo = portPraca.filter(p => {
-        if (!p.data_ativacao) return false;
-        const d = parseISO(p.data_ativacao);
+        const proj = p.project_id ? projectMap[p.project_id] : null;
+        const dateStr = p.data_ativacao || proj?.prazo_entrega_projeto;
+        if (!dateStr) return false;
+        const d = parseISO(dateStr);
         return isWithinInterval(d, { start: startOfMonth(start), end: endOfMonth(end) });
       });
       const receitaTotal = ativadosNoPeriodo.reduce((s, p) => s + (p.mensalidade || 0), 0);

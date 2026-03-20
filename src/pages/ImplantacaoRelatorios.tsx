@@ -326,6 +326,7 @@ export default function ImplantacaoRelatorios() {
         'Mês': r.mes, 'Previsto': r.previsto, 'Ativações': r.ativacoes,
         'Cancelamentos': r.cancelamentos, 'Saldo': r.saldo,
         'Receita Prevista': r.receitaPrevista, 'Receita Ativada': r.receitaAtivada,
+        'Venda Prevista': r.vendaPrevista, 'Venda Realizada': r.vendaAtivada,
         'Receita Cancelada': r.receitaCancelada, 'Saldo Receita': r.saldoReceita,
         'Atingimento (%)': r.atingimento,
       })));

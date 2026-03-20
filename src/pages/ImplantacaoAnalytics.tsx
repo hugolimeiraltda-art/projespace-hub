@@ -37,6 +37,7 @@ interface PortfolioData {
   razao_social: string;
   filial: string | null;
   praca: string | null;
+  status_implantacao: string | null;
 }
 
 interface CancelamentoData {

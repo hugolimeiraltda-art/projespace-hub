@@ -99,6 +99,27 @@ export default function ImplantacaoRelatorios() {
     return eachMonthOfInterval({ start: startOfMonth(start), end: endOfMonth(end) });
   }, [dataInicio, dataFim]);
 
+  // ========== FILTERED DATA BY PRACA ==========
+  const filteredPortfolio = useMemo(() => {
+    if (selectedPraca === 'TODOS') return portfolio;
+    return portfolio.filter(p => getPraca(p.filial, p.praca) === selectedPraca);
+  }, [portfolio, selectedPraca]);
+
+  const filteredProjects = useMemo(() => {
+    if (selectedPraca === 'TODOS') return projects;
+    return projects.filter(p => getPraca(p.filial) === selectedPraca);
+  }, [projects, selectedPraca]);
+
+  const filteredCancelamentos = useMemo(() => {
+    // Filter cancelamentos by period
+    const start = parseISO(dataInicio);
+    const end = parseISO(dataFim);
+    return cancelamentos.filter(c => {
+      const d = parseISO(c.data_cancelamento);
+      return isWithinInterval(d, { start: startOfMonth(start), end: endOfMonth(end) });
+    });
+  }, [cancelamentos, dataInicio, dataFim]);
+
   // ========== RESUMO MENSAL ==========
   const resumoMensal = useMemo(() => {
     return periodMonths.map(month => {
@@ -107,7 +128,7 @@ export default function ImplantacaoRelatorios() {
       const mesNum = month.getMonth() + 1;
       const anoNum = month.getFullYear();
 
-      const ativacoes = portfolio.filter(p => {
+      const ativacoes = filteredPortfolio.filter(p => {
         if (!p.data_ativacao) return false;
         const d = parseISO(p.data_ativacao);
         return isWithinInterval(d, { start: ms, end: me });
@@ -118,9 +139,12 @@ export default function ImplantacaoRelatorios() {
         return isWithinInterval(d, { start: ms, end: me });
       });
 
-      const plan = plans.find(p => p.mes === mesNum && p.ano === anoNum && (p.praca === 'GERAL' || !p.praca));
+      const plan = plans.find(p => p.mes === mesNum && p.ano === anoNum && (selectedPraca === 'TODOS' ? (p.praca === 'GERAL' || !p.praca) : p.praca === selectedPraca));
       const receitaAtivada = ativacoes.reduce((s, a) => s + (a.mensalidade || 0), 0);
+      const vendaAtivada = ativacoes.reduce((s, a) => s + (a.taxa_ativacao || 0), 0);
       const receitaCancelada = canc.reduce((s, c) => s + (c.valor_contrato || 0), 0);
+      const receitaPrevista = plan?.valor_total || 0;
+      const vendaPrevista = plan?.valor_venda || 0;
 
       return {
         mes: format(month, 'MMM/yyyy', { locale: ptBR }),
@@ -128,14 +152,16 @@ export default function ImplantacaoRelatorios() {
         cancelamentos: canc.length,
         saldo: ativacoes.length - canc.length,
         receitaAtivada,
+        vendaAtivada,
         receitaCancelada,
         saldoReceita: receitaAtivada - receitaCancelada,
         previsto: plan?.qtd_contratos || 0,
-        receitaPrevista: plan?.valor_total || 0,
+        receitaPrevista,
+        vendaPrevista,
         atingimento: plan?.qtd_contratos ? Math.round((ativacoes.length / plan.qtd_contratos) * 100) : null,
       };
     });
-  }, [periodMonths, portfolio, cancelamentos, plans]);
+  }, [periodMonths, filteredPortfolio, cancelamentos, plans, selectedPraca]);
 
   // ========== POR PRAÇA ==========
   const relatorioPraca = useMemo(() => {

@@ -336,7 +336,9 @@ export default function StartupProjetos() {
     const effectiveStatus = project.implantacao_status || 'A_EXECUTAR';
     const matchesStatus = statusFilter === 'TODOS' || effectiveStatus === statusFilter;
     
-    return matchesSearch && matchesStatus;
+    const matchesTipoObra = tipoObraFilter === 'todas' || project.tipo_obra === tipoObraFilter;
+    
+    return matchesSearch && matchesStatus && matchesTipoObra;
   });
 
   const statusCounts = {

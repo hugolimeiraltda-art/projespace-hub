@@ -17,8 +17,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
-import jsPDF from 'jspdf';
 import * as XLSX from 'xlsx';
+import { exportImplantacaoPDF } from '@/lib/implantacaoRelatorioPdf';
 
 const PRACA_MAP: Record<string, string> = {
   'BHZ': 'BHZ', 'Belo Horizonte': 'BHZ', 'Belo Horizonte-MG': 'BHZ',

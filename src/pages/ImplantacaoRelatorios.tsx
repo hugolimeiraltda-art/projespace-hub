@@ -162,7 +162,7 @@ export default function ImplantacaoRelatorios() {
         previsto,
         receitaPrevista,
         vendaPrevista,
-        atingimento: previsto ? Math.round((ativacoes.length / previsto) * 100) : null,
+        atingimento: previsto > 0 ? Math.round((ativacoes.length / previsto) * 100) : (ativacoes.length > 0 ? 100 : 0),
       };
     });
   }, [periodMonths, filteredPortfolio, cancelamentos, plans, selectedPraca]);

@@ -54,13 +54,19 @@ export function PlanejamentoAtivacoes({ onUpdate }: Props) {
     if (data) setPlans(data as PlanData[]);
   };
 
+  const parseNumber = (val: string) => {
+    const cleaned = val.replace(/[R$\s]/g, '').replace(/\./g, '').replace(',', '.');
+    return Number(cleaned) || 0;
+  };
+
   const handleAdd = async () => {
     if (!qtd || !ticketMedio) {
       toast.error('Preencha quantidade e ticket médio');
       return;
     }
-    const ticketNum = Number(ticketMedio.replace(/\./g, '').replace(',', '.'));
-    const valorTotal = Number(qtd) * ticketNum;
+    const ticketNum = parseNumber(ticketMedio);
+    const qtdInt = Math.round(parseNumber(qtd));
+    const valorTotal = qtdInt * ticketNum;
     setSaving(true);
     const { data: userData } = await supabase.auth.getUser();
     const { data: profile } = await supabase
@@ -75,7 +81,7 @@ export function PlanejamentoAtivacoes({ onUpdate }: Props) {
         mes: Number(mes),
         ano: Number(ano),
         praca,
-        qtd_contratos: Number(qtd),
+        qtd_contratos: qtdInt,
         valor_total: valorTotal,
         ticket_medio: ticketNum,
         created_by: userData.user?.id,
@@ -172,8 +178,8 @@ export function PlanejamentoAtivacoes({ onUpdate }: Props) {
               <Input
                 value={
                   qtd && ticketMedio
-                    ? (Number(qtd) * Number(ticketMedio.replace(/\./g, '').replace(',', '.'))).toLocaleString('pt-BR', { minimumFractionDigits: 2 })
-                    : '0,00'
+                    ? `R$ ${(Math.round(parseNumber(qtd)) * parseNumber(ticketMedio)).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
+                    : 'R$ 0,00'
                 }
                 readOnly
                 className="bg-muted cursor-not-allowed"

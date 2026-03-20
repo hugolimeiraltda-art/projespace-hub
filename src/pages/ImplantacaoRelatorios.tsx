@@ -301,61 +301,20 @@ export default function ImplantacaoRelatorios() {
 
   // ========== EXPORT FUNCTIONS ==========
   const exportPDF = () => {
-    const doc = new jsPDF({ orientation: 'landscape' });
-    const title = REPORT_TYPES.find(r => r.value === selectedReport)!.label;
-    doc.setFontSize(16);
-    doc.text(title, 14, 20);
-    doc.setFontSize(9);
-    doc.text(`Gerado em ${format(new Date(), 'dd/MM/yyyy HH:mm')}`, 14, 28);
+    const reportLabel = REPORT_TYPES.find(r => r.value === selectedReport)!.label;
+    const periodo = `${format(parseISO(dataInicio), 'dd/MM/yyyy')} a ${format(parseISO(dataFim), 'dd/MM/yyyy')}`;
+    const pracaLabel = selectedPraca === 'TODOS' ? 'Todas' : selectedPraca;
 
-    let y = 38;
-    const lh = 7;
-    const pageH = doc.internal.pageSize.height - 20;
-
-    const addRow = (cols: string[], bold = false) => {
-      if (y > pageH) { doc.addPage(); y = 20; }
-      doc.setFont('helvetica', bold ? 'bold' : 'normal');
-      const colW = (doc.internal.pageSize.width - 28) / cols.length;
-      cols.forEach((c, i) => doc.text(String(c), 14 + i * colW, y));
-      y += lh;
-    };
-
-    if (selectedReport === 'resumo_mensal') {
-      addRow(['Mês', 'Previsto', 'Ativações', 'Churn', 'Saldo', 'Rec. Prevista', 'Rec. Ativada', 'Ating.'], true);
-      resumoMensal.forEach(r => addRow([
-        r.mes, String(r.previsto), String(r.ativacoes), String(r.cancelamentos),
-        String(r.saldo), formatCurrency(r.receitaPrevista), formatCurrency(r.receitaAtivada),
-        r.atingimento !== null ? `${r.atingimento}%` : '—',
-      ]));
-    } else if (selectedReport === 'por_praca') {
-      addRow(['Praça', 'Projetos', 'Em Andamento', 'Concluídos', 'Clientes', 'Receita Mensal', 'Taxa Ativação'], true);
-      relatorioPraca.forEach(r => addRow([
-        r.praca, String(r.totalProjetos), String(r.emAndamento), String(r.concluidos),
-        String(r.clientesAtivos), formatCurrency(r.receitaMensal), formatCurrency(r.taxaAtivacao),
-      ]));
-    } else if (selectedReport === 'historico') {
-      addRow(['Projeto', 'Cliente', 'Status', 'Praça', 'Entrada', 'Início', 'Conclusão', 'Dias', 'Mensalidade'], true);
-      historicoProjetos.forEach(r => addRow([
-        String(r.projeto), r.cliente.substring(0, 20), r.status, r.praca,
-        r.dataEntrada, r.inicioObra, r.conclusao, r.diasObra !== null ? String(r.diasObra) : '—',
-        formatCurrency(r.mensalidade),
-      ]));
-    } else {
-      const ind = indicadores;
-      addRow(['Indicador', 'Valor'], true);
-      addRow(['Total de Projetos', String(ind.totalProjetos)]);
-      addRow(['Concluídos', String(ind.concluidos)]);
-      addRow(['Em Execução', String(ind.emExecucao)]);
-      addRow(['Tempo Médio (dias)', String(ind.tempoMedio)]);
-      addRow(['Tempo Mínimo (dias)', String(ind.tempoMin)]);
-      addRow(['Tempo Máximo (dias)', String(ind.tempoMax)]);
-      addRow(['Taxa de Conclusão', `${ind.taxaConclusao}%`]);
-      addRow(['Dentro do SLA', `${ind.slaRate}% (${ind.dentroSLA}/${ind.concluidos})`]);
-      addRow(['Receita Mensal Total', formatCurrency(ind.receitaTotal)]);
-      addRow(['Taxa Ativação Total', formatCurrency(ind.taxaTotal)]);
-    }
-
-    doc.save(`implantacao_${selectedReport}_${format(new Date(), 'yyyyMMdd')}.pdf`);
+    exportImplantacaoPDF({
+      selectedReport,
+      reportLabel,
+      periodo,
+      praca: pracaLabel,
+      resumoMensal,
+      relatorioPraca,
+      historicoProjetos,
+      indicadores,
+    });
     toast.success('PDF gerado com sucesso');
   };
 

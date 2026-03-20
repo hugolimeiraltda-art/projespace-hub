@@ -67,7 +67,8 @@ export function PlanejamentoAtivacoes({ onUpdate }: Props) {
     }
     const ticketNum = parseNumber(ticketMedio);
     const qtdNum = parseNumber(qtd);
-    const valorTotal = qtdNum * ticketNum;
+    const churnNum = parseNumber(qtdChurn);
+    const valorTotal = (qtdNum - churnNum) * ticketNum;
     setSaving(true);
     const { data: userData } = await supabase.auth.getUser();
     const { data: profile } = await supabase

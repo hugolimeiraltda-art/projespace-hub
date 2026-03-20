@@ -501,25 +501,8 @@ export default function StartupProjetos() {
               </Card>
             </div>
 
-            {/* Tipo de Obra Tabs */}
-            <div className="flex gap-2 mb-6">
-              {[
-                { value: 'todas' as const, label: 'Todas' },
-                { value: 'nova' as const, label: 'Obras Novas' },
-                { value: 'acrescimo' as const, label: 'Acréscimos' },
-              ].map((tab) => (
-                <Button
-                  key={tab.value}
-                  variant={tipoObraFilter === tab.value ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setTipoObraFilter(tab.value)}
-                >
-                  {tab.label}
-                </Button>
-              ))}
-            </div>
-            {/* Search and Filter */}
-            <div className="mb-6 flex flex-col sm:flex-row gap-4">
+            {/* Search, Filter and Tipo de Obra */}
+            <div className="mb-6 flex flex-col sm:flex-row gap-4 items-center">
               <div className="relative flex-1 max-w-md">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input

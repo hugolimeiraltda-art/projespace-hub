@@ -301,12 +301,12 @@ export default function ImplantacaoAnalytics() {
         }
       });
 
-      const saldo = totalMensalidade - canceladosReceita;
-
       // Find planned data for this month
       const plan = plans.find(p => p.mes === monthNum && p.ano === yearNum);
       const planejadoValor = plan ? Number(plan.valor_total) : 0;
       const planejadoQtd = plan ? plan.qtd_contratos : 0;
+
+      const saldo = (totalMensalidade + canceladosReceita) - planejadoValor;
 
       return {
         label,

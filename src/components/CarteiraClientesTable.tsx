@@ -406,7 +406,7 @@ export function CarteiraClientesTable({ customers, onDelete }: CarteiraClientesT
             return (
               <tfoot>
                 <TableRow className="bg-muted/50 font-semibold border-t-2">
-                  <TableCell colSpan={9} className="text-right">
+                  <TableCell colSpan={10} className="text-right">
                     Total Mensalidades
                   </TableCell>
                   <TableCell className="text-right">
@@ -414,7 +414,7 @@ export function CarteiraClientesTable({ customers, onDelete }: CarteiraClientesT
                   </TableCell>
                 </TableRow>
                 <TableRow className="bg-muted/30 font-semibold">
-                  <TableCell colSpan={9} className="text-right">
+                  <TableCell colSpan={10} className="text-right">
                     Ticket Médio ({comMensalidade.length} clientes)
                   </TableCell>
                   <TableCell className="text-right">

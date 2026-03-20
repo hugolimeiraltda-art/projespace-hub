@@ -167,6 +167,32 @@ export default function StartupProjetos() {
     }
   };
 
+  const handleDeleteProject = async (projectId: string, projectName: string) => {
+    try {
+      // Delete related records first
+      await Promise.all([
+        supabase.from('implantacao_etapas').delete().eq('project_id', projectId),
+        supabase.from('implantacao_checklists').delete().eq('project_id', projectId),
+        supabase.from('sale_forms').delete().eq('project_id', projectId),
+        supabase.from('tap_forms').delete().eq('project_id', projectId),
+        supabase.from('sale_form_attachments').delete().eq('project_id', projectId),
+        supabase.from('project_notifications').delete().eq('project_id', projectId),
+        supabase.from('implantacao_noc_chamados').delete().eq('project_id', projectId),
+      ]);
+
+      const { error } = await supabase.from('projects').delete().eq('id', projectId);
+      if (error) {
+        toast({ title: 'Erro ao excluir projeto', description: error.message, variant: 'destructive' });
+        return;
+      }
+      toast({ title: 'Projeto excluído', description: `"${projectName}" foi removido com sucesso.` });
+      fetchProjects();
+    } catch (e) {
+      console.error('Error deleting project:', e);
+      toast({ title: 'Erro inesperado ao excluir', variant: 'destructive' });
+    }
+  };
+
   const fetchProjects = async () => {
     try {
       setIsLoading(true);

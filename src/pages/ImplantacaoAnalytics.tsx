@@ -51,6 +51,7 @@ interface ContratoDetalhe {
   nome: string;
   contrato: string;
   mensalidade: number;
+  taxaAtivacao: number;
   dataAtivacao: string | null;
   praca: string;
   tipoObra: string;

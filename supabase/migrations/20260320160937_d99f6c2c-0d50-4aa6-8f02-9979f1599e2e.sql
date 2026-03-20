@@ -1,0 +1,1 @@
+ALTER TABLE public.implantacao_planejamento_ativacoes ADD COLUMN valor_venda numeric DEFAULT 0;

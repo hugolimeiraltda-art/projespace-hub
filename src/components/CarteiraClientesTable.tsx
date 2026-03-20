@@ -40,11 +40,15 @@ interface SortConfig {
 
 interface CarteiraClientesTableProps {
   customers: Customer[];
+  onDelete?: () => void;
 }
 
-export function CarteiraClientesTable({ customers }: CarteiraClientesTableProps) {
+export function CarteiraClientesTable({ customers, onDelete }: CarteiraClientesTableProps) {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [columnFilters, setColumnFilters] = useState<ColumnFilter[]>([]);
+  const [deleteCustomer, setDeleteCustomer] = useState<Customer | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const [sortConfig, setSortConfig] = useState<SortConfig>({ column: '', direction: null });
   const [activeFilterColumn, setActiveFilterColumn] = useState<string | null>(null);
 

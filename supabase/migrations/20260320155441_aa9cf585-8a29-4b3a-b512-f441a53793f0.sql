@@ -1,0 +1,1 @@
+ALTER TABLE public.implantacao_planejamento_ativacoes ADD COLUMN qtd_churn numeric DEFAULT 0;

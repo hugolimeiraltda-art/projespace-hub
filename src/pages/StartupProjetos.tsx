@@ -33,6 +33,7 @@ import {
   Plus,
   Loader2,
   Trash2,
+  ArrowUpDown,
 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -96,6 +97,7 @@ export default function StartupProjetos() {
   const [newObraVendedor, setNewObraVendedor] = useState('');
   const [newObraTipo, setNewObraTipo] = useState<'nova' | 'acrescimo'>('nova');
   const [tipoObraFilter, setTipoObraFilter] = useState<'todas' | 'nova' | 'acrescimo'>('todas');
+  const [sortField, setSortField] = useState<'created_at' | 'cliente_condominio_nome' | 'implantacao_started_at' | 'prazo_entrega_projeto'>('created_at');
   const [creatingObra, setCreatingObra] = useState(false);
   const [vendedoresList, setVendedoresList] = useState<{ id: string; nome: string; email: string }[]>([]);
 
@@ -339,6 +341,13 @@ export default function StartupProjetos() {
     const matchesTipoObra = tipoObraFilter === 'todas' || project.tipo_obra === tipoObraFilter;
     
     return matchesSearch && matchesStatus && matchesTipoObra;
+  }).sort((a, b) => {
+    if (sortField === 'cliente_condominio_nome') {
+      return a.cliente_condominio_nome.localeCompare(b.cliente_condominio_nome);
+    }
+    const valA = a[sortField] || '';
+    const valB = b[sortField] || '';
+    return valB.localeCompare(valA); // descending for dates
   });
 
   const statusCounts = {
@@ -544,6 +553,19 @@ export default function StartupProjetos() {
                   </Button>
                 ))}
               </div>
+
+              <Select value={sortField} onValueChange={(v) => setSortField(v as typeof sortField)}>
+                <SelectTrigger className="w-full sm:w-[220px]">
+                  <ArrowUpDown className="w-4 h-4 mr-2" />
+                  <SelectValue placeholder="Ordenar por" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="created_at">Data de Entrada</SelectItem>
+                  <SelectItem value="implantacao_started_at">Data de Início</SelectItem>
+                  <SelectItem value="prazo_entrega_projeto">Previsão Ativação</SelectItem>
+                  <SelectItem value="cliente_condominio_nome">Nome (A-Z)</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             {/* Projects List */}

@@ -150,6 +150,7 @@ export default function ImplantacaoRelatorios() {
         mes: format(month, 'MMM/yyyy', { locale: ptBR }),
         ativacoes: ativacoes.length,
         cancelamentos: canc.length,
+        churnPrevisto: plan?.qtd_churn || 0,
         saldo: ativacoes.length - canc.length,
         receitaAtivada,
         vendaAtivada,
@@ -324,7 +325,7 @@ export default function ImplantacaoRelatorios() {
     if (selectedReport === 'resumo_mensal') {
       const ws = XLSX.utils.json_to_sheet(resumoMensal.map(r => ({
         'Mês': r.mes, 'Previsto': r.previsto, 'Ativações': r.ativacoes,
-        'Cancelamentos': r.cancelamentos, 'Saldo': r.saldo,
+        'Churn Previsto': r.churnPrevisto, 'Churn Real': r.cancelamentos, 'Saldo': r.saldo,
         'Receita Prevista': r.receitaPrevista, 'Receita Ativada': r.receitaAtivada,
         'Venda Prevista': r.vendaPrevista, 'Venda Realizada': r.vendaAtivada,
         'Receita Cancelada': r.receitaCancelada, 'Saldo Receita': r.saldoReceita,
@@ -380,7 +381,8 @@ export default function ImplantacaoRelatorios() {
               <TableHead>Mês</TableHead>
               <TableHead className="text-right">Previsto</TableHead>
               <TableHead className="text-right">Ativações</TableHead>
-              <TableHead className="text-right">Churn</TableHead>
+              <TableHead className="text-right">Churn Prev.</TableHead>
+              <TableHead className="text-right">Churn Real</TableHead>
               <TableHead className="text-right">Saldo</TableHead>
               <TableHead className="text-right">Rec. Prevista</TableHead>
               <TableHead className="text-right">Rec. Ativada</TableHead>
@@ -396,6 +398,7 @@ export default function ImplantacaoRelatorios() {
                 <TableCell className="font-medium">{r.mes}</TableCell>
                 <TableCell className="text-right">{r.previsto}</TableCell>
                 <TableCell className="text-right text-green-600 font-medium">{r.ativacoes}</TableCell>
+                <TableCell className="text-right text-orange-500">{r.churnPrevisto}</TableCell>
                 <TableCell className="text-right text-destructive">{r.cancelamentos}</TableCell>
                 <TableCell className="text-right font-semibold">{r.saldo}</TableCell>
                 <TableCell className="text-right">{formatCurrency(r.receitaPrevista)}</TableCell>

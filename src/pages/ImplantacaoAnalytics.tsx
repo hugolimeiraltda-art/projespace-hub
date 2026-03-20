@@ -51,6 +51,7 @@ interface ContratoDetalhe {
   mensalidade: number;
   dataAtivacao: string | null;
   praca: string;
+  tipoObra: string;
 }
 
 interface PlanData {

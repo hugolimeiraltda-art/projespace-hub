@@ -164,7 +164,7 @@ export default function ImplantacaoRelatorios() {
         ativacoes: ativacoes.length,
         cancelamentos: canc.length,
         churnPrevisto: churnPrev,
-        saldo: ativacoes.length - previsto,
+        saldo: Math.round((ativacoes.length - previsto) * 100) / 100,
         receitaAtivada,
         vendaAtivada,
         receitaCancelada,

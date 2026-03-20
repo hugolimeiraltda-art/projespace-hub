@@ -197,13 +197,22 @@ export default function StartupProjetos() {
   const fetchProjects = async () => {
     try {
       setIsLoading(true);
+      
+      let projectsQuery = supabase
+        .from('projects')
+        .select('id, numero_projeto, cliente_condominio_nome, cliente_cidade, cliente_estado, vendedor_nome, created_at, updated_at, implantacao_status, implantacao_started_at, implantacao_completed_at, prazo_entrega_projeto')
+        .eq('sale_status', 'CONCLUIDO');
+      
+      if (activeTab === 'historico') {
+        projectsQuery = projectsQuery.eq('implantacao_status', 'CONCLUIDO_IMPLANTACAO');
+      } else {
+        projectsQuery = projectsQuery.neq('implantacao_status', 'CONCLUIDO_IMPLANTACAO');
+      }
+      
+      projectsQuery = projectsQuery.order('updated_at', { ascending: false });
+
       const [projectsRes, portfolioRes, etapasRes] = await Promise.all([
-        supabase
-          .from('projects')
-          .select('id, numero_projeto, cliente_condominio_nome, cliente_cidade, cliente_estado, vendedor_nome, created_at, updated_at, implantacao_status, implantacao_started_at, implantacao_completed_at, prazo_entrega_projeto')
-          .eq('sale_status', 'CONCLUIDO')
-          .neq('implantacao_status', 'CONCLUIDO_IMPLANTACAO')
-          .order('updated_at', { ascending: false }),
+        projectsQuery,
         supabase
           .from('customer_portfolio')
           .select('project_id, mensalidade, taxa_ativacao')

@@ -182,7 +182,7 @@ export default function StartupProjetos() {
 
       toast({ title: 'Obra cadastrada com sucesso!' });
       setShowNewObra(false);
-      setNewObraNome(''); setNewObraCidade(''); setNewObraEstado(''); setNewObraEndereco(''); setNewObraVendedor(''); setNewObraTipo('nova');
+      setNewObraNome(''); setNewObraCidade(''); setNewObraEstado(''); setNewObraEndereco(''); setNewObraVendedor(''); setNewObraTipo('nova'); setSelectedCustomerId(''); setCustomerSearch('');
       fetchProjects();
     } catch (e) {
       console.error('Error creating obra:', e);

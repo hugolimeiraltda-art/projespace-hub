@@ -37,7 +37,7 @@ export function PlanejamentoAtivacoes({ onUpdate }: Props) {
   const [ano, setAno] = useState(String(new Date().getFullYear()));
   const [praca, setPraca] = useState('GERAL');
   const [qtd, setQtd] = useState('');
-  const [_valor, _setValor] = useState(''); // unused, kept for compat
+  
   const [ticketMedio, setTicketMedio] = useState('');
   const [saving, setSaving] = useState(false);
 

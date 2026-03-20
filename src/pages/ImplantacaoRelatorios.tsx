@@ -152,14 +152,13 @@ export default function ImplantacaoRelatorios() {
     return proj?.prazo_entrega_projeto || portRecord.data_ativacao || null;
   };
 
-  const resumoMensal = useMemo(() => {
+  const resumoMensalComDetalhe = useMemo(() => {
     return periodMonths.map(month => {
       const ms = startOfMonth(month);
       const me = endOfMonth(month);
       const mesNum = month.getMonth() + 1;
       const anoNum = month.getFullYear();
 
-      // Use getEffectiveDate: only data_ativacao for completed, prazo_entrega_projeto otherwise
       const ativacoes = filteredPortfolio.filter(p => {
         const dateStr = getEffectiveDate(p);
         if (!dateStr) return false;
@@ -172,7 +171,6 @@ export default function ImplantacaoRelatorios() {
         return isWithinInterval(d, { start: ms, end: me });
       });
 
-      // When "TODOS", aggregate all plans for that month; otherwise match specific praca
       const matchingPlans = plans.filter(p => p.mes === mesNum && p.ano === anoNum && (selectedPraca === 'TODOS' ? true : p.praca === selectedPraca));
       const previsto = matchingPlans.reduce((s, p) => s + (p.qtd_contratos || 0), 0);
       const churnPrev = matchingPlans.reduce((s, p) => s + (p.qtd_churn || 0), 0);
@@ -181,6 +179,21 @@ export default function ImplantacaoRelatorios() {
       const receitaAtivada = ativacoes.reduce((s, a) => s + (a.mensalidade || 0), 0);
       const vendaAtivada = ativacoes.reduce((s, a) => s + (a.taxa_ativacao || 0), 0);
       const receitaCancelada = canc.reduce((s, c) => s + (c.valor_contrato || 0), 0);
+
+      // Estratificado: detail of each activation
+      const detalheAtivacoes = ativacoes.map(a => {
+        const proj = a.project_id ? projectMap[a.project_id] : null;
+        const isAtivo = proj?.implantacao_status === 'CONCLUIDO' || a.status_implantacao === 'ATIVO';
+        return {
+          cliente: a.razao_social || proj?.cliente_condominio_nome || '—',
+          contrato: a.contrato || '—',
+          praca: getPraca(a.filial, a.praca),
+          mensalidade: a.mensalidade || 0,
+          taxaAtivacao: a.taxa_ativacao || 0,
+          dataAtivacao: a.data_ativacao ? format(parseISO(a.data_ativacao), 'dd/MM/yyyy') : '—',
+          status: isAtivo ? 'Ativado' : 'Previsto',
+        };
+      });
 
       return {
         mes: format(month, 'MMM/yyyy', { locale: ptBR }),
@@ -196,9 +209,12 @@ export default function ImplantacaoRelatorios() {
         receitaPrevista,
         vendaPrevista,
         atingimento: previsto > 0 ? Math.round((ativacoes.length / previsto) * 100) : (ativacoes.length > 0 ? 100 : 0),
+        detalheAtivacoes,
       };
     });
   }, [periodMonths, filteredPortfolio, cancelamentos, plans, selectedPraca, projectMap]);
+
+  const resumoMensal = useMemo(() => resumoMensalComDetalhe.map(({ detalheAtivacoes, ...rest }) => rest), [resumoMensalComDetalhe]);
 
   // ========== POR PRAÇA ==========
   const relatorioPraca = useMemo(() => {

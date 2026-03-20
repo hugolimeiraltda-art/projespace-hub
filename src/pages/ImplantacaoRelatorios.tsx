@@ -2,7 +2,8 @@ import { useState, useEffect, useMemo } from 'react';
 import { Layout } from '@/components/Layout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
@@ -10,7 +11,7 @@ import {
   ArrowLeft, FileText, FileSpreadsheet, Download, Calendar, Building,
   TrendingUp, BarChart3, MapPin, Clock,
 } from 'lucide-react';
-import { format, parseISO, differenceInDays, startOfMonth, endOfMonth, eachMonthOfInterval, isWithinInterval, subMonths } from 'date-fns';
+import { format, parseISO, differenceInDays, differenceInMonths, startOfMonth, endOfMonth, eachMonthOfInterval, isWithinInterval, subMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -33,11 +34,8 @@ const getPraca = (filial?: string | null, praca?: string | null): string => {
 const formatCurrency = (v: number) =>
   new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
 
-const PERIOD_OPTIONS = [
-  { value: '3m', label: 'Últimos 3 meses' },
-  { value: '6m', label: 'Últimos 6 meses' },
-  { value: '12m', label: 'Último ano' },
-];
+
+
 
 type ReportType = 'resumo_mensal' | 'por_praca' | 'historico' | 'indicadores';
 
@@ -51,7 +49,9 @@ const REPORT_TYPES: { value: ReportType; label: string; desc: string; icon: type
 export default function ImplantacaoRelatorios() {
   const navigate = useNavigate();
   const [selectedReport, setSelectedReport] = useState<ReportType>('resumo_mensal');
-  const [period, setPeriod] = useState('6m');
+  const [dataInicio, setDataInicio] = useState(() => format(subMonths(new Date(), 6), 'yyyy-MM-dd'));
+  const [dataFim, setDataFim] = useState(() => format(new Date(), 'yyyy-MM-dd'));
+  const [periodoErro, setPeriodoErro] = useState('');
   const [loading, setLoading] = useState(true);
   const [projects, setProjects] = useState<any[]>([]);
   const [portfolio, setPortfolio] = useState<any[]>([]);
@@ -77,12 +77,25 @@ export default function ImplantacaoRelatorios() {
     setLoading(false);
   };
 
+  useEffect(() => {
+    if (dataInicio && dataFim) {
+      const meses = differenceInMonths(parseISO(dataFim), parseISO(dataInicio));
+      if (meses > 24) {
+        setPeriodoErro('Período máximo de 24 meses');
+      } else if (parseISO(dataFim) < parseISO(dataInicio)) {
+        setPeriodoErro('Data final deve ser maior que a inicial');
+      } else {
+        setPeriodoErro('');
+      }
+    }
+  }, [dataInicio, dataFim]);
+
   const periodMonths = useMemo(() => {
-    const n = parseInt(period);
-    const end = new Date();
-    const start = subMonths(end, n);
+    const start = parseISO(dataInicio);
+    const end = parseISO(dataFim);
+    if (end < start) return [];
     return eachMonthOfInterval({ start: startOfMonth(start), end: endOfMonth(end) });
-  }, [period]);
+  }, [dataInicio, dataFim]);
 
   // ========== RESUMO MENSAL ==========
   const resumoMensal = useMemo(() => {
@@ -508,22 +521,30 @@ export default function ImplantacaoRelatorios() {
           })}
         </div>
 
-        {/* Period filter (for resumo mensal) */}
-        {selectedReport === 'resumo_mensal' && (
-          <div className="flex items-center gap-3">
-            <span className="text-sm text-muted-foreground">Período:</span>
-            <Select value={period} onValueChange={setPeriod}>
-              <SelectTrigger className="w-48">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {PERIOD_OPTIONS.map(o => (
-                  <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+        {/* Period filter */}
+        <div className="flex items-center gap-4 flex-wrap">
+          <div className="flex items-center gap-2">
+            <Label className="text-sm text-muted-foreground whitespace-nowrap">De:</Label>
+            <Input
+              type="date"
+              value={dataInicio}
+              onChange={e => setDataInicio(e.target.value)}
+              className="w-44"
+            />
           </div>
-        )}
+          <div className="flex items-center gap-2">
+            <Label className="text-sm text-muted-foreground whitespace-nowrap">Até:</Label>
+            <Input
+              type="date"
+              value={dataFim}
+              onChange={e => setDataFim(e.target.value)}
+              className="w-44"
+            />
+          </div>
+          {periodoErro && (
+            <span className="text-sm text-destructive font-medium">{periodoErro}</span>
+          )}
+        </div>
 
         {/* Data table */}
         <Card>

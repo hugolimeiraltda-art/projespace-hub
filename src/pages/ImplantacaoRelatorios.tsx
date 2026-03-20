@@ -15,6 +15,7 @@ import { format, parseISO, differenceInDays, differenceInMonths, startOfMonth, e
 import { ptBR } from 'date-fns/locale';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import jsPDF from 'jspdf';
 import * as XLSX from 'xlsx';

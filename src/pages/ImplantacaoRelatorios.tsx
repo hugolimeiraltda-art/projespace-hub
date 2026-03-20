@@ -9,12 +9,13 @@ import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, FileText, FileSpreadsheet, Download, Calendar, Building,
-  TrendingUp, BarChart3, MapPin, Clock,
+  TrendingUp, BarChart3, MapPin, Clock, Filter,
 } from 'lucide-react';
 import { format, parseISO, differenceInDays, differenceInMonths, startOfMonth, endOfMonth, eachMonthOfInterval, isWithinInterval, subMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import jsPDF from 'jspdf';
 import * as XLSX from 'xlsx';
@@ -49,6 +50,7 @@ const REPORT_TYPES: { value: ReportType; label: string; desc: string; icon: type
 export default function ImplantacaoRelatorios() {
   const navigate = useNavigate();
   const [selectedReport, setSelectedReport] = useState<ReportType>('resumo_mensal');
+  const [selectedPraca, setSelectedPraca] = useState<string>('TODOS');
   const [dataInicio, setDataInicio] = useState(() => format(subMonths(new Date(), 6), 'yyyy-MM-dd'));
   const [dataFim, setDataFim] = useState(() => format(new Date(), 'yyyy-MM-dd'));
   const [periodoErro, setPeriodoErro] = useState('');
@@ -97,6 +99,27 @@ export default function ImplantacaoRelatorios() {
     return eachMonthOfInterval({ start: startOfMonth(start), end: endOfMonth(end) });
   }, [dataInicio, dataFim]);
 
+  // ========== FILTERED DATA BY PRACA ==========
+  const filteredPortfolio = useMemo(() => {
+    if (selectedPraca === 'TODOS') return portfolio;
+    return portfolio.filter(p => getPraca(p.filial, p.praca) === selectedPraca);
+  }, [portfolio, selectedPraca]);
+
+  const filteredProjects = useMemo(() => {
+    if (selectedPraca === 'TODOS') return projects;
+    return projects.filter(p => getPraca(p.filial) === selectedPraca);
+  }, [projects, selectedPraca]);
+
+  const filteredCancelamentos = useMemo(() => {
+    // Filter cancelamentos by period
+    const start = parseISO(dataInicio);
+    const end = parseISO(dataFim);
+    return cancelamentos.filter(c => {
+      const d = parseISO(c.data_cancelamento);
+      return isWithinInterval(d, { start: startOfMonth(start), end: endOfMonth(end) });
+    });
+  }, [cancelamentos, dataInicio, dataFim]);
+
   // ========== RESUMO MENSAL ==========
   const resumoMensal = useMemo(() => {
     return periodMonths.map(month => {
@@ -105,7 +128,7 @@ export default function ImplantacaoRelatorios() {
       const mesNum = month.getMonth() + 1;
       const anoNum = month.getFullYear();
 
-      const ativacoes = portfolio.filter(p => {
+      const ativacoes = filteredPortfolio.filter(p => {
         if (!p.data_ativacao) return false;
         const d = parseISO(p.data_ativacao);
         return isWithinInterval(d, { start: ms, end: me });
@@ -116,9 +139,12 @@ export default function ImplantacaoRelatorios() {
         return isWithinInterval(d, { start: ms, end: me });
       });
 
-      const plan = plans.find(p => p.mes === mesNum && p.ano === anoNum && (p.praca === 'GERAL' || !p.praca));
+      const plan = plans.find(p => p.mes === mesNum && p.ano === anoNum && (selectedPraca === 'TODOS' ? (p.praca === 'GERAL' || !p.praca) : p.praca === selectedPraca));
       const receitaAtivada = ativacoes.reduce((s, a) => s + (a.mensalidade || 0), 0);
+      const vendaAtivada = ativacoes.reduce((s, a) => s + (a.taxa_ativacao || 0), 0);
       const receitaCancelada = canc.reduce((s, c) => s + (c.valor_contrato || 0), 0);
+      const receitaPrevista = plan?.valor_total || 0;
+      const vendaPrevista = plan?.valor_venda || 0;
 
       return {
         mes: format(month, 'MMM/yyyy', { locale: ptBR }),
@@ -126,24 +152,32 @@ export default function ImplantacaoRelatorios() {
         cancelamentos: canc.length,
         saldo: ativacoes.length - canc.length,
         receitaAtivada,
+        vendaAtivada,
         receitaCancelada,
         saldoReceita: receitaAtivada - receitaCancelada,
         previsto: plan?.qtd_contratos || 0,
-        receitaPrevista: plan?.valor_total || 0,
+        receitaPrevista,
+        vendaPrevista,
         atingimento: plan?.qtd_contratos ? Math.round((ativacoes.length / plan.qtd_contratos) * 100) : null,
       };
     });
-  }, [periodMonths, portfolio, cancelamentos, plans]);
+  }, [periodMonths, filteredPortfolio, cancelamentos, plans, selectedPraca]);
 
   // ========== POR PRAÇA ==========
   const relatorioPraca = useMemo(() => {
-    const pracas = ['BHZ', 'RJ', 'VIX', 'SPO'];
+    const pracas = selectedPraca === 'TODOS' ? ['BHZ', 'RJ', 'VIX', 'SPO'] : [selectedPraca];
+    const start = parseISO(dataInicio);
+    const end = parseISO(dataFim);
     return pracas.map(praca => {
       const projPraca = projects.filter(p => getPraca(p.filial) === praca);
       const portPraca = portfolio.filter(p => getPraca(p.filial, p.praca) === praca);
-      const ativados = portPraca.filter(p => p.data_ativacao);
-      const receitaTotal = portPraca.reduce((s, p) => s + (p.mensalidade || 0), 0);
-      const taxaTotal = portPraca.reduce((s, p) => s + (p.taxa_ativacao || 0), 0);
+      const ativadosNoPeriodo = portPraca.filter(p => {
+        if (!p.data_ativacao) return false;
+        const d = parseISO(p.data_ativacao);
+        return isWithinInterval(d, { start: startOfMonth(start), end: endOfMonth(end) });
+      });
+      const receitaTotal = ativadosNoPeriodo.reduce((s, p) => s + (p.mensalidade || 0), 0);
+      const taxaTotal = ativadosNoPeriodo.reduce((s, p) => s + (p.taxa_ativacao || 0), 0);
       const emAndamento = projPraca.filter(p => p.implantacao_status === 'EM_EXECUCAO').length;
       const concluidos = projPraca.filter(p => p.implantacao_status === 'CONCLUIDO').length;
 
@@ -152,40 +186,47 @@ export default function ImplantacaoRelatorios() {
         totalProjetos: projPraca.length,
         emAndamento,
         concluidos,
-        clientesAtivos: ativados.length,
+        clientesAtivos: ativadosNoPeriodo.length,
         receitaMensal: receitaTotal,
         taxaAtivacao: taxaTotal,
       };
     });
-  }, [projects, portfolio]);
+  }, [projects, portfolio, selectedPraca, dataInicio, dataFim]);
 
   // ========== HISTÓRICO ==========
   const historicoProjetos = useMemo(() => {
-    return projects.map(p => {
-      const port = portfolio.find(pt => pt.project_id === p.id);
-      const dias = p.implantacao_started_at && p.implantacao_completed_at
-        ? differenceInDays(parseISO(p.implantacao_completed_at), parseISO(p.implantacao_started_at))
-        : null;
-      return {
-        projeto: p.numero_projeto,
-        cliente: p.cliente_condominio_nome,
-        status: p.implantacao_status || '—',
-        tipoObra: p.tipo_obra || '—',
-        praca: getPraca(p.filial),
-        dataEntrada: p.created_at ? format(parseISO(p.created_at), 'dd/MM/yyyy') : '—',
-        inicioObra: p.implantacao_started_at ? format(parseISO(p.implantacao_started_at), 'dd/MM/yyyy') : '—',
-        conclusao: p.implantacao_completed_at ? format(parseISO(p.implantacao_completed_at), 'dd/MM/yyyy') : '—',
-        diasObra: dias,
-        mensalidade: port?.mensalidade || 0,
-        taxaAtivacao: port?.taxa_ativacao || 0,
-      };
-    });
-  }, [projects, portfolio]);
+    const start = parseISO(dataInicio);
+    const end = parseISO(dataFim);
+    return filteredProjects
+      .filter(p => {
+        const d = parseISO(p.created_at);
+        return isWithinInterval(d, { start: startOfMonth(start), end: endOfMonth(end) });
+      })
+      .map(p => {
+        const port = portfolio.find(pt => pt.project_id === p.id);
+        const dias = p.implantacao_started_at && p.implantacao_completed_at
+          ? differenceInDays(parseISO(p.implantacao_completed_at), parseISO(p.implantacao_started_at))
+          : null;
+        return {
+          projeto: p.numero_projeto,
+          cliente: p.cliente_condominio_nome,
+          status: p.implantacao_status || '—',
+          tipoObra: p.tipo_obra || '—',
+          praca: getPraca(p.filial),
+          dataEntrada: p.created_at ? format(parseISO(p.created_at), 'dd/MM/yyyy') : '—',
+          inicioObra: p.implantacao_started_at ? format(parseISO(p.implantacao_started_at), 'dd/MM/yyyy') : '—',
+          conclusao: p.implantacao_completed_at ? format(parseISO(p.implantacao_completed_at), 'dd/MM/yyyy') : '—',
+          diasObra: dias,
+          mensalidade: port?.mensalidade || 0,
+          taxaAtivacao: port?.taxa_ativacao || 0,
+        };
+      });
+  }, [filteredProjects, portfolio, dataInicio, dataFim]);
 
   // ========== INDICADORES ==========
   const indicadores = useMemo(() => {
-    const concluidos = projects.filter(p => p.implantacao_status === 'CONCLUIDO');
-    const emExecucao = projects.filter(p => p.implantacao_status === 'EM_EXECUCAO');
+    const concluidos = filteredProjects.filter(p => p.implantacao_status === 'CONCLUIDO');
+    const emExecucao = filteredProjects.filter(p => p.implantacao_status === 'EM_EXECUCAO');
     const dias = concluidos
       .map(p => p.implantacao_started_at && p.implantacao_completed_at
         ? differenceInDays(parseISO(p.implantacao_completed_at), parseISO(p.implantacao_started_at))
@@ -195,7 +236,7 @@ export default function ImplantacaoRelatorios() {
     const tempoMedio = dias.length ? Math.round(dias.reduce((a, b) => a + b, 0) / dias.length) : 0;
     const tempoMin = dias.length ? Math.min(...dias) : 0;
     const tempoMax = dias.length ? Math.max(...dias) : 0;
-    const taxaConclusao = projects.length ? Math.round((concluidos.length / projects.length) * 100) : 0;
+    const taxaConclusao = filteredProjects.length ? Math.round((concluidos.length / filteredProjects.length) * 100) : 0;
 
     const dentroSLA = concluidos.filter(p => {
       if (!p.prazo_entrega_projeto || !p.implantacao_completed_at) return false;
@@ -203,11 +244,11 @@ export default function ImplantacaoRelatorios() {
     }).length;
     const slaRate = concluidos.length ? Math.round((dentroSLA / concluidos.length) * 100) : 0;
 
-    const receitaTotal = portfolio.reduce((s, p) => s + (p.mensalidade || 0), 0);
-    const taxaTotal = portfolio.reduce((s, p) => s + (p.taxa_ativacao || 0), 0);
+    const receitaTotal = filteredPortfolio.reduce((s, p) => s + (p.mensalidade || 0), 0);
+    const taxaTotal = filteredPortfolio.reduce((s, p) => s + (p.taxa_ativacao || 0), 0);
 
     return {
-      totalProjetos: projects.length,
+      totalProjetos: filteredProjects.length,
       concluidos: concluidos.length,
       emExecucao: emExecucao.length,
       tempoMedio, tempoMin, tempoMax,
@@ -215,7 +256,7 @@ export default function ImplantacaoRelatorios() {
       slaRate, dentroSLA,
       receitaTotal, taxaTotal,
     };
-  }, [projects, portfolio]);
+  }, [filteredProjects, filteredPortfolio]);
 
   // ========== EXPORT FUNCTIONS ==========
   const exportPDF = () => {
@@ -285,6 +326,7 @@ export default function ImplantacaoRelatorios() {
         'Mês': r.mes, 'Previsto': r.previsto, 'Ativações': r.ativacoes,
         'Cancelamentos': r.cancelamentos, 'Saldo': r.saldo,
         'Receita Prevista': r.receitaPrevista, 'Receita Ativada': r.receitaAtivada,
+        'Venda Prevista': r.vendaPrevista, 'Venda Realizada': r.vendaAtivada,
         'Receita Cancelada': r.receitaCancelada, 'Saldo Receita': r.saldoReceita,
         'Atingimento (%)': r.atingimento,
       })));
@@ -342,6 +384,8 @@ export default function ImplantacaoRelatorios() {
               <TableHead className="text-right">Saldo</TableHead>
               <TableHead className="text-right">Rec. Prevista</TableHead>
               <TableHead className="text-right">Rec. Ativada</TableHead>
+              <TableHead className="text-right">Venda Prevista</TableHead>
+              <TableHead className="text-right">Venda Realizada</TableHead>
               <TableHead className="text-right">Saldo Receita</TableHead>
               <TableHead className="text-right">Atingimento</TableHead>
             </TableRow>
@@ -356,6 +400,8 @@ export default function ImplantacaoRelatorios() {
                 <TableCell className="text-right font-semibold">{r.saldo}</TableCell>
                 <TableCell className="text-right">{formatCurrency(r.receitaPrevista)}</TableCell>
                 <TableCell className="text-right">{formatCurrency(r.receitaAtivada)}</TableCell>
+                <TableCell className="text-right">{formatCurrency(r.vendaPrevista)}</TableCell>
+                <TableCell className="text-right">{formatCurrency(r.vendaAtivada)}</TableCell>
                 <TableCell className="text-right font-semibold">{formatCurrency(r.saldoReceita)}</TableCell>
                 <TableCell className="text-right">
                   {r.atingimento !== null ? (
@@ -521,7 +567,7 @@ export default function ImplantacaoRelatorios() {
           })}
         </div>
 
-        {/* Period filter */}
+        {/* Period & Praça filter */}
         <div className="flex items-center gap-4 flex-wrap">
           <div className="flex items-center gap-2">
             <Label className="text-sm text-muted-foreground whitespace-nowrap">De:</Label>
@@ -540,6 +586,21 @@ export default function ImplantacaoRelatorios() {
               onChange={e => setDataFim(e.target.value)}
               className="w-44"
             />
+          </div>
+          <div className="flex items-center gap-2">
+            <Filter className="w-4 h-4 text-muted-foreground" />
+            <Select value={selectedPraca} onValueChange={setSelectedPraca}>
+              <SelectTrigger className="w-40">
+                <SelectValue placeholder="Praça" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="TODOS">Todas as Praças</SelectItem>
+                <SelectItem value="BHZ">BHZ</SelectItem>
+                <SelectItem value="RJ">RJ</SelectItem>
+                <SelectItem value="VIX">VIX</SelectItem>
+                <SelectItem value="SPO">SPO</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           {periodoErro && (
             <span className="text-sm text-destructive font-medium">{periodoErro}</span>

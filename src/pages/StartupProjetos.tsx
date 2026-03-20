@@ -570,6 +570,19 @@ export default function StartupProjetos() {
                   <SelectItem value="cliente_condominio_nome">Nome (A-Z)</SelectItem>
                 </SelectContent>
               </Select>
+
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => setSortDirection(d => d === 'asc' ? 'desc' : 'asc')}
+                title={sortDirection === 'asc' ? 'Crescente' : 'Decrescente'}
+              >
+                {sortDirection === 'asc' ? (
+                  <ArrowUpDown className="w-4 h-4" />
+                ) : (
+                  <ArrowUpDown className="w-4 h-4 rotate-180" />
+                )}
+              </Button>
             </div>
 
             {/* Projects List */}

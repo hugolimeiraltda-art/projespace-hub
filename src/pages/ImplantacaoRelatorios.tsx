@@ -139,27 +139,30 @@ export default function ImplantacaoRelatorios() {
         return isWithinInterval(d, { start: ms, end: me });
       });
 
-      const plan = plans.find(p => p.mes === mesNum && p.ano === anoNum && (selectedPraca === 'TODOS' ? (p.praca === 'GERAL' || !p.praca) : p.praca === selectedPraca));
+      // When "TODOS", aggregate all plans for that month; otherwise match specific praca
+      const matchingPlans = plans.filter(p => p.mes === mesNum && p.ano === anoNum && (selectedPraca === 'TODOS' ? true : p.praca === selectedPraca));
+      const previsto = matchingPlans.reduce((s, p) => s + (p.qtd_contratos || 0), 0);
+      const churnPrev = matchingPlans.reduce((s, p) => s + (p.qtd_churn || 0), 0);
+      const receitaPrevista = matchingPlans.reduce((s, p) => s + (p.valor_total || 0), 0);
+      const vendaPrevista = matchingPlans.reduce((s, p) => s + (p.valor_venda || 0), 0);
       const receitaAtivada = ativacoes.reduce((s, a) => s + (a.mensalidade || 0), 0);
       const vendaAtivada = ativacoes.reduce((s, a) => s + (a.taxa_ativacao || 0), 0);
       const receitaCancelada = canc.reduce((s, c) => s + (c.valor_contrato || 0), 0);
-      const receitaPrevista = plan?.valor_total || 0;
-      const vendaPrevista = plan?.valor_venda || 0;
 
       return {
         mes: format(month, 'MMM/yyyy', { locale: ptBR }),
         ativacoes: ativacoes.length,
         cancelamentos: canc.length,
-        churnPrevisto: plan?.qtd_churn || 0,
+        churnPrevisto: churnPrev,
         saldo: ativacoes.length - canc.length,
         receitaAtivada,
         vendaAtivada,
         receitaCancelada,
         saldoReceita: receitaAtivada - receitaCancelada,
-        previsto: plan?.qtd_contratos || 0,
+        previsto,
         receitaPrevista,
         vendaPrevista,
-        atingimento: plan?.qtd_contratos ? Math.round((ativacoes.length / plan.qtd_contratos) * 100) : null,
+        atingimento: previsto ? Math.round((ativacoes.length / previsto) * 100) : null,
       };
     });
   }, [periodMonths, filteredPortfolio, cancelamentos, plans, selectedPraca]);

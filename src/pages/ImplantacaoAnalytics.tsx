@@ -593,6 +593,7 @@ export default function ImplantacaoAnalytics() {
                         <TableHeader>
                           <TableRow>
                             <TableHead>Condomínio</TableHead>
+                            <TableHead>Tipo</TableHead>
                             <TableHead>Contrato</TableHead>
                             <TableHead>Data</TableHead>
                             <TableHead>Praça</TableHead>
@@ -603,6 +604,11 @@ export default function ImplantacaoAnalytics() {
                           {m.contratos.map((c, j) => (
                             <TableRow key={j}>
                               <TableCell className="text-sm font-medium">{c.nome}</TableCell>
+                              <TableCell>
+                                <Badge variant="outline" className={`text-[10px] ${c.tipoObra === 'acrescimo' ? 'border-chart-4 text-chart-4' : ''}`}>
+                                  {c.tipoObra === 'acrescimo' ? 'Acréscimo' : 'Novo Contrato'}
+                                </Badge>
+                              </TableCell>
                               <TableCell className="text-sm text-muted-foreground">{c.contrato}</TableCell>
                               <TableCell className="text-sm text-muted-foreground">
                                 {c.dataAtivacao ? format(parseISO(c.dataAtivacao), 'dd/MM/yyyy') : '—'}

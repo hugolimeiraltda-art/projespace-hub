@@ -14,6 +14,7 @@ interface PlanData {
   mes: number;
   ano: number;
   qtd_contratos: number;
+  qtd_churn: number;
   valor_total: number;
   praca: string;
   ticket_medio: number;
@@ -37,7 +38,7 @@ export function PlanejamentoAtivacoes({ onUpdate }: Props) {
   const [ano, setAno] = useState(String(new Date().getFullYear()));
   const [praca, setPraca] = useState('GERAL');
   const [qtd, setQtd] = useState('');
-  
+  const [qtdChurn, setQtdChurn] = useState('');
   const [ticketMedio, setTicketMedio] = useState('');
   const [saving, setSaving] = useState(false);
 
@@ -66,7 +67,8 @@ export function PlanejamentoAtivacoes({ onUpdate }: Props) {
     }
     const ticketNum = parseNumber(ticketMedio);
     const qtdNum = parseNumber(qtd);
-    const valorTotal = qtdNum * ticketNum;
+    const churnNum = parseNumber(qtdChurn);
+    const valorTotal = (qtdNum - churnNum) * ticketNum;
     setSaving(true);
     const { data: userData } = await supabase.auth.getUser();
     const { data: profile } = await supabase
@@ -82,6 +84,7 @@ export function PlanejamentoAtivacoes({ onUpdate }: Props) {
         ano: Number(ano),
         praca,
         qtd_contratos: qtdNum,
+        qtd_churn: churnNum,
         valor_total: valorTotal,
         ticket_medio: ticketNum,
         created_by: userData.user?.id,
@@ -94,7 +97,7 @@ export function PlanejamentoAtivacoes({ onUpdate }: Props) {
     } else {
       toast.success('Planejamento salvo');
       setQtd('');
-      
+      setQtdChurn('');
       setTicketMedio('');
       fetchPlans();
       onUpdate();
@@ -124,7 +127,7 @@ export function PlanejamentoAtivacoes({ onUpdate }: Props) {
           Planejamento
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-3xl">
         <DialogHeader>
           <DialogTitle>Planejamento de Ativações</DialogTitle>
         </DialogHeader>
@@ -164,10 +167,14 @@ export function PlanejamentoAtivacoes({ onUpdate }: Props) {
               </Select>
             </div>
           </div>
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-4 gap-3">
             <div>
-              <Label>Qtd Contratos</Label>
+              <Label>Qtd Ativações</Label>
               <Input value={qtd} onChange={e => setQtd(e.target.value.replace(/[^0-9,]/g, ''))} placeholder="0" />
+            </div>
+            <div>
+              <Label>Qtd Churn</Label>
+              <Input value={qtdChurn} onChange={e => setQtdChurn(e.target.value.replace(/[^0-9,]/g, ''))} placeholder="0" />
             </div>
             <div>
               <Label>Ticket Médio (R$)</Label>
@@ -177,8 +184,8 @@ export function PlanejamentoAtivacoes({ onUpdate }: Props) {
               <Label>Valor Total (R$)</Label>
               <Input
                 value={
-                  qtd && ticketMedio
-                    ? `R$ ${(parseNumber(qtd) * parseNumber(ticketMedio)).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
+                  (qtd || qtdChurn) && ticketMedio
+                    ? `R$ ${((parseNumber(qtd) - parseNumber(qtdChurn)) * parseNumber(ticketMedio)).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
                     : 'R$ 0,00'
                 }
                 readOnly
@@ -198,7 +205,9 @@ export function PlanejamentoAtivacoes({ onUpdate }: Props) {
                   <TableRow>
                     <TableHead>Mês/Ano</TableHead>
                     <TableHead>Praça</TableHead>
-                    <TableHead className="text-right">Contratos</TableHead>
+                    <TableHead className="text-right">Ativações</TableHead>
+                    <TableHead className="text-right">Churn</TableHead>
+                    <TableHead className="text-right">Saldo</TableHead>
                     <TableHead className="text-right">Ticket Médio</TableHead>
                     <TableHead className="text-right">Valor Total</TableHead>
                     <TableHead className="w-10" />
@@ -210,6 +219,8 @@ export function PlanejamentoAtivacoes({ onUpdate }: Props) {
                       <TableCell className="text-sm">{MESES[p.mes - 1]}/{p.ano}</TableCell>
                       <TableCell className="text-sm">{p.praca || 'GERAL'}</TableCell>
                       <TableCell className="text-right text-sm">{p.qtd_contratos}</TableCell>
+                      <TableCell className="text-right text-sm text-destructive">{p.qtd_churn || 0}</TableCell>
+                      <TableCell className="text-right text-sm font-medium">{(p.qtd_contratos - (p.qtd_churn || 0))}</TableCell>
                       <TableCell className="text-right text-sm">R$ {Number(p.ticket_medio || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</TableCell>
                       <TableCell className="text-right text-sm">R$ {Number(p.valor_total).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</TableCell>
                       <TableCell>

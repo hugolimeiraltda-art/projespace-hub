@@ -1072,6 +1072,7 @@ export type Database = {
           id: string
           mes: number
           praca: string | null
+          qtd_churn: number | null
           qtd_contratos: number
           ticket_medio: number | null
           updated_at: string
@@ -1085,6 +1086,7 @@ export type Database = {
           id?: string
           mes: number
           praca?: string | null
+          qtd_churn?: number | null
           qtd_contratos?: number
           ticket_medio?: number | null
           updated_at?: string
@@ -1098,6 +1100,7 @@ export type Database = {
           id?: string
           mes?: number
           praca?: string | null
+          qtd_churn?: number | null
           qtd_contratos?: number
           ticket_medio?: number | null
           updated_at?: string

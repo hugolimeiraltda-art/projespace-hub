@@ -9,7 +9,7 @@ import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, FileText, FileSpreadsheet, Download, Calendar, Building,
-  TrendingUp, BarChart3, MapPin, Clock,
+  TrendingUp, BarChart3, MapPin, Clock, Filter,
 } from 'lucide-react';
 import { format, parseISO, differenceInDays, differenceInMonths, startOfMonth, endOfMonth, eachMonthOfInterval, isWithinInterval, subMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';

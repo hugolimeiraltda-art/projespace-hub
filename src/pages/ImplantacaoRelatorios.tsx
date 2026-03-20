@@ -212,8 +212,7 @@ export default function ImplantacaoRelatorios() {
       });
       const portPraca = portfolio.filter(p => getPraca(p.filial, p.praca) === praca);
       const ativadosNoPeriodo = portPraca.filter(p => {
-        const proj = p.project_id ? projectMap[p.project_id] : null;
-        const dateStr = p.data_ativacao || proj?.prazo_entrega_projeto;
+        const dateStr = getEffectiveDate(p);
         if (!dateStr) return false;
         const d = parseISO(dateStr);
         return isWithinInterval(d, { start: startOfMonth(start), end: endOfMonth(end) });

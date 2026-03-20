@@ -16,6 +16,7 @@ interface PlanData {
   qtd_contratos: number;
   valor_total: number;
   praca: string;
+  ticket_medio: number;
 }
 
 interface Props {

@@ -760,6 +760,32 @@ export default function StartupProjetos() {
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="border-amber-300 text-amber-700 hover:bg-amber-50"
+                              >
+                                <RotateCcw className="w-4 h-4 mr-2" />
+                                Voltar p/ Implantação
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Reabrir implantação</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Deseja mover <strong>"{project.cliente_condominio_nome}"</strong> de volta para Em Implantação (status "Em Execução")?
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => handleStatusChange(project.id, 'EM_EXECUCAO')}>
+                                  Confirmar
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
                           <Button
                             variant="outline"
                             size="sm"

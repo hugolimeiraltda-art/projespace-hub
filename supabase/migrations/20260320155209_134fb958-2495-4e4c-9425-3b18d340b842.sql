@@ -1,0 +1,1 @@
+ALTER TABLE public.implantacao_planejamento_ativacoes ALTER COLUMN qtd_contratos TYPE numeric USING qtd_contratos::numeric;

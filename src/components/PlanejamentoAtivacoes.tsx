@@ -65,8 +65,8 @@ export function PlanejamentoAtivacoes({ onUpdate }: Props) {
       return;
     }
     const ticketNum = parseNumber(ticketMedio);
-    const qtdInt = Math.round(parseNumber(qtd));
-    const valorTotal = qtdInt * ticketNum;
+    const qtdNum = parseNumber(qtd);
+    const valorTotal = qtdNum * ticketNum;
     setSaving(true);
     const { data: userData } = await supabase.auth.getUser();
     const { data: profile } = await supabase
@@ -81,7 +81,7 @@ export function PlanejamentoAtivacoes({ onUpdate }: Props) {
         mes: Number(mes),
         ano: Number(ano),
         praca,
-        qtd_contratos: qtdInt,
+        qtd_contratos: qtdNum,
         valor_total: valorTotal,
         ticket_medio: ticketNum,
         created_by: userData.user?.id,
@@ -167,7 +167,7 @@ export function PlanejamentoAtivacoes({ onUpdate }: Props) {
           <div className="grid grid-cols-3 gap-3">
             <div>
               <Label>Qtd Contratos</Label>
-              <Input type="number" min="0" step="1" value={qtd} onChange={e => setQtd(e.target.value.replace(/[^0-9]/g, ''))} placeholder="0" />
+              <Input value={qtd} onChange={e => setQtd(e.target.value.replace(/[^0-9,]/g, ''))} placeholder="0" />
             </div>
             <div>
               <Label>Ticket Médio (R$)</Label>
@@ -178,7 +178,7 @@ export function PlanejamentoAtivacoes({ onUpdate }: Props) {
               <Input
                 value={
                   qtd && ticketMedio
-                    ? `R$ ${(Math.round(parseNumber(qtd)) * parseNumber(ticketMedio)).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
+                    ? `R$ ${(parseNumber(qtd) * parseNumber(ticketMedio)).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
                     : 'R$ 0,00'
                 }
                 readOnly

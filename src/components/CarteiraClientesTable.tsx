@@ -5,9 +5,12 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
-import { ArrowUp, ArrowDown, ArrowUpDown, Filter, X } from 'lucide-react';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { ArrowUp, ArrowDown, ArrowUpDown, Filter, X, Trash2 } from 'lucide-react';
 import { format, addMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 interface Customer {
   id: string;
@@ -37,11 +40,15 @@ interface SortConfig {
 
 interface CarteiraClientesTableProps {
   customers: Customer[];
+  onDelete?: () => void;
 }
 
-export function CarteiraClientesTable({ customers }: CarteiraClientesTableProps) {
+export function CarteiraClientesTable({ customers, onDelete }: CarteiraClientesTableProps) {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [columnFilters, setColumnFilters] = useState<ColumnFilter[]>([]);
+  const [deleteCustomer, setDeleteCustomer] = useState<Customer | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const [sortConfig, setSortConfig] = useState<SortConfig>({ column: '', direction: null });
   const [activeFilterColumn, setActiveFilterColumn] = useState<string | null>(null);
 
@@ -324,6 +331,7 @@ export function CarteiraClientesTable({ customers }: CarteiraClientesTableProps)
         <Table>
           <TableHeader>
             <TableRow className="bg-muted/30">
+              <TableHead className="w-[40px]"></TableHead>
               <TableHead className="min-w-[100px]">{renderColumnHeader('contrato', 'Contrato')}</TableHead>
               <TableHead className="min-w-[200px]">{renderColumnHeader('razao_social', 'Razão Social')}</TableHead>
               <TableHead className="min-w-[80px]">{renderColumnHeader('filial', 'Filial')}</TableHead>
@@ -339,7 +347,7 @@ export function CarteiraClientesTable({ customers }: CarteiraClientesTableProps)
           <TableBody>
             {filteredAndSortedCustomers.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={10} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={11} className="text-center py-8 text-muted-foreground">
                   Nenhum cliente encontrado com os filtros aplicados
                 </TableCell>
               </TableRow>
@@ -350,6 +358,19 @@ export function CarteiraClientesTable({ customers }: CarteiraClientesTableProps)
                   className="cursor-pointer hover:bg-muted/50"
                   onClick={() => navigate(`/carteira-clientes/${customer.id}`)}
                 >
+                  <TableCell className="p-1">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setDeleteCustomer(customer);
+                      }}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </TableCell>
                   <TableCell className="font-medium text-primary hover:underline">
                     {customer.contrato}
                   </TableCell>
@@ -385,7 +406,7 @@ export function CarteiraClientesTable({ customers }: CarteiraClientesTableProps)
             return (
               <tfoot>
                 <TableRow className="bg-muted/50 font-semibold border-t-2">
-                  <TableCell colSpan={9} className="text-right">
+                  <TableCell colSpan={10} className="text-right">
                     Total Mensalidades
                   </TableCell>
                   <TableCell className="text-right">
@@ -393,7 +414,7 @@ export function CarteiraClientesTable({ customers }: CarteiraClientesTableProps)
                   </TableCell>
                 </TableRow>
                 <TableRow className="bg-muted/30 font-semibold">
-                  <TableCell colSpan={9} className="text-right">
+                  <TableCell colSpan={10} className="text-right">
                     Ticket Médio ({comMensalidade.length} clientes)
                   </TableCell>
                   <TableCell className="text-right">
@@ -409,6 +430,45 @@ export function CarteiraClientesTable({ customers }: CarteiraClientesTableProps)
       <div className="text-sm text-muted-foreground">
         Exibindo {filteredAndSortedCustomers.length} de {customers.length} clientes
       </div>
+
+      <AlertDialog open={!!deleteCustomer} onOpenChange={(open) => !open && setDeleteCustomer(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir cliente</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir o cliente <strong>{deleteCustomer?.razao_social}</strong> (Contrato: {deleteCustomer?.contrato})? Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={deleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={async () => {
+                if (!deleteCustomer) return;
+                setDeleting(true);
+                try {
+                  const { error } = await supabase
+                    .from('customer_portfolio')
+                    .delete()
+                    .eq('id', deleteCustomer.id);
+                  if (error) throw error;
+                  toast({ title: 'Cliente excluído', description: `${deleteCustomer.razao_social} foi removido.` });
+                  setDeleteCustomer(null);
+                  onDelete?.();
+                } catch (error) {
+                  console.error(error);
+                  toast({ title: 'Erro', description: 'Não foi possível excluir o cliente.', variant: 'destructive' });
+                } finally {
+                  setDeleting(false);
+                }
+              }}
+            >
+              {deleting ? 'Excluindo...' : 'Excluir'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

@@ -97,7 +97,7 @@ export function PlanejamentoAtivacoes({ onUpdate }: Props) {
     } else {
       toast.success('Planejamento salvo');
       setQtd('');
-      
+      setQtdChurn('');
       setTicketMedio('');
       fetchPlans();
       onUpdate();

@@ -115,6 +115,7 @@ interface ImplantacaoEtapas {
   pagamento_instalacao_deslocamento_auferido: number | null;
   pagamento_instalacao_pedagio_auferido: number | null;
   pagamento_instalacao_diaria_auferido: number | null;
+  pagamento_instalacao_divergencia_justificativa: string | null;
   pagamento_instalacao_conferido: boolean;
   pagamento_instalacao_conferido_at: string | null;
   // Step 10: Satisfaction Survey

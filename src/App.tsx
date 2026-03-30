@@ -26,6 +26,7 @@ import ImplantacaoChecklist from "./pages/ImplantacaoChecklist";
 import ImplantacaoDashboard from "./pages/ImplantacaoDashboard";
 import ImplantacaoAnalytics from "./pages/ImplantacaoAnalytics";
 import ImplantacaoRelatorios from "./pages/ImplantacaoRelatorios";
+import ImplantacaoPagamentoInstaladores from "./pages/ImplantacaoPagamentoInstaladores";
 import CarteiraClientes from "./pages/CarteiraClientes";
 import CustomerDetail from "./pages/CustomerDetail";
 import ControleEstoque from "./pages/ControleEstoque";

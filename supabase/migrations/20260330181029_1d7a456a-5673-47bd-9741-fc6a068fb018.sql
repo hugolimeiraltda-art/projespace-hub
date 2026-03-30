@@ -1,0 +1,1 @@
+ALTER TABLE public.orcamento_kits ADD COLUMN IF NOT EXISTS pontuacao numeric DEFAULT 0;

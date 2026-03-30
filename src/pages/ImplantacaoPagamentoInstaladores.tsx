@@ -540,6 +540,38 @@ export default function ImplantacaoPagamentoInstaladores() {
           )}
         </div>
 
+        {/* Regras de Pagamento Dialog */}
+        <Dialog open={showRegrasDialog} onOpenChange={setShowRegrasDialog}>
+          <DialogContent className="max-w-sm">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Settings className="w-5 h-5 text-primary" />
+                Regras de Pagamento
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label>Valor do Ponto (R$)</Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={editValorPonto}
+                  onChange={e => setEditValorPonto(e.target.value)}
+                  className="mt-1"
+                  placeholder="19.00"
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  O valor de mão de obra é calculado como: pontos × valor do ponto
+                </p>
+              </div>
+              <Button className="w-full" onClick={saveRegras} disabled={savingRegras}>
+                {savingRegras ? 'Salvando...' : 'Salvar'}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
         {/* Histórico Dialog */}
         <Dialog open={!!historicoDialog} onOpenChange={() => setHistoricoDialog(null)}>
           <DialogContent className="max-w-lg">

@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
-import { DollarSign, Search, Eye, CheckCircle2, Clock, Building, List, ChevronDown, ChevronUp, Pencil, Save, X, History, Package, Boxes } from 'lucide-react';
+import { DollarSign, Search, Eye, CheckCircle2, Clock, Building, List, ChevronDown, ChevronUp, Pencil, Save, X, History, Package, Boxes, Settings } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useAuth } from '@/contexts/AuthContext';

@@ -54,6 +54,7 @@ import { Progress } from '@/components/ui/progress';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import jsPDF from 'jspdf';
 import { EquipmentListDialog } from '@/components/EquipmentListDialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 interface ImplantacaoEtapas {
   id: string;
@@ -199,8 +200,34 @@ export default function ImplantacaoExecucao() {
     item_6_3_status: string;
   } | null>(null);
   const [nocLoading, setNocLoading] = useState(false);
+  const [checklistDialogOpen, setChecklistDialogOpen] = useState(false);
+  const [checklistDialogData, setChecklistDialogData] = useState<{ items: { id: string; label: string; checked: boolean; observacao?: string }[]; observacoes?: string } | null>(null);
+  const [checklistDialogLoading, setChecklistDialogLoading] = useState(false);
 
   const canEditDates = user?.role === 'admin' || user?.role === 'administrativo' || user?.role === 'implantacao';
+
+  const openChecklistDialog = async (checklistType: string) => {
+    setChecklistDialogLoading(true);
+    setChecklistDialogOpen(true);
+    try {
+      const { data } = await supabase
+        .from('implantacao_checklists')
+        .select('dados, observacoes')
+        .eq('project_id', id!)
+        .eq('tipo', checklistType)
+        .maybeSingle();
+      if (data) {
+        const dados = data.dados as any;
+        setChecklistDialogData({ items: dados?.items || [], observacoes: data.observacoes || '' });
+      } else {
+        setChecklistDialogData(null);
+      }
+    } catch {
+      setChecklistDialogData(null);
+    } finally {
+      setChecklistDialogLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (id) {
@@ -782,7 +809,8 @@ export default function ImplantacaoExecucao() {
     dateField,
     date,
     hasChecklist,
-    checklistType
+    checklistType,
+    onChecklistClick,
   }: { 
     label: string; 
     checked: boolean; 
@@ -791,6 +819,7 @@ export default function ImplantacaoExecucao() {
     date?: string | null;
     hasChecklist?: boolean;
     checklistType?: string;
+    onChecklistClick?: () => void;
   }) => (
     <div className="flex items-center justify-between py-2 px-4 hover:bg-muted/50 rounded-md">
       <div className="flex items-center gap-3">
@@ -811,7 +840,7 @@ export default function ImplantacaoExecucao() {
           <Button 
             variant="outline" 
             size="sm"
-            onClick={() => navigate(`/startup-projetos/${id}/checklist/${checklistType}`)}
+            onClick={() => onChecklistClick ? onChecklistClick() : navigate(`/startup-projetos/${id}/checklist/${checklistType}`)}
           >
             <ClipboardCheck className="w-4 h-4 mr-1" />
             Checklist
@@ -2027,6 +2056,7 @@ export default function ImplantacaoExecucao() {
                       date={etapas.check_programacao_at}
                       hasChecklist
                       checklistType="check_programacao"
+                      onChecklistClick={() => openChecklistDialog('check_programacao')}
                     />
                   </div>
 
@@ -2438,6 +2468,65 @@ export default function ImplantacaoExecucao() {
           engineeringStatus={project.engineering_status}
         />
       )}
+      {/* Checklist Dialog for 6.2 */}
+      <Dialog open={checklistDialogOpen} onOpenChange={setChecklistDialogOpen}>
+        <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ClipboardCheck className="w-5 h-5 text-primary" />
+              Check e Laudo de Programação (NOC)
+            </DialogTitle>
+          </DialogHeader>
+          {checklistDialogLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary" />
+            </div>
+          ) : checklistDialogData ? (
+            <div className="space-y-4">
+              <div className="space-y-2">
+                {checklistDialogData.items.map((item) => (
+                  <div key={item.id} className="flex items-start gap-3 py-2 px-3 rounded-md bg-muted/30">
+                    <div className={cn(
+                      "w-5 h-5 rounded-full flex items-center justify-center shrink-0 mt-0.5",
+                      item.checked ? "bg-primary text-primary-foreground" : "bg-muted border border-border"
+                    )}>
+                      {item.checked && <Check className="w-3 h-3" />}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <span className={cn("text-sm", item.checked ? "text-foreground" : "text-muted-foreground")}>
+                        {item.label}
+                      </span>
+                      {item.observacao && (
+                        <p className="text-xs text-muted-foreground mt-0.5 italic">{item.observacao}</p>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {checklistDialogData.observacoes && (
+                <div className="border-t pt-3">
+                  <p className="text-xs font-medium text-muted-foreground mb-1">Observações Gerais</p>
+                  <p className="text-sm">{checklistDialogData.observacoes}</p>
+                </div>
+              )}
+              <div className="flex items-center justify-between text-xs text-muted-foreground border-t pt-3">
+                <span>{checklistDialogData.items.filter(i => i.checked).length}/{checklistDialogData.items.length} itens concluídos</span>
+                <span className={cn(
+                  "font-medium",
+                  checklistDialogData.items.every(i => i.checked) ? "text-primary" : "text-amber-600"
+                )}>
+                  {checklistDialogData.items.every(i => i.checked) ? '✓ Completo' : 'Pendente'}
+                </span>
+              </div>
+            </div>
+          ) : (
+            <div className="text-center py-8 text-muted-foreground">
+              <ClipboardCheck className="w-8 h-8 mx-auto mb-2 opacity-50" />
+              <p className="text-sm">Nenhum checklist registrado ainda.</p>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </Layout>
   );
 }

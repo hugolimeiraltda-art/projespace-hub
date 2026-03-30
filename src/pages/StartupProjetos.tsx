@@ -287,6 +287,48 @@ export default function StartupProjetos() {
       });
       setEtapasMap(eMap);
 
+      // Build pendências map: project_id -> count of open pendências
+      const projectIds = (projectsRes.data || []).map((p: any) => p.id);
+      const customerProjectIds = portfolioRes.data
+        ?.filter(p => p.project_id && projectIds.includes(p.project_id))
+        .map(p => p.project_id) || [];
+      
+      const pendMap: Record<string, number> = {};
+      if (customerProjectIds.length > 0) {
+        // Get customer_portfolio entries with project_id
+        const { data: customerEntries } = await supabase
+          .from('customer_portfolio')
+          .select('id, project_id')
+          .in('project_id', customerProjectIds);
+        
+        if (customerEntries && customerEntries.length > 0) {
+          const customerIds = customerEntries.map(c => c.id);
+          const { data: pendencias } = await supabase
+            .from('manutencao_pendencias')
+            .select('customer_id')
+            .in('customer_id', customerIds)
+            .eq('status', 'ABERTO');
+          
+          if (pendencias) {
+            // Map customer_id back to project_id
+            const customerToProject: Record<string, string> = {};
+            customerEntries.forEach(c => {
+              if (c.project_id) customerToProject[c.id] = c.project_id;
+            });
+            
+            pendencias.forEach(p => {
+              if (p.customer_id) {
+                const projId = customerToProject[p.customer_id];
+                if (projId) {
+                  pendMap[projId] = (pendMap[projId] || 0) + 1;
+                }
+              }
+            });
+          }
+        }
+      }
+      setPendenciasMap(pendMap);
+
       setProjects((projectsRes.data || []) as StartupProject[]);
     } catch (error) {
       console.error('Error:', error);

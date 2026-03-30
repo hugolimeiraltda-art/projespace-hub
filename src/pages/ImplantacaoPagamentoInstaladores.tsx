@@ -270,6 +270,91 @@ export default function ImplantacaoPagamentoInstaladores() {
             </div>
           </Card>
         )}
+
+        {/* Tabela de Instalação */}
+        <div className="mt-8">
+          <Button
+            variant="outline"
+            className="w-full flex items-center justify-between py-4 text-left"
+            onClick={async () => {
+              const next = !showTabelaPontuacao;
+              setShowTabelaPontuacao(next);
+              if (next && produtosPontuacao.length === 0) {
+                setLoadingPontuacao(true);
+                const { data } = await supabase
+                  .from('orcamento_produtos')
+                  .select('id, codigo, nome, categoria, subgrupo, pontuacao')
+                  .eq('ativo', true)
+                  .order('nome');
+                setProdutosPontuacao((data || []).map(p => ({ ...p, pontuacao: (p as any).pontuacao ?? 0 })));
+                setLoadingPontuacao(false);
+              }
+            }}
+          >
+            <div className="flex items-center gap-2">
+              <List className="w-5 h-5 text-primary" />
+              <span className="text-base font-semibold">Tabela de Instalação — Pontuação por Produto</span>
+            </div>
+            {showTabelaPontuacao ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+          </Button>
+
+          {showTabelaPontuacao && (
+            <Card className="mt-2">
+              <CardContent className="pt-4">
+                <div className="mb-4 relative max-w-md">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Buscar produto por nome ou código..."
+                    value={searchPontuacao}
+                    onChange={(e) => setSearchPontuacao(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+                <div className="text-xs text-muted-foreground mb-3">
+                  Valor do ponto: <span className="font-semibold text-foreground">R$ 19,00</span> &middot; {produtosPontuacao.length} produtos cadastrados
+                </div>
+                {loadingPontuacao ? (
+                  <div className="flex justify-center py-8">
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary" />
+                  </div>
+                ) : (
+                  <div className="border rounded-lg overflow-x-auto max-h-[500px] overflow-y-auto">
+                    <table className="w-full text-sm">
+                      <thead className="sticky top-0 z-10">
+                        <tr className="border-b bg-muted/50">
+                          <th className="text-left p-2 font-medium text-muted-foreground text-xs">Código</th>
+                          <th className="text-left p-2 font-medium text-muted-foreground text-xs">Produto</th>
+                          <th className="text-left p-2 font-medium text-muted-foreground text-xs">Grupo</th>
+                          <th className="text-left p-2 font-medium text-muted-foreground text-xs">Subgrupo</th>
+                          <th className="text-right p-2 font-medium text-muted-foreground text-xs">Pontos</th>
+                          <th className="text-right p-2 font-medium text-muted-foreground text-xs">Valor MO</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {produtosPontuacao
+                          .filter(p => {
+                            if (!searchPontuacao) return true;
+                            const s = searchPontuacao.toLowerCase();
+                            return p.nome.toLowerCase().includes(s) || (p.codigo || '').toLowerCase().includes(s);
+                          })
+                          .map(p => (
+                            <tr key={p.id} className="border-b border-border hover:bg-muted/30 transition-colors">
+                              <td className="p-2 font-mono text-xs text-muted-foreground">{p.codigo || '—'}</td>
+                              <td className="p-2 text-xs font-medium max-w-[300px] truncate">{p.nome}</td>
+                              <td className="p-2 text-xs"><Badge variant="outline" className="text-xs">{p.categoria}</Badge></td>
+                              <td className="p-2 text-xs text-muted-foreground">{p.subgrupo || '—'}</td>
+                              <td className="p-2 text-right text-xs font-semibold">{p.pontuacao}</td>
+                              <td className="p-2 text-right text-xs font-mono">R$ {(p.pontuacao * 19).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                            </tr>
+                          ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
+        </div>
       </div>
     </Layout>
   );

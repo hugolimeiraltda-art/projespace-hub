@@ -1,0 +1,1 @@
+ALTER TABLE public.orcamento_produtos ADD COLUMN pontuacao numeric DEFAULT 0;

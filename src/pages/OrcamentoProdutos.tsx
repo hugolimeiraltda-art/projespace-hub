@@ -1011,6 +1011,10 @@ export default function OrcamentoProdutos() {
                 <Input value={pForm.valor_instalacao} onChange={e => setPForm(p => ({ ...p, valor_instalacao: e.target.value }))} onBlur={e => { const v = parseFloat(parseBRL(e.target.value)); if (!isNaN(v)) setPForm(p => ({ ...p, valor_instalacao: formatBRL(v) })); }} placeholder={pForm.subgrupo === 'Serviço' ? '0,00 (Serviço)' : '0,00'} />
                 
               </div>
+              <div>
+                <Label>Pontuação</Label>
+                <Input value={pForm.pontuacao} onChange={e => setPForm(p => ({ ...p, pontuacao: e.target.value }))} placeholder="0" type="number" />
+              </div>
             </div>
             <div className="flex items-center gap-3">
               <Switch checked={pForm.adicional} onCheckedChange={v => setPForm(p => ({ ...p, adicional: v }))} />

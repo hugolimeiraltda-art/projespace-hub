@@ -485,36 +485,10 @@ export default function ImplantacaoPagamentoInstaladores() {
             </div>
           </Card>
         )}
+          </TabsContent>
 
-        {/* Tabela de Instalação */}
-        <div className="mt-8">
-          <Button
-            variant="outline"
-            className="w-full flex items-center justify-between py-4 text-left"
-            onClick={async () => {
-              const next = !showTabelaPontuacao;
-              setShowTabelaPontuacao(next);
-              if (next && produtosPontuacao.length === 0 && kitsPontuacao.length === 0) {
-                setLoadingPontuacao(true);
-                const [prodRes, kitRes] = await Promise.all([
-                  supabase.from('orcamento_produtos').select('id, codigo, nome, categoria, subgrupo, pontuacao, historico_alteracoes').eq('ativo', true).order('nome'),
-                  supabase.from('orcamento_kits').select('id, codigo, nome, categoria, pontuacao, historico_alteracoes').eq('ativo', true).order('nome'),
-                ]);
-                setProdutosPontuacao((prodRes.data || []).map(p => ({ ...p, pontuacao: (p as any).pontuacao ?? 0, historico_alteracoes: (p as any).historico_alteracoes || [], tipo: 'produto' as const })));
-                setKitsPontuacao((kitRes.data || []).map(k => ({ ...k, codigo: (k as any).codigo || null, subgrupo: null, pontuacao: (k as any).pontuacao ?? 0, historico_alteracoes: (k as any).historico_alteracoes || [], tipo: 'kit' as const })));
-                setLoadingPontuacao(false);
-              }
-            }}
-          >
-            <div className="flex items-center gap-2">
-              <List className="w-5 h-5 text-primary" />
-              <span className="text-base font-semibold">Tabela de Instalação — Pontuação por Produto e Kit</span>
-            </div>
-            {showTabelaPontuacao ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
-          </Button>
-
-          {showTabelaPontuacao && (
-            <Card className="mt-2">
+          <TabsContent value="tabela">
+            <Card>
               <CardContent className="pt-4">
                 <Tabs value={tabelaTab} onValueChange={(v) => setTabelaTab(v as any)}>
                   <div className="flex items-center justify-between mb-4">
@@ -562,8 +536,8 @@ export default function ImplantacaoPagamentoInstaladores() {
                 </Tabs>
               </CardContent>
             </Card>
-          )}
-        </div>
+          </TabsContent>
+        </Tabs>
 
         {/* Regras de Pagamento Dialog */}
         <Dialog open={showRegrasDialog} onOpenChange={setShowRegrasDialog}>

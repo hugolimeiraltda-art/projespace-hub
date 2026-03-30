@@ -7,9 +7,12 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
-import { DollarSign, Search, Eye, CheckCircle2, Clock, Building, List, ChevronDown, ChevronUp } from 'lucide-react';
+import { DollarSign, Search, Eye, CheckCircle2, Clock, Building, List, ChevronDown, ChevronUp, Pencil, Save, X, History } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/hooks/use-toast';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 interface PontuacaoProduto {
   id: string;
@@ -18,6 +21,7 @@ interface PontuacaoProduto {
   categoria: string;
   subgrupo: string | null;
   pontuacao: number;
+  historico_alteracoes?: { user_name: string; alteracao: string; data: string }[];
 }
 
 interface PagamentoProject {
@@ -38,6 +42,8 @@ interface PagamentoProject {
 
 export default function ImplantacaoPagamentoInstaladores() {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const { toast } = useToast();
   const [projects, setProjects] = useState<PagamentoProject[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -46,6 +52,60 @@ export default function ImplantacaoPagamentoInstaladores() {
   const [produtosPontuacao, setProdutosPontuacao] = useState<PontuacaoProduto[]>([]);
   const [searchPontuacao, setSearchPontuacao] = useState('');
   const [loadingPontuacao, setLoadingPontuacao] = useState(false);
+  const [editingPontuacao, setEditingPontuacao] = useState<Record<string, string>>({});
+  const [savingPontuacao, setSavingPontuacao] = useState<string | null>(null);
+  const [historicoDialog, setHistoricoDialog] = useState<PontuacaoProduto | null>(null);
+
+  const startEditPontuacao = (p: PontuacaoProduto) => {
+    setEditingPontuacao(prev => ({ ...prev, [p.id]: String(p.pontuacao) }));
+  };
+
+  const cancelEditPontuacao = (id: string) => {
+    setEditingPontuacao(prev => {
+      const next = { ...prev };
+      delete next[id];
+      return next;
+    });
+  };
+
+  const savePontuacao = async (p: PontuacaoProduto) => {
+    const newVal = parseFloat(editingPontuacao[p.id]);
+    if (isNaN(newVal) || newVal === p.pontuacao) {
+      cancelEditPontuacao(p.id);
+      return;
+    }
+    setSavingPontuacao(p.id);
+    try {
+      const historico = [...(p.historico_alteracoes || [])];
+      historico.unshift({
+        user_name: user?.nome || 'Desconhecido',
+        alteracao: `Pontuação: ${p.pontuacao} → ${newVal}`,
+        data: new Date().toISOString(),
+      });
+
+      const { error } = await supabase
+        .from('orcamento_produtos')
+        .update({
+          pontuacao: newVal,
+          historico_alteracoes: historico.slice(0, 50) as any,
+          updated_by: user?.id,
+          updated_by_name: user?.nome,
+        })
+        .eq('id', p.id);
+
+      if (error) throw error;
+
+      setProdutosPontuacao(prev =>
+        prev.map(item => item.id === p.id ? { ...item, pontuacao: newVal, historico_alteracoes: historico.slice(0, 50) } : item)
+      );
+      cancelEditPontuacao(p.id);
+      toast({ title: 'Pontuação atualizada', description: `${p.nome}: ${p.pontuacao} → ${newVal}` });
+    } catch (err: any) {
+      toast({ title: 'Erro ao salvar', description: err.message, variant: 'destructive' });
+    } finally {
+      setSavingPontuacao(null);
+    }
+  };
 
   useEffect(() => {
     fetchData();
@@ -283,10 +343,10 @@ export default function ImplantacaoPagamentoInstaladores() {
                 setLoadingPontuacao(true);
                 const { data } = await supabase
                   .from('orcamento_produtos')
-                  .select('id, codigo, nome, categoria, subgrupo, pontuacao')
+                  .select('id, codigo, nome, categoria, subgrupo, pontuacao, historico_alteracoes')
                   .eq('ativo', true)
                   .order('nome');
-                setProdutosPontuacao((data || []).map(p => ({ ...p, pontuacao: (p as any).pontuacao ?? 0 })));
+                setProdutosPontuacao((data || []).map(p => ({ ...p, pontuacao: (p as any).pontuacao ?? 0, historico_alteracoes: (p as any).historico_alteracoes || [] })));
                 setLoadingPontuacao(false);
               }
             }}
@@ -328,6 +388,7 @@ export default function ImplantacaoPagamentoInstaladores() {
                           <th className="text-left p-2 font-medium text-muted-foreground text-xs">Subgrupo</th>
                           <th className="text-right p-2 font-medium text-muted-foreground text-xs">Pontos</th>
                           <th className="text-right p-2 font-medium text-muted-foreground text-xs">Valor MO</th>
+                          <th className="text-center p-2 font-medium text-muted-foreground text-xs">Ações</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -337,16 +398,65 @@ export default function ImplantacaoPagamentoInstaladores() {
                             const s = searchPontuacao.toLowerCase();
                             return p.nome.toLowerCase().includes(s) || (p.codigo || '').toLowerCase().includes(s);
                           })
-                          .map(p => (
-                            <tr key={p.id} className="border-b border-border hover:bg-muted/30 transition-colors">
-                              <td className="p-2 font-mono text-xs text-muted-foreground">{p.codigo || '—'}</td>
-                              <td className="p-2 text-xs font-medium max-w-[300px] truncate">{p.nome}</td>
-                              <td className="p-2 text-xs"><Badge variant="outline" className="text-xs">{p.categoria}</Badge></td>
-                              <td className="p-2 text-xs text-muted-foreground">{p.subgrupo || '—'}</td>
-                              <td className="p-2 text-right text-xs font-semibold">{p.pontuacao}</td>
-                              <td className="p-2 text-right text-xs font-mono">R$ {(p.pontuacao * 19).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
-                            </tr>
-                          ))}
+                          .map(p => {
+                            const isEditing = p.id in editingPontuacao;
+                            const isSaving = savingPontuacao === p.id;
+                            return (
+                              <tr key={p.id} className="border-b border-border hover:bg-muted/30 transition-colors">
+                                <td className="p-2 font-mono text-xs text-muted-foreground">{p.codigo || '—'}</td>
+                                <td className="p-2 text-xs font-medium max-w-[300px] truncate">{p.nome}</td>
+                                <td className="p-2 text-xs"><Badge variant="outline" className="text-xs">{p.categoria}</Badge></td>
+                                <td className="p-2 text-xs text-muted-foreground">{p.subgrupo || '—'}</td>
+                                <td className="p-2 text-right text-xs font-semibold">
+                                  {isEditing ? (
+                                    <Input
+                                      type="number"
+                                      step="0.01"
+                                      className="w-20 h-7 text-xs text-right ml-auto"
+                                      value={editingPontuacao[p.id]}
+                                      onChange={e => setEditingPontuacao(prev => ({ ...prev, [p.id]: e.target.value }))}
+                                      onKeyDown={e => {
+                                        if (e.key === 'Enter') savePontuacao(p);
+                                        if (e.key === 'Escape') cancelEditPontuacao(p.id);
+                                      }}
+                                      autoFocus
+                                      disabled={isSaving}
+                                    />
+                                  ) : (
+                                    p.pontuacao
+                                  )}
+                                </td>
+                                <td className="p-2 text-right text-xs font-mono">
+                                  R$ {((isEditing ? (parseFloat(editingPontuacao[p.id]) || 0) : p.pontuacao) * 19).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                </td>
+                                <td className="p-2 text-center">
+                                  <div className="flex items-center justify-center gap-1">
+                                    {isEditing ? (
+                                      <>
+                                        <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={() => savePontuacao(p)} disabled={isSaving}>
+                                          <Save className="w-3.5 h-3.5 text-green-600" />
+                                        </Button>
+                                        <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={() => cancelEditPontuacao(p.id)} disabled={isSaving}>
+                                          <X className="w-3.5 h-3.5 text-destructive" />
+                                        </Button>
+                                      </>
+                                    ) : (
+                                      <>
+                                        <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={() => startEditPontuacao(p)}>
+                                          <Pencil className="w-3.5 h-3.5 text-muted-foreground" />
+                                        </Button>
+                                        {p.historico_alteracoes && p.historico_alteracoes.length > 0 && (
+                                          <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={() => setHistoricoDialog(p)}>
+                                            <History className="w-3.5 h-3.5 text-muted-foreground" />
+                                          </Button>
+                                        )}
+                                      </>
+                                    )}
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          })}
                       </tbody>
                     </table>
                   </div>
@@ -355,6 +465,29 @@ export default function ImplantacaoPagamentoInstaladores() {
             </Card>
           )}
         </div>
+
+        {/* Histórico Dialog */}
+        <Dialog open={!!historicoDialog} onOpenChange={() => setHistoricoDialog(null)}>
+          <DialogContent className="max-w-lg">
+            <DialogHeader>
+              <DialogTitle className="text-sm">Histórico — {historicoDialog?.nome}</DialogTitle>
+            </DialogHeader>
+            <div className="max-h-[400px] overflow-y-auto space-y-2">
+              {historicoDialog?.historico_alteracoes?.map((h, i) => (
+                <div key={i} className="text-xs border rounded p-2 bg-muted/30">
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="font-medium text-foreground">{h.user_name}</span>
+                    <span className="text-muted-foreground">{new Date(h.data).toLocaleString('pt-BR')}</span>
+                  </div>
+                  <p className="text-muted-foreground">{h.alteracao}</p>
+                </div>
+              ))}
+              {(!historicoDialog?.historico_alteracoes || historicoDialog.historico_alteracoes.length === 0) && (
+                <p className="text-sm text-muted-foreground text-center py-4">Nenhum histórico registrado.</p>
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </Layout>
   );

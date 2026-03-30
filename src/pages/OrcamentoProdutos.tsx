@@ -456,6 +456,7 @@ export default function OrcamentoProdutos() {
       qtd_max: String(p.qtd_max || ''), valor_minimo: formatBRL(p.valor_minimo || 0),
       valor_locacao: formatBRL(p.valor_locacao || 0),
       valor_instalacao: formatBRL(p.valor_instalacao || 0), valor_minimo_locacao: formatBRL(p.valor_minimo_locacao || 0),
+      pontuacao: String(p.pontuacao || ''),
       adicional: p.adicional || false,
     });
     setShowProdutoForm(true);

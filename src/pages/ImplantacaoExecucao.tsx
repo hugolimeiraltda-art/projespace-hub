@@ -2468,6 +2468,65 @@ export default function ImplantacaoExecucao() {
           engineeringStatus={project.engineering_status}
         />
       )}
+      {/* Checklist Dialog for 6.2 */}
+      <Dialog open={checklistDialogOpen} onOpenChange={setChecklistDialogOpen}>
+        <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ClipboardCheck className="w-5 h-5 text-primary" />
+              Check e Laudo de Programação (NOC)
+            </DialogTitle>
+          </DialogHeader>
+          {checklistDialogLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary" />
+            </div>
+          ) : checklistDialogData ? (
+            <div className="space-y-4">
+              <div className="space-y-2">
+                {checklistDialogData.items.map((item) => (
+                  <div key={item.id} className="flex items-start gap-3 py-2 px-3 rounded-md bg-muted/30">
+                    <div className={cn(
+                      "w-5 h-5 rounded-full flex items-center justify-center shrink-0 mt-0.5",
+                      item.checked ? "bg-primary text-primary-foreground" : "bg-muted border border-border"
+                    )}>
+                      {item.checked && <Check className="w-3 h-3" />}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <span className={cn("text-sm", item.checked ? "text-foreground" : "text-muted-foreground")}>
+                        {item.label}
+                      </span>
+                      {item.observacao && (
+                        <p className="text-xs text-muted-foreground mt-0.5 italic">{item.observacao}</p>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {checklistDialogData.observacoes && (
+                <div className="border-t pt-3">
+                  <p className="text-xs font-medium text-muted-foreground mb-1">Observações Gerais</p>
+                  <p className="text-sm">{checklistDialogData.observacoes}</p>
+                </div>
+              )}
+              <div className="flex items-center justify-between text-xs text-muted-foreground border-t pt-3">
+                <span>{checklistDialogData.items.filter(i => i.checked).length}/{checklistDialogData.items.length} itens concluídos</span>
+                <span className={cn(
+                  "font-medium",
+                  checklistDialogData.items.every(i => i.checked) ? "text-primary" : "text-amber-600"
+                )}>
+                  {checklistDialogData.items.every(i => i.checked) ? '✓ Completo' : 'Pendente'}
+                </span>
+              </div>
+            </div>
+          ) : (
+            <div className="text-center py-8 text-muted-foreground">
+              <ClipboardCheck className="w-8 h-8 mx-auto mb-2 opacity-50" />
+              <p className="text-sm">Nenhum checklist registrado ainda.</p>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </Layout>
   );
 }

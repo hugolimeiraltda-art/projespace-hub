@@ -200,6 +200,91 @@ export default function ImplantacaoPagamentoInstaladores() {
     );
   }
 
+  const renderPontuacaoTable = (items: PontuacaoItem[], showSubgrupo: boolean) => (
+    <div className="border rounded-lg overflow-x-auto max-h-[500px] overflow-y-auto">
+      <table className="w-full text-sm">
+        <thead className="sticky top-0 z-10">
+          <tr className="border-b bg-muted/50">
+            <th className="text-left p-2 font-medium text-muted-foreground text-xs">Código</th>
+            <th className="text-left p-2 font-medium text-muted-foreground text-xs">{showSubgrupo ? 'Produto' : 'Kit'}</th>
+            <th className="text-left p-2 font-medium text-muted-foreground text-xs">Grupo</th>
+            {showSubgrupo && <th className="text-left p-2 font-medium text-muted-foreground text-xs">Subgrupo</th>}
+            <th className="text-right p-2 font-medium text-muted-foreground text-xs">Pontos</th>
+            <th className="text-right p-2 font-medium text-muted-foreground text-xs">Valor MO</th>
+            <th className="text-center p-2 font-medium text-muted-foreground text-xs">Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+          {items
+            .filter(p => {
+              if (!searchPontuacao) return true;
+              const s = searchPontuacao.toLowerCase();
+              return p.nome.toLowerCase().includes(s) || (p.codigo || '').toLowerCase().includes(s);
+            })
+            .map(p => {
+              const isEditing = p.id in editingPontuacao;
+              const isSaving = savingPontuacao === p.id;
+              return (
+                <tr key={p.id} className="border-b border-border hover:bg-muted/30 transition-colors">
+                  <td className="p-2 font-mono text-xs text-muted-foreground">{p.codigo || '—'}</td>
+                  <td className="p-2 text-xs font-medium max-w-[300px] truncate">{p.nome}</td>
+                  <td className="p-2 text-xs"><Badge variant="outline" className="text-xs">{p.categoria}</Badge></td>
+                  {showSubgrupo && <td className="p-2 text-xs text-muted-foreground">{p.subgrupo || '—'}</td>}
+                  <td className="p-2 text-right text-xs font-semibold">
+                    {isEditing ? (
+                      <Input
+                        type="number"
+                        step="0.01"
+                        className="w-20 h-7 text-xs text-right ml-auto"
+                        value={editingPontuacao[p.id]}
+                        onChange={e => setEditingPontuacao(prev => ({ ...prev, [p.id]: e.target.value }))}
+                        onKeyDown={e => {
+                          if (e.key === 'Enter') savePontuacao(p);
+                          if (e.key === 'Escape') cancelEditPontuacao(p.id);
+                        }}
+                        autoFocus
+                        disabled={isSaving}
+                      />
+                    ) : (
+                      p.pontuacao
+                    )}
+                  </td>
+                  <td className="p-2 text-right text-xs font-mono">
+                    R$ {((isEditing ? (parseFloat(editingPontuacao[p.id]) || 0) : p.pontuacao) * 19).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                  </td>
+                  <td className="p-2 text-center">
+                    <div className="flex items-center justify-center gap-1">
+                      {isEditing ? (
+                        <>
+                          <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={() => savePontuacao(p)} disabled={isSaving}>
+                            <Save className="w-3.5 h-3.5 text-green-600" />
+                          </Button>
+                          <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={() => cancelEditPontuacao(p.id)} disabled={isSaving}>
+                            <X className="w-3.5 h-3.5 text-destructive" />
+                          </Button>
+                        </>
+                      ) : (
+                        <>
+                          <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={() => startEditPontuacao(p)}>
+                            <Pencil className="w-3.5 h-3.5 text-muted-foreground" />
+                          </Button>
+                          {p.historico_alteracoes && p.historico_alteracoes.length > 0 && (
+                            <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={() => setHistoricoDialog(p)}>
+                              <History className="w-3.5 h-3.5 text-muted-foreground" />
+                            </Button>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+        </tbody>
+      </table>
+    </div>
+  );
+
   return (
     <Layout>
       <div className="p-6 md:p-8">

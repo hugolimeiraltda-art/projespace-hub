@@ -56,7 +56,7 @@ export default function ImplantacaoPagamentoInstaladores() {
   const [loadingPontuacao, setLoadingPontuacao] = useState(false);
   const [editingPontuacao, setEditingPontuacao] = useState<Record<string, string>>({});
   const [savingPontuacao, setSavingPontuacao] = useState<string | null>(null);
-  const [historicoDialog, setHistoricoDialog] = useState<PontuacaoProduto | null>(null);
+  const [historicoDialog, setHistoricoDialog] = useState<PontuacaoItem | null>(null);
 
   const startEditPontuacao = (p: PontuacaoProduto) => {
     setEditingPontuacao(prev => ({ ...prev, [p.id]: String(p.pontuacao) }));

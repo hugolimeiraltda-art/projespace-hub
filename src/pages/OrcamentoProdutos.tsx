@@ -95,6 +95,7 @@ interface Produto {
   valor_locacao: number;
   valor_instalacao: number;
   valor_minimo_locacao: number;
+  pontuacao: number;
   adicional: boolean;
   ativo: boolean;
   historico_alteracoes?: { user_name: string; alteracao: string; data: string }[];
@@ -134,7 +135,7 @@ export default function OrcamentoProdutos() {
   const [sortField, setSortField] = useState<string>('nome');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
 
-  type ColKey = 'id_produto' | 'codigo' | 'nome' | 'grupo' | 'subgrupo' | 'unidade' | 'qtd_max' | 'valor_atual' | 'valor_minimo' | 'valor_locacao' | 'valor_min_locacao' | 'valor_instalacao' | 'adicional' | 'ativo';
+  type ColKey = 'id_produto' | 'codigo' | 'nome' | 'grupo' | 'subgrupo' | 'unidade' | 'qtd_max' | 'valor_atual' | 'valor_minimo' | 'valor_locacao' | 'valor_min_locacao' | 'valor_instalacao' | 'pontuacao' | 'adicional' | 'ativo';
   const ALL_COLUMNS: { key: ColKey; label: string }[] = [
     { key: 'id_produto', label: 'Id' },
     { key: 'codigo', label: 'Código' },
@@ -148,10 +149,11 @@ export default function OrcamentoProdutos() {
     { key: 'valor_locacao', label: 'Valor Locação' },
     { key: 'valor_min_locacao', label: 'Valor Mín. Loc.' },
     { key: 'valor_instalacao', label: 'Valor Instalação' },
+    { key: 'pontuacao', label: 'Pontuação' },
     { key: 'adicional', label: 'Adicional' },
     { key: 'ativo', label: 'Ativo' },
   ];
-  const [visibleCols, setVisibleCols] = useState<Set<ColKey>>(new Set(['id_produto', 'codigo', 'nome', 'grupo', 'subgrupo', 'unidade', 'valor_atual', 'valor_minimo', 'valor_locacao', 'valor_min_locacao', 'valor_instalacao', 'adicional', 'ativo']));
+  const [visibleCols, setVisibleCols] = useState<Set<ColKey>>(new Set(['id_produto', 'codigo', 'nome', 'grupo', 'subgrupo', 'unidade', 'valor_atual', 'valor_minimo', 'valor_locacao', 'valor_min_locacao', 'valor_instalacao', 'pontuacao', 'adicional', 'ativo']));
 
   // Kit filters & sorting (Excel-style per-column)
   const [kitColumnFilters, setKitColumnFilters] = useState<Record<string, string>>({});
@@ -348,6 +350,7 @@ export default function OrcamentoProdutos() {
         case 'valor_locacao': va = a.valor_locacao || 0; vb = b.valor_locacao || 0; break;
         case 'valor_min_locacao': va = a.valor_minimo_locacao || 0; vb = b.valor_minimo_locacao || 0; break;
         case 'valor_instalacao': va = a.valor_instalacao || 0; vb = b.valor_instalacao || 0; break;
+        case 'pontuacao': va = a.pontuacao || 0; vb = b.pontuacao || 0; break;
         case 'adicional': va = a.adicional ? 1 : 0; vb = b.adicional ? 1 : 0; break;
         case 'ativo': va = a.ativo ? 1 : 0; vb = b.ativo ? 1 : 0; break;
         default: va = a.nome; vb = b.nome;
@@ -365,7 +368,7 @@ export default function OrcamentoProdutos() {
 
   const [showProdutoForm, setShowProdutoForm] = useState(false);
   const [editProduto, setEditProduto] = useState<Produto | null>(null);
-  const [pForm, setPForm] = useState({ nome: '', descricao: '', categoria: 'Smartportaria', subgrupo: '', codigo: '', id_produto: '', preco_unitario: '', unidade: 'un', qtd_max: '', valor_minimo: '', valor_locacao: '', valor_instalacao: '', valor_minimo_locacao: '', adicional: false });
+  const [pForm, setPForm] = useState({ nome: '', descricao: '', categoria: 'Smartportaria', subgrupo: '', codigo: '', id_produto: '', preco_unitario: '', unidade: 'un', qtd_max: '', valor_minimo: '', valor_locacao: '', valor_instalacao: '', valor_minimo_locacao: '', pontuacao: '', adicional: false });
 
   // Kit form
   const [showKitForm, setShowKitForm] = useState(false);
@@ -453,6 +456,7 @@ export default function OrcamentoProdutos() {
       qtd_max: String(p.qtd_max || ''), valor_minimo: formatBRL(p.valor_minimo || 0),
       valor_locacao: formatBRL(p.valor_locacao || 0),
       valor_instalacao: formatBRL(p.valor_instalacao || 0), valor_minimo_locacao: formatBRL(p.valor_minimo_locacao || 0),
+      pontuacao: String(p.pontuacao || ''),
       adicional: p.adicional || false,
     });
     setShowProdutoForm(true);
@@ -474,6 +478,7 @@ export default function OrcamentoProdutos() {
       valor_locacao: parseFloat(parseBRL(pForm.valor_locacao)) || 0,
       valor_instalacao: parseFloat(parseBRL(pForm.valor_instalacao)) || 0,
       valor_minimo_locacao: parseFloat(parseBRL(pForm.valor_minimo_locacao)) || 0,
+      pontuacao: parseFloat(pForm.pontuacao) || 0,
       adicional: pForm.adicional,
       updated_by: user?.id,
       updated_by_name: user?.nome,
@@ -490,6 +495,7 @@ export default function OrcamentoProdutos() {
       if (payload.valor_minimo !== old.valor_minimo) changes.push(`Valor Mínimo: ${formatBRL(old.valor_minimo)} → ${formatBRL(payload.valor_minimo)}`);
       if (payload.valor_locacao !== (old.valor_locacao || 0)) changes.push(`Valor Locação: ${formatBRL(old.valor_locacao || 0)} → ${formatBRL(payload.valor_locacao)}`);
       if (payload.valor_instalacao !== (old.valor_instalacao || 0)) changes.push(`Valor Instalação: ${formatBRL(old.valor_instalacao || 0)} → ${formatBRL(payload.valor_instalacao)}`);
+      if (payload.pontuacao !== (old.pontuacao || 0)) changes.push(`Pontuação: ${old.pontuacao || 0} → ${payload.pontuacao}`);
       if (payload.adicional !== old.adicional) changes.push(`Adicional: ${old.adicional ? 'Sim' : 'Não'} → ${payload.adicional ? 'Sim' : 'Não'}`);
       if (payload.qtd_max !== old.qtd_max) changes.push(`Qtd Máx: ${old.qtd_max} → ${payload.qtd_max}`);
 
@@ -534,7 +540,7 @@ export default function OrcamentoProdutos() {
     toast({ title: editProduto ? 'Produto atualizado' : 'Produto criado' });
   };
 
-  const resetPForm = () => setPForm({ nome: '', descricao: '', categoria: 'Smartportaria', subgrupo: '', codigo: '', id_produto: '', preco_unitario: '', unidade: 'un', qtd_max: '', valor_minimo: '', valor_locacao: '', valor_instalacao: '', valor_minimo_locacao: '', adicional: false });
+  const resetPForm = () => setPForm({ nome: '', descricao: '', categoria: 'Smartportaria', subgrupo: '', codigo: '', id_produto: '', preco_unitario: '', unidade: 'un', qtd_max: '', valor_minimo: '', valor_locacao: '', valor_instalacao: '', valor_minimo_locacao: '', pontuacao: '', adicional: false });
 
   // Recalculate all kit prices based on current product prices
   const recalcAllKitPrices = async () => {
@@ -775,6 +781,7 @@ export default function OrcamentoProdutos() {
                       {visibleCols.has('valor_locacao') && <th className="px-3 py-2 text-right cursor-pointer hover:bg-muted" onClick={() => toggleSort('valor_locacao')}><div className="flex items-center justify-end gap-1">Val. Loc. {sortField === 'valor_locacao' ? (sortDir === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />) : <ArrowUpDown className="h-3 w-3 opacity-30" />}</div></th>}
                       {visibleCols.has('valor_min_locacao') && <th className="px-3 py-2 text-right cursor-pointer hover:bg-muted" onClick={() => toggleSort('valor_min_locacao')}><div className="flex items-center justify-end gap-1">Mín. Loc. {sortField === 'valor_min_locacao' ? (sortDir === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />) : <ArrowUpDown className="h-3 w-3 opacity-30" />}</div></th>}
                       {visibleCols.has('valor_instalacao') && <th className="px-3 py-2 text-right cursor-pointer hover:bg-muted" onClick={() => toggleSort('valor_instalacao')}><div className="flex items-center justify-end gap-1">Instalação {sortField === 'valor_instalacao' ? (sortDir === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />) : <ArrowUpDown className="h-3 w-3 opacity-30" />}</div></th>}
+                      {visibleCols.has('pontuacao') && <th className="px-3 py-2 text-right cursor-pointer hover:bg-muted" onClick={() => toggleSort('pontuacao')}><div className="flex items-center justify-end gap-1">Pontuação {sortField === 'pontuacao' ? (sortDir === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />) : <ArrowUpDown className="h-3 w-3 opacity-30" />}</div></th>}
                       {visibleCols.has('adicional') && <th className="px-3 py-2 text-center cursor-pointer hover:bg-muted" onClick={() => toggleSort('adicional')}><div className="flex items-center justify-center gap-1">Adic. {sortField === 'adicional' ? (sortDir === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />) : <ArrowUpDown className="h-3 w-3 opacity-30" />}</div></th>}
                       {visibleCols.has('ativo') && <th className="px-3 py-2 text-center cursor-pointer hover:bg-muted" onClick={() => toggleSort('ativo')}><div className="flex items-center justify-center gap-1">Ativo {sortField === 'ativo' ? (sortDir === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />) : <ArrowUpDown className="h-3 w-3 opacity-30" />}</div></th>}
                       <th className="px-3 py-2 text-right">Ações</th>
@@ -795,6 +802,7 @@ export default function OrcamentoProdutos() {
                         {visibleCols.has('valor_locacao') && <td className="px-3 py-2 text-right text-xs">R$ {(p.valor_locacao || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>}
                         {visibleCols.has('valor_min_locacao') && <td className="px-3 py-2 text-right text-xs">R$ {p.valor_minimo_locacao.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>}
                         {visibleCols.has('valor_instalacao') && <td className="px-3 py-2 text-right text-xs">R$ {p.valor_instalacao.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>}
+                        {visibleCols.has('pontuacao') && <td className="px-3 py-2 text-right text-xs font-medium">{(p.pontuacao || 0).toLocaleString('pt-BR', { minimumFractionDigits: 0 })}</td>}
                         {visibleCols.has('adicional') && <td className="px-3 py-2 text-center">{p.adicional ? <Badge className="text-xs bg-primary/20 text-primary">Sim</Badge> : <span className="text-xs text-muted-foreground">Não</span>}</td>}
                         {visibleCols.has('ativo') && <td className="px-3 py-2 text-center"><Switch checked={p.ativo} onCheckedChange={v => toggleAtivo('produto', p.id, v)} /></td>}
                         <td className="px-3 py-2 text-right">
@@ -1002,6 +1010,10 @@ export default function OrcamentoProdutos() {
                 <Label>Valor Instalação (R$)</Label>
                 <Input value={pForm.valor_instalacao} onChange={e => setPForm(p => ({ ...p, valor_instalacao: e.target.value }))} onBlur={e => { const v = parseFloat(parseBRL(e.target.value)); if (!isNaN(v)) setPForm(p => ({ ...p, valor_instalacao: formatBRL(v) })); }} placeholder={pForm.subgrupo === 'Serviço' ? '0,00 (Serviço)' : '0,00'} />
                 
+              </div>
+              <div>
+                <Label>Pontuação</Label>
+                <Input value={pForm.pontuacao} onChange={e => setPForm(p => ({ ...p, pontuacao: e.target.value }))} placeholder="0" type="number" />
               </div>
             </div>
             <div className="flex items-center gap-3">

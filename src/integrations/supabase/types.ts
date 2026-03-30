@@ -1777,6 +1777,7 @@ export type Database = {
           id: string
           id_produto: number | null
           nome: string
+          pontuacao: number | null
           preco_unitario: number
           qtd_max: number | null
           subgrupo: string | null
@@ -1800,6 +1801,7 @@ export type Database = {
           id?: string
           id_produto?: number | null
           nome: string
+          pontuacao?: number | null
           preco_unitario?: number
           qtd_max?: number | null
           subgrupo?: string | null
@@ -1823,6 +1825,7 @@ export type Database = {
           id?: string
           id_produto?: number | null
           nome?: string
+          pontuacao?: number | null
           preco_unitario?: number
           qtd_max?: number | null
           subgrupo?: string | null

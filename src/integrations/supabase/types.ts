@@ -847,10 +847,15 @@ export type Database = {
           pagamento_instalacao_conferido: boolean | null
           pagamento_instalacao_conferido_at: string | null
           pagamento_instalacao_deslocamento: number | null
+          pagamento_instalacao_deslocamento_auferido: number | null
           pagamento_instalacao_diaria: number | null
+          pagamento_instalacao_diaria_auferido: number | null
           pagamento_instalacao_infra: number | null
+          pagamento_instalacao_infra_auferido: number | null
           pagamento_instalacao_pedagio: number | null
+          pagamento_instalacao_pedagio_auferido: number | null
           pagamento_instalacao_pontuacao: number | null
+          pagamento_instalacao_pontuacao_auferido: number | null
           pesquisa_satisfacao_comentario: string | null
           pesquisa_satisfacao_nota: number | null
           pesquisa_satisfacao_pontos_negativos: string | null
@@ -912,10 +917,15 @@ export type Database = {
           pagamento_instalacao_conferido?: boolean | null
           pagamento_instalacao_conferido_at?: string | null
           pagamento_instalacao_deslocamento?: number | null
+          pagamento_instalacao_deslocamento_auferido?: number | null
           pagamento_instalacao_diaria?: number | null
+          pagamento_instalacao_diaria_auferido?: number | null
           pagamento_instalacao_infra?: number | null
+          pagamento_instalacao_infra_auferido?: number | null
           pagamento_instalacao_pedagio?: number | null
+          pagamento_instalacao_pedagio_auferido?: number | null
           pagamento_instalacao_pontuacao?: number | null
+          pagamento_instalacao_pontuacao_auferido?: number | null
           pesquisa_satisfacao_comentario?: string | null
           pesquisa_satisfacao_nota?: number | null
           pesquisa_satisfacao_pontos_negativos?: string | null
@@ -977,10 +987,15 @@ export type Database = {
           pagamento_instalacao_conferido?: boolean | null
           pagamento_instalacao_conferido_at?: string | null
           pagamento_instalacao_deslocamento?: number | null
+          pagamento_instalacao_deslocamento_auferido?: number | null
           pagamento_instalacao_diaria?: number | null
+          pagamento_instalacao_diaria_auferido?: number | null
           pagamento_instalacao_infra?: number | null
+          pagamento_instalacao_infra_auferido?: number | null
           pagamento_instalacao_pedagio?: number | null
+          pagamento_instalacao_pedagio_auferido?: number | null
           pagamento_instalacao_pontuacao?: number | null
+          pagamento_instalacao_pontuacao_auferido?: number | null
           pesquisa_satisfacao_comentario?: string | null
           pesquisa_satisfacao_nota?: number | null
           pesquisa_satisfacao_pontos_negativos?: string | null

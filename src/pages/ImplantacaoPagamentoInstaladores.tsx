@@ -70,7 +70,7 @@ export default function ImplantacaoPagamentoInstaladores() {
     });
   };
 
-  const savePontuacao = async (p: PontuacaoProduto) => {
+  const savePontuacao = async (p: PontuacaoItem) => {
     const newVal = parseFloat(editingPontuacao[p.id]);
     if (isNaN(newVal) || newVal === p.pontuacao) {
       cancelEditPontuacao(p.id);

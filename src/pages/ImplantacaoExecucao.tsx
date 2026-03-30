@@ -2056,6 +2056,7 @@ export default function ImplantacaoExecucao() {
                       date={etapas.check_programacao_at}
                       hasChecklist
                       checklistType="check_programacao"
+                      onChecklistClick={() => openChecklistDialog('check_programacao')}
                     />
                   </div>
 

@@ -135,7 +135,7 @@ export default function OrcamentoProdutos() {
   const [sortField, setSortField] = useState<string>('nome');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
 
-  type ColKey = 'id_produto' | 'codigo' | 'nome' | 'grupo' | 'subgrupo' | 'unidade' | 'qtd_max' | 'valor_atual' | 'valor_minimo' | 'valor_locacao' | 'valor_min_locacao' | 'valor_instalacao' | 'adicional' | 'ativo';
+  type ColKey = 'id_produto' | 'codigo' | 'nome' | 'grupo' | 'subgrupo' | 'unidade' | 'qtd_max' | 'valor_atual' | 'valor_minimo' | 'valor_locacao' | 'valor_min_locacao' | 'valor_instalacao' | 'pontuacao' | 'adicional' | 'ativo';
   const ALL_COLUMNS: { key: ColKey; label: string }[] = [
     { key: 'id_produto', label: 'Id' },
     { key: 'codigo', label: 'Código' },
@@ -149,10 +149,11 @@ export default function OrcamentoProdutos() {
     { key: 'valor_locacao', label: 'Valor Locação' },
     { key: 'valor_min_locacao', label: 'Valor Mín. Loc.' },
     { key: 'valor_instalacao', label: 'Valor Instalação' },
+    { key: 'pontuacao', label: 'Pontuação' },
     { key: 'adicional', label: 'Adicional' },
     { key: 'ativo', label: 'Ativo' },
   ];
-  const [visibleCols, setVisibleCols] = useState<Set<ColKey>>(new Set(['id_produto', 'codigo', 'nome', 'grupo', 'subgrupo', 'unidade', 'valor_atual', 'valor_minimo', 'valor_locacao', 'valor_min_locacao', 'valor_instalacao', 'adicional', 'ativo']));
+  const [visibleCols, setVisibleCols] = useState<Set<ColKey>>(new Set(['id_produto', 'codigo', 'nome', 'grupo', 'subgrupo', 'unidade', 'valor_atual', 'valor_minimo', 'valor_locacao', 'valor_min_locacao', 'valor_instalacao', 'pontuacao', 'adicional', 'ativo']));
 
   // Kit filters & sorting (Excel-style per-column)
   const [kitColumnFilters, setKitColumnFilters] = useState<Record<string, string>>({});

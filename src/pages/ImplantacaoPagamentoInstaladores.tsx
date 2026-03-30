@@ -513,8 +513,12 @@ export default function ImplantacaoPagamentoInstaladores() {
                       />
                     </div>
                   </div>
-                  <div className="text-xs text-muted-foreground mb-3">
-                    Valor do ponto: <span className="font-semibold text-foreground">R$ 19,00</span>
+                  <div className="flex items-center justify-between text-xs text-muted-foreground mb-3">
+                    <span>Valor do ponto: <span className="font-semibold text-foreground">R$ {valorPonto.toFixed(2).replace('.', ',')}</span></span>
+                    <Button variant="outline" size="sm" className="h-7 text-xs gap-1.5" onClick={() => { setEditValorPonto(String(valorPonto)); setShowRegrasDialog(true); }}>
+                      <Settings className="w-3.5 h-3.5" />
+                      Regras de Pagamento
+                    </Button>
                   </div>
                   {loadingPontuacao ? (
                     <div className="flex justify-center py-8">

@@ -85,14 +85,18 @@ export default function ImplantacaoPagamentoInstaladores() {
         data: new Date().toISOString(),
       });
 
+      const tableName = p.tipo === 'kit' ? 'orcamento_kits' : 'orcamento_produtos';
+      const updateData: any = {
+        pontuacao: newVal,
+        historico_alteracoes: historico.slice(0, 50) as any,
+      };
+      if (p.tipo === 'produto') {
+        updateData.updated_by = user?.id;
+        updateData.updated_by_name = user?.nome;
+      }
       const { error } = await supabase
-        .from('orcamento_produtos')
-        .update({
-          pontuacao: newVal,
-          historico_alteracoes: historico.slice(0, 50) as any,
-          updated_by: user?.id,
-          updated_by_name: user?.nome,
-        })
+        .from(tableName)
+        .update(updateData)
         .eq('id', p.id);
 
       if (error) throw error;

@@ -698,6 +698,7 @@ export default function StartupProjetos() {
                 ))}
               </div>
 
+              <Select value={sortField} onValueChange={(v) => setSortField(v as typeof sortField)}>
                 <SelectTrigger className="w-full sm:w-[220px]">
                   <ArrowUpDown className="w-4 h-4 mr-2" />
                   <SelectValue placeholder="Ordenar por" />

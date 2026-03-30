@@ -850,6 +850,7 @@ export type Database = {
           pagamento_instalacao_deslocamento_auferido: number | null
           pagamento_instalacao_diaria: number | null
           pagamento_instalacao_diaria_auferido: number | null
+          pagamento_instalacao_divergencia_justificativa: string | null
           pagamento_instalacao_infra: number | null
           pagamento_instalacao_infra_auferido: number | null
           pagamento_instalacao_pedagio: number | null
@@ -920,6 +921,7 @@ export type Database = {
           pagamento_instalacao_deslocamento_auferido?: number | null
           pagamento_instalacao_diaria?: number | null
           pagamento_instalacao_diaria_auferido?: number | null
+          pagamento_instalacao_divergencia_justificativa?: string | null
           pagamento_instalacao_infra?: number | null
           pagamento_instalacao_infra_auferido?: number | null
           pagamento_instalacao_pedagio?: number | null
@@ -990,6 +992,7 @@ export type Database = {
           pagamento_instalacao_deslocamento_auferido?: number | null
           pagamento_instalacao_diaria?: number | null
           pagamento_instalacao_diaria_auferido?: number | null
+          pagamento_instalacao_divergencia_justificativa?: string | null
           pagamento_instalacao_infra?: number | null
           pagamento_instalacao_infra_auferido?: number | null
           pagamento_instalacao_pedagio?: number | null

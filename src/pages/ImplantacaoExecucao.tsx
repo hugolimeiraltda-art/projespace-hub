@@ -2347,8 +2347,13 @@ export default function ImplantacaoExecucao() {
                   <div className="px-4">
                     <Label className="text-sm font-medium">9.1 - Observações para o setor de Manutenção</Label>
                     <Textarea 
-                      value={etapas.observacoes_manutencao || ''}
-                      onChange={(e) => updateEtapa('observacoes_manutencao', e.target.value)}
+                      value={localObsManutencao}
+                      onChange={(e) => setLocalObsManutencao(e.target.value)}
+                      onBlur={() => {
+                        if (localObsManutencao !== (etapas.observacoes_manutencao || '')) {
+                          updateEtapa('observacoes_manutencao', localObsManutencao);
+                        }
+                      }}
                       placeholder="Registre observações, laudos ou recados importantes para o setor de Manutenção que será o próximo responsável pelo contrato..."
                       className="mt-2 min-h-[100px]"
                     />

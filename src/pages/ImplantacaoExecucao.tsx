@@ -200,6 +200,9 @@ export default function ImplantacaoExecucao() {
     item_6_3_status: string;
   } | null>(null);
   const [nocLoading, setNocLoading] = useState(false);
+  const [checklistDialogOpen, setChecklistDialogOpen] = useState(false);
+  const [checklistDialogData, setChecklistDialogData] = useState<{ items: { id: string; label: string; checked: boolean; observacao?: string }[]; observacoes?: string } | null>(null);
+  const [checklistDialogLoading, setChecklistDialogLoading] = useState(false);
 
   const canEditDates = user?.role === 'admin' || user?.role === 'administrativo' || user?.role === 'implantacao';
 

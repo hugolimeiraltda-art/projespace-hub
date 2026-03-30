@@ -7,9 +7,12 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
-import { DollarSign, Search, Eye, CheckCircle2, Clock, Building, List, ChevronDown, ChevronUp } from 'lucide-react';
+import { DollarSign, Search, Eye, CheckCircle2, Clock, Building, List, ChevronDown, ChevronUp, Pencil, Save, X, History } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/hooks/use-toast';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 interface PontuacaoProduto {
   id: string;
@@ -18,6 +21,7 @@ interface PontuacaoProduto {
   categoria: string;
   subgrupo: string | null;
   pontuacao: number;
+  historico_alteracoes?: { user_name: string; alteracao: string; data: string }[];
 }
 
 interface PagamentoProject {

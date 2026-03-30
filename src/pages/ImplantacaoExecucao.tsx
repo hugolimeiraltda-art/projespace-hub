@@ -203,6 +203,8 @@ export default function ImplantacaoExecucao() {
   const [checklistDialogOpen, setChecklistDialogOpen] = useState(false);
   const [checklistDialogData, setChecklistDialogData] = useState<{ items: { id: string; label: string; checked: boolean; observacao?: string }[]; observacoes?: string } | null>(null);
   const [checklistDialogLoading, setChecklistDialogLoading] = useState(false);
+  const [localLaudoTexto, setLocalLaudoTexto] = useState('');
+  const [localObsManutencao, setLocalObsManutencao] = useState('');
 
   const canEditDates = user?.role === 'admin' || user?.role === 'administrativo' || user?.role === 'implantacao';
 
@@ -276,10 +278,13 @@ export default function ImplantacaoExecucao() {
         ? interacoes.map((i: unknown) => i as InteracaoAssistida)
         : [];
 
-      setEtapas({
+      const etapasObj = {
         ...etapasData,
         operacao_assistida_interacoes: parsedInteracoes
-      } as ImplantacaoEtapas);
+      } as ImplantacaoEtapas;
+      setEtapas(etapasObj);
+      setLocalLaudoTexto(etapasObj.laudo_visita_comercial_texto || '');
+      setLocalObsManutencao(etapasObj.observacoes_manutencao || '');
 
       // Fetch customer_portfolio data for contract info
       const { data: portfolioData } = await supabase
@@ -2147,8 +2152,13 @@ export default function ImplantacaoExecucao() {
                   <div className="px-4 pt-2">
                     <Label className="text-sm text-muted-foreground">Observações da entrega técnica e comercial</Label>
                     <Textarea 
-                      value={etapas.laudo_visita_comercial_texto || ''}
-                      onChange={(e) => updateEtapa('laudo_visita_comercial_texto', e.target.value)}
+                      value={localLaudoTexto}
+                      onChange={(e) => setLocalLaudoTexto(e.target.value)}
+                      onBlur={() => {
+                        if (localLaudoTexto !== (etapas.laudo_visita_comercial_texto || '')) {
+                          updateEtapa('laudo_visita_comercial_texto', localLaudoTexto);
+                        }
+                      }}
                       placeholder="Descreva observações sobre a entrega técnica e comercial..."
                       className="mt-1"
                     />
@@ -2337,8 +2347,13 @@ export default function ImplantacaoExecucao() {
                   <div className="px-4">
                     <Label className="text-sm font-medium">9.1 - Observações para o setor de Manutenção</Label>
                     <Textarea 
-                      value={etapas.observacoes_manutencao || ''}
-                      onChange={(e) => updateEtapa('observacoes_manutencao', e.target.value)}
+                      value={localObsManutencao}
+                      onChange={(e) => setLocalObsManutencao(e.target.value)}
+                      onBlur={() => {
+                        if (localObsManutencao !== (etapas.observacoes_manutencao || '')) {
+                          updateEtapa('observacoes_manutencao', localObsManutencao);
+                        }
+                      }}
                       placeholder="Registre observações, laudos ou recados importantes para o setor de Manutenção que será o próximo responsável pelo contrato..."
                       className="mt-2 min-h-[100px]"
                     />

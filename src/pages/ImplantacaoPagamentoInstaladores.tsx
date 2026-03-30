@@ -52,8 +52,10 @@ export default function ImplantacaoPagamentoInstaladores() {
   const [filterStatus, setFilterStatus] = useState<'todos' | 'conferido' | 'pendente'>('todos');
   const [showTabelaPontuacao, setShowTabelaPontuacao] = useState(false);
   const [produtosPontuacao, setProdutosPontuacao] = useState<PontuacaoItem[]>([]);
+  const [kitsPontuacao, setKitsPontuacao] = useState<PontuacaoItem[]>([]);
   const [searchPontuacao, setSearchPontuacao] = useState('');
   const [loadingPontuacao, setLoadingPontuacao] = useState(false);
+  const [tabelaTab, setTabelaTab] = useState<'produtos' | 'kits'>('produtos');
   const [editingPontuacao, setEditingPontuacao] = useState<Record<string, string>>({});
   const [savingPontuacao, setSavingPontuacao] = useState<string | null>(null);
   const [historicoDialog, setHistoricoDialog] = useState<PontuacaoItem | null>(null);

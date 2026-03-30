@@ -767,6 +767,12 @@ export default function StartupProjetos() {
                               <Badge variant="outline" className="text-xs">
                                 {project.tipo_obra === 'acrescimo' ? 'Acréscimo' : 'Novo Contrato'}
                               </Badge>
+                              {(pendenciasMap[project.id] || 0) > 0 && (
+                                <Badge className="bg-destructive text-destructive-foreground border-destructive text-xs">
+                                  <AlertTriangle className="w-3 h-3 mr-1" />
+                                  {pendenciasMap[project.id]} pendência{pendenciasMap[project.id] > 1 ? 's' : ''}
+                                </Badge>
+                              )}
                             </div>
                             
                             <h3 className="text-lg font-semibold text-foreground mb-1">

@@ -343,10 +343,10 @@ export default function ImplantacaoPagamentoInstaladores() {
                 setLoadingPontuacao(true);
                 const { data } = await supabase
                   .from('orcamento_produtos')
-                  .select('id, codigo, nome, categoria, subgrupo, pontuacao')
+                  .select('id, codigo, nome, categoria, subgrupo, pontuacao, historico_alteracoes')
                   .eq('ativo', true)
                   .order('nome');
-                setProdutosPontuacao((data || []).map(p => ({ ...p, pontuacao: (p as any).pontuacao ?? 0 })));
+                setProdutosPontuacao((data || []).map(p => ({ ...p, pontuacao: (p as any).pontuacao ?? 0, historico_alteracoes: (p as any).historico_alteracoes || [] })));
                 setLoadingPontuacao(false);
               }
             }}

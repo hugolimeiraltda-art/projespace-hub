@@ -368,7 +368,7 @@ export default function OrcamentoProdutos() {
 
   const [showProdutoForm, setShowProdutoForm] = useState(false);
   const [editProduto, setEditProduto] = useState<Produto | null>(null);
-  const [pForm, setPForm] = useState({ nome: '', descricao: '', categoria: 'Smartportaria', subgrupo: '', codigo: '', id_produto: '', preco_unitario: '', unidade: 'un', qtd_max: '', valor_minimo: '', valor_locacao: '', valor_instalacao: '', valor_minimo_locacao: '', adicional: false });
+  const [pForm, setPForm] = useState({ nome: '', descricao: '', categoria: 'Smartportaria', subgrupo: '', codigo: '', id_produto: '', preco_unitario: '', unidade: 'un', qtd_max: '', valor_minimo: '', valor_locacao: '', valor_instalacao: '', valor_minimo_locacao: '', pontuacao: '', adicional: false });
 
   // Kit form
   const [showKitForm, setShowKitForm] = useState(false);

@@ -8,12 +8,13 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
-import { DollarSign, Search, Eye, CheckCircle2, Clock, Building, List, ChevronDown, ChevronUp, Pencil, Save, X, History, Package, Boxes } from 'lucide-react';
+import { DollarSign, Search, Eye, CheckCircle2, Clock, Building, List, ChevronDown, ChevronUp, Pencil, Save, X, History, Package, Boxes, Settings } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
 
 interface PontuacaoItem {
   id: string;
@@ -59,7 +60,42 @@ export default function ImplantacaoPagamentoInstaladores() {
   const [editingPontuacao, setEditingPontuacao] = useState<Record<string, string>>({});
   const [savingPontuacao, setSavingPontuacao] = useState<string | null>(null);
   const [historicoDialog, setHistoricoDialog] = useState<PontuacaoItem | null>(null);
+  const [valorPonto, setValorPonto] = useState(19);
+  const [showRegrasDialog, setShowRegrasDialog] = useState(false);
+  const [editValorPonto, setEditValorPonto] = useState('19');
+  const [savingRegras, setSavingRegras] = useState(false);
 
+  useEffect(() => {
+    supabase.from('configuracoes_pagamento').select('valor_ponto').eq('id', 'default').single().then(({ data }) => {
+      if (data) {
+        setValorPonto(Number((data as any).valor_ponto) || 19);
+        setEditValorPonto(String(Number((data as any).valor_ponto) || 19));
+      }
+    });
+  }, []);
+
+  const saveRegras = async () => {
+    const newVal = parseFloat(editValorPonto);
+    if (isNaN(newVal) || newVal <= 0) return;
+    setSavingRegras(true);
+    try {
+      const { error } = await supabase.from('configuracoes_pagamento' as any).upsert({
+        id: 'default',
+        valor_ponto: newVal,
+        updated_at: new Date().toISOString(),
+        updated_by: user?.id,
+        updated_by_name: user?.nome,
+      } as any);
+      if (error) throw error;
+      setValorPonto(newVal);
+      setShowRegrasDialog(false);
+      toast({ title: 'Regras atualizadas', description: `Valor do ponto: R$ ${newVal.toFixed(2)}` });
+    } catch (err: any) {
+      toast({ title: 'Erro', description: err.message, variant: 'destructive' });
+    } finally {
+      setSavingRegras(false);
+    }
+  };
   const startEditPontuacao = (p: PontuacaoItem) => {
     setEditingPontuacao(prev => ({ ...prev, [p.id]: String(p.pontuacao) }));
   };
@@ -250,7 +286,7 @@ export default function ImplantacaoPagamentoInstaladores() {
                     )}
                   </td>
                   <td className="p-2 text-right text-xs font-mono">
-                    R$ {((isEditing ? (parseFloat(editingPontuacao[p.id]) || 0) : p.pontuacao) * 19).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                    R$ {((isEditing ? (parseFloat(editingPontuacao[p.id]) || 0) : p.pontuacao) * valorPonto).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                   </td>
                   <td className="p-2 text-center">
                     <div className="flex items-center justify-center gap-1">
@@ -477,8 +513,12 @@ export default function ImplantacaoPagamentoInstaladores() {
                       />
                     </div>
                   </div>
-                  <div className="text-xs text-muted-foreground mb-3">
-                    Valor do ponto: <span className="font-semibold text-foreground">R$ 19,00</span>
+                  <div className="flex items-center justify-between text-xs text-muted-foreground mb-3">
+                    <span>Valor do ponto: <span className="font-semibold text-foreground">R$ {valorPonto.toFixed(2).replace('.', ',')}</span></span>
+                    <Button variant="outline" size="sm" className="h-7 text-xs gap-1.5" onClick={() => { setEditValorPonto(String(valorPonto)); setShowRegrasDialog(true); }}>
+                      <Settings className="w-3.5 h-3.5" />
+                      Regras de Pagamento
+                    </Button>
                   </div>
                   {loadingPontuacao ? (
                     <div className="flex justify-center py-8">
@@ -499,6 +539,38 @@ export default function ImplantacaoPagamentoInstaladores() {
             </Card>
           )}
         </div>
+
+        {/* Regras de Pagamento Dialog */}
+        <Dialog open={showRegrasDialog} onOpenChange={setShowRegrasDialog}>
+          <DialogContent className="max-w-sm">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Settings className="w-5 h-5 text-primary" />
+                Regras de Pagamento
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label>Valor do Ponto (R$)</Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={editValorPonto}
+                  onChange={e => setEditValorPonto(e.target.value)}
+                  className="mt-1"
+                  placeholder="19.00"
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  O valor de mão de obra é calculado como: pontos × valor do ponto
+                </p>
+              </div>
+              <Button className="w-full" onClick={saveRegras} disabled={savingRegras}>
+                {savingRegras ? 'Salvando...' : 'Salvar'}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
 
         {/* Histórico Dialog */}
         <Dialog open={!!historicoDialog} onOpenChange={() => setHistoricoDialog(null)}>

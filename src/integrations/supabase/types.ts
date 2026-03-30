@@ -65,6 +65,30 @@ export type Database = {
         }
         Relationships: []
       }
+      configuracoes_pagamento: {
+        Row: {
+          id: string
+          updated_at: string
+          updated_by: string | null
+          updated_by_name: string | null
+          valor_ponto: number
+        }
+        Insert: {
+          id?: string
+          updated_at?: string
+          updated_by?: string | null
+          updated_by_name?: string | null
+          valor_ponto?: number
+        }
+        Update: {
+          id?: string
+          updated_at?: string
+          updated_by?: string | null
+          updated_by_name?: string | null
+          valor_ponto?: number
+        }
+        Relationships: []
+      }
       customer_administradores: {
         Row: {
           atende_celular: boolean | null

@@ -680,7 +680,24 @@ export default function StartupProjetos() {
                 ))}
               </div>
 
-              <Select value={sortField} onValueChange={(v) => setSortField(v as typeof sortField)}>
+              <div className="flex gap-2">
+                {[
+                  { value: 'todas' as const, label: 'Todas' },
+                  { value: 'com' as const, label: '⚠ Com Pendências' },
+                  { value: 'sem' as const, label: 'Sem Pendências' },
+                ].map((tab) => (
+                  <Button
+                    key={tab.value}
+                    variant={pendenciaFilter === tab.value ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setPendenciaFilter(tab.value)}
+                    className={pendenciaFilter === tab.value && tab.value === 'com' ? 'bg-destructive text-destructive-foreground hover:bg-destructive/90' : ''}
+                  >
+                    {tab.label}
+                  </Button>
+                ))}
+              </div>
+
                 <SelectTrigger className="w-full sm:w-[220px]">
                   <ArrowUpDown className="w-4 h-4 mr-2" />
                   <SelectValue placeholder="Ordenar por" />

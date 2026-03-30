@@ -1632,6 +1632,7 @@ export type Database = {
           id_kit: number | null
           nome: string
           palavras_chave: string[] | null
+          pontuacao: number | null
           preco_kit: number
           regras_condicionais: Json | null
           updated_at: string
@@ -1652,6 +1653,7 @@ export type Database = {
           id_kit?: number | null
           nome: string
           palavras_chave?: string[] | null
+          pontuacao?: number | null
           preco_kit?: number
           regras_condicionais?: Json | null
           updated_at?: string
@@ -1672,6 +1674,7 @@ export type Database = {
           id_kit?: number | null
           nome?: string
           palavras_chave?: string[] | null
+          pontuacao?: number | null
           preco_kit?: number
           regras_condicionais?: Json | null
           updated_at?: string

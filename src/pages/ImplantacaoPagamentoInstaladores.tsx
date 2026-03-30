@@ -5,16 +5,17 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
-import { DollarSign, Search, Eye, CheckCircle2, Clock, Building, List, ChevronDown, ChevronUp, Pencil, Save, X, History } from 'lucide-react';
+import { DollarSign, Search, Eye, CheckCircle2, Clock, Building, List, ChevronDown, ChevronUp, Pencil, Save, X, History, Package, Boxes } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
-interface PontuacaoProduto {
+interface PontuacaoItem {
   id: string;
   codigo: string | null;
   nome: string;
@@ -22,6 +23,7 @@ interface PontuacaoProduto {
   subgrupo: string | null;
   pontuacao: number;
   historico_alteracoes?: { user_name: string; alteracao: string; data: string }[];
+  tipo: 'produto' | 'kit';
 }
 
 interface PagamentoProject {
@@ -49,14 +51,16 @@ export default function ImplantacaoPagamentoInstaladores() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<'todos' | 'conferido' | 'pendente'>('todos');
   const [showTabelaPontuacao, setShowTabelaPontuacao] = useState(false);
-  const [produtosPontuacao, setProdutosPontuacao] = useState<PontuacaoProduto[]>([]);
+  const [produtosPontuacao, setProdutosPontuacao] = useState<PontuacaoItem[]>([]);
+  const [kitsPontuacao, setKitsPontuacao] = useState<PontuacaoItem[]>([]);
   const [searchPontuacao, setSearchPontuacao] = useState('');
   const [loadingPontuacao, setLoadingPontuacao] = useState(false);
+  const [tabelaTab, setTabelaTab] = useState<'produtos' | 'kits'>('produtos');
   const [editingPontuacao, setEditingPontuacao] = useState<Record<string, string>>({});
   const [savingPontuacao, setSavingPontuacao] = useState<string | null>(null);
-  const [historicoDialog, setHistoricoDialog] = useState<PontuacaoProduto | null>(null);
+  const [historicoDialog, setHistoricoDialog] = useState<PontuacaoItem | null>(null);
 
-  const startEditPontuacao = (p: PontuacaoProduto) => {
+  const startEditPontuacao = (p: PontuacaoItem) => {
     setEditingPontuacao(prev => ({ ...prev, [p.id]: String(p.pontuacao) }));
   };
 
@@ -68,7 +72,7 @@ export default function ImplantacaoPagamentoInstaladores() {
     });
   };
 
-  const savePontuacao = async (p: PontuacaoProduto) => {
+  const savePontuacao = async (p: PontuacaoItem) => {
     const newVal = parseFloat(editingPontuacao[p.id]);
     if (isNaN(newVal) || newVal === p.pontuacao) {
       cancelEditPontuacao(p.id);
@@ -83,19 +87,24 @@ export default function ImplantacaoPagamentoInstaladores() {
         data: new Date().toISOString(),
       });
 
+      const tableName = p.tipo === 'kit' ? 'orcamento_kits' : 'orcamento_produtos';
+      const updateData: any = {
+        pontuacao: newVal,
+        historico_alteracoes: historico.slice(0, 50) as any,
+      };
+      if (p.tipo === 'produto') {
+        updateData.updated_by = user?.id;
+        updateData.updated_by_name = user?.nome;
+      }
       const { error } = await supabase
-        .from('orcamento_produtos')
-        .update({
-          pontuacao: newVal,
-          historico_alteracoes: historico.slice(0, 50) as any,
-          updated_by: user?.id,
-          updated_by_name: user?.nome,
-        })
+        .from(tableName)
+        .update(updateData)
         .eq('id', p.id);
 
       if (error) throw error;
 
-      setProdutosPontuacao(prev =>
+      const updateList = p.tipo === 'kit' ? setKitsPontuacao : setProdutosPontuacao;
+      updateList(prev =>
         prev.map(item => item.id === p.id ? { ...item, pontuacao: newVal, historico_alteracoes: historico.slice(0, 50) } : item)
       );
       cancelEditPontuacao(p.id);
@@ -190,6 +199,91 @@ export default function ImplantacaoPagamentoInstaladores() {
       </Layout>
     );
   }
+
+  const renderPontuacaoTable = (items: PontuacaoItem[], showSubgrupo: boolean) => (
+    <div className="border rounded-lg overflow-x-auto max-h-[500px] overflow-y-auto">
+      <table className="w-full text-sm">
+        <thead className="sticky top-0 z-10">
+          <tr className="border-b bg-muted/50">
+            <th className="text-left p-2 font-medium text-muted-foreground text-xs">Código</th>
+            <th className="text-left p-2 font-medium text-muted-foreground text-xs">{showSubgrupo ? 'Produto' : 'Kit'}</th>
+            <th className="text-left p-2 font-medium text-muted-foreground text-xs">Grupo</th>
+            {showSubgrupo && <th className="text-left p-2 font-medium text-muted-foreground text-xs">Subgrupo</th>}
+            <th className="text-right p-2 font-medium text-muted-foreground text-xs">Pontos</th>
+            <th className="text-right p-2 font-medium text-muted-foreground text-xs">Valor MO</th>
+            <th className="text-center p-2 font-medium text-muted-foreground text-xs">Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+          {items
+            .filter(p => {
+              if (!searchPontuacao) return true;
+              const s = searchPontuacao.toLowerCase();
+              return p.nome.toLowerCase().includes(s) || (p.codigo || '').toLowerCase().includes(s);
+            })
+            .map(p => {
+              const isEditing = p.id in editingPontuacao;
+              const isSaving = savingPontuacao === p.id;
+              return (
+                <tr key={p.id} className="border-b border-border hover:bg-muted/30 transition-colors">
+                  <td className="p-2 font-mono text-xs text-muted-foreground">{p.codigo || '—'}</td>
+                  <td className="p-2 text-xs font-medium max-w-[300px] truncate">{p.nome}</td>
+                  <td className="p-2 text-xs"><Badge variant="outline" className="text-xs">{p.categoria}</Badge></td>
+                  {showSubgrupo && <td className="p-2 text-xs text-muted-foreground">{p.subgrupo || '—'}</td>}
+                  <td className="p-2 text-right text-xs font-semibold">
+                    {isEditing ? (
+                      <Input
+                        type="number"
+                        step="0.01"
+                        className="w-20 h-7 text-xs text-right ml-auto"
+                        value={editingPontuacao[p.id]}
+                        onChange={e => setEditingPontuacao(prev => ({ ...prev, [p.id]: e.target.value }))}
+                        onKeyDown={e => {
+                          if (e.key === 'Enter') savePontuacao(p);
+                          if (e.key === 'Escape') cancelEditPontuacao(p.id);
+                        }}
+                        autoFocus
+                        disabled={isSaving}
+                      />
+                    ) : (
+                      p.pontuacao
+                    )}
+                  </td>
+                  <td className="p-2 text-right text-xs font-mono">
+                    R$ {((isEditing ? (parseFloat(editingPontuacao[p.id]) || 0) : p.pontuacao) * 19).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                  </td>
+                  <td className="p-2 text-center">
+                    <div className="flex items-center justify-center gap-1">
+                      {isEditing ? (
+                        <>
+                          <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={() => savePontuacao(p)} disabled={isSaving}>
+                            <Save className="w-3.5 h-3.5 text-green-600" />
+                          </Button>
+                          <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={() => cancelEditPontuacao(p.id)} disabled={isSaving}>
+                            <X className="w-3.5 h-3.5 text-destructive" />
+                          </Button>
+                        </>
+                      ) : (
+                        <>
+                          <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={() => startEditPontuacao(p)}>
+                            <Pencil className="w-3.5 h-3.5 text-muted-foreground" />
+                          </Button>
+                          {p.historico_alteracoes && p.historico_alteracoes.length > 0 && (
+                            <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={() => setHistoricoDialog(p)}>
+                              <History className="w-3.5 h-3.5 text-muted-foreground" />
+                            </Button>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+        </tbody>
+      </table>
+    </div>
+  );
 
   return (
     <Layout>
@@ -339,21 +433,21 @@ export default function ImplantacaoPagamentoInstaladores() {
             onClick={async () => {
               const next = !showTabelaPontuacao;
               setShowTabelaPontuacao(next);
-              if (next && produtosPontuacao.length === 0) {
+              if (next && produtosPontuacao.length === 0 && kitsPontuacao.length === 0) {
                 setLoadingPontuacao(true);
-                const { data } = await supabase
-                  .from('orcamento_produtos')
-                  .select('id, codigo, nome, categoria, subgrupo, pontuacao, historico_alteracoes')
-                  .eq('ativo', true)
-                  .order('nome');
-                setProdutosPontuacao((data || []).map(p => ({ ...p, pontuacao: (p as any).pontuacao ?? 0, historico_alteracoes: (p as any).historico_alteracoes || [] })));
+                const [prodRes, kitRes] = await Promise.all([
+                  supabase.from('orcamento_produtos').select('id, codigo, nome, categoria, subgrupo, pontuacao, historico_alteracoes').eq('ativo', true).order('nome'),
+                  supabase.from('orcamento_kits').select('id, codigo, nome, categoria, pontuacao, historico_alteracoes').eq('ativo', true).order('nome'),
+                ]);
+                setProdutosPontuacao((prodRes.data || []).map(p => ({ ...p, pontuacao: (p as any).pontuacao ?? 0, historico_alteracoes: (p as any).historico_alteracoes || [], tipo: 'produto' as const })));
+                setKitsPontuacao((kitRes.data || []).map(k => ({ ...k, codigo: (k as any).codigo || null, subgrupo: null, pontuacao: (k as any).pontuacao ?? 0, historico_alteracoes: (k as any).historico_alteracoes || [], tipo: 'kit' as const })));
                 setLoadingPontuacao(false);
               }
             }}
           >
             <div className="flex items-center gap-2">
               <List className="w-5 h-5 text-primary" />
-              <span className="text-base font-semibold">Tabela de Instalação — Pontuação por Produto</span>
+              <span className="text-base font-semibold">Tabela de Instalação — Pontuação por Produto e Kit</span>
             </div>
             {showTabelaPontuacao ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
           </Button>
@@ -361,106 +455,46 @@ export default function ImplantacaoPagamentoInstaladores() {
           {showTabelaPontuacao && (
             <Card className="mt-2">
               <CardContent className="pt-4">
-                <div className="mb-4 relative max-w-md">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Buscar produto por nome ou código..."
-                    value={searchPontuacao}
-                    onChange={(e) => setSearchPontuacao(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
-                <div className="text-xs text-muted-foreground mb-3">
-                  Valor do ponto: <span className="font-semibold text-foreground">R$ 19,00</span> &middot; {produtosPontuacao.length} produtos cadastrados
-                </div>
-                {loadingPontuacao ? (
-                  <div className="flex justify-center py-8">
-                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary" />
+                <Tabs value={tabelaTab} onValueChange={(v) => setTabelaTab(v as any)}>
+                  <div className="flex items-center justify-between mb-4">
+                    <TabsList>
+                      <TabsTrigger value="produtos" className="gap-1.5">
+                        <Package className="w-4 h-4" />
+                        Produtos ({produtosPontuacao.length})
+                      </TabsTrigger>
+                      <TabsTrigger value="kits" className="gap-1.5">
+                        <Boxes className="w-4 h-4" />
+                        Kits ({kitsPontuacao.length})
+                      </TabsTrigger>
+                    </TabsList>
+                    <div className="relative max-w-xs">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                      <Input
+                        placeholder="Buscar por nome ou código..."
+                        value={searchPontuacao}
+                        onChange={(e) => setSearchPontuacao(e.target.value)}
+                        className="pl-10 h-8 text-sm"
+                      />
+                    </div>
                   </div>
-                ) : (
-                  <div className="border rounded-lg overflow-x-auto max-h-[500px] overflow-y-auto">
-                    <table className="w-full text-sm">
-                      <thead className="sticky top-0 z-10">
-                        <tr className="border-b bg-muted/50">
-                          <th className="text-left p-2 font-medium text-muted-foreground text-xs">Código</th>
-                          <th className="text-left p-2 font-medium text-muted-foreground text-xs">Produto</th>
-                          <th className="text-left p-2 font-medium text-muted-foreground text-xs">Grupo</th>
-                          <th className="text-left p-2 font-medium text-muted-foreground text-xs">Subgrupo</th>
-                          <th className="text-right p-2 font-medium text-muted-foreground text-xs">Pontos</th>
-                          <th className="text-right p-2 font-medium text-muted-foreground text-xs">Valor MO</th>
-                          <th className="text-center p-2 font-medium text-muted-foreground text-xs">Ações</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {produtosPontuacao
-                          .filter(p => {
-                            if (!searchPontuacao) return true;
-                            const s = searchPontuacao.toLowerCase();
-                            return p.nome.toLowerCase().includes(s) || (p.codigo || '').toLowerCase().includes(s);
-                          })
-                          .map(p => {
-                            const isEditing = p.id in editingPontuacao;
-                            const isSaving = savingPontuacao === p.id;
-                            return (
-                              <tr key={p.id} className="border-b border-border hover:bg-muted/30 transition-colors">
-                                <td className="p-2 font-mono text-xs text-muted-foreground">{p.codigo || '—'}</td>
-                                <td className="p-2 text-xs font-medium max-w-[300px] truncate">{p.nome}</td>
-                                <td className="p-2 text-xs"><Badge variant="outline" className="text-xs">{p.categoria}</Badge></td>
-                                <td className="p-2 text-xs text-muted-foreground">{p.subgrupo || '—'}</td>
-                                <td className="p-2 text-right text-xs font-semibold">
-                                  {isEditing ? (
-                                    <Input
-                                      type="number"
-                                      step="0.01"
-                                      className="w-20 h-7 text-xs text-right ml-auto"
-                                      value={editingPontuacao[p.id]}
-                                      onChange={e => setEditingPontuacao(prev => ({ ...prev, [p.id]: e.target.value }))}
-                                      onKeyDown={e => {
-                                        if (e.key === 'Enter') savePontuacao(p);
-                                        if (e.key === 'Escape') cancelEditPontuacao(p.id);
-                                      }}
-                                      autoFocus
-                                      disabled={isSaving}
-                                    />
-                                  ) : (
-                                    p.pontuacao
-                                  )}
-                                </td>
-                                <td className="p-2 text-right text-xs font-mono">
-                                  R$ {((isEditing ? (parseFloat(editingPontuacao[p.id]) || 0) : p.pontuacao) * 19).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                                </td>
-                                <td className="p-2 text-center">
-                                  <div className="flex items-center justify-center gap-1">
-                                    {isEditing ? (
-                                      <>
-                                        <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={() => savePontuacao(p)} disabled={isSaving}>
-                                          <Save className="w-3.5 h-3.5 text-green-600" />
-                                        </Button>
-                                        <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={() => cancelEditPontuacao(p.id)} disabled={isSaving}>
-                                          <X className="w-3.5 h-3.5 text-destructive" />
-                                        </Button>
-                                      </>
-                                    ) : (
-                                      <>
-                                        <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={() => startEditPontuacao(p)}>
-                                          <Pencil className="w-3.5 h-3.5 text-muted-foreground" />
-                                        </Button>
-                                        {p.historico_alteracoes && p.historico_alteracoes.length > 0 && (
-                                          <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={() => setHistoricoDialog(p)}>
-                                            <History className="w-3.5 h-3.5 text-muted-foreground" />
-                                          </Button>
-                                        )}
-                                      </>
-                                    )}
-                                  </div>
-                                </td>
-                              </tr>
-                            );
-                          })}
-                      </tbody>
-                    </table>
+                  <div className="text-xs text-muted-foreground mb-3">
+                    Valor do ponto: <span className="font-semibold text-foreground">R$ 19,00</span>
                   </div>
-                )}
+                  {loadingPontuacao ? (
+                    <div className="flex justify-center py-8">
+                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary" />
+                    </div>
+                  ) : (
+                    <>
+                      <TabsContent value="produtos" className="mt-0">
+                        {renderPontuacaoTable(produtosPontuacao, true)}
+                      </TabsContent>
+                      <TabsContent value="kits" className="mt-0">
+                        {renderPontuacaoTable(kitsPontuacao, false)}
+                      </TabsContent>
+                    </>
+                  )}
+                </Tabs>
               </CardContent>
             </Card>
           )}

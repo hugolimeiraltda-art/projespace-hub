@@ -42,6 +42,8 @@ interface PagamentoProject {
 
 export default function ImplantacaoPagamentoInstaladores() {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const { toast } = useToast();
   const [projects, setProjects] = useState<PagamentoProject[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -50,6 +52,60 @@ export default function ImplantacaoPagamentoInstaladores() {
   const [produtosPontuacao, setProdutosPontuacao] = useState<PontuacaoProduto[]>([]);
   const [searchPontuacao, setSearchPontuacao] = useState('');
   const [loadingPontuacao, setLoadingPontuacao] = useState(false);
+  const [editingPontuacao, setEditingPontuacao] = useState<Record<string, string>>({});
+  const [savingPontuacao, setSavingPontuacao] = useState<string | null>(null);
+  const [historicoDialog, setHistoricoDialog] = useState<PontuacaoProduto | null>(null);
+
+  const startEditPontuacao = (p: PontuacaoProduto) => {
+    setEditingPontuacao(prev => ({ ...prev, [p.id]: String(p.pontuacao) }));
+  };
+
+  const cancelEditPontuacao = (id: string) => {
+    setEditingPontuacao(prev => {
+      const next = { ...prev };
+      delete next[id];
+      return next;
+    });
+  };
+
+  const savePontuacao = async (p: PontuacaoProduto) => {
+    const newVal = parseFloat(editingPontuacao[p.id]);
+    if (isNaN(newVal) || newVal === p.pontuacao) {
+      cancelEditPontuacao(p.id);
+      return;
+    }
+    setSavingPontuacao(p.id);
+    try {
+      const historico = [...(p.historico_alteracoes || [])];
+      historico.unshift({
+        user_name: user?.nome || 'Desconhecido',
+        alteracao: `Pontuação: ${p.pontuacao} → ${newVal}`,
+        data: new Date().toISOString(),
+      });
+
+      const { error } = await supabase
+        .from('orcamento_produtos')
+        .update({
+          pontuacao: newVal,
+          historico_alteracoes: historico.slice(0, 50) as any,
+          updated_by: user?.id,
+          updated_by_name: user?.nome,
+        })
+        .eq('id', p.id);
+
+      if (error) throw error;
+
+      setProdutosPontuacao(prev =>
+        prev.map(item => item.id === p.id ? { ...item, pontuacao: newVal, historico_alteracoes: historico.slice(0, 50) } : item)
+      );
+      cancelEditPontuacao(p.id);
+      toast({ title: 'Pontuação atualizada', description: `${p.nome}: ${p.pontuacao} → ${newVal}` });
+    } catch (err: any) {
+      toast({ title: 'Erro ao salvar', description: err.message, variant: 'destructive' });
+    } finally {
+      setSavingPontuacao(null);
+    }
+  };
 
   useEffect(() => {
     fetchData();

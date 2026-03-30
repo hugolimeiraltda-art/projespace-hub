@@ -142,6 +142,10 @@ function AppRoutes() {
         element={<ProtectedRoute><ImplantacaoRelatorios /></ProtectedRoute>} 
       />
       <Route 
+        path="/implantacao-pagamento-instaladores" 
+        element={<ProtectedRoute><ImplantacaoPagamentoInstaladores /></ProtectedRoute>} 
+      />
+      <Route 
         path="/startup-projetos" 
         element={<ProtectedRoute><StartupProjetos /></ProtectedRoute>} 
       />

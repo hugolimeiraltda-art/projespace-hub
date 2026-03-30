@@ -350,6 +350,7 @@ export default function OrcamentoProdutos() {
         case 'valor_locacao': va = a.valor_locacao || 0; vb = b.valor_locacao || 0; break;
         case 'valor_min_locacao': va = a.valor_minimo_locacao || 0; vb = b.valor_minimo_locacao || 0; break;
         case 'valor_instalacao': va = a.valor_instalacao || 0; vb = b.valor_instalacao || 0; break;
+        case 'pontuacao': va = a.pontuacao || 0; vb = b.pontuacao || 0; break;
         case 'adicional': va = a.adicional ? 1 : 0; vb = b.adicional ? 1 : 0; break;
         case 'ativo': va = a.ativo ? 1 : 0; vb = b.ativo ? 1 : 0; break;
         default: va = a.nome; vb = b.nome;

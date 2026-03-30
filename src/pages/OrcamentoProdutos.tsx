@@ -495,6 +495,7 @@ export default function OrcamentoProdutos() {
       if (payload.valor_minimo !== old.valor_minimo) changes.push(`Valor Mínimo: ${formatBRL(old.valor_minimo)} → ${formatBRL(payload.valor_minimo)}`);
       if (payload.valor_locacao !== (old.valor_locacao || 0)) changes.push(`Valor Locação: ${formatBRL(old.valor_locacao || 0)} → ${formatBRL(payload.valor_locacao)}`);
       if (payload.valor_instalacao !== (old.valor_instalacao || 0)) changes.push(`Valor Instalação: ${formatBRL(old.valor_instalacao || 0)} → ${formatBRL(payload.valor_instalacao)}`);
+      if (payload.pontuacao !== (old.pontuacao || 0)) changes.push(`Pontuação: ${old.pontuacao || 0} → ${payload.pontuacao}`);
       if (payload.adicional !== old.adicional) changes.push(`Adicional: ${old.adicional ? 'Sim' : 'Não'} → ${payload.adicional ? 'Sim' : 'Não'}`);
       if (payload.qtd_max !== old.qtd_max) changes.push(`Qtd Máx: ${old.qtd_max} → ${payload.qtd_max}`);
 

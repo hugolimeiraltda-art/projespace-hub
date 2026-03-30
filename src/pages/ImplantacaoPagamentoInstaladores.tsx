@@ -42,6 +42,10 @@ export default function ImplantacaoPagamentoInstaladores() {
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<'todos' | 'conferido' | 'pendente'>('todos');
+  const [showTabelaPontuacao, setShowTabelaPontuacao] = useState(false);
+  const [produtosPontuacao, setProdutosPontuacao] = useState<PontuacaoProduto[]>([]);
+  const [searchPontuacao, setSearchPontuacao] = useState('');
+  const [loadingPontuacao, setLoadingPontuacao] = useState(false);
 
   useEffect(() => {
     fetchData();

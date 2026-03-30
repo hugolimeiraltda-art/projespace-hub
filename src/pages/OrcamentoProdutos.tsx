@@ -95,6 +95,7 @@ interface Produto {
   valor_locacao: number;
   valor_instalacao: number;
   valor_minimo_locacao: number;
+  pontuacao: number;
   adicional: boolean;
   ativo: boolean;
   historico_alteracoes?: { user_name: string; alteracao: string; data: string }[];

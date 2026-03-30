@@ -60,7 +60,42 @@ export default function ImplantacaoPagamentoInstaladores() {
   const [editingPontuacao, setEditingPontuacao] = useState<Record<string, string>>({});
   const [savingPontuacao, setSavingPontuacao] = useState<string | null>(null);
   const [historicoDialog, setHistoricoDialog] = useState<PontuacaoItem | null>(null);
+  const [valorPonto, setValorPonto] = useState(19);
+  const [showRegrasDialog, setShowRegrasDialog] = useState(false);
+  const [editValorPonto, setEditValorPonto] = useState('19');
+  const [savingRegras, setSavingRegras] = useState(false);
 
+  useEffect(() => {
+    supabase.from('configuracoes_pagamento').select('valor_ponto').eq('id', 'default').single().then(({ data }) => {
+      if (data) {
+        setValorPonto(Number((data as any).valor_ponto) || 19);
+        setEditValorPonto(String(Number((data as any).valor_ponto) || 19));
+      }
+    });
+  }, []);
+
+  const saveRegras = async () => {
+    const newVal = parseFloat(editValorPonto);
+    if (isNaN(newVal) || newVal <= 0) return;
+    setSavingRegras(true);
+    try {
+      const { error } = await supabase.from('configuracoes_pagamento' as any).upsert({
+        id: 'default',
+        valor_ponto: newVal,
+        updated_at: new Date().toISOString(),
+        updated_by: user?.id,
+        updated_by_name: user?.nome,
+      } as any);
+      if (error) throw error;
+      setValorPonto(newVal);
+      setShowRegrasDialog(false);
+      toast({ title: 'Regras atualizadas', description: `Valor do ponto: R$ ${newVal.toFixed(2)}` });
+    } catch (err: any) {
+      toast({ title: 'Erro', description: err.message, variant: 'destructive' });
+    } finally {
+      setSavingRegras(false);
+    }
+  };
   const startEditPontuacao = (p: PontuacaoItem) => {
     setEditingPontuacao(prev => ({ ...prev, [p.id]: String(p.pontuacao) }));
   };

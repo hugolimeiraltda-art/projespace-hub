@@ -286,7 +286,7 @@ export default function ImplantacaoPagamentoInstaladores() {
                     )}
                   </td>
                   <td className="p-2 text-right text-xs font-mono">
-                    R$ {((isEditing ? (parseFloat(editingPontuacao[p.id]) || 0) : p.pontuacao) * valorPonto).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                    R$ {(Number(isEditing ? (parseFloat(editingPontuacao[p.id]) || 0) : (p.pontuacao || 0)) * Number(valorPonto)).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                   </td>
                   <td className="p-2 text-center">
                     <div className="flex items-center justify-center gap-1">

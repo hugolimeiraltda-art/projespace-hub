@@ -2152,8 +2152,13 @@ export default function ImplantacaoExecucao() {
                   <div className="px-4 pt-2">
                     <Label className="text-sm text-muted-foreground">Observações da entrega técnica e comercial</Label>
                     <Textarea 
-                      value={etapas.laudo_visita_comercial_texto || ''}
-                      onChange={(e) => updateEtapa('laudo_visita_comercial_texto', e.target.value)}
+                      value={localLaudoTexto}
+                      onChange={(e) => setLocalLaudoTexto(e.target.value)}
+                      onBlur={() => {
+                        if (localLaudoTexto !== (etapas.laudo_visita_comercial_texto || '')) {
+                          updateEtapa('laudo_visita_comercial_texto', localLaudoTexto);
+                        }
+                      }}
                       placeholder="Descreva observações sobre a entrega técnica e comercial..."
                       className="mt-1"
                     />

@@ -104,6 +104,14 @@ interface ImplantacaoEtapas {
   observacoes_manutencao: string | null;
   data_ativacao_realizada: string | null;
   etapa_atual: number;
+  // Step 4.5: Pagamento de Instalação
+  pagamento_instalacao_pontuacao: number | null;
+  pagamento_instalacao_infra: number | null;
+  pagamento_instalacao_deslocamento: number | null;
+  pagamento_instalacao_pedagio: number | null;
+  pagamento_instalacao_diaria: number | null;
+  pagamento_instalacao_conferido: boolean;
+  pagamento_instalacao_conferido_at: string | null;
   // Step 10: Satisfaction Survey
   pesquisa_satisfacao_realizada: boolean;
   pesquisa_satisfacao_realizada_at: string | null;
@@ -1847,6 +1855,118 @@ export default function ImplantacaoExecucao() {
                         <Plus className="w-4 h-4 mr-1" />
                         Abrir Pendência Cliente
                       </Button>
+                    </div>
+                  </div>
+
+                  {/* 4.5 - Pagamento de Instalação */}
+                  <div className="px-4 py-3 space-y-3 border-t border-border">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <Checkbox 
+                          checked={etapas.pagamento_instalacao_conferido}
+                          onCheckedChange={(value) => updateEtapa('pagamento_instalacao_conferido', value, 'pagamento_instalacao_conferido_at')}
+                          disabled={isSaving}
+                        />
+                        <span className={cn("text-sm font-medium", etapas.pagamento_instalacao_conferido && "text-muted-foreground line-through")}>
+                          4.5 - Pagamento de Instalação
+                        </span>
+                        {etapas.pagamento_instalacao_conferido_at && (
+                          <span className="text-xs text-muted-foreground">
+                            {format(parseISO(etapas.pagamento_instalacao_conferido_at), "dd/MM/yyyy", { locale: ptBR })}
+                          </span>
+                        )}
+                      </div>
+                      <DollarSign className="w-4 h-4 text-muted-foreground" />
+                    </div>
+                    <p className="text-xs text-muted-foreground ml-8">
+                      Valores referentes à pontuação liberada, infraestrutura, deslocamento, pedágio e diárias de viagem.
+                    </p>
+                    <div className="ml-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                      <div className="space-y-1.5">
+                        <Label className="text-xs">Pontuação Liberada (equipamentos)</Label>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          placeholder="0,00"
+                          value={etapas.pagamento_instalacao_pontuacao ?? ''}
+                          onChange={(e) => {
+                            const val = e.target.value === '' ? null : Number(e.target.value);
+                            setEtapas(prev => prev ? { ...prev, pagamento_instalacao_pontuacao: val } as ImplantacaoEtapas : null);
+                          }}
+                          onBlur={(e) => {
+                            const val = e.target.value === '' ? null : Number(e.target.value);
+                            updateEtapa('pagamento_instalacao_pontuacao', val);
+                          }}
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-xs">Qtd. Infra Liberada na Venda</Label>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          placeholder="0,00"
+                          value={etapas.pagamento_instalacao_infra ?? ''}
+                          onChange={(e) => {
+                            const val = e.target.value === '' ? null : Number(e.target.value);
+                            setEtapas(prev => prev ? { ...prev, pagamento_instalacao_infra: val } as ImplantacaoEtapas : null);
+                          }}
+                          onBlur={(e) => {
+                            const val = e.target.value === '' ? null : Number(e.target.value);
+                            updateEtapa('pagamento_instalacao_infra', val);
+                          }}
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-xs">Qtd. Deslocamento</Label>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          placeholder="0,00"
+                          value={etapas.pagamento_instalacao_deslocamento ?? ''}
+                          onChange={(e) => {
+                            const val = e.target.value === '' ? null : Number(e.target.value);
+                            setEtapas(prev => prev ? { ...prev, pagamento_instalacao_deslocamento: val } as ImplantacaoEtapas : null);
+                          }}
+                          onBlur={(e) => {
+                            const val = e.target.value === '' ? null : Number(e.target.value);
+                            updateEtapa('pagamento_instalacao_deslocamento', val);
+                          }}
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-xs">Qtd. Pedágio</Label>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          placeholder="0,00"
+                          value={etapas.pagamento_instalacao_pedagio ?? ''}
+                          onChange={(e) => {
+                            const val = e.target.value === '' ? null : Number(e.target.value);
+                            setEtapas(prev => prev ? { ...prev, pagamento_instalacao_pedagio: val } as ImplantacaoEtapas : null);
+                          }}
+                          onBlur={(e) => {
+                            const val = e.target.value === '' ? null : Number(e.target.value);
+                            updateEtapa('pagamento_instalacao_pedagio', val);
+                          }}
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-xs">Diária de Viagem</Label>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          placeholder="0,00"
+                          value={etapas.pagamento_instalacao_diaria ?? ''}
+                          onChange={(e) => {
+                            const val = e.target.value === '' ? null : Number(e.target.value);
+                            setEtapas(prev => prev ? { ...prev, pagamento_instalacao_diaria: val } as ImplantacaoEtapas : null);
+                          }}
+                          onBlur={(e) => {
+                            const val = e.target.value === '' ? null : Number(e.target.value);
+                            updateEtapa('pagamento_instalacao_diaria', val);
+                          }}
+                        />
+                      </div>
                     </div>
                   </div>
                 </CardContent>

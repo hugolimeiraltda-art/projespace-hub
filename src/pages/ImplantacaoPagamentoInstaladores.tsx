@@ -7,9 +7,18 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
-import { DollarSign, Search, Eye, CheckCircle2, Clock, Building } from 'lucide-react';
+import { DollarSign, Search, Eye, CheckCircle2, Clock, Building, List, ChevronDown, ChevronUp } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+
+interface PontuacaoProduto {
+  id: string;
+  codigo: string | null;
+  nome: string;
+  categoria: string;
+  subgrupo: string | null;
+  pontuacao: number;
+}
 
 interface PagamentoProject {
   id: string;

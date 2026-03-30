@@ -206,6 +206,29 @@ export default function ImplantacaoExecucao() {
 
   const canEditDates = user?.role === 'admin' || user?.role === 'administrativo' || user?.role === 'implantacao';
 
+  const openChecklistDialog = async (checklistType: string) => {
+    setChecklistDialogLoading(true);
+    setChecklistDialogOpen(true);
+    try {
+      const { data } = await supabase
+        .from('implantacao_checklists')
+        .select('dados, observacoes')
+        .eq('project_id', id!)
+        .eq('tipo', checklistType)
+        .maybeSingle();
+      if (data) {
+        const dados = data.dados as any;
+        setChecklistDialogData({ items: dados?.items || [], observacoes: data.observacoes || '' });
+      } else {
+        setChecklistDialogData(null);
+      }
+    } catch {
+      setChecklistDialogData(null);
+    } finally {
+      setChecklistDialogLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (id) {
       fetchData();

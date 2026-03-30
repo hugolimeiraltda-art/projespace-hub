@@ -36,6 +36,7 @@ import {
   ArrowUpDown,
   ArrowUp,
   ArrowDown,
+  AlertTriangle,
 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -89,6 +90,8 @@ export default function StartupProjetos() {
   const [statusFilter, setStatusFilter] = useState<ImplantacaoStatus | 'TODOS'>('TODOS');
   const [portfolioMap, setPortfolioMap] = useState<Record<string, { mensalidade: number | null; taxa_ativacao: number | null }>>({});
   const [etapasMap, setEtapasMap] = useState<Record<string, ImplantacaoEtapasData>>({});
+  const [pendenciasMap, setPendenciasMap] = useState<Record<string, number>>({});
+  const [pendenciaFilter, setPendenciaFilter] = useState<'todas' | 'com' | 'sem'>('todas');
 
   // New obra dialog state
   const [showNewObra, setShowNewObra] = useState(false);
@@ -284,6 +287,48 @@ export default function StartupProjetos() {
       });
       setEtapasMap(eMap);
 
+      // Build pendências map: project_id -> count of open pendências
+      const projectIds = (projectsRes.data || []).map((p: any) => p.id);
+      const customerProjectIds = portfolioRes.data
+        ?.filter(p => p.project_id && projectIds.includes(p.project_id))
+        .map(p => p.project_id) || [];
+      
+      const pendMap: Record<string, number> = {};
+      if (customerProjectIds.length > 0) {
+        // Get customer_portfolio entries with project_id
+        const { data: customerEntries } = await supabase
+          .from('customer_portfolio')
+          .select('id, project_id')
+          .in('project_id', customerProjectIds);
+        
+        if (customerEntries && customerEntries.length > 0) {
+          const customerIds = customerEntries.map(c => c.id);
+          const { data: pendencias } = await supabase
+            .from('manutencao_pendencias')
+            .select('customer_id')
+            .in('customer_id', customerIds)
+            .eq('status', 'ABERTO');
+          
+          if (pendencias) {
+            // Map customer_id back to project_id
+            const customerToProject: Record<string, string> = {};
+            customerEntries.forEach(c => {
+              if (c.project_id) customerToProject[c.id] = c.project_id;
+            });
+            
+            pendencias.forEach(p => {
+              if (p.customer_id) {
+                const projId = customerToProject[p.customer_id];
+                if (projId) {
+                  pendMap[projId] = (pendMap[projId] || 0) + 1;
+                }
+              }
+            });
+          }
+        }
+      }
+      setPendenciasMap(pendMap);
+
       setProjects((projectsRes.data || []) as StartupProject[]);
     } catch (error) {
       console.error('Error:', error);
@@ -358,8 +403,11 @@ export default function StartupProjetos() {
     const matchesStatus = statusFilter === 'TODOS' || effectiveStatus === statusFilter;
     
     const matchesTipoObra = tipoObraFilter === 'todas' || project.tipo_obra === tipoObraFilter;
+
+    const hasPend = (pendenciasMap[project.id] || 0) > 0;
+    const matchesPendencia = pendenciaFilter === 'todas' || (pendenciaFilter === 'com' && hasPend) || (pendenciaFilter === 'sem' && !hasPend);
     
-    return matchesSearch && matchesStatus && matchesTipoObra;
+    return matchesSearch && matchesStatus && matchesTipoObra && matchesPendencia;
   }).sort((a, b) => {
     let result: number;
     if (sortField === 'cliente_condominio_nome') {
@@ -632,6 +680,24 @@ export default function StartupProjetos() {
                 ))}
               </div>
 
+              <div className="flex gap-2">
+                {[
+                  { value: 'todas' as const, label: 'Todas' },
+                  { value: 'com' as const, label: '⚠ Com Pendências' },
+                  { value: 'sem' as const, label: 'Sem Pendências' },
+                ].map((tab) => (
+                  <Button
+                    key={tab.value}
+                    variant={pendenciaFilter === tab.value ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setPendenciaFilter(tab.value)}
+                    className={pendenciaFilter === tab.value && tab.value === 'com' ? 'bg-destructive text-destructive-foreground hover:bg-destructive/90' : ''}
+                  >
+                    {tab.label}
+                  </Button>
+                ))}
+              </div>
+
               <Select value={sortField} onValueChange={(v) => setSortField(v as typeof sortField)}>
                 <SelectTrigger className="w-full sm:w-[220px]">
                   <ArrowUpDown className="w-4 h-4 mr-2" />
@@ -701,6 +767,12 @@ export default function StartupProjetos() {
                               <Badge variant="outline" className="text-xs">
                                 {project.tipo_obra === 'acrescimo' ? 'Acréscimo' : 'Novo Contrato'}
                               </Badge>
+                              {(pendenciasMap[project.id] || 0) > 0 && (
+                                <Badge className="bg-destructive text-destructive-foreground border-destructive text-xs">
+                                  <AlertTriangle className="w-3 h-3 mr-1" />
+                                  {pendenciasMap[project.id]} pendência{pendenciasMap[project.id] > 1 ? 's' : ''}
+                                </Badge>
+                              )}
                             </div>
                             
                             <h3 className="text-lg font-semibold text-foreground mb-1">

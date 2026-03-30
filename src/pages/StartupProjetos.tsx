@@ -90,6 +90,8 @@ export default function StartupProjetos() {
   const [statusFilter, setStatusFilter] = useState<ImplantacaoStatus | 'TODOS'>('TODOS');
   const [portfolioMap, setPortfolioMap] = useState<Record<string, { mensalidade: number | null; taxa_ativacao: number | null }>>({});
   const [etapasMap, setEtapasMap] = useState<Record<string, ImplantacaoEtapasData>>({});
+  const [pendenciasMap, setPendenciasMap] = useState<Record<string, number>>({});
+  const [pendenciaFilter, setPendenciaFilter] = useState<'todas' | 'com' | 'sem'>('todas');
 
   // New obra dialog state
   const [showNewObra, setShowNewObra] = useState(false);

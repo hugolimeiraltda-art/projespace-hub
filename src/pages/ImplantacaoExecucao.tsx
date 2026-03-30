@@ -104,6 +104,14 @@ interface ImplantacaoEtapas {
   observacoes_manutencao: string | null;
   data_ativacao_realizada: string | null;
   etapa_atual: number;
+  // Step 4.5: Pagamento de Instalação
+  pagamento_instalacao_pontuacao: number | null;
+  pagamento_instalacao_infra: number | null;
+  pagamento_instalacao_deslocamento: number | null;
+  pagamento_instalacao_pedagio: number | null;
+  pagamento_instalacao_diaria: number | null;
+  pagamento_instalacao_conferido: boolean;
+  pagamento_instalacao_conferido_at: string | null;
   // Step 10: Satisfaction Survey
   pesquisa_satisfacao_realizada: boolean;
   pesquisa_satisfacao_realizada_at: string | null;

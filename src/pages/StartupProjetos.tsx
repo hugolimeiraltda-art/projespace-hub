@@ -403,8 +403,11 @@ export default function StartupProjetos() {
     const matchesStatus = statusFilter === 'TODOS' || effectiveStatus === statusFilter;
     
     const matchesTipoObra = tipoObraFilter === 'todas' || project.tipo_obra === tipoObraFilter;
+
+    const hasPend = (pendenciasMap[project.id] || 0) > 0;
+    const matchesPendencia = pendenciaFilter === 'todas' || (pendenciaFilter === 'com' && hasPend) || (pendenciaFilter === 'sem' && !hasPend);
     
-    return matchesSearch && matchesStatus && matchesTipoObra;
+    return matchesSearch && matchesStatus && matchesTipoObra && matchesPendencia;
   }).sort((a, b) => {
     let result: number;
     if (sortField === 'cliente_condominio_nome') {

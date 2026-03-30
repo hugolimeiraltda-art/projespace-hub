@@ -278,10 +278,13 @@ export default function ImplantacaoExecucao() {
         ? interacoes.map((i: unknown) => i as InteracaoAssistida)
         : [];
 
-      setEtapas({
+      const etapasObj = {
         ...etapasData,
         operacao_assistida_interacoes: parsedInteracoes
-      } as ImplantacaoEtapas);
+      } as ImplantacaoEtapas;
+      setEtapas(etapasObj);
+      setLocalLaudoTexto(etapasObj.laudo_visita_comercial_texto || '');
+      setLocalObsManutencao(etapasObj.observacoes_manutencao || '');
 
       // Fetch customer_portfolio data for contract info
       const { data: portfolioData } = await supabase

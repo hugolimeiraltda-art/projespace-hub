@@ -809,7 +809,8 @@ export default function ImplantacaoExecucao() {
     dateField,
     date,
     hasChecklist,
-    checklistType
+    checklistType,
+    onChecklistClick,
   }: { 
     label: string; 
     checked: boolean; 
@@ -818,6 +819,7 @@ export default function ImplantacaoExecucao() {
     date?: string | null;
     hasChecklist?: boolean;
     checklistType?: string;
+    onChecklistClick?: () => void;
   }) => (
     <div className="flex items-center justify-between py-2 px-4 hover:bg-muted/50 rounded-md">
       <div className="flex items-center gap-3">
@@ -838,7 +840,7 @@ export default function ImplantacaoExecucao() {
           <Button 
             variant="outline" 
             size="sm"
-            onClick={() => navigate(`/startup-projetos/${id}/checklist/${checklistType}`)}
+            onClick={() => onChecklistClick ? onChecklistClick() : navigate(`/startup-projetos/${id}/checklist/${checklistType}`)}
           >
             <ClipboardCheck className="w-4 h-4 mr-1" />
             Checklist

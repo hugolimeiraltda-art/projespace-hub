@@ -379,6 +379,31 @@ export default function ImplantacaoPagamentoInstaladores() {
           </Card>
         </div>
 
+        {/* Tabs: Projetos / Tabela de Instalação */}
+        <Tabs defaultValue="projetos" className="space-y-4">
+          <TabsList>
+            <TabsTrigger value="projetos" className="gap-1.5">
+              <Building className="w-4 h-4" />
+              Projetos
+            </TabsTrigger>
+            <TabsTrigger value="tabela" className="gap-1.5" onClick={async () => {
+              if (produtosPontuacao.length === 0 && kitsPontuacao.length === 0) {
+                setLoadingPontuacao(true);
+                const [prodRes, kitRes] = await Promise.all([
+                  supabase.from('orcamento_produtos').select('id, codigo, nome, categoria, subgrupo, pontuacao, historico_alteracoes').eq('ativo', true).order('nome'),
+                  supabase.from('orcamento_kits').select('id, codigo, nome, categoria, pontuacao, historico_alteracoes').eq('ativo', true).order('nome'),
+                ]);
+                setProdutosPontuacao((prodRes.data || []).map(p => ({ ...p, pontuacao: (p as any).pontuacao ?? 0, historico_alteracoes: (p as any).historico_alteracoes || [], tipo: 'produto' as const })));
+                setKitsPontuacao((kitRes.data || []).map(k => ({ ...k, codigo: (k as any).codigo || null, subgrupo: null, pontuacao: (k as any).pontuacao ?? 0, historico_alteracoes: (k as any).historico_alteracoes || [], tipo: 'kit' as const })));
+                setLoadingPontuacao(false);
+              }
+            }}>
+              <List className="w-4 h-4" />
+              Tabela de Instalação
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="projetos" className="space-y-4">
         {/* Search */}
         <div className="mb-6 relative max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />

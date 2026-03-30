@@ -478,6 +478,7 @@ export default function OrcamentoProdutos() {
       valor_locacao: parseFloat(parseBRL(pForm.valor_locacao)) || 0,
       valor_instalacao: parseFloat(parseBRL(pForm.valor_instalacao)) || 0,
       valor_minimo_locacao: parseFloat(parseBRL(pForm.valor_minimo_locacao)) || 0,
+      pontuacao: parseFloat(pForm.pontuacao) || 0,
       adicional: pForm.adicional,
       updated_by: user?.id,
       updated_by_name: user?.nome,

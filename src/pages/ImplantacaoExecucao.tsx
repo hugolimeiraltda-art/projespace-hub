@@ -1886,92 +1886,63 @@ export default function ImplantacaoExecucao() {
                     <p className="text-xs text-muted-foreground ml-8">
                       Valores referentes à pontuação liberada, infraestrutura, deslocamento, pedágio e diárias de viagem.
                     </p>
-                    <div className="ml-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                      <div className="space-y-1.5">
-                        <Label className="text-xs">Pontuação Liberada (equipamentos)</Label>
-                        <Input
-                          type="number"
-                          step="0.01"
-                          placeholder="0,00"
-                          value={etapas.pagamento_instalacao_pontuacao ?? ''}
-                          onChange={(e) => {
-                            const val = e.target.value === '' ? null : Number(e.target.value);
-                            setEtapas(prev => prev ? { ...prev, pagamento_instalacao_pontuacao: val } as ImplantacaoEtapas : null);
-                          }}
-                          onBlur={(e) => {
-                            const val = e.target.value === '' ? null : Number(e.target.value);
-                            updateEtapa('pagamento_instalacao_pontuacao', val);
-                          }}
-                        />
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label className="text-xs">Qtd. Infra Liberada na Venda</Label>
-                        <Input
-                          type="number"
-                          step="0.01"
-                          placeholder="0,00"
-                          value={etapas.pagamento_instalacao_infra ?? ''}
-                          onChange={(e) => {
-                            const val = e.target.value === '' ? null : Number(e.target.value);
-                            setEtapas(prev => prev ? { ...prev, pagamento_instalacao_infra: val } as ImplantacaoEtapas : null);
-                          }}
-                          onBlur={(e) => {
-                            const val = e.target.value === '' ? null : Number(e.target.value);
-                            updateEtapa('pagamento_instalacao_infra', val);
-                          }}
-                        />
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label className="text-xs">Qtd. Deslocamento</Label>
-                        <Input
-                          type="number"
-                          step="0.01"
-                          placeholder="0,00"
-                          value={etapas.pagamento_instalacao_deslocamento ?? ''}
-                          onChange={(e) => {
-                            const val = e.target.value === '' ? null : Number(e.target.value);
-                            setEtapas(prev => prev ? { ...prev, pagamento_instalacao_deslocamento: val } as ImplantacaoEtapas : null);
-                          }}
-                          onBlur={(e) => {
-                            const val = e.target.value === '' ? null : Number(e.target.value);
-                            updateEtapa('pagamento_instalacao_deslocamento', val);
-                          }}
-                        />
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label className="text-xs">Qtd. Pedágio</Label>
-                        <Input
-                          type="number"
-                          step="0.01"
-                          placeholder="0,00"
-                          value={etapas.pagamento_instalacao_pedagio ?? ''}
-                          onChange={(e) => {
-                            const val = e.target.value === '' ? null : Number(e.target.value);
-                            setEtapas(prev => prev ? { ...prev, pagamento_instalacao_pedagio: val } as ImplantacaoEtapas : null);
-                          }}
-                          onBlur={(e) => {
-                            const val = e.target.value === '' ? null : Number(e.target.value);
-                            updateEtapa('pagamento_instalacao_pedagio', val);
-                          }}
-                        />
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label className="text-xs">Diária de Viagem</Label>
-                        <Input
-                          type="number"
-                          step="0.01"
-                          placeholder="0,00"
-                          value={etapas.pagamento_instalacao_diaria ?? ''}
-                          onChange={(e) => {
-                            const val = e.target.value === '' ? null : Number(e.target.value);
-                            setEtapas(prev => prev ? { ...prev, pagamento_instalacao_diaria: val } as ImplantacaoEtapas : null);
-                          }}
-                          onBlur={(e) => {
-                            const val = e.target.value === '' ? null : Number(e.target.value);
-                            updateEtapa('pagamento_instalacao_diaria', val);
-                          }}
-                        />
-                      </div>
+                    <div className="ml-8 overflow-x-auto">
+                      <table className="w-full text-sm border border-border rounded-md">
+                        <thead>
+                          <tr className="bg-muted/50">
+                            <th className="text-left text-xs font-medium p-2 border-b border-border">Item</th>
+                            <th className="text-center text-xs font-medium p-2 border-b border-border">Liberado</th>
+                            <th className="text-center text-xs font-medium p-2 border-b border-border">Auferido (Vistoria)</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {[
+                            { label: 'Pontuação (equipamentos)', field: 'pagamento_instalacao_pontuacao', fieldAuf: 'pagamento_instalacao_pontuacao_auferido' },
+                            { label: 'Qtd. Infra', field: 'pagamento_instalacao_infra', fieldAuf: 'pagamento_instalacao_infra_auferido' },
+                            { label: 'Qtd. Deslocamento', field: 'pagamento_instalacao_deslocamento', fieldAuf: 'pagamento_instalacao_deslocamento_auferido' },
+                            { label: 'Qtd. Pedágio', field: 'pagamento_instalacao_pedagio', fieldAuf: 'pagamento_instalacao_pedagio_auferido' },
+                            { label: 'Diária de Viagem', field: 'pagamento_instalacao_diaria', fieldAuf: 'pagamento_instalacao_diaria_auferido' },
+                          ].map((item) => (
+                            <tr key={item.field} className="border-b border-border last:border-b-0">
+                              <td className="p-2 text-xs font-medium text-muted-foreground">{item.label}</td>
+                              <td className="p-2">
+                                <Input
+                                  type="number"
+                                  step="0.01"
+                                  placeholder="0,00"
+                                  className="h-8 text-xs text-center"
+                                  value={(etapas as any)[item.field] ?? ''}
+                                  onChange={(e) => {
+                                    const val = e.target.value === '' ? null : Number(e.target.value);
+                                    setEtapas(prev => prev ? { ...prev, [item.field]: val } as ImplantacaoEtapas : null);
+                                  }}
+                                  onBlur={(e) => {
+                                    const val = e.target.value === '' ? null : Number(e.target.value);
+                                    updateEtapa(item.field as any, val);
+                                  }}
+                                />
+                              </td>
+                              <td className="p-2">
+                                <Input
+                                  type="number"
+                                  step="0.01"
+                                  placeholder="0,00"
+                                  className="h-8 text-xs text-center"
+                                  value={(etapas as any)[item.fieldAuf] ?? ''}
+                                  onChange={(e) => {
+                                    const val = e.target.value === '' ? null : Number(e.target.value);
+                                    setEtapas(prev => prev ? { ...prev, [item.fieldAuf]: val } as ImplantacaoEtapas : null);
+                                  }}
+                                  onBlur={(e) => {
+                                    const val = e.target.value === '' ? null : Number(e.target.value);
+                                    updateEtapa(item.fieldAuf as any, val);
+                                  }}
+                                />
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
                     </div>
                   </div>
                 </CardContent>

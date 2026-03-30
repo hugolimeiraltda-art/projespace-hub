@@ -14,7 +14,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
-interface PontuacaoProduto {
+interface PontuacaoItem {
   id: string;
   codigo: string | null;
   nome: string;
@@ -22,6 +22,7 @@ interface PontuacaoProduto {
   subgrupo: string | null;
   pontuacao: number;
   historico_alteracoes?: { user_name: string; alteracao: string; data: string }[];
+  tipo: 'produto' | 'kit';
 }
 
 interface PagamentoProject {

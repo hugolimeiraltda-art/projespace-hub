@@ -540,7 +540,7 @@ export default function OrcamentoProdutos() {
     toast({ title: editProduto ? 'Produto atualizado' : 'Produto criado' });
   };
 
-  const resetPForm = () => setPForm({ nome: '', descricao: '', categoria: 'Smartportaria', subgrupo: '', codigo: '', id_produto: '', preco_unitario: '', unidade: 'un', qtd_max: '', valor_minimo: '', valor_locacao: '', valor_instalacao: '', valor_minimo_locacao: '', adicional: false });
+  const resetPForm = () => setPForm({ nome: '', descricao: '', categoria: 'Smartportaria', subgrupo: '', codigo: '', id_produto: '', preco_unitario: '', unidade: 'un', qtd_max: '', valor_minimo: '', valor_locacao: '', valor_instalacao: '', valor_minimo_locacao: '', pontuacao: '', adicional: false });
 
   // Recalculate all kit prices based on current product prices
   const recalcAllKitPrices = async () => {

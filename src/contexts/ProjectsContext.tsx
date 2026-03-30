@@ -966,6 +966,72 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
         return false;
       }
 
+      // Calculate pontuação from equipment list and save to implantacao_etapas
+      try {
+        // Get project attachments to extract equipment
+        const { data: attachments } = await supabase
+          .from('project_attachments')
+          .select('arquivo_url, nome_arquivo')
+          .eq('project_id', projectId);
+
+        if (attachments && attachments.length > 0) {
+          // Get signed URLs for attachments
+          const fileUrls: string[] = [];
+          for (const att of attachments) {
+            const path = att.arquivo_url.includes('/') ? att.arquivo_url.split('project-attachments/')[1] || att.arquivo_url : att.arquivo_url;
+            const { data: signedData } = await supabase.storage.from('project-attachments').createSignedUrl(path, 300);
+            if (signedData?.signedUrl) fileUrls.push(signedData.signedUrl);
+          }
+
+          if (fileUrls.length > 0) {
+            // Extract equipment via AI
+            const { data: eqData } = await supabase.functions.invoke('extract-equipment-list', { body: { fileUrls } });
+            
+            if (eqData?.equipamentos && eqData.equipamentos.length > 0) {
+              // Get all product pontuações by code
+              const codes = eqData.equipamentos.map((eq: any) => eq.codigo).filter(Boolean);
+              const { data: produtos } = await supabase
+                .from('orcamento_produtos')
+                .select('codigo, pontuacao')
+                .in('codigo', codes);
+
+              const pontuacaoMap: Record<string, number> = {};
+              (produtos || []).forEach((p: any) => {
+                if (p.codigo) pontuacaoMap[p.codigo] = Number(p.pontuacao) || 0;
+              });
+
+              // Calculate total pontuação
+              let totalPontuacao = 0;
+              for (const eq of eqData.equipamentos) {
+                const pts = pontuacaoMap[eq.codigo] || 0;
+                totalPontuacao += pts * (eq.quantidade || 1);
+              }
+
+              // Upsert implantacao_etapas with pontuação
+              const { data: existingEtapa } = await supabase
+                .from('implantacao_etapas')
+                .select('id')
+                .eq('project_id', projectId)
+                .maybeSingle();
+
+              if (existingEtapa) {
+                await supabase
+                  .from('implantacao_etapas')
+                  .update({ pagamento_instalacao_pontuacao: totalPontuacao })
+                  .eq('project_id', projectId);
+              } else {
+                await supabase
+                  .from('implantacao_etapas')
+                  .insert({ project_id: projectId, pagamento_instalacao_pontuacao: totalPontuacao });
+              }
+            }
+          }
+        }
+      } catch (pontuacaoError) {
+        console.error('Error calculating pontuação (non-blocking):', pontuacaoError);
+        // Non-blocking: sale still proceeds even if pontuação fails
+      }
+
       // Create notification for implantacao role
       if (project) {
         await supabase

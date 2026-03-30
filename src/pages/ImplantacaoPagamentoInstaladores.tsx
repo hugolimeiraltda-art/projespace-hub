@@ -103,7 +103,8 @@ export default function ImplantacaoPagamentoInstaladores() {
 
       if (error) throw error;
 
-      setProdutosPontuacao(prev =>
+      const updateList = p.tipo === 'kit' ? setKitsPontuacao : setProdutosPontuacao;
+      updateList(prev =>
         prev.map(item => item.id === p.id ? { ...item, pontuacao: newVal, historico_alteracoes: historico.slice(0, 50) } : item)
       );
       cancelEditPontuacao(p.id);

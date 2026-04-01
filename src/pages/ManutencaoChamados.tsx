@@ -255,6 +255,81 @@ export default function ManutencaoChamados() {
     }
   };
 
+  const handleOpenExec = (chamado: Chamado) => {
+    setSelectedChamado(chamado);
+    setExecForm({
+      tecnico_executor: chamado.tecnico_executor || chamado.tecnico_responsavel || '',
+      cliente_acompanhante: chamado.cliente_acompanhante || '',
+      laudo_texto: '',
+    });
+    setExecFotos([]);
+    setExecDialogOpen(true);
+  };
+
+  const handleUploadFoto = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || !selectedChamado) return;
+
+    setUploadingFoto(true);
+    try {
+      for (const file of Array.from(files)) {
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${selectedChamado.id}/${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+
+        const { data, error } = await supabase.storage
+          .from('manutencao-laudos')
+          .upload(fileName, file, { cacheControl: '3600', upsert: false });
+
+        if (error) {
+          console.error('Upload error:', error);
+          continue;
+        }
+
+        const { data: urlData } = supabase.storage
+          .from('manutencao-laudos')
+          .getPublicUrl(data.path);
+
+        setExecFotos(prev => [...prev, urlData.publicUrl]);
+      }
+    } catch (err) {
+      console.error('Error uploading fotos:', err);
+    } finally {
+      setUploadingFoto(false);
+    }
+  };
+
+  const handleExecSubmit = async () => {
+    if (!selectedChamado) return;
+    if (!execForm.tecnico_executor) {
+      toast({ title: 'Erro', description: 'Informe o técnico executor', variant: 'destructive' });
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('manutencao_chamados')
+        .update({
+          status: 'CONCLUIDO' as const,
+          tecnico_executor: execForm.tecnico_executor,
+          cliente_acompanhante: execForm.cliente_acompanhante || null,
+          laudo_texto: execForm.laudo_texto || null,
+          laudo_fotos: execFotos.length > 0 ? execFotos : null,
+          data_conclusao: new Date().toISOString(),
+        })
+        .eq('id', selectedChamado.id);
+
+      if (error) throw error;
+
+      toast({ title: 'Sucesso', description: 'Chamado concluído com sucesso!' });
+      setExecDialogOpen(false);
+      setSelectedChamado(null);
+      fetchData();
+    } catch (error) {
+      console.error('Error:', error);
+      toast({ title: 'Erro', description: 'Erro ao concluir chamado', variant: 'destructive' });
+    }
+  };
+
   const resetForm = () => {
     setFormData({
       customer_id: '',

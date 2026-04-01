@@ -251,7 +251,9 @@ export default function ManutencaoAlertasNOC() {
                         </TableCell>
                         <TableCell className="font-mono text-sm">{alerta.contrato}</TableCell>
                         <TableCell className="font-medium">{alerta.razao_social}</TableCell>
-                        <TableCell className="text-sm">{alerta.categoria || "-"}</TableCell>
+                        <TableCell className="text-sm">
+                          <Badge variant="outline" className="capitalize">{alerta.origem || "não informado"}</Badge>
+                        </TableCell>
                         <TableCell>
                           <Badge variant={sev.variant}>{sev.label}</Badge>
                         </TableCell>

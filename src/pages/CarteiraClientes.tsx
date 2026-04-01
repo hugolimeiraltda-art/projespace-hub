@@ -725,6 +725,38 @@ export default function CarteiraClientes() {
           </Card>
         </div>
 
+        {/* Active Clients by Praça */}
+        <div className="grid grid-cols-5 gap-4 mb-6">
+          <Card className="border-l-4 border-l-green-500">
+            <CardContent className="pt-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-green-100 rounded-lg">
+                  <Users className="w-5 h-5 text-green-600" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Ativos Total</p>
+                  <p className="text-2xl font-bold text-green-600">{activeByPraca._total || 0}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          {pracaEntries.map(({ praca, count }) => (
+            <Card key={praca} className="border-l-4 border-l-primary">
+              <CardContent className="pt-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-primary/10 rounded-lg">
+                    <Building2 className="w-5 h-5 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Ativos {praca}</p>
+                    <p className="text-2xl font-bold">{count}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
         {/* Expiring Contracts Dialog */}
         <Dialog open={expiringDialogOpen} onOpenChange={setExpiringDialogOpen}>
           <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">

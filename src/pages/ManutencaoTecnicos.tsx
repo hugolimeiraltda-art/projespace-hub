@@ -67,6 +67,17 @@ const EMPRESAS = ['Graber', 'Emive'];
 const PRACAS = ['SPO', 'VIX', 'RJO', 'BHZ'];
 const ESTADOS = ['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO'];
 
+const TIPOS_DOCUMENTO = [
+  { value: 'cnpj', label: 'Certificado CNPJ' },
+  { value: 'foto', label: 'Foto' },
+  { value: 'identidade', label: 'Identidade (RG/CNH)' },
+  { value: 'contrato', label: 'Contrato / Termo de Confidencialidade' },
+  { value: 'comprovante_endereco', label: 'Comprovante de Endereço' },
+  { value: 'doc_veiculo', label: 'Documentação do Veículo' },
+  { value: 'nada_consta', label: 'Atestado de Nada Consta' },
+  { value: 'outro', label: 'Outro' },
+];
+
 const emptyForm = {
   tipo_pessoa: 'PJ' as string,
   nome: '',

@@ -2247,6 +2247,7 @@ export type Database = {
           created_by_name: string | null
           data_nascimento: string | null
           email: string | null
+          empresa: string[] | null
           endereco: string | null
           especialidade: string | null
           estado: string | null
@@ -2257,6 +2258,8 @@ export type Database = {
           nome_fantasia: string | null
           observacoes: string | null
           pix: string | null
+          praca: string[] | null
+          produtos_homologados: string[] | null
           razao_social: string | null
           rg: string | null
           telefone: string | null
@@ -2278,6 +2281,7 @@ export type Database = {
           created_by_name?: string | null
           data_nascimento?: string | null
           email?: string | null
+          empresa?: string[] | null
           endereco?: string | null
           especialidade?: string | null
           estado?: string | null
@@ -2288,6 +2292,8 @@ export type Database = {
           nome_fantasia?: string | null
           observacoes?: string | null
           pix?: string | null
+          praca?: string[] | null
+          produtos_homologados?: string[] | null
           razao_social?: string | null
           rg?: string | null
           telefone?: string | null
@@ -2309,6 +2315,7 @@ export type Database = {
           created_by_name?: string | null
           data_nascimento?: string | null
           email?: string | null
+          empresa?: string[] | null
           endereco?: string | null
           especialidade?: string | null
           estado?: string | null
@@ -2319,6 +2326,8 @@ export type Database = {
           nome_fantasia?: string | null
           observacoes?: string | null
           pix?: string | null
+          praca?: string[] | null
+          produtos_homologados?: string[] | null
           razao_social?: string | null
           rg?: string | null
           telefone?: string | null

@@ -324,8 +324,8 @@ export default function ImplantacaoBancoPrestadores() {
 
             <Tabs defaultValue={form.tipo_pessoa} onValueChange={v => updateField('tipo_pessoa', v)}>
               <TabsList className="mb-4">
-                <TabsTrigger value="PF" className="gap-2"><User className="w-4 h-4" /> Pessoa Física</TabsTrigger>
                 <TabsTrigger value="PJ" className="gap-2"><Building2 className="w-4 h-4" /> Pessoa Jurídica</TabsTrigger>
+                <TabsTrigger value="PF" className="gap-2"><User className="w-4 h-4" /> Pessoa Física</TabsTrigger>
               </TabsList>
 
               {/* Common fields */}

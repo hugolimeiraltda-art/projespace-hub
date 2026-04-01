@@ -206,6 +206,7 @@ const ManutencaoTecnicos = () => {
       ctps: t.ctps || '',
       pis: t.pis || '',
     });
+    fetchFormDocs(t.id);
     setDialogOpen(true);
   };
 

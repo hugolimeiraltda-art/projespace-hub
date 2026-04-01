@@ -310,14 +310,8 @@ const ManutencaoTecnicos = () => {
             <h1 className="text-2xl font-bold text-foreground">Cadastro de Técnicos</h1>
             <p className="text-muted-foreground">Gestão de técnicos PJ e CLT da manutenção</p>
           </div>
-          <Dialog open={dialogOpen} onOpenChange={(open) => { setDialogOpen(open); if (!open) { setForm(emptyForm); setEditingId(null); } }}>
+          <Dialog open={dialogOpen} onOpenChange={(open) => { setDialogOpen(open); if (!open) { setForm(emptyForm); setEditingId(null); setFormDocs([]); } }}>
             <DialogTrigger asChild>
-              <Button><Plus className="h-4 w-4 mr-2" /> Novo Técnico</Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>{editingId ? 'Editar Técnico' : 'Novo Técnico'}</DialogTitle>
-              </DialogHeader>
               <Button><Plus className="h-4 w-4 mr-2" /> Novo Técnico</Button>
             </DialogTrigger>
             <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">

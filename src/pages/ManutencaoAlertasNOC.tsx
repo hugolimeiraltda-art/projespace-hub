@@ -25,6 +25,7 @@ interface AlertaNOC {
   severidade: string;
   quantidade_ocorrencias: number;
   periodo_referencia: string | null;
+  origem: string | null;
   dados_extras: any;
   resolvido: boolean;
   resolvido_at: string | null;

@@ -43,6 +43,9 @@ interface Prestador {
   pix: string | null;
   especialidade: string | null;
   observacoes: string | null;
+  empresa: string[] | null;
+  praca: string[] | null;
+  produtos_homologados: string[] | null;
   ativo: boolean;
   created_at: string;
 }

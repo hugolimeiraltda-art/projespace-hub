@@ -31,7 +31,6 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, serviceKey);
 
     if (req.method === "GET") {
-      // List alerts (with optional filters)
       const url = new URL(req.url);
       const contrato = url.searchParams.get("contrato");
       const resolvido = url.searchParams.get("resolvido");
@@ -59,43 +58,55 @@ serve(async (req) => {
     if (req.method === "POST") {
       const body = await req.json();
 
-      // Support single or batch alerts
+      // Support both single alert and batch (alertas array)
       const alertas = Array.isArray(body.alertas) ? body.alertas : [body];
 
       const insertResults = [];
       const errors = [];
 
       for (const alerta of alertas) {
-        if (!alerta.contrato || !alerta.razao_social) {
+        // Map Eixo NOC payload fields to our schema
+        // NOC sends: tipo, cliente_conta, cliente_nome, quantidade_chamados, periodo_dias, threshold, data_alerta, mensagem
+        const contrato = alerta.cliente_conta || alerta.contrato;
+        const razaoSocial = alerta.cliente_nome || alerta.razao_social;
+
+        if (!contrato || !razaoSocial) {
           errors.push({
-            contrato: alerta.contrato,
-            error: "contrato e razao_social são obrigatórios",
+            contrato: contrato,
+            error: "cliente_conta/contrato e cliente_nome/razao_social são obrigatórios",
           });
           continue;
         }
 
         // Try to find customer_id by contrato
         let customerId = alerta.customer_id || null;
-        if (!customerId && alerta.contrato) {
+        if (!customerId && contrato) {
           const { data: customer } = await supabase
             .from("customer_portfolio")
             .select("id")
-            .eq("contrato", alerta.contrato)
+            .eq("contrato", contrato)
             .maybeSingle();
           if (customer) customerId = customer.id;
         }
 
         const record = {
-          contrato: alerta.contrato,
-          razao_social: alerta.razao_social,
+          contrato,
+          razao_social: razaoSocial,
           customer_id: customerId,
-          tipo_alerta: alerta.tipo_alerta || "reincidencia",
+          tipo_alerta: alerta.tipo || alerta.tipo_alerta || "reincidencia",
           categoria: alerta.categoria || null,
-          descricao: alerta.descricao || null,
+          descricao: alerta.mensagem || alerta.descricao || null,
           severidade: alerta.severidade || "media",
-          quantidade_ocorrencias: alerta.quantidade_ocorrencias || 1,
-          periodo_referencia: alerta.periodo_referencia || null,
-          dados_extras: alerta.dados_extras || {},
+          quantidade_ocorrencias: alerta.quantidade_chamados || alerta.quantidade_ocorrencias || 1,
+          periodo_referencia: alerta.periodo_dias
+            ? `${alerta.periodo_dias} dias (threshold: ${alerta.threshold || "N/A"})`
+            : alerta.periodo_referencia || null,
+          dados_extras: {
+            threshold: alerta.threshold || null,
+            data_alerta: alerta.data_alerta || null,
+            periodo_dias: alerta.periodo_dias || null,
+            ...(alerta.dados_extras || {}),
+          },
         };
 
         const { data, error } = await supabase
@@ -105,7 +116,7 @@ serve(async (req) => {
           .single();
 
         if (error) {
-          errors.push({ contrato: alerta.contrato, error: error.message });
+          errors.push({ contrato, error: error.message });
         } else {
           insertResults.push(data);
         }

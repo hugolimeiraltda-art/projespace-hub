@@ -73,6 +73,7 @@ export default function ManutencaoChamados() {
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [execDialogOpen, setExecDialogOpen] = useState(false);
   const [selectedChamado, setSelectedChamado] = useState<Chamado | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterTipo, setFilterTipo] = useState<string>('all');
@@ -80,6 +81,7 @@ export default function ManutencaoChamados() {
   const [filterPraca, setFilterPraca] = useState<string>('all');
   const [filterDataInicio, setFilterDataInicio] = useState<string>('');
   const [filterDataFim, setFilterDataFim] = useState<string>('');
+  const [activeTab, setActiveTab] = useState('abertos');
 
   // Form state for new chamado
   const [formData, setFormData] = useState({
@@ -100,6 +102,15 @@ export default function ManutencaoChamados() {
     cliente_acompanhante: '',
     status: '',
   });
+
+  // Execution form state
+  const [execForm, setExecForm] = useState({
+    tecnico_executor: '',
+    cliente_acompanhante: '',
+    laudo_texto: '',
+  });
+  const [execFotos, setExecFotos] = useState<string[]>([]);
+  const [uploadingFoto, setUploadingFoto] = useState(false);
 
   useEffect(() => {
     fetchData();

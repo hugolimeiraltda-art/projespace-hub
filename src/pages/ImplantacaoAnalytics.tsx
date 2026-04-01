@@ -93,6 +93,52 @@ export default function ImplantacaoAnalytics() {
   const [plans, setPlans] = useState<PlanData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedMonth, setSelectedMonth] = useState<number | null>(null);
+  const [activationEdits, setActivationEdits] = useState<Record<string, { confirmed: boolean; newDate: string }>>({});
+  const [savingActivation, setSavingActivation] = useState<string | null>(null);
+
+  const handleActivationConfirmToggle = (projectId: string, currentDate: string | null) => {
+    setActivationEdits(prev => {
+      const existing = prev[projectId];
+      if (existing) {
+        const { [projectId]: _, ...rest } = prev;
+        return rest;
+      }
+      return { ...prev, [projectId]: { confirmed: false, newDate: currentDate ? currentDate.split('T')[0] : '' } };
+    });
+  };
+
+  const handleActivationDateChange = (projectId: string, date: string) => {
+    setActivationEdits(prev => ({
+      ...prev,
+      [projectId]: { ...prev[projectId], newDate: date },
+    }));
+  };
+
+  const handleSaveActivationDate = async (projectId: string, contrato: string) => {
+    const edit = activationEdits[projectId];
+    if (!edit?.newDate) {
+      toast.error('Informe a data de ativação real.');
+      return;
+    }
+    setSavingActivation(projectId);
+    try {
+      const { error } = await supabase
+        .from('customer_portfolio')
+        .update({ data_ativacao: edit.newDate })
+        .eq('project_id', projectId);
+      if (error) throw error;
+      toast.success(`Data de ativação de ${contrato} atualizada.`);
+      setActivationEdits(prev => {
+        const { [projectId]: _, ...rest } = prev;
+        return rest;
+      });
+      fetchData();
+    } catch (err) {
+      toast.error('Erro ao salvar data de ativação.');
+    } finally {
+      setSavingActivation(null);
+    }
+  };
 
   const fetchPlans = useCallback(async () => {
     const { data } = await supabase

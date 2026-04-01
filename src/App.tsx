@@ -248,6 +248,10 @@ function AppRoutes() {
         element={<ProtectedRoute><ManutencaoPendencias /></ProtectedRoute>} 
       />
       <Route 
+        path="/manutencao/alertas-noc" 
+        element={<ProtectedRoute><ManutencaoAlertasNOC /></ProtectedRoute>} 
+      />
+      <Route 
         path="/orcamentos" 
         element={<ProtectedRoute><Orcamentos /></ProtectedRoute>} 
       />

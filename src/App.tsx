@@ -47,6 +47,7 @@ import ManutencaoChamados from "./pages/ManutencaoChamados";
 import ManutencaoPendencias from "./pages/ManutencaoPendencias";
 import ManutencaoAlertasNOC from "./pages/ManutencaoAlertasNOC";
 import ManutencaoTecnicos from "./pages/ManutencaoTecnicos";
+import ManutencaoRelatorios from "./pages/ManutencaoRelatorios";
 import Orcamentos from "./pages/Orcamentos";
 import OrcamentoChat from "./pages/OrcamentoChat";
 import OrcamentoProdutos from "./pages/OrcamentoProdutos";
@@ -267,6 +268,10 @@ function AppRoutes() {
         element={<ProtectedRoute><ManutencaoTecnicos /></ProtectedRoute>} 
       />
       <Route 
+        path="/manutencao/relatorios" 
+        element={<ProtectedRoute><ManutencaoRelatorios /></ProtectedRoute>} 
+      />
+      <Route
         path="/orcamentos"
         element={<ProtectedRoute><Orcamentos /></ProtectedRoute>} 
       />

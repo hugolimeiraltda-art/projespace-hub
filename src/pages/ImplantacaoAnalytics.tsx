@@ -288,6 +288,8 @@ export default function ImplantacaoAnalytics() {
             dataAtivacao: port.data_ativacao || p.prazo_entrega_projeto || null,
             praca: getPraca(port.filial, port.praca),
             tipoObra: p.tipo_obra || 'nova',
+            projectId: p.id,
+            portfolioProjectId: port.project_id,
           });
         }
       });

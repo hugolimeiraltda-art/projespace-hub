@@ -422,10 +422,14 @@ const ManutencaoTecnicos = () => {
                   <div><Label>Observações</Label><Textarea value={form.observacoes} onChange={e => updateField('observacoes', e.target.value)} /></div>
                 </div>
 
-                {/* Documentos - só aparece em edição */}
-                {editingId && (
-                  <div className="border-t pt-4 space-y-3">
-                    <h3 className="font-semibold text-foreground">Documentos</h3>
+                {/* Documentos */}
+                <div className="border-t pt-4 space-y-3">
+                  <h3 className="font-semibold text-foreground">Documentos</h3>
+                  {!editingId ? (
+                    <p className="text-sm text-muted-foreground bg-muted/30 rounded-lg p-4 text-center">
+                      Salve o cadastro primeiro para anexar documentos.
+                    </p>
+                  ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                       {TIPOS_DOCUMENTO.map(tipo => {
                         const docExistente = formDocs.find(d => d.tipo_documento === tipo.value);
@@ -461,8 +465,8 @@ const ManutencaoTecnicos = () => {
                         );
                       })}
                     </div>
-                  </div>
-                )}
+                  )}
+                </div>
                 <div className="flex justify-end gap-2 pt-4">
                   <Button variant="outline" onClick={() => { setDialogOpen(false); setForm(emptyForm); setEditingId(null); }}>Cancelar</Button>
                   <Button onClick={handleSave}>{editingId ? 'Salvar Alterações' : 'Cadastrar'}</Button>

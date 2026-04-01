@@ -272,7 +272,7 @@ export default function ImplantacaoBancoPrestadores() {
     (p.especialidade && p.especialidade.toLowerCase().includes(search.toLowerCase()))
   );
 
-  const updateField = (field: string, value: string) => setForm(f => ({ ...f, [field]: value }));
+  const updateField = (field: string, value: any) => setForm(f => ({ ...f, [field]: value }));
 
   return (
     <Layout>

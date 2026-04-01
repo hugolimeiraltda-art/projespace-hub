@@ -1,0 +1,1 @@
+ALTER TABLE public.noc_alertas_reincidencia ADD COLUMN origem text DEFAULT 'não informado';

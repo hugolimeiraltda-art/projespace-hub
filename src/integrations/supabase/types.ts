@@ -1546,6 +1546,7 @@ export type Database = {
           descricao: string | null
           id: string
           notificado: boolean
+          origem: string | null
           periodo_referencia: string | null
           quantidade_ocorrencias: number | null
           razao_social: string
@@ -1565,6 +1566,7 @@ export type Database = {
           descricao?: string | null
           id?: string
           notificado?: boolean
+          origem?: string | null
           periodo_referencia?: string | null
           quantidade_ocorrencias?: number | null
           razao_social: string
@@ -1584,6 +1586,7 @@ export type Database = {
           descricao?: string | null
           id?: string
           notificado?: boolean
+          origem?: string | null
           periodo_referencia?: string | null
           quantidade_ocorrencias?: number | null
           razao_social?: string

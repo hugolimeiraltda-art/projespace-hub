@@ -47,6 +47,7 @@ import ManutencaoChamados from "./pages/ManutencaoChamados";
 import ManutencaoPendencias from "./pages/ManutencaoPendencias";
 import ManutencaoAlertasNOC from "./pages/ManutencaoAlertasNOC";
 import ManutencaoTecnicos from "./pages/ManutencaoTecnicos";
+import TecnicoCertificacoes from "./pages/TecnicoCertificacoes";
 import ManutencaoRelatorios from "./pages/ManutencaoRelatorios";
 import Orcamentos from "./pages/Orcamentos";
 import OrcamentoChat from "./pages/OrcamentoChat";

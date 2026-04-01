@@ -114,6 +114,7 @@ const emptyForm = {
 
 const ManutencaoTecnicos = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [tecnicos, setTecnicos] = useState<Tecnico[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');

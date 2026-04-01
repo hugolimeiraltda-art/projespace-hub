@@ -60,8 +60,10 @@ const ALL_NAV_ITEMS: NavItem[] = [
       { path: '/startup-projetos?tab=em-implantacao', label: 'Em Implantação', icon: PlayCircle, menuKey: 'implantacao/em-implantacao' },
       { path: '/startup-projetos?tab=operacao-assistida', label: 'Operação Assistida', icon: HeadphonesIcon, menuKey: 'implantacao/operacao-assistida' },
       { path: '/startup-projetos?tab=pequenas-obras', label: 'Pequenas Obras', icon: Wrench, menuKey: 'implantacao/pequenas-obras' },
-      { path: '/implantacao-pagamento-instaladores', label: 'Pgto. Instaladores', icon: DollarSign, menuKey: 'implantacao/pagamento-instaladores' },
       { path: '/startup-projetos?tab=historico', label: 'Histórico', icon: CheckCircle2, menuKey: 'implantacao/historico' },
+      { path: '/implantacao-pagamento-instaladores', label: 'Pgto. Instaladores', icon: DollarSign, menuKey: 'implantacao/pagamento-instaladores', section: 'Financeiro' },
+      { path: '/implantacao-orcamento-setor', label: 'Orçamento do Setor', icon: BarChart3, menuKey: 'implantacao/orcamento-setor', section: 'Financeiro' },
+      { path: '/implantacao-banco-prestadores', label: 'Prestadores', icon: HardHat, menuKey: 'implantacao/banco-prestadores', section: 'Banco de Prestadores' },
     ],
   },
   {

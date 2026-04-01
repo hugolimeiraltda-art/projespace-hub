@@ -101,7 +101,7 @@ const emptyForm = {
 };
 
 const ManutencaoTecnicos = () => {
-  const { user, profile } = useAuth();
+  const { user } = useAuth();
   const [tecnicos, setTecnicos] = useState<Tecnico[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');

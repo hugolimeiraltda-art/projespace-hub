@@ -1578,6 +1578,161 @@ export type Database = {
           },
         ]
       }
+      manutencao_tecnico_documentos: {
+        Row: {
+          arquivo_url: string
+          created_at: string
+          id: string
+          nome_arquivo: string
+          tamanho: number | null
+          tecnico_id: string
+          tipo_documento: string | null
+        }
+        Insert: {
+          arquivo_url: string
+          created_at?: string
+          id?: string
+          nome_arquivo: string
+          tamanho?: number | null
+          tecnico_id: string
+          tipo_documento?: string | null
+        }
+        Update: {
+          arquivo_url?: string
+          created_at?: string
+          id?: string
+          nome_arquivo?: string
+          tamanho?: number | null
+          tecnico_id?: string
+          tipo_documento?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "manutencao_tecnico_documentos_tecnico_id_fkey"
+            columns: ["tecnico_id"]
+            isOneToOne: false
+            referencedRelation: "manutencao_tecnicos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      manutencao_tecnicos: {
+        Row: {
+          agencia: string | null
+          ativo: boolean
+          banco: string | null
+          cargo: string | null
+          cep: string | null
+          cidade: string | null
+          conta: string | null
+          cpf_cnpj: string | null
+          created_at: string
+          created_by: string | null
+          created_by_name: string | null
+          ctps: string | null
+          data_admissao: string | null
+          data_nascimento: string | null
+          email: string | null
+          empresa: string[] | null
+          endereco: string | null
+          especialidade: string | null
+          estado: string | null
+          id: string
+          inscricao_estadual: string | null
+          inscricao_municipal: string | null
+          nome: string
+          nome_fantasia: string | null
+          observacoes: string | null
+          pis: string | null
+          pix: string | null
+          praca: string[] | null
+          razao_social: string | null
+          rg: string | null
+          telefone: string | null
+          telefone2: string | null
+          tipo_conta: string | null
+          tipo_pessoa: string
+          tipo_vinculo: string
+          updated_at: string
+        }
+        Insert: {
+          agencia?: string | null
+          ativo?: boolean
+          banco?: string | null
+          cargo?: string | null
+          cep?: string | null
+          cidade?: string | null
+          conta?: string | null
+          cpf_cnpj?: string | null
+          created_at?: string
+          created_by?: string | null
+          created_by_name?: string | null
+          ctps?: string | null
+          data_admissao?: string | null
+          data_nascimento?: string | null
+          email?: string | null
+          empresa?: string[] | null
+          endereco?: string | null
+          especialidade?: string | null
+          estado?: string | null
+          id?: string
+          inscricao_estadual?: string | null
+          inscricao_municipal?: string | null
+          nome: string
+          nome_fantasia?: string | null
+          observacoes?: string | null
+          pis?: string | null
+          pix?: string | null
+          praca?: string[] | null
+          razao_social?: string | null
+          rg?: string | null
+          telefone?: string | null
+          telefone2?: string | null
+          tipo_conta?: string | null
+          tipo_pessoa?: string
+          tipo_vinculo?: string
+          updated_at?: string
+        }
+        Update: {
+          agencia?: string | null
+          ativo?: boolean
+          banco?: string | null
+          cargo?: string | null
+          cep?: string | null
+          cidade?: string | null
+          conta?: string | null
+          cpf_cnpj?: string | null
+          created_at?: string
+          created_by?: string | null
+          created_by_name?: string | null
+          ctps?: string | null
+          data_admissao?: string | null
+          data_nascimento?: string | null
+          email?: string | null
+          empresa?: string[] | null
+          endereco?: string | null
+          especialidade?: string | null
+          estado?: string | null
+          id?: string
+          inscricao_estadual?: string | null
+          inscricao_municipal?: string | null
+          nome?: string
+          nome_fantasia?: string | null
+          observacoes?: string | null
+          pis?: string | null
+          pix?: string | null
+          praca?: string[] | null
+          razao_social?: string | null
+          rg?: string | null
+          telefone?: string | null
+          telefone2?: string | null
+          tipo_conta?: string | null
+          tipo_pessoa?: string
+          tipo_vinculo?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       noc_alertas_reincidencia: {
         Row: {
           categoria: string | null

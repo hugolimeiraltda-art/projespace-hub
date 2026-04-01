@@ -77,8 +77,8 @@ export function useMenuPermissions() {
     const rolePerm = rolePerms.find(r => r.menu_key === menuKey);
     if (rolePerm) return rolePerm.access_level;
     
-    // Default: admin gets completo, others get nenhum
-    if (user?.role === 'admin') return 'completo';
+    // Default: admin, supervisor_operacoes and administrativo get completo, others get nenhum
+    if (user?.role === 'admin' || user?.role === 'supervisor_operacoes' || user?.role === 'administrativo') return 'completo';
     return 'nenhum';
   }, [rolePerms, userOverrides, user]);
 

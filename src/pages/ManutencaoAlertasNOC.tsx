@@ -331,8 +331,8 @@ export default function ManutencaoAlertasNOC() {
                   <p className="font-bold text-lg">{selectedAlerta.quantidade_ocorrencias}</p>
                 </div>
                 <div>
-                  <p className="text-muted-foreground">Categoria</p>
-                  <p>{selectedAlerta.categoria || "-"}</p>
+                  <p className="text-muted-foreground">Origem</p>
+                  <Badge variant="outline" className="capitalize">{selectedAlerta.origem || "não informado"}</Badge>
                 </div>
                 <div>
                   <p className="text-muted-foreground">Período</p>

@@ -494,6 +494,97 @@ export default function ManutencaoPreventivas() {
           </Card>
         )}
 
+        {/* Dashboard - Visão Mensal por Praça */}
+        {(() => {
+          const now = new Date();
+          const mesAtual = startOfMonth(now);
+          const fimMes = endOfMonth(now);
+          
+          const visitasHoje = agendas.filter(a => a.ativo && isToday(parseISO(a.proxima_execucao)));
+          const visitasMes = agendas.filter(a => a.ativo && isSameMonth(parseISO(a.proxima_execucao), now));
+          
+          const visitasPorPraca = PRACAS.map(praca => ({
+            praca,
+            total: agendas.filter(a => a.ativo && a.praca === praca && isSameMonth(parseISO(a.proxima_execucao), now)).length,
+            hoje: agendas.filter(a => a.ativo && a.praca === praca && isToday(parseISO(a.proxima_execucao))).length,
+          }));
+
+          return (
+            <>
+              {/* KPI Cards */}
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                <Card className="col-span-1">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-1">
+                      <CalendarDays className="h-4 w-4" />
+                      Hoje
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-3xl font-bold text-primary">{visitasHoje.length}</div>
+                    <p className="text-xs text-muted-foreground">visitas agendadas</p>
+                  </CardContent>
+                </Card>
+                <Card className="col-span-1">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-1">
+                      <BarChart3 className="h-4 w-4" />
+                      {format(now, 'MMMM', { locale: ptBR })}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-3xl font-bold text-foreground">{visitasMes.length}</div>
+                    <p className="text-xs text-muted-foreground">visitas no mês</p>
+                  </CardContent>
+                </Card>
+                {visitasPorPraca.map(({ praca, total, hoje }) => (
+                  <Card key={praca}>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-1">
+                        <MapPin className="h-3 w-3" />
+                        {praca.split('-')[0]}
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-3xl font-bold text-foreground">{total}</div>
+                      <p className="text-xs text-muted-foreground">
+                        {hoje > 0 ? `${hoje} hoje` : 'no mês'}
+                      </p>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+
+              {/* Agenda de Hoje */}
+              {visitasHoje.length > 0 && (
+                <Card className="border-primary/30 bg-primary/5">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <CalendarDays className="h-5 w-5 text-primary" />
+                      Visitas de Hoje — {format(now, "dd 'de' MMMM", { locale: ptBR })}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                      {visitasHoje.map(agenda => (
+                        <div key={agenda.id} className="flex items-center gap-3 p-3 rounded-lg border bg-background">
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-sm truncate">{agenda.razao_social}</p>
+                            <p className="text-xs text-muted-foreground">{agenda.contrato} • {agenda.praca || 'Sem praça'}</p>
+                          </div>
+                          <Badge variant="outline" className="text-xs shrink-0">
+                            {agenda.supervisor_responsavel_nome || agenda.tecnico_responsavel || 'Sem técnico'}
+                          </Badge>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </>
+          );
+        })()}
+
         {/* Filters */}
         <Card>
           <CardContent className="pt-6">

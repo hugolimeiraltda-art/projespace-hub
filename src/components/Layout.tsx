@@ -161,7 +161,7 @@ export function Layout({ children }: LayoutProps) {
   // Auto-expand parent menu when navigating to a sub-route
   useEffect(() => {
     const path = location.pathname;
-    const parentPaths = ['/projetos', '/manutencao', '/orcamentos', '/startup-projetos', '/sucesso-cliente', '/configuracoes'];
+    const parentPaths = ['/projetos', '/manutencao', '/orcamentos', '/startup-projetos', '/implantacao', '/sucesso-cliente', '/configuracoes'];
     setExpandedMenus(prev => {
       const toAdd = parentPaths.filter(p => path.startsWith(p) && !prev.includes(p));
       return toAdd.length > 0 ? [...prev, ...toAdd] : prev;

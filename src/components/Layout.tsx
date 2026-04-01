@@ -78,7 +78,7 @@ const ALL_NAV_ITEMS: NavItem[] = [
     icon: Wrench,
     menuKey: 'manutencao',
     subItems: [
-      { path: '/manutencao/preventivas', label: 'Agendas Preventivas', icon: Calendar, menuKey: 'manutencao/preventivas' },
+      { path: '/manutencao/preventivas', label: 'Agenda Preventiva', icon: Calendar, menuKey: 'manutencao/preventivas' },
       { path: '/manutencao/chamados', label: 'Visitas Preventivas', icon: Wrench, menuKey: 'manutencao/chamados' },
       { path: '/manutencao/alertas-noc', label: 'Alertas NOC', icon: AlertTriangle, menuKey: 'manutencao/alertas-noc' },
       { path: '/manutencao/tecnicos', label: 'Cadastro de Técnicos', icon: UserCheck, menuKey: 'manutencao/tecnicos' },

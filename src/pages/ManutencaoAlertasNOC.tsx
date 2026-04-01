@@ -90,7 +90,7 @@ export default function ManutencaoAlertasNOC() {
         .update({
           resolvido: true,
           resolvido_at: new Date().toISOString(),
-          resolvido_por: user?.user_metadata?.nome || "Usuário",
+          resolvido_por: (user as any)?.user_metadata?.nome || "Usuário",
         } as any)
         .eq("id", selectedAlerta.id);
 

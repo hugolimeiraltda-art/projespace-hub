@@ -474,6 +474,60 @@ export default function ImplantacaoBancoPrestadores() {
                   </div>
                 </div>
 
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider pt-2">Empresa / Praça</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <Label className="mb-2 block">Empresa que atende</Label>
+                    <div className="flex gap-4">
+                      {EMPRESAS.map(emp => (
+                        <label key={emp} className="flex items-center gap-2 text-sm cursor-pointer">
+                          <Checkbox
+                            checked={form.empresa.includes(emp)}
+                            onCheckedChange={(checked) => {
+                              const next = checked ? [...form.empresa, emp] : form.empresa.filter(e => e !== emp);
+                              updateField('empresa', next);
+                            }}
+                          />
+                          {emp}
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <Label className="mb-2 block">Praça</Label>
+                    <div className="flex gap-4">
+                      {PRACAS.map(p => (
+                        <label key={p} className="flex items-center gap-2 text-sm cursor-pointer">
+                          <Checkbox
+                            checked={form.praca.includes(p)}
+                            onCheckedChange={(checked) => {
+                              const next = checked ? [...form.praca, p] : form.praca.filter(x => x !== p);
+                              updateField('praca', next);
+                            }}
+                          />
+                          {p}
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider pt-2">Produtos Homologados</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                  {PRODUTOS_HOMOLOGADOS.map(prod => (
+                    <label key={prod} className="flex items-center gap-2 text-sm cursor-pointer">
+                      <Checkbox
+                        checked={form.produtos_homologados.includes(prod)}
+                        onCheckedChange={(checked) => {
+                          const next = checked ? [...form.produtos_homologados, prod] : form.produtos_homologados.filter(x => x !== prod);
+                          updateField('produtos_homologados', next);
+                        }}
+                      />
+                      {prod}
+                    </label>
+                  ))}
+                </div>
+
                 <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider pt-2">Informações Profissionais</p>
                 <div className="grid grid-cols-1 gap-3">
                   <div>

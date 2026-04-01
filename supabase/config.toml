@@ -35,3 +35,6 @@ verify_jwt = false
 
 [functions.noc-project-view]
 verify_jwt = false
+
+[functions.noc-alertas-reincidencia]
+verify_jwt = false

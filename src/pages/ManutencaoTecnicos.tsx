@@ -162,13 +162,22 @@ const ManutencaoTecnicos = () => {
       const { created_by, created_by_name, ...updatePayload } = payload;
       ({ error } = await supabase.from('manutencao_tecnicos').update(updatePayload).eq('id', editingId));
     } else {
-      ({ error } = await supabase.from('manutencao_tecnicos').insert(payload));
+      const { data: insertData, error: insertError } = await supabase.from('manutencao_tecnicos').insert(payload).select().single();
+      error = insertError;
+      if (!insertError && insertData) {
+        toast.success('Técnico cadastrado! Agora você pode anexar documentos.');
+        setEditingId(insertData.id);
+        fetchFormDocs(insertData.id);
+        fetchTecnicos();
+        return;
+      }
     }
     if (error) { toast.error('Erro ao salvar técnico'); return; }
-    toast.success(editingId ? 'Técnico atualizado!' : 'Técnico cadastrado!');
+    toast.success('Técnico atualizado!');
     setDialogOpen(false);
     setForm(emptyForm);
     setEditingId(null);
+    setFormDocs([]);
     fetchTecnicos();
   };
 

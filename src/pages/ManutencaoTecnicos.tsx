@@ -67,6 +67,17 @@ const EMPRESAS = ['Graber', 'Emive'];
 const PRACAS = ['SPO', 'VIX', 'RJO', 'BHZ'];
 const ESTADOS = ['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO'];
 
+const TIPOS_DOCUMENTO = [
+  { value: 'cnpj', label: 'Certificado CNPJ' },
+  { value: 'foto', label: 'Foto' },
+  { value: 'identidade', label: 'Identidade (RG/CNH)' },
+  { value: 'contrato', label: 'Contrato / Termo de Confidencialidade' },
+  { value: 'comprovante_endereco', label: 'Comprovante de Endereço' },
+  { value: 'doc_veiculo', label: 'Documentação do Veículo' },
+  { value: 'nada_consta', label: 'Atestado de Nada Consta' },
+  { value: 'outro', label: 'Outro' },
+];
+
 const emptyForm = {
   tipo_pessoa: 'PJ' as string,
   nome: '',
@@ -112,7 +123,9 @@ const ManutencaoTecnicos = () => {
   const [viewingTecnico, setViewingTecnico] = useState<Tecnico | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [docs, setDocs] = useState<TecnicoDoc[]>([]);
+  const [formDocs, setFormDocs] = useState<TecnicoDoc[]>([]);
   const [uploading, setUploading] = useState(false);
+  const [uploadingCategory, setUploadingCategory] = useState<string | null>(null);
 
   const fetchTecnicos = async () => {
     const { data, error } = await supabase
@@ -193,6 +206,7 @@ const ManutencaoTecnicos = () => {
       ctps: t.ctps || '',
       pis: t.pis || '',
     });
+    fetchFormDocs(t.id);
     setDialogOpen(true);
   };
 
@@ -202,24 +216,37 @@ const ManutencaoTecnicos = () => {
     setViewDialogOpen(true);
   };
 
-  const handleUploadDoc = async (e: React.ChangeEvent<HTMLInputElement>, tecnicoId: string) => {
+  const handleUploadDoc = async (e: React.ChangeEvent<HTMLInputElement>, tecnicoId: string, categoria?: string) => {
     const file = e.target.files?.[0];
     if (!file) return;
     setUploading(true);
+    if (categoria) setUploadingCategory(categoria);
     const filePath = `${tecnicoId}/${Date.now()}_${file.name}`;
     const { error: upErr } = await supabase.storage.from('prestador-documentos').upload(filePath, file);
-    if (upErr) { toast.error('Erro ao enviar arquivo'); setUploading(false); return; }
+    if (upErr) { toast.error('Erro ao enviar arquivo'); setUploading(false); setUploadingCategory(null); return; }
     const { data: urlData } = supabase.storage.from('prestador-documentos').getPublicUrl(filePath);
     await supabase.from('manutencao_tecnico_documentos').insert({
       tecnico_id: tecnicoId,
       nome_arquivo: file.name,
       arquivo_url: urlData.publicUrl,
-      tipo_documento: file.type,
+      tipo_documento: categoria || file.type,
       tamanho: file.size,
     });
     toast.success('Documento enviado!');
     fetchDocs(tecnicoId);
+    if (editingId === tecnicoId) fetchFormDocs(tecnicoId);
     setUploading(false);
+    setUploadingCategory(null);
+    e.target.value = '';
+  };
+
+  const fetchFormDocs = async (tecnicoId: string) => {
+    const { data } = await supabase
+      .from('manutencao_tecnico_documentos')
+      .select('*')
+      .eq('tecnico_id', tecnicoId)
+      .order('created_at', { ascending: false });
+    setFormDocs(data || []);
   };
 
   const handleDeleteDoc = async (docId: string, tecnicoId: string) => {
@@ -283,7 +310,7 @@ const ManutencaoTecnicos = () => {
             <h1 className="text-2xl font-bold text-foreground">Cadastro de Técnicos</h1>
             <p className="text-muted-foreground">Gestão de técnicos PJ e CLT da manutenção</p>
           </div>
-          <Dialog open={dialogOpen} onOpenChange={(open) => { setDialogOpen(open); if (!open) { setForm(emptyForm); setEditingId(null); } }}>
+          <Dialog open={dialogOpen} onOpenChange={(open) => { setDialogOpen(open); if (!open) { setForm(emptyForm); setEditingId(null); setFormDocs([]); } }}>
             <DialogTrigger asChild>
               <Button><Plus className="h-4 w-4 mr-2" /> Novo Técnico</Button>
             </DialogTrigger>
@@ -395,6 +422,47 @@ const ManutencaoTecnicos = () => {
                   <div><Label>Observações</Label><Textarea value={form.observacoes} onChange={e => updateField('observacoes', e.target.value)} /></div>
                 </div>
 
+                {/* Documentos - só aparece em edição */}
+                {editingId && (
+                  <div className="border-t pt-4 space-y-3">
+                    <h3 className="font-semibold text-foreground">Documentos</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {TIPOS_DOCUMENTO.map(tipo => {
+                        const docExistente = formDocs.find(d => d.tipo_documento === tipo.value);
+                        return (
+                          <div key={tipo.value} className="flex items-center justify-between border rounded-lg p-3 bg-muted/20">
+                            <div className="flex items-center gap-2 min-w-0">
+                              <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
+                              <div className="min-w-0">
+                                <p className="text-sm font-medium truncate">{tipo.label}</p>
+                                {docExistente ? (
+                                  <a href={docExistente.arquivo_url} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline truncate block">
+                                    {docExistente.nome_arquivo}
+                                  </a>
+                                ) : (
+                                  <p className="text-xs text-muted-foreground">Não enviado</p>
+                                )}
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-1 shrink-0">
+                              {docExistente && (
+                                <Button size="sm" variant="ghost" onClick={() => handleDeleteDoc(docExistente.id, editingId)}>
+                                  <Trash2 className="h-3 w-3 text-destructive" />
+                                </Button>
+                              )}
+                              <label className="cursor-pointer">
+                                <input type="file" className="hidden" onChange={e => handleUploadDoc(e, editingId, tipo.value)} disabled={uploading} />
+                                <Button variant="outline" size="sm" asChild disabled={uploading && uploadingCategory === tipo.value}>
+                                  <span><Upload className="h-3 w-3 mr-1" />{uploading && uploadingCategory === tipo.value ? '...' : docExistente ? 'Trocar' : 'Enviar'}</span>
+                                </Button>
+                              </label>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
                 <div className="flex justify-end gap-2 pt-4">
                   <Button variant="outline" onClick={() => { setDialogOpen(false); setForm(emptyForm); setEditingId(null); }}>Cancelar</Button>
                   <Button onClick={handleSave}>{editingId ? 'Salvar Alterações' : 'Cadastrar'}</Button>
@@ -532,38 +600,41 @@ const ManutencaoTecnicos = () => {
                   )}
                 </TabsContent>
                 <TabsContent value="documentos" className="space-y-4">
-                  <div className="flex items-center gap-2">
-                    <label className="cursor-pointer">
-                      <input type="file" className="hidden" onChange={e => handleUploadDoc(e, viewingTecnico.id)} disabled={uploading} />
-                      <Button variant="outline" size="sm" asChild disabled={uploading}>
-                        <span><Upload className="h-4 w-4 mr-2" />{uploading ? 'Enviando...' : 'Enviar Documento'}</span>
-                      </Button>
-                    </label>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {TIPOS_DOCUMENTO.map(tipo => {
+                      const docExistente = docs.find(d => d.tipo_documento === tipo.value);
+                      return (
+                        <div key={tipo.value} className="flex items-center justify-between border rounded-lg p-3 bg-muted/20">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
+                            <div className="min-w-0">
+                              <p className="text-sm font-medium truncate">{tipo.label}</p>
+                              {docExistente ? (
+                                <a href={docExistente.arquivo_url} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline truncate block">
+                                  {docExistente.nome_arquivo}
+                                </a>
+                              ) : (
+                                <p className="text-xs text-muted-foreground">Não enviado</p>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-1 shrink-0">
+                            {docExistente && (
+                              <Button size="sm" variant="ghost" onClick={() => handleDeleteDoc(docExistente.id, viewingTecnico.id)}>
+                                <Trash2 className="h-3 w-3 text-destructive" />
+                              </Button>
+                            )}
+                            <label className="cursor-pointer">
+                              <input type="file" className="hidden" onChange={e => handleUploadDoc(e, viewingTecnico.id, tipo.value)} disabled={uploading} />
+                              <Button variant="outline" size="sm" asChild disabled={uploading && uploadingCategory === tipo.value}>
+                                <span><Upload className="h-3 w-3 mr-1" />{uploading && uploadingCategory === tipo.value ? '...' : docExistente ? 'Trocar' : 'Enviar'}</span>
+                              </Button>
+                            </label>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
-                  {docs.length === 0 ? (
-                    <p className="text-center text-muted-foreground py-8">Nenhum documento anexado</p>
-                  ) : (
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Arquivo</TableHead>
-                          <TableHead>Tipo</TableHead>
-                          <TableHead>Data</TableHead>
-                          <TableHead>Ações</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {docs.map(doc => (
-                          <TableRow key={doc.id}>
-                            <TableCell><a href={doc.arquivo_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-primary hover:underline"><FileText className="h-4 w-4" />{doc.nome_arquivo}</a></TableCell>
-                            <TableCell className="text-muted-foreground">{doc.tipo_documento || '-'}</TableCell>
-                            <TableCell className="text-muted-foreground">{format(new Date(doc.created_at), 'dd/MM/yyyy')}</TableCell>
-                            <TableCell><Button size="sm" variant="ghost" onClick={() => handleDeleteDoc(doc.id, viewingTecnico.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button></TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  )}
                 </TabsContent>
               </Tabs>
             )}

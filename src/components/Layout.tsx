@@ -19,6 +19,7 @@ interface NavSubItem {
   label: string;
   icon: typeof LayoutDashboard;
   menuKey: string;
+  section?: string;
 }
 
 interface NavItem {

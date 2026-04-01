@@ -268,6 +268,10 @@ function AppRoutes() {
         element={<ProtectedRoute><ManutencaoTecnicos /></ProtectedRoute>} 
       />
       <Route 
+        path="/manutencao/relatorios" 
+        element={<ProtectedRoute><ManutencaoRelatorios /></ProtectedRoute>} 
+      />
+      <Route
         path="/orcamentos"
         element={<ProtectedRoute><Orcamentos /></ProtectedRoute>} 
       />

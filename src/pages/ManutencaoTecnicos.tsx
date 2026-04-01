@@ -600,38 +600,41 @@ const ManutencaoTecnicos = () => {
                   )}
                 </TabsContent>
                 <TabsContent value="documentos" className="space-y-4">
-                  <div className="flex items-center gap-2">
-                    <label className="cursor-pointer">
-                      <input type="file" className="hidden" onChange={e => handleUploadDoc(e, viewingTecnico.id)} disabled={uploading} />
-                      <Button variant="outline" size="sm" asChild disabled={uploading}>
-                        <span><Upload className="h-4 w-4 mr-2" />{uploading ? 'Enviando...' : 'Enviar Documento'}</span>
-                      </Button>
-                    </label>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {TIPOS_DOCUMENTO.map(tipo => {
+                      const docExistente = docs.find(d => d.tipo_documento === tipo.value);
+                      return (
+                        <div key={tipo.value} className="flex items-center justify-between border rounded-lg p-3 bg-muted/20">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
+                            <div className="min-w-0">
+                              <p className="text-sm font-medium truncate">{tipo.label}</p>
+                              {docExistente ? (
+                                <a href={docExistente.arquivo_url} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline truncate block">
+                                  {docExistente.nome_arquivo}
+                                </a>
+                              ) : (
+                                <p className="text-xs text-muted-foreground">Não enviado</p>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-1 shrink-0">
+                            {docExistente && (
+                              <Button size="sm" variant="ghost" onClick={() => handleDeleteDoc(docExistente.id, viewingTecnico.id)}>
+                                <Trash2 className="h-3 w-3 text-destructive" />
+                              </Button>
+                            )}
+                            <label className="cursor-pointer">
+                              <input type="file" className="hidden" onChange={e => handleUploadDoc(e, viewingTecnico.id, tipo.value)} disabled={uploading} />
+                              <Button variant="outline" size="sm" asChild disabled={uploading && uploadingCategory === tipo.value}>
+                                <span><Upload className="h-3 w-3 mr-1" />{uploading && uploadingCategory === tipo.value ? '...' : docExistente ? 'Trocar' : 'Enviar'}</span>
+                              </Button>
+                            </label>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
-                  {docs.length === 0 ? (
-                    <p className="text-center text-muted-foreground py-8">Nenhum documento anexado</p>
-                  ) : (
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Arquivo</TableHead>
-                          <TableHead>Tipo</TableHead>
-                          <TableHead>Data</TableHead>
-                          <TableHead>Ações</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {docs.map(doc => (
-                          <TableRow key={doc.id}>
-                            <TableCell><a href={doc.arquivo_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-primary hover:underline"><FileText className="h-4 w-4" />{doc.nome_arquivo}</a></TableCell>
-                            <TableCell className="text-muted-foreground">{doc.tipo_documento || '-'}</TableCell>
-                            <TableCell className="text-muted-foreground">{format(new Date(doc.created_at), 'dd/MM/yyyy')}</TableCell>
-                            <TableCell><Button size="sm" variant="ghost" onClick={() => handleDeleteDoc(doc.id, viewingTecnico.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button></TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  )}
                 </TabsContent>
               </Tabs>
             )}

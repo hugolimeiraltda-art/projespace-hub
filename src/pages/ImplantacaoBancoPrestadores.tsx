@@ -76,6 +76,8 @@ const PRODUTOS_HOMOLOGADOS = [
 ];
 
 
+const ESTADOS = ['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO'];
+
 const emptyForm = {
   tipo_pessoa: 'PJ',
   nome: '',
@@ -100,6 +102,9 @@ const emptyForm = {
   pix: '',
   especialidade: '',
   observacoes: '',
+  empresa: [] as string[],
+  praca: [] as string[],
+  produtos_homologados: [] as string[],
 };
 
 export default function ImplantacaoBancoPrestadores() {

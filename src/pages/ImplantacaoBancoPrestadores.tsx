@@ -204,6 +204,9 @@ export default function ImplantacaoBancoPrestadores() {
         pix: form.pix || null,
         especialidade: form.especialidade || null,
         observacoes: form.observacoes || null,
+        empresa: form.empresa.length > 0 ? form.empresa : [],
+        praca: form.praca.length > 0 ? form.praca : [],
+        produtos_homologados: form.produtos_homologados.length > 0 ? form.produtos_homologados : [],
         updated_at: new Date().toISOString(),
       };
 

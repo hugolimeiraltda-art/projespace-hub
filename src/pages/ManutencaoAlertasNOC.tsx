@@ -25,6 +25,7 @@ interface AlertaNOC {
   severidade: string;
   quantidade_ocorrencias: number;
   periodo_referencia: string | null;
+  origem: string | null;
   dados_extras: any;
   resolvido: boolean;
   resolvido_at: string | null;
@@ -216,9 +217,12 @@ export default function ManutencaoAlertasNOC() {
                   <TableHead>Data</TableHead>
                   <TableHead>Contrato</TableHead>
                   <TableHead>Cliente</TableHead>
-                  <TableHead>Categoria</TableHead>
+                  <TableHead>Origem</TableHead>
                   <TableHead>Severidade</TableHead>
                   <TableHead className="text-center">Ocorrências</TableHead>
+                  <TableHead>Período</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Ações</TableHead>
                   <TableHead>Período</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="text-right">Ações</TableHead>
@@ -227,13 +231,13 @@ export default function ManutencaoAlertasNOC() {
               <TableBody>
                 {loading ? (
                   <TableRow>
-                    <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
+                   <TableCell colSpan={10} className="text-center py-8 text-muted-foreground">
                       Carregando...
                     </TableCell>
                   </TableRow>
                 ) : filtered.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
+                   <TableCell colSpan={10} className="text-center py-8 text-muted-foreground">
                       Nenhum alerta encontrado
                     </TableCell>
                   </TableRow>
@@ -247,7 +251,9 @@ export default function ManutencaoAlertasNOC() {
                         </TableCell>
                         <TableCell className="font-mono text-sm">{alerta.contrato}</TableCell>
                         <TableCell className="font-medium">{alerta.razao_social}</TableCell>
-                        <TableCell className="text-sm">{alerta.categoria || "-"}</TableCell>
+                        <TableCell className="text-sm">
+                          <Badge variant="outline" className="capitalize">{alerta.origem || "não informado"}</Badge>
+                        </TableCell>
                         <TableCell>
                           <Badge variant={sev.variant}>{sev.label}</Badge>
                         </TableCell>
@@ -325,8 +331,8 @@ export default function ManutencaoAlertasNOC() {
                   <p className="font-bold text-lg">{selectedAlerta.quantidade_ocorrencias}</p>
                 </div>
                 <div>
-                  <p className="text-muted-foreground">Categoria</p>
-                  <p>{selectedAlerta.categoria || "-"}</p>
+                  <p className="text-muted-foreground">Origem</p>
+                  <Badge variant="outline" className="capitalize">{selectedAlerta.origem || "não informado"}</Badge>
                 </div>
                 <div>
                   <p className="text-muted-foreground">Período</p>

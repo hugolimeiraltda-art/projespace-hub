@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { SaleFormSummary } from '@/components/SaleFormSummary';
+import { useImplantacaoIntegration } from '@/hooks/useImplantacaoIntegration';
 import { AIFeedbackDialog } from '@/components/AIFeedbackDialog';
 import { SaleCompletedForm, PORTARIA_VIRTUAL_LABELS, CFTV_ELEVADOR_LABELS, MODALIDADE_PORTARIA_LABELS, PortariaVirtualApp, CFTVElevador, ModalidadePortaria } from '@/types/project';
 import { Layout } from '@/components/Layout';
@@ -163,6 +164,7 @@ export default function ImplantacaoExecucao() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { createPreventivaOnActivation } = useImplantacaoIntegration();
 
   const [project, setProject] = useState<Project | null>(null);
   const [etapas, setEtapas] = useState<ImplantacaoEtapas | null>(null);
@@ -504,6 +506,28 @@ export default function ImplantacaoExecucao() {
       if (error) throw error;
 
       setEtapas(prev => prev ? { ...prev, ...updateData } as ImplantacaoEtapas : null);
+
+      // Auto-create preventive agenda when Etapa 6 is fully completed
+      if (field === 'confirmacao_ativacao_financeira' && value === true && project) {
+        const updatedEtapas = { ...etapas, ...updateData } as ImplantacaoEtapas;
+        const etapa6Complete = nocChamado?.item_6_1_status === 'success' 
+          && updatedEtapas.check_programacao 
+          && updatedEtapas.confirmacao_ativacao_financeira;
+        
+        if (etapa6Complete) {
+          const unidades = (saleForm as any)?.qtd_apartamentos || 0;
+          const contrato = contratoInfo?.contrato || `TEMP-${project.numero_projeto}`;
+          const praca = contratoInfo?.filial || null;
+          
+          createPreventivaOnActivation(
+            id!,
+            project.cliente_condominio_nome,
+            contrato,
+            unidades,
+            praca || undefined,
+          );
+        }
+      }
 
       toast({
         title: 'Salvo',

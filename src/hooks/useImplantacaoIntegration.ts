@@ -177,9 +177,115 @@ export function useImplantacaoIntegration() {
     }
   };
 
+  // Determine preventive frequency based on unit count (ticket)
+  const getFrequenciaByUnidades = (unidades: number): string => {
+    if (unidades >= 15) return 'MENSAL';
+    if (unidades >= 8) return 'BIMESTRAL';
+    if (unidades >= 4) return 'TRIMESTRAL';
+    return 'QUADRIMESTRAL';
+  };
+
+  // Calculate next execution date based on frequency
+  const calcProximaExecucao = (frequencia: string): string => {
+    const now = new Date();
+    switch (frequencia) {
+      case 'MENSAL': now.setMonth(now.getMonth() + 1); break;
+      case 'BIMESTRAL': now.setMonth(now.getMonth() + 2); break;
+      case 'TRIMESTRAL': now.setMonth(now.getMonth() + 3); break;
+      case 'QUADRIMESTRAL': now.setMonth(now.getMonth() + 4); break;
+      default: now.setMonth(now.getMonth() + 3);
+    }
+    return now.toISOString().split('T')[0];
+  };
+
+  // Auto-create preventive agenda when Etapa 6 (Ativação) is completed
+  const createPreventivaOnActivation = async (
+    projectId: string,
+    customerName: string,
+    contrato: string,
+    unidades: number,
+    praca?: string,
+    equipamentos?: string,
+  ) => {
+    try {
+      // Get customer_id from project
+      const { data: customer } = await supabase
+        .from('customer_portfolio')
+        .select('id, supervisor_responsavel_id')
+        .eq('project_id', projectId)
+        .single();
+
+      if (!customer) {
+        console.error('Customer not found for project:', projectId);
+        return false;
+      }
+
+      // Check if agenda already exists for this customer
+      const { data: existingAgenda } = await supabase
+        .from('manutencao_agendas_preventivas')
+        .select('id')
+        .eq('customer_id', customer.id)
+        .limit(1);
+
+      if (existingAgenda && existingAgenda.length > 0) {
+        console.log('Preventive agenda already exists for customer:', customer.id);
+        return true;
+      }
+
+      const frequencia = getFrequenciaByUnidades(unidades);
+      const proximaExecucao = calcProximaExecucao(frequencia);
+
+      // Get supervisor name if available
+      let supervisorNome: string | null = null;
+      if (customer.supervisor_responsavel_id) {
+        const { data: supervisor } = await supabase
+          .from('profiles')
+          .select('nome')
+          .eq('id', customer.supervisor_responsavel_id)
+          .single();
+        supervisorNome = supervisor?.nome || null;
+      }
+
+      const { error } = await supabase
+        .from('manutencao_agendas_preventivas')
+        .insert({
+          customer_id: customer.id,
+          contrato,
+          razao_social: customerName,
+          descricao: `Manutenção Preventiva - ${unidades} unidades (${frequencia.toLowerCase()})`,
+          frequencia: frequencia as any,
+          proxima_execucao: proximaExecucao,
+          praca: praca || null,
+          equipamentos: equipamentos || null,
+          supervisor_responsavel_id: customer.supervisor_responsavel_id || null,
+          supervisor_responsavel_nome: supervisorNome,
+          created_by: user?.id,
+          created_by_name: user?.nome,
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: 'Agenda Preventiva Criada',
+        description: `Frequência ${frequencia.toLowerCase()} definida automaticamente (${unidades} unidades).`,
+      });
+
+      return true;
+    } catch (error) {
+      console.error('Error creating preventiva on activation:', error);
+      toast({
+        title: 'Aviso',
+        description: 'Não foi possível criar a agenda preventiva automaticamente.',
+        variant: 'destructive',
+      });
+      return false;
+    }
+  };
+
   return {
     createCustomerOnStart,
     updateCustomerOnComplete,
     createAuditChamadoOnAssistedOperation,
+    createPreventivaOnActivation,
   };
 }

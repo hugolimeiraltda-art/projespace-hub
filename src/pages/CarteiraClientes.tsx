@@ -258,6 +258,21 @@ export default function CarteiraClientes() {
     return endDate && isAfter(endDate, in6Months) && isBefore(endDate, in1Year);
   });
 
+  // Active clients by praça (data_ativacao preenchida)
+  const activeByPraca = customers.reduce((acc, c) => {
+    if (c.data_ativacao) {
+      const praca = c.filial || 'Sem Praça';
+      acc[praca] = (acc[praca] || 0) + 1;
+      acc._total = (acc._total || 0) + 1;
+    }
+    return acc;
+  }, {} as Record<string, number>);
+  const PRACAS_ORDER = ['SPO', 'BHZ', 'VIX', 'RJO'];
+  const pracaEntries = [
+    ...PRACAS_ORDER.filter(p => activeByPraca[p]).map(p => ({ praca: p, count: activeByPraca[p] })),
+    ...Object.keys(activeByPraca).filter(p => p !== '_total' && !PRACAS_ORDER.includes(p)).sort().map(p => ({ praca: p, count: activeByPraca[p] })),
+  ];
+
   const formatDate = (dateString: string | null) => {
     if (!dateString) return '-';
     try {

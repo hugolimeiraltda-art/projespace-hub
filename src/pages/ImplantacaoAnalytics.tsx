@@ -56,6 +56,8 @@ interface ContratoDetalhe {
   dataAtivacao: string | null;
   praca: string;
   tipoObra: string;
+  projectId: string;
+  portfolioProjectId: string | null;
 }
 
 interface PlanData {

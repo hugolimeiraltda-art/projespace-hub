@@ -12,7 +12,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Wrench, Search, MapPin, Calendar, CheckCircle, Clock, Edit, Download, FileText, FileSpreadsheet, Filter } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Plus, Wrench, Search, MapPin, Calendar, CheckCircle, Clock, Edit, Download, FileText, FileSpreadsheet, Filter, PlayCircle, Upload, Image, X } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -72,6 +73,7 @@ export default function ManutencaoChamados() {
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [execDialogOpen, setExecDialogOpen] = useState(false);
   const [selectedChamado, setSelectedChamado] = useState<Chamado | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterTipo, setFilterTipo] = useState<string>('all');
@@ -79,6 +81,7 @@ export default function ManutencaoChamados() {
   const [filterPraca, setFilterPraca] = useState<string>('all');
   const [filterDataInicio, setFilterDataInicio] = useState<string>('');
   const [filterDataFim, setFilterDataFim] = useState<string>('');
+  const [activeTab, setActiveTab] = useState('abertos');
 
   // Form state for new chamado
   const [formData, setFormData] = useState({
@@ -99,6 +102,15 @@ export default function ManutencaoChamados() {
     cliente_acompanhante: '',
     status: '',
   });
+
+  // Execution form state
+  const [execForm, setExecForm] = useState({
+    tecnico_executor: '',
+    cliente_acompanhante: '',
+    laudo_texto: '',
+  });
+  const [execFotos, setExecFotos] = useState<string[]>([]);
+  const [uploadingFoto, setUploadingFoto] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -243,6 +255,81 @@ export default function ManutencaoChamados() {
     }
   };
 
+  const handleOpenExec = (chamado: Chamado) => {
+    setSelectedChamado(chamado);
+    setExecForm({
+      tecnico_executor: chamado.tecnico_executor || chamado.tecnico_responsavel || '',
+      cliente_acompanhante: chamado.cliente_acompanhante || '',
+      laudo_texto: '',
+    });
+    setExecFotos([]);
+    setExecDialogOpen(true);
+  };
+
+  const handleUploadFoto = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || !selectedChamado) return;
+
+    setUploadingFoto(true);
+    try {
+      for (const file of Array.from(files)) {
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${selectedChamado.id}/${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+
+        const { data, error } = await supabase.storage
+          .from('manutencao-laudos')
+          .upload(fileName, file, { cacheControl: '3600', upsert: false });
+
+        if (error) {
+          console.error('Upload error:', error);
+          continue;
+        }
+
+        const { data: urlData } = supabase.storage
+          .from('manutencao-laudos')
+          .getPublicUrl(data.path);
+
+        setExecFotos(prev => [...prev, urlData.publicUrl]);
+      }
+    } catch (err) {
+      console.error('Error uploading fotos:', err);
+    } finally {
+      setUploadingFoto(false);
+    }
+  };
+
+  const handleExecSubmit = async () => {
+    if (!selectedChamado) return;
+    if (!execForm.tecnico_executor) {
+      toast({ title: 'Erro', description: 'Informe o técnico executor', variant: 'destructive' });
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('manutencao_chamados')
+        .update({
+          status: 'CONCLUIDO' as const,
+          tecnico_executor: execForm.tecnico_executor,
+          cliente_acompanhante: execForm.cliente_acompanhante || null,
+          laudo_texto: execForm.laudo_texto || null,
+          laudo_fotos: execFotos.length > 0 ? execFotos : null,
+          data_conclusao: new Date().toISOString(),
+        })
+        .eq('id', selectedChamado.id);
+
+      if (error) throw error;
+
+      toast({ title: 'Sucesso', description: 'Chamado concluído com sucesso!' });
+      setExecDialogOpen(false);
+      setSelectedChamado(null);
+      fetchData();
+    } catch (error) {
+      console.error('Error:', error);
+      toast({ title: 'Erro', description: 'Erro ao concluir chamado', variant: 'destructive' });
+    }
+  };
+
   const resetForm = () => {
     setFormData({
       customer_id: '',
@@ -276,6 +363,9 @@ export default function ManutencaoChamados() {
 
     return matchesSearch && matchesTipo && matchesStatus && matchesPraca && matchesData;
   });
+
+  const chamadosAbertos = filteredChamados.filter(c => c.status !== 'CONCLUIDO' && c.status !== 'CANCELADO');
+  const chamadosConcluidos = filteredChamados.filter(c => c.status === 'CONCLUIDO');
 
   // Dashboard metrics for preventive
   const chamadosPreventivos = chamados.filter(c => c.tipo === 'PREVENTIVO');
@@ -631,77 +721,165 @@ export default function ManutencaoChamados() {
           </CardContent>
         </Card>
 
-        {/* Table */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Chamados ({filteredChamados.length})</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {loading ? (
-              <div className="flex justify-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-              </div>
-            ) : filteredChamados.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                Nenhum chamado encontrado
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Cliente</TableHead>
-                      <TableHead>Contrato</TableHead>
-                      <TableHead>Tipo</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Praça</TableHead>
-                      <TableHead>Data Agendada</TableHead>
-                      <TableHead>Técnico</TableHead>
-                      <TableHead>Ações</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredChamados.map((chamado) => (
-                      <TableRow key={chamado.id}>
-                        <TableCell className="font-medium max-w-[200px] truncate">
-                          {chamado.razao_social}
-                          {chamado.is_auditoria && (
-                            <Badge variant="outline" className="ml-2 text-xs">Auditoria</Badge>
-                          )}
-                        </TableCell>
-                        <TableCell>{chamado.contrato}</TableCell>
-                        <TableCell>{getTipoBadge(chamado.tipo)}</TableCell>
-                        <TableCell>{getStatusBadge(chamado.status)}</TableCell>
-                        <TableCell>
-                          {chamado.praca ? (
-                            <Badge variant="outline" className="flex items-center gap-1 w-fit">
-                              <MapPin className="h-3 w-3" />
-                              {chamado.praca}
-                            </Badge>
-                          ) : '-'}
-                        </TableCell>
-                        <TableCell>
-                          {format(parseISO(chamado.data_agendada), 'dd/MM/yyyy', { locale: ptBR })}
-                        </TableCell>
-                        <TableCell>{chamado.tecnico_executor || chamado.tecnico_responsavel || '-'}</TableCell>
-                        <TableCell>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleEditChamado(chamado)}
-                          >
-                            <Edit className="h-4 w-4 mr-1" />
-                            Editar
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        {/* Table with Tabs */}
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList>
+            <TabsTrigger value="abertos" className="flex items-center gap-2">
+              <Clock className="h-4 w-4" />
+              Abertos ({chamadosAbertos.length})
+            </TabsTrigger>
+            <TabsTrigger value="concluidos" className="flex items-center gap-2">
+              <CheckCircle className="h-4 w-4" />
+              Concluídos ({chamadosConcluidos.length})
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="abertos">
+            <Card>
+              <CardContent className="pt-6">
+                {loading ? (
+                  <div className="flex justify-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                  </div>
+                ) : chamadosAbertos.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    Nenhum chamado em aberto
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Cliente</TableHead>
+                          <TableHead>Contrato</TableHead>
+                          <TableHead>Tipo</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead>Praça</TableHead>
+                          <TableHead>Data Agendada</TableHead>
+                          <TableHead>Técnico</TableHead>
+                          <TableHead>Ações</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {chamadosAbertos.map((chamado) => (
+                          <TableRow key={chamado.id}>
+                            <TableCell className="font-medium max-w-[200px] truncate">
+                              {chamado.razao_social}
+                              {chamado.is_auditoria && (
+                                <Badge variant="outline" className="ml-2 text-xs">Auditoria</Badge>
+                              )}
+                            </TableCell>
+                            <TableCell>{chamado.contrato}</TableCell>
+                            <TableCell>{getTipoBadge(chamado.tipo)}</TableCell>
+                            <TableCell>{getStatusBadge(chamado.status)}</TableCell>
+                            <TableCell>
+                              {chamado.praca ? (
+                                <Badge variant="outline" className="flex items-center gap-1 w-fit">
+                                  <MapPin className="h-3 w-3" />
+                                  {chamado.praca}
+                                </Badge>
+                              ) : '-'}
+                            </TableCell>
+                            <TableCell>
+                              {format(parseISO(chamado.data_agendada), 'dd/MM/yyyy', { locale: ptBR })}
+                            </TableCell>
+                            <TableCell>{chamado.tecnico_executor || chamado.tecnico_responsavel || '-'}</TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-1">
+                                <Button
+                                  variant="default"
+                                  size="sm"
+                                  onClick={() => handleOpenExec(chamado)}
+                                  className="bg-green-600 hover:bg-green-700"
+                                >
+                                  <PlayCircle className="h-4 w-4 mr-1" />
+                                  Executar
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleEditChamado(chamado)}
+                                >
+                                  <Edit className="h-4 w-4 mr-1" />
+                                  Editar
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="concluidos">
+            <Card>
+              <CardContent className="pt-6">
+                {chamadosConcluidos.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    Nenhum chamado concluído
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Cliente</TableHead>
+                          <TableHead>Contrato</TableHead>
+                          <TableHead>Tipo</TableHead>
+                          <TableHead>Praça</TableHead>
+                          <TableHead>Data Agendada</TableHead>
+                          <TableHead>Data Conclusão</TableHead>
+                          <TableHead>Técnico Executor</TableHead>
+                          <TableHead>Ações</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {chamadosConcluidos.map((chamado) => (
+                          <TableRow key={chamado.id}>
+                            <TableCell className="font-medium max-w-[200px] truncate">
+                              {chamado.razao_social}
+                            </TableCell>
+                            <TableCell>{chamado.contrato}</TableCell>
+                            <TableCell>{getTipoBadge(chamado.tipo)}</TableCell>
+                            <TableCell>
+                              {chamado.praca ? (
+                                <Badge variant="outline" className="flex items-center gap-1 w-fit">
+                                  <MapPin className="h-3 w-3" />
+                                  {chamado.praca}
+                                </Badge>
+                              ) : '-'}
+                            </TableCell>
+                            <TableCell>
+                              {format(parseISO(chamado.data_agendada), 'dd/MM/yyyy', { locale: ptBR })}
+                            </TableCell>
+                            <TableCell>
+                              {chamado.data_conclusao ? format(parseISO(chamado.data_conclusao), 'dd/MM/yyyy', { locale: ptBR }) : '-'}
+                            </TableCell>
+                            <TableCell>{chamado.tecnico_executor || '-'}</TableCell>
+                            <TableCell>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleEditChamado(chamado)}
+                              >
+                                <Edit className="h-4 w-4 mr-1" />
+                                Ver
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
 
         {/* Edit Dialog */}
         <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
@@ -764,6 +942,97 @@ export default function ManutencaoChamados() {
                   Cancelar
                 </Button>
                 <Button onClick={handleUpdateChamado}>Salvar Alterações</Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Execution Dialog */}
+        <Dialog open={execDialogOpen} onOpenChange={setExecDialogOpen}>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <PlayCircle className="h-5 w-5 text-green-600" />
+                Executar Chamado - {selectedChamado?.razao_social}
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="exec-tecnico">Técnico Executor *</Label>
+                  <Input
+                    id="exec-tecnico"
+                    value={execForm.tecnico_executor}
+                    onChange={(e) => setExecForm(prev => ({ ...prev, tecnico_executor: e.target.value }))}
+                    placeholder="Nome do técnico que executou"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="exec-cliente">Cliente que Acompanhou</Label>
+                  <Input
+                    id="exec-cliente"
+                    value={execForm.cliente_acompanhante}
+                    onChange={(e) => setExecForm(prev => ({ ...prev, cliente_acompanhante: e.target.value }))}
+                    placeholder="Nome do representante do cliente"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="exec-laudo">Laudo / Descrição da Execução</Label>
+                <Textarea
+                  id="exec-laudo"
+                  value={execForm.laudo_texto}
+                  onChange={(e) => setExecForm(prev => ({ ...prev, laudo_texto: e.target.value }))}
+                  placeholder="Descreva o que foi realizado na visita..."
+                  rows={5}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Fotos do Laudo</Label>
+                <div className="flex flex-wrap gap-3">
+                  {execFotos.map((url, idx) => (
+                    <div key={idx} className="relative group w-24 h-24 rounded-md overflow-hidden border">
+                      <img src={url} alt={`Foto ${idx + 1}`} className="w-full h-full object-cover" />
+                      <button
+                        type="button"
+                        onClick={() => setExecFotos(prev => prev.filter((_, i) => i !== idx))}
+                        className="absolute top-1 right-1 bg-destructive text-destructive-foreground rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ))}
+                  <label className="w-24 h-24 rounded-md border-2 border-dashed border-muted-foreground/30 flex flex-col items-center justify-center cursor-pointer hover:border-primary transition-colors">
+                    {uploadingFoto ? (
+                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+                    ) : (
+                      <>
+                        <Image className="h-6 w-6 text-muted-foreground" />
+                        <span className="text-xs text-muted-foreground mt-1">Adicionar</span>
+                      </>
+                    )}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      className="hidden"
+                      onChange={handleUploadFoto}
+                      disabled={uploadingFoto}
+                    />
+                  </label>
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2">
+                <Button type="button" variant="outline" onClick={() => setExecDialogOpen(false)}>
+                  Cancelar
+                </Button>
+                <Button onClick={handleExecSubmit} className="bg-green-600 hover:bg-green-700">
+                  <CheckCircle className="h-4 w-4 mr-2" />
+                  Concluir Chamado
+                </Button>
               </div>
             </div>
           </DialogContent>

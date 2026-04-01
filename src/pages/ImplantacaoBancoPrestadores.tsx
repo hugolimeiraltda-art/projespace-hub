@@ -58,7 +58,7 @@ interface PrestadorDoc {
 const ESTADOS = ['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO'];
 
 const emptyForm = {
-  tipo_pessoa: 'PF',
+  tipo_pessoa: 'PJ',
   nome: '',
   cpf_cnpj: '',
   rg: '',
@@ -324,8 +324,8 @@ export default function ImplantacaoBancoPrestadores() {
 
             <Tabs defaultValue={form.tipo_pessoa} onValueChange={v => updateField('tipo_pessoa', v)}>
               <TabsList className="mb-4">
-                <TabsTrigger value="PF" className="gap-2"><User className="w-4 h-4" /> Pessoa Física</TabsTrigger>
                 <TabsTrigger value="PJ" className="gap-2"><Building2 className="w-4 h-4" /> Pessoa Jurídica</TabsTrigger>
+                <TabsTrigger value="PF" className="gap-2"><User className="w-4 h-4" /> Pessoa Física</TabsTrigger>
               </TabsList>
 
               {/* Common fields */}

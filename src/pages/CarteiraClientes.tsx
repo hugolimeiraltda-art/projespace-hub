@@ -258,6 +258,21 @@ export default function CarteiraClientes() {
     return endDate && isAfter(endDate, in6Months) && isBefore(endDate, in1Year);
   });
 
+  // Active clients by praça (data_ativacao preenchida)
+  const activeByPraca = customers.reduce((acc, c) => {
+    if (c.data_ativacao) {
+      const praca = c.filial || 'Sem Praça';
+      acc[praca] = (acc[praca] || 0) + 1;
+      acc._total = (acc._total || 0) + 1;
+    }
+    return acc;
+  }, {} as Record<string, number>);
+  const PRACAS_ORDER = ['SPO', 'BHZ', 'VIX', 'RJO'];
+  const pracaEntries = [
+    ...PRACAS_ORDER.filter(p => activeByPraca[p]).map(p => ({ praca: p, count: activeByPraca[p] })),
+    ...Object.keys(activeByPraca).filter(p => p !== '_total' && !PRACAS_ORDER.includes(p)).sort().map(p => ({ praca: p, count: activeByPraca[p] })),
+  ];
+
   const formatDate = (dateString: string | null) => {
     if (!dateString) return '-';
     try {
@@ -708,6 +723,38 @@ export default function CarteiraClientes() {
               </div>
             </CardContent>
           </Card>
+        </div>
+
+        {/* Active Clients by Praça */}
+        <div className="grid grid-cols-5 gap-4 mb-6">
+          <Card className="border-l-4 border-l-green-500">
+            <CardContent className="pt-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-green-100 rounded-lg">
+                  <Users className="w-5 h-5 text-green-600" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Ativos Total</p>
+                  <p className="text-2xl font-bold text-green-600">{activeByPraca._total || 0}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          {pracaEntries.map(({ praca, count }) => (
+            <Card key={praca} className="border-l-4 border-l-primary">
+              <CardContent className="pt-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-primary/10 rounded-lg">
+                    <Building2 className="w-5 h-5 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Ativos {praca}</p>
+                    <p className="text-2xl font-bold">{count}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
         </div>
 
         {/* Expiring Contracts Dialog */}

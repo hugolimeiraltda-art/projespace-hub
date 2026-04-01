@@ -164,6 +164,7 @@ export default function ImplantacaoExecucao() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { createPreventivaOnActivation } = useImplantacaoIntegration();
 
   const [project, setProject] = useState<Project | null>(null);
   const [etapas, setEtapas] = useState<ImplantacaoEtapas | null>(null);

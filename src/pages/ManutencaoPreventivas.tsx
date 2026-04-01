@@ -638,9 +638,9 @@ export default function ManutencaoPreventivas() {
                 </div>
               </div>
               <Select value={filterPraca} onValueChange={setFilterPraca}>
-                <SelectTrigger className="w-[180px]">
-                  <MapPin className="h-4 w-4 mr-2" />
-                  <SelectValue placeholder="Filtrar por praça" />
+                <SelectTrigger className="w-[170px]">
+                  <MapPin className="h-4 w-4 mr-1" />
+                  <SelectValue placeholder="Praça" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Todas as praças</SelectItem>
@@ -650,14 +650,36 @@ export default function ManutencaoPreventivas() {
                 </SelectContent>
               </Select>
               <Select value={filterSupervisor} onValueChange={setFilterSupervisor}>
-                <SelectTrigger className="w-[200px]">
-                  <User className="h-4 w-4 mr-2" />
-                  <SelectValue placeholder="Filtrar por supervisor" />
+                <SelectTrigger className="w-[180px]">
+                  <User className="h-4 w-4 mr-1" />
+                  <SelectValue placeholder="Supervisor" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Todos os supervisores</SelectItem>
+                  <SelectItem value="all">Todos supervisores</SelectItem>
                   {supervisors.map((sup) => (
                     <SelectItem key={sup.id} value={sup.id}>{sup.nome}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={filterFrequencia} onValueChange={setFilterFrequencia}>
+                <SelectTrigger className="w-[160px]">
+                  <SelectValue placeholder="Frequência" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todas frequências</SelectItem>
+                  {FREQUENCIAS.map((f) => (
+                    <SelectItem key={f.value} value={f.value}>{f.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={filterTecnico} onValueChange={setFilterTecnico}>
+                <SelectTrigger className="w-[170px]">
+                  <SelectValue placeholder="Técnico" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos técnicos</SelectItem>
+                  {tecnicos.map((t) => (
+                    <SelectItem key={t} value={t}>{t}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -684,13 +706,27 @@ export default function ManutencaoPreventivas() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Cliente</TableHead>
-                      <TableHead>Contrato</TableHead>
-                      <TableHead>Praça</TableHead>
-                      <TableHead>Supervisor</TableHead>
-                      <TableHead>Frequência</TableHead>
-                      <TableHead>Próxima Execução</TableHead>
-                      <TableHead>Técnico</TableHead>
+                      <TableHead className="cursor-pointer select-none" onClick={() => handleSort('razao_social')}>
+                        <div className="flex items-center">Cliente <SortIcon column="razao_social" /></div>
+                      </TableHead>
+                      <TableHead className="cursor-pointer select-none" onClick={() => handleSort('contrato')}>
+                        <div className="flex items-center">Contrato <SortIcon column="contrato" /></div>
+                      </TableHead>
+                      <TableHead className="cursor-pointer select-none" onClick={() => handleSort('praca')}>
+                        <div className="flex items-center">Praça <SortIcon column="praca" /></div>
+                      </TableHead>
+                      <TableHead className="cursor-pointer select-none" onClick={() => handleSort('supervisor')}>
+                        <div className="flex items-center">Supervisor <SortIcon column="supervisor" /></div>
+                      </TableHead>
+                      <TableHead className="cursor-pointer select-none" onClick={() => handleSort('frequencia')}>
+                        <div className="flex items-center">Frequência <SortIcon column="frequencia" /></div>
+                      </TableHead>
+                      <TableHead className="cursor-pointer select-none" onClick={() => handleSort('proxima_execucao')}>
+                        <div className="flex items-center">Próxima Execução <SortIcon column="proxima_execucao" /></div>
+                      </TableHead>
+                      <TableHead className="cursor-pointer select-none" onClick={() => handleSort('tecnico')}>
+                        <div className="flex items-center">Técnico <SortIcon column="tecnico" /></div>
+                      </TableHead>
                       <TableHead>Ações</TableHead>
                     </TableRow>
                   </TableHeader>

@@ -580,6 +580,11 @@ export default function ImplantacaoBancoPrestadores() {
                       <div className="col-span-2"><span className="text-muted-foreground text-xs block">Endereço</span>{[selectedPrestador.endereco, selectedPrestador.cidade, selectedPrestador.estado].filter(Boolean).join(', ') || '—'}</div>
                       <div><span className="text-muted-foreground text-xs block">PIX</span>{selectedPrestador.pix || '—'}</div>
                       <div><span className="text-muted-foreground text-xs block">Banco</span>{[selectedPrestador.banco, selectedPrestador.agencia, selectedPrestador.conta].filter(Boolean).join(' / ') || '—'}</div>
+                      <div><span className="text-muted-foreground text-xs block">Empresa</span>{selectedPrestador.empresa?.join(', ') || '—'}</div>
+                      <div><span className="text-muted-foreground text-xs block">Praça</span>{selectedPrestador.praca?.join(', ') || '—'}</div>
+                      <div className="col-span-3"><span className="text-muted-foreground text-xs block">Produtos Homologados</span>
+                        <div className="flex flex-wrap gap-1 mt-1">{selectedPrestador.produtos_homologados?.length ? selectedPrestador.produtos_homologados.map(p => <Badge key={p} variant="outline" className="text-[10px]">{p}</Badge>) : '—'}</div>
+                      </div>
                     </div>
                     {selectedPrestador.observacoes && (
                       <div>

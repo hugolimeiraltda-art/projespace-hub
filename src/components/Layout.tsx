@@ -250,26 +250,32 @@ export function Layout({ children }: LayoutProps) {
                   </CollapsibleTrigger>
                   <CollapsibleContent>
                     <div className="mt-1 ml-4 space-y-1 border-l border-border pl-3">
-                      {item.subItems.map(subItem => {
+                      {item.subItems.map((subItem, idx) => {
                         const SubIcon = subItem.icon;
                         const isSubActive = subItem.path.includes('?')
                           ? location.pathname + location.search === subItem.path
                           : location.pathname === subItem.path && !location.search;
+                        const prevSection = idx > 0 ? item.subItems![idx - 1].section : undefined;
+                        const showSectionHeader = subItem.section && subItem.section !== prevSection;
                         return (
-                          <Link
-                            key={subItem.path}
-                            to={subItem.path}
-                            onClick={handleNavClick}
-                            className={cn(
-                              'flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors',
-                              isSubActive
-                                ? 'bg-primary/10 text-primary font-medium'
-                                : 'text-muted-foreground hover:bg-accent hover:text-foreground'
+                          <div key={subItem.path}>
+                            {showSectionHeader && (
+                              <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-3 pt-2 pb-1">{subItem.section}</p>
                             )}
-                          >
-                            <SubIcon className="w-4 h-4" />
-                            {subItem.label}
-                          </Link>
+                            <Link
+                              to={subItem.path}
+                              onClick={handleNavClick}
+                              className={cn(
+                                'flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors',
+                                isSubActive
+                                  ? 'bg-primary/10 text-primary font-medium'
+                                  : 'text-muted-foreground hover:bg-accent hover:text-foreground'
+                              )}
+                            >
+                              <SubIcon className="w-4 h-4" />
+                              {subItem.label}
+                            </Link>
+                          </div>
                         );
                       })}
                     </div>

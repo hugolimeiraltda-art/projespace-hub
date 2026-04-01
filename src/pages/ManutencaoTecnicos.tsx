@@ -318,6 +318,12 @@ const ManutencaoTecnicos = () => {
               <DialogHeader>
                 <DialogTitle>{editingId ? 'Editar Técnico' : 'Novo Técnico'}</DialogTitle>
               </DialogHeader>
+              <Button><Plus className="h-4 w-4 mr-2" /> Novo Técnico</Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>{editingId ? 'Editar Técnico' : 'Novo Técnico'}</DialogTitle>
+              </DialogHeader>
               <div className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>

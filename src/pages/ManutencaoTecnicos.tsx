@@ -14,7 +14,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
-import { Plus, Search, Upload, FileText, Trash2, User, Building2, Edit, Eye } from 'lucide-react';
+import { Plus, Search, Upload, FileText, Trash2, User, Building2, Edit, Eye, Award } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 
 interface Tecnico {

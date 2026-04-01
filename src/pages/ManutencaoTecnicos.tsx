@@ -422,6 +422,47 @@ const ManutencaoTecnicos = () => {
                   <div><Label>Observações</Label><Textarea value={form.observacoes} onChange={e => updateField('observacoes', e.target.value)} /></div>
                 </div>
 
+                {/* Documentos - só aparece em edição */}
+                {editingId && (
+                  <div className="border-t pt-4 space-y-3">
+                    <h3 className="font-semibold text-foreground">Documentos</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {TIPOS_DOCUMENTO.map(tipo => {
+                        const docExistente = formDocs.find(d => d.tipo_documento === tipo.value);
+                        return (
+                          <div key={tipo.value} className="flex items-center justify-between border rounded-lg p-3 bg-muted/20">
+                            <div className="flex items-center gap-2 min-w-0">
+                              <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
+                              <div className="min-w-0">
+                                <p className="text-sm font-medium truncate">{tipo.label}</p>
+                                {docExistente ? (
+                                  <a href={docExistente.arquivo_url} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline truncate block">
+                                    {docExistente.nome_arquivo}
+                                  </a>
+                                ) : (
+                                  <p className="text-xs text-muted-foreground">Não enviado</p>
+                                )}
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-1 shrink-0">
+                              {docExistente && (
+                                <Button size="sm" variant="ghost" onClick={() => handleDeleteDoc(docExistente.id, editingId)}>
+                                  <Trash2 className="h-3 w-3 text-destructive" />
+                                </Button>
+                              )}
+                              <label className="cursor-pointer">
+                                <input type="file" className="hidden" onChange={e => handleUploadDoc(e, editingId, tipo.value)} disabled={uploading} />
+                                <Button variant="outline" size="sm" asChild disabled={uploading && uploadingCategory === tipo.value}>
+                                  <span><Upload className="h-3 w-3 mr-1" />{uploading && uploadingCategory === tipo.value ? '...' : docExistente ? 'Trocar' : 'Enviar'}</span>
+                                </Button>
+                              </label>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
                 <div className="flex justify-end gap-2 pt-4">
                   <Button variant="outline" onClick={() => { setDialogOpen(false); setForm(emptyForm); setEditingId(null); }}>Cancelar</Button>
                   <Button onClick={handleSave}>{editingId ? 'Salvar Alterações' : 'Cadastrar'}</Button>

@@ -367,7 +367,7 @@ export function ManutencaoChamados({ customers }: ManutencaoChamadosProps) {
           observacoes_conclusao: execForm.observacoes_conclusao || null,
           laudo_fotos: execFotos,
           data_conclusao: new Date().toISOString(),
-          historico: newHistorico,
+          historico: newHistorico as any,
         })
         .eq('id', execChamado.id);
 

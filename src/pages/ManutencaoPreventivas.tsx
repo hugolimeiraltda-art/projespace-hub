@@ -313,9 +313,42 @@ export default function ManutencaoPreventivas() {
     
     const matchesPraca = filterPraca === 'all' || agenda.praca === filterPraca;
     const matchesSupervisor = filterSupervisor === 'all' || agenda.supervisor_responsavel_id === filterSupervisor;
+    const matchesFrequencia = filterFrequencia === 'all' || agenda.frequencia === filterFrequencia;
+    const matchesTecnico = filterTecnico === 'all' || (agenda.tecnico_responsavel || '') === filterTecnico;
 
-    return matchesSearch && matchesPraca && matchesSupervisor;
+    return matchesSearch && matchesPraca && matchesSupervisor && matchesFrequencia && matchesTecnico;
+  }).sort((a, b) => {
+    const dir = sortDirection === 'asc' ? 1 : -1;
+    switch (sortColumn) {
+      case 'razao_social': return a.razao_social.localeCompare(b.razao_social) * dir;
+      case 'contrato': return a.contrato.localeCompare(b.contrato) * dir;
+      case 'praca': return (a.praca || '').localeCompare(b.praca || '') * dir;
+      case 'supervisor': return (a.supervisor_responsavel_nome || '').localeCompare(b.supervisor_responsavel_nome || '') * dir;
+      case 'frequencia': return a.frequencia.localeCompare(b.frequencia) * dir;
+      case 'proxima_execucao': return a.proxima_execucao.localeCompare(b.proxima_execucao) * dir;
+      case 'tecnico': return (a.tecnico_responsavel || '').localeCompare(b.tecnico_responsavel || '') * dir;
+      default: return 0;
+    }
   });
+
+  // Unique technicians for filter
+  const tecnicos = [...new Set(agendas.map(a => a.tecnico_responsavel).filter(Boolean))] as string[];
+
+  const handleSort = (column: string) => {
+    if (sortColumn === column) {
+      setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortColumn(column);
+      setSortDirection('asc');
+    }
+  };
+
+  const SortIcon = ({ column }: { column: string }) => {
+    if (sortColumn !== column) return <ArrowUpDown className="h-3 w-3 ml-1 opacity-40" />;
+    return sortDirection === 'asc' 
+      ? <ArrowUp className="h-3 w-3 ml-1" /> 
+      : <ArrowDown className="h-3 w-3 ml-1" />;
+  };
 
   // Check for notifications (48h before)
   const agendasProximas = agendas.filter(agenda => {

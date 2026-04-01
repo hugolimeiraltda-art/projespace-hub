@@ -1129,6 +1129,48 @@ export type Database = {
           },
         ]
       }
+      implantacao_orcamento_setor: {
+        Row: {
+          ano: number
+          categoria: string
+          created_at: string
+          created_by: string | null
+          created_by_name: string | null
+          id: string
+          mes: number
+          observacoes: string | null
+          updated_at: string
+          valor_executado: number
+          valor_planejado: number
+        }
+        Insert: {
+          ano: number
+          categoria: string
+          created_at?: string
+          created_by?: string | null
+          created_by_name?: string | null
+          id?: string
+          mes: number
+          observacoes?: string | null
+          updated_at?: string
+          valor_executado?: number
+          valor_planejado?: number
+        }
+        Update: {
+          ano?: number
+          categoria?: string
+          created_at?: string
+          created_by?: string | null
+          created_by_name?: string | null
+          id?: string
+          mes?: number
+          observacoes?: string | null
+          updated_at?: string
+          valor_executado?: number
+          valor_planejado?: number
+        }
+        Relationships: []
+      }
       implantacao_planejamento_ativacoes: {
         Row: {
           ano: number
@@ -2146,6 +2188,143 @@ export type Database = {
           id?: string
           ordem?: number
           titulo?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      prestador_documentos: {
+        Row: {
+          arquivo_url: string
+          created_at: string
+          created_by: string | null
+          id: string
+          nome_arquivo: string
+          prestador_id: string
+          tamanho: number | null
+          tipo_documento: string | null
+        }
+        Insert: {
+          arquivo_url: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          nome_arquivo: string
+          prestador_id: string
+          tamanho?: number | null
+          tipo_documento?: string | null
+        }
+        Update: {
+          arquivo_url?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          nome_arquivo?: string
+          prestador_id?: string
+          tamanho?: number | null
+          tipo_documento?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prestador_documentos_prestador_id_fkey"
+            columns: ["prestador_id"]
+            isOneToOne: false
+            referencedRelation: "prestadores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      prestadores: {
+        Row: {
+          agencia: string | null
+          ativo: boolean
+          banco: string | null
+          cep: string | null
+          cidade: string | null
+          conta: string | null
+          cpf_cnpj: string | null
+          created_at: string
+          created_by: string | null
+          created_by_name: string | null
+          data_nascimento: string | null
+          email: string | null
+          endereco: string | null
+          especialidade: string | null
+          estado: string | null
+          id: string
+          inscricao_estadual: string | null
+          inscricao_municipal: string | null
+          nome: string
+          nome_fantasia: string | null
+          observacoes: string | null
+          pix: string | null
+          razao_social: string | null
+          rg: string | null
+          telefone: string | null
+          telefone2: string | null
+          tipo_conta: string | null
+          tipo_pessoa: string
+          updated_at: string
+        }
+        Insert: {
+          agencia?: string | null
+          ativo?: boolean
+          banco?: string | null
+          cep?: string | null
+          cidade?: string | null
+          conta?: string | null
+          cpf_cnpj?: string | null
+          created_at?: string
+          created_by?: string | null
+          created_by_name?: string | null
+          data_nascimento?: string | null
+          email?: string | null
+          endereco?: string | null
+          especialidade?: string | null
+          estado?: string | null
+          id?: string
+          inscricao_estadual?: string | null
+          inscricao_municipal?: string | null
+          nome: string
+          nome_fantasia?: string | null
+          observacoes?: string | null
+          pix?: string | null
+          razao_social?: string | null
+          rg?: string | null
+          telefone?: string | null
+          telefone2?: string | null
+          tipo_conta?: string | null
+          tipo_pessoa?: string
+          updated_at?: string
+        }
+        Update: {
+          agencia?: string | null
+          ativo?: boolean
+          banco?: string | null
+          cep?: string | null
+          cidade?: string | null
+          conta?: string | null
+          cpf_cnpj?: string | null
+          created_at?: string
+          created_by?: string | null
+          created_by_name?: string | null
+          data_nascimento?: string | null
+          email?: string | null
+          endereco?: string | null
+          especialidade?: string | null
+          estado?: string | null
+          id?: string
+          inscricao_estadual?: string | null
+          inscricao_municipal?: string | null
+          nome?: string
+          nome_fantasia?: string | null
+          observacoes?: string | null
+          pix?: string | null
+          razao_social?: string | null
+          rg?: string | null
+          telefone?: string | null
+          telefone2?: string | null
+          tipo_conta?: string | null
+          tipo_pessoa?: string
           updated_at?: string
         }
         Relationships: []

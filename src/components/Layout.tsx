@@ -5,7 +5,7 @@ import { useMenuPermissions } from '@/hooks/useMenuPermissions';
 import { Button } from '@/components/ui/button';
 import { NotificationsSidebarItem } from '@/components/NotificationsSidebarItem';
 import { cn } from '@/lib/utils';
-import { LayoutDashboard, FolderPlus, List, Settings, LogOut, User, ClipboardList, Users, Briefcase, ShoppingCart, Package, Heart, Wrench, ChevronDown, ChevronRight, AlertTriangle, Calendar, Bot, Boxes, Percent, Brain, BookOpen, FileText, Menu, X, BarChart3, PlayCircle, HeadphonesIcon, TrendingUp, UserX, FileBarChart, UserCheck, CheckCircle2, DollarSign } from 'lucide-react';
+import { LayoutDashboard, FolderPlus, List, Settings, LogOut, User, ClipboardList, Users, Briefcase, ShoppingCart, Package, Heart, Wrench, ChevronDown, ChevronRight, AlertTriangle, Calendar, Bot, Boxes, Percent, Brain, BookOpen, FileText, Menu, X, BarChart3, PlayCircle, HeadphonesIcon, TrendingUp, UserX, FileBarChart, UserCheck, CheckCircle2, DollarSign, HardHat } from 'lucide-react';
 import emiveLogo from '@/assets/emive-logo.png';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -19,6 +19,7 @@ interface NavSubItem {
   label: string;
   icon: typeof LayoutDashboard;
   menuKey: string;
+  section?: string;
 }
 
 interface NavItem {
@@ -59,8 +60,10 @@ const ALL_NAV_ITEMS: NavItem[] = [
       { path: '/startup-projetos?tab=em-implantacao', label: 'Em Implantação', icon: PlayCircle, menuKey: 'implantacao/em-implantacao' },
       { path: '/startup-projetos?tab=operacao-assistida', label: 'Operação Assistida', icon: HeadphonesIcon, menuKey: 'implantacao/operacao-assistida' },
       { path: '/startup-projetos?tab=pequenas-obras', label: 'Pequenas Obras', icon: Wrench, menuKey: 'implantacao/pequenas-obras' },
-      { path: '/implantacao-pagamento-instaladores', label: 'Pgto. Instaladores', icon: DollarSign, menuKey: 'implantacao/pagamento-instaladores' },
       { path: '/startup-projetos?tab=historico', label: 'Histórico', icon: CheckCircle2, menuKey: 'implantacao/historico' },
+      { path: '/implantacao-pagamento-instaladores', label: 'Pgto. Instaladores', icon: DollarSign, menuKey: 'implantacao/pagamento-instaladores', section: 'Financeiro' },
+      { path: '/implantacao-orcamento-setor', label: 'Orçamento do Setor', icon: BarChart3, menuKey: 'implantacao/orcamento-setor', section: 'Financeiro' },
+      { path: '/implantacao-banco-prestadores', label: 'Prestadores', icon: HardHat, menuKey: 'implantacao/banco-prestadores', section: 'Banco de Prestadores' },
     ],
   },
   {
@@ -161,6 +164,8 @@ export function Layout({ children }: LayoutProps) {
     const parentPaths = ['/projetos', '/manutencao', '/orcamentos', '/startup-projetos', '/sucesso-cliente', '/configuracoes'];
     setExpandedMenus(prev => {
       const toAdd = parentPaths.filter(p => path.startsWith(p) && !prev.includes(p));
+      // Also expand /startup-projetos for /implantacao-* routes
+      if (path.startsWith('/implantacao') && !prev.includes('/startup-projetos')) toAdd.push('/startup-projetos');
       return toAdd.length > 0 ? [...prev, ...toAdd] : prev;
     });
   }, [location.pathname]);
@@ -247,26 +252,32 @@ export function Layout({ children }: LayoutProps) {
                   </CollapsibleTrigger>
                   <CollapsibleContent>
                     <div className="mt-1 ml-4 space-y-1 border-l border-border pl-3">
-                      {item.subItems.map(subItem => {
+                      {item.subItems.map((subItem, idx) => {
                         const SubIcon = subItem.icon;
                         const isSubActive = subItem.path.includes('?')
                           ? location.pathname + location.search === subItem.path
                           : location.pathname === subItem.path && !location.search;
+                        const prevSection = idx > 0 ? item.subItems![idx - 1].section : undefined;
+                        const showSectionHeader = subItem.section && subItem.section !== prevSection;
                         return (
-                          <Link
-                            key={subItem.path}
-                            to={subItem.path}
-                            onClick={handleNavClick}
-                            className={cn(
-                              'flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors',
-                              isSubActive
-                                ? 'bg-primary/10 text-primary font-medium'
-                                : 'text-muted-foreground hover:bg-accent hover:text-foreground'
+                          <div key={subItem.path}>
+                            {showSectionHeader && (
+                              <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-3 pt-2 pb-1">{subItem.section}</p>
                             )}
-                          >
-                            <SubIcon className="w-4 h-4" />
-                            {subItem.label}
-                          </Link>
+                            <Link
+                              to={subItem.path}
+                              onClick={handleNavClick}
+                              className={cn(
+                                'flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors',
+                                isSubActive
+                                  ? 'bg-primary/10 text-primary font-medium'
+                                  : 'text-muted-foreground hover:bg-accent hover:text-foreground'
+                              )}
+                            >
+                              <SubIcon className="w-4 h-4" />
+                              {subItem.label}
+                            </Link>
+                          </div>
                         );
                       })}
                     </div>

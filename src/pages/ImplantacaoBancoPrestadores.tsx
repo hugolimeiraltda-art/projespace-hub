@@ -15,6 +15,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { Plus, Search, Upload, FileText, Trash2, User, Building2, Edit, Eye } from 'lucide-react';
 import { format } from 'date-fns';
+import { Checkbox } from '@/components/ui/checkbox';
 
 interface Prestador {
   id: string;
@@ -41,6 +42,9 @@ interface Prestador {
   pix: string | null;
   especialidade: string | null;
   observacoes: string | null;
+  empresa: string[] | null;
+  praca: string[] | null;
+  produtos_homologados: string[] | null;
   ativo: boolean;
   created_at: string;
 }
@@ -54,6 +58,22 @@ interface PrestadorDoc {
   tamanho: number | null;
   created_at: string;
 }
+
+const EMPRESAS = ['Graber', 'Emive'];
+const PRACAS = ['SPO', 'VIX', 'RJO', 'BHZ'];
+const PRODUTOS_HOMOLOGADOS = [
+  'Portaria Digital',
+  'Portaria Presencial',
+  'Portaria Expressa',
+  'Totens - Emive Vision',
+  'Infraestrutura Grande Porte Subterrânea e Aérea',
+  'Infraestrutura Médio Porte',
+  'Fibra Óptica',
+  'Rádios',
+  'Painéis Fotovoltaicos',
+  'Laços Indutivos',
+];
+
 
 const ESTADOS = ['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO'];
 
@@ -81,6 +101,9 @@ const emptyForm = {
   pix: '',
   especialidade: '',
   observacoes: '',
+  empresa: [] as string[],
+  praca: [] as string[],
+  produtos_homologados: [] as string[],
 };
 
 export default function ImplantacaoBancoPrestadores() {
@@ -141,6 +164,9 @@ export default function ImplantacaoBancoPrestadores() {
       pix: p.pix || '',
       especialidade: p.especialidade || '',
       observacoes: p.observacoes || '',
+      empresa: p.empresa || [],
+      praca: p.praca || [],
+      produtos_homologados: p.produtos_homologados || [],
     });
     setDialogOpen(true);
   };
@@ -177,6 +203,9 @@ export default function ImplantacaoBancoPrestadores() {
         pix: form.pix || null,
         especialidade: form.especialidade || null,
         observacoes: form.observacoes || null,
+        empresa: form.empresa.length > 0 ? form.empresa : [],
+        praca: form.praca.length > 0 ? form.praca : [],
+        produtos_homologados: form.produtos_homologados.length > 0 ? form.produtos_homologados : [],
         updated_at: new Date().toISOString(),
       };
 
@@ -243,7 +272,7 @@ export default function ImplantacaoBancoPrestadores() {
     (p.especialidade && p.especialidade.toLowerCase().includes(search.toLowerCase()))
   );
 
-  const updateField = (field: string, value: string) => setForm(f => ({ ...f, [field]: value }));
+  const updateField = (field: string, value: any) => setForm(f => ({ ...f, [field]: value }));
 
   return (
     <Layout>
@@ -275,9 +304,9 @@ export default function ImplantacaoBancoPrestadores() {
                 <TableRow>
                   <TableHead>Nome</TableHead>
                   <TableHead>Tipo</TableHead>
-                  <TableHead>CPF/CNPJ</TableHead>
+                  <TableHead>Empresa</TableHead>
+                  <TableHead>Praça</TableHead>
                   <TableHead>Telefone</TableHead>
-                  <TableHead>Especialidade</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="text-right">Ações</TableHead>
                 </TableRow>
@@ -295,9 +324,9 @@ export default function ImplantacaoBancoPrestadores() {
                         {p.tipo_pessoa === 'PJ' ? <><Building2 className="w-3 h-3 mr-1 inline" />PJ</> : <><User className="w-3 h-3 mr-1 inline" />PF</>}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-sm text-muted-foreground">{p.cpf_cnpj || '—'}</TableCell>
+                    <TableCell className="text-sm text-muted-foreground">{p.empresa?.join(', ') || '—'}</TableCell>
+                    <TableCell className="text-sm text-muted-foreground">{p.praca?.join(', ') || '—'}</TableCell>
                     <TableCell className="text-sm text-muted-foreground">{p.telefone || '—'}</TableCell>
-                    <TableCell className="text-sm text-muted-foreground">{p.especialidade || '—'}</TableCell>
                     <TableCell>
                       <Badge variant={p.ativo ? 'default' : 'secondary'} className="text-[10px]">
                         {p.ativo ? 'Ativo' : 'Inativo'}
@@ -445,6 +474,60 @@ export default function ImplantacaoBancoPrestadores() {
                   </div>
                 </div>
 
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider pt-2">Empresa / Praça</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <Label className="mb-2 block">Empresa que atende</Label>
+                    <div className="flex gap-4">
+                      {EMPRESAS.map(emp => (
+                        <label key={emp} className="flex items-center gap-2 text-sm cursor-pointer">
+                          <Checkbox
+                            checked={form.empresa.includes(emp)}
+                            onCheckedChange={(checked) => {
+                              const next = checked ? [...form.empresa, emp] : form.empresa.filter(e => e !== emp);
+                              updateField('empresa', next);
+                            }}
+                          />
+                          {emp}
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <Label className="mb-2 block">Praça</Label>
+                    <div className="flex gap-4">
+                      {PRACAS.map(p => (
+                        <label key={p} className="flex items-center gap-2 text-sm cursor-pointer">
+                          <Checkbox
+                            checked={form.praca.includes(p)}
+                            onCheckedChange={(checked) => {
+                              const next = checked ? [...form.praca, p] : form.praca.filter(x => x !== p);
+                              updateField('praca', next);
+                            }}
+                          />
+                          {p}
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider pt-2">Produtos Homologados</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                  {PRODUTOS_HOMOLOGADOS.map(prod => (
+                    <label key={prod} className="flex items-center gap-2 text-sm cursor-pointer">
+                      <Checkbox
+                        checked={form.produtos_homologados.includes(prod)}
+                        onCheckedChange={(checked) => {
+                          const next = checked ? [...form.produtos_homologados, prod] : form.produtos_homologados.filter(x => x !== prod);
+                          updateField('produtos_homologados', next);
+                        }}
+                      />
+                      {prod}
+                    </label>
+                  ))}
+                </div>
+
                 <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider pt-2">Informações Profissionais</p>
                 <div className="grid grid-cols-1 gap-3">
                   <div>
@@ -497,6 +580,11 @@ export default function ImplantacaoBancoPrestadores() {
                       <div className="col-span-2"><span className="text-muted-foreground text-xs block">Endereço</span>{[selectedPrestador.endereco, selectedPrestador.cidade, selectedPrestador.estado].filter(Boolean).join(', ') || '—'}</div>
                       <div><span className="text-muted-foreground text-xs block">PIX</span>{selectedPrestador.pix || '—'}</div>
                       <div><span className="text-muted-foreground text-xs block">Banco</span>{[selectedPrestador.banco, selectedPrestador.agencia, selectedPrestador.conta].filter(Boolean).join(' / ') || '—'}</div>
+                      <div><span className="text-muted-foreground text-xs block">Empresa</span>{selectedPrestador.empresa?.join(', ') || '—'}</div>
+                      <div><span className="text-muted-foreground text-xs block">Praça</span>{selectedPrestador.praca?.join(', ') || '—'}</div>
+                      <div className="col-span-3"><span className="text-muted-foreground text-xs block">Produtos Homologados</span>
+                        <div className="flex flex-wrap gap-1 mt-1">{selectedPrestador.produtos_homologados?.length ? selectedPrestador.produtos_homologados.map(p => <Badge key={p} variant="outline" className="text-[10px]">{p}</Badge>) : '—'}</div>
+                      </div>
                     </div>
                     {selectedPrestador.observacoes && (
                       <div>

@@ -113,6 +113,7 @@ serve(async (req) => {
           descricao: alerta.mensagem || alerta.descricao || null,
           severidade: alerta.severidade || "media",
           quantidade_ocorrencias: alerta.quantidade_chamados || alerta.quantidade_ocorrencias || 1,
+          origem: alerta.origem || "não informado",
           periodo_referencia: alerta.periodo_dias
             ? `${alerta.periodo_dias} dias (threshold: ${alerta.threshold || "N/A"})`
             : alerta.periodo_referencia || null,

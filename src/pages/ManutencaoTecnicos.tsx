@@ -215,24 +215,37 @@ const ManutencaoTecnicos = () => {
     setViewDialogOpen(true);
   };
 
-  const handleUploadDoc = async (e: React.ChangeEvent<HTMLInputElement>, tecnicoId: string) => {
+  const handleUploadDoc = async (e: React.ChangeEvent<HTMLInputElement>, tecnicoId: string, categoria?: string) => {
     const file = e.target.files?.[0];
     if (!file) return;
     setUploading(true);
+    if (categoria) setUploadingCategory(categoria);
     const filePath = `${tecnicoId}/${Date.now()}_${file.name}`;
     const { error: upErr } = await supabase.storage.from('prestador-documentos').upload(filePath, file);
-    if (upErr) { toast.error('Erro ao enviar arquivo'); setUploading(false); return; }
+    if (upErr) { toast.error('Erro ao enviar arquivo'); setUploading(false); setUploadingCategory(null); return; }
     const { data: urlData } = supabase.storage.from('prestador-documentos').getPublicUrl(filePath);
     await supabase.from('manutencao_tecnico_documentos').insert({
       tecnico_id: tecnicoId,
       nome_arquivo: file.name,
       arquivo_url: urlData.publicUrl,
-      tipo_documento: file.type,
+      tipo_documento: categoria || file.type,
       tamanho: file.size,
     });
     toast.success('Documento enviado!');
     fetchDocs(tecnicoId);
+    if (editingId === tecnicoId) fetchFormDocs(tecnicoId);
     setUploading(false);
+    setUploadingCategory(null);
+    e.target.value = '';
+  };
+
+  const fetchFormDocs = async (tecnicoId: string) => {
+    const { data } = await supabase
+      .from('manutencao_tecnico_documentos')
+      .select('*')
+      .eq('tecnico_id', tecnicoId)
+      .order('created_at', { ascending: false });
+    setFormDocs(data || []);
   };
 
   const handleDeleteDoc = async (docId: string, tecnicoId: string) => {

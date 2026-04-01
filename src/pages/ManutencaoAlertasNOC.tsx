@@ -40,7 +40,7 @@ const severidadeConfig: Record<string, { label: string; variant: "destructive" |
 };
 
 export default function ManutencaoAlertasNOC() {
-  const { profile } = useAuth();
+  const { user } = useAuth();
   const [alertas, setAlertas] = useState<AlertaNOC[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");

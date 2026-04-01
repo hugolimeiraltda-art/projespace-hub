@@ -1337,6 +1337,7 @@ export type Database = {
           historico: Json | null
           id: string
           is_auditoria: boolean | null
+          laudo_fotos: string[] | null
           laudo_texto: string | null
           observacoes_conclusao: string | null
           praca: string | null
@@ -1363,6 +1364,7 @@ export type Database = {
           historico?: Json | null
           id?: string
           is_auditoria?: boolean | null
+          laudo_fotos?: string[] | null
           laudo_texto?: string | null
           observacoes_conclusao?: string | null
           praca?: string | null
@@ -1389,6 +1391,7 @@ export type Database = {
           historico?: Json | null
           id?: string
           is_auditoria?: boolean | null
+          laudo_fotos?: string[] | null
           laudo_texto?: string | null
           observacoes_conclusao?: string | null
           praca?: string | null

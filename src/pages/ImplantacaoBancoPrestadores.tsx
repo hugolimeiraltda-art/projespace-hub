@@ -304,9 +304,9 @@ export default function ImplantacaoBancoPrestadores() {
                 <TableRow>
                   <TableHead>Nome</TableHead>
                   <TableHead>Tipo</TableHead>
-                  <TableHead>CPF/CNPJ</TableHead>
+                  <TableHead>Empresa</TableHead>
+                  <TableHead>Praça</TableHead>
                   <TableHead>Telefone</TableHead>
-                  <TableHead>Especialidade</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="text-right">Ações</TableHead>
                 </TableRow>
@@ -324,9 +324,9 @@ export default function ImplantacaoBancoPrestadores() {
                         {p.tipo_pessoa === 'PJ' ? <><Building2 className="w-3 h-3 mr-1 inline" />PJ</> : <><User className="w-3 h-3 mr-1 inline" />PF</>}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-sm text-muted-foreground">{p.cpf_cnpj || '—'}</TableCell>
+                    <TableCell className="text-sm text-muted-foreground">{p.empresa?.join(', ') || '—'}</TableCell>
+                    <TableCell className="text-sm text-muted-foreground">{p.praca?.join(', ') || '—'}</TableCell>
                     <TableCell className="text-sm text-muted-foreground">{p.telefone || '—'}</TableCell>
-                    <TableCell className="text-sm text-muted-foreground">{p.especialidade || '—'}</TableCell>
                     <TableCell>
                       <Badge variant={p.ativo ? 'default' : 'secondary'} className="text-[10px]">
                         {p.ativo ? 'Ativo' : 'Inativo'}

@@ -14,7 +14,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
-import { Plus, Search, Upload, FileText, Trash2, User, Building2, Edit, Eye } from 'lucide-react';
+import { Plus, Search, Upload, FileText, Trash2, User, Building2, Edit, Eye, Award } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 
 interface Tecnico {
@@ -113,6 +114,7 @@ const emptyForm = {
 
 const ManutencaoTecnicos = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [tecnicos, setTecnicos] = useState<Tecnico[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -428,7 +430,22 @@ const ManutencaoTecnicos = () => {
                 </div>
 
                 <div className="grid grid-cols-1 gap-4 border-t pt-4">
-                  <div><Label>Especialidade</Label><Input value={form.especialidade} onChange={e => updateField('especialidade', e.target.value)} placeholder="Ex: CFTV, controle de acesso, automação..." /></div>
+                  <div>
+                    <Label>Certificações e Homologações</Label>
+                    {editingId ? (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="w-full mt-1 justify-start"
+                        onClick={() => { setDialogOpen(false); navigate(`/manutencao/tecnicos/${editingId}/certificacoes`); }}
+                      >
+                        <Award className="h-4 w-4 mr-2" />
+                        Ver Certificações e Homologações
+                      </Button>
+                    ) : (
+                      <p className="text-sm text-muted-foreground mt-1">Salve o cadastro primeiro para gerenciar certificações.</p>
+                    )}
+                  </div>
                   <div><Label>Observações</Label><Textarea value={form.observacoes} onChange={e => updateField('observacoes', e.target.value)} /></div>
                 </div>
 

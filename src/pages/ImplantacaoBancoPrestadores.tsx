@@ -60,7 +60,21 @@ interface PrestadorDoc {
   created_at: string;
 }
 
-const ESTADOS = ['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO'];
+const EMPRESAS = ['Graber', 'Emive'];
+const PRACAS = ['SPO', 'VIX', 'RJO', 'BHZ'];
+const PRODUTOS_HOMOLOGADOS = [
+  'Portaria Digital',
+  'Portaria Presencial',
+  'Portaria Expressa',
+  'Totens - Emive Vision',
+  'Infraestrutura Grande Porte Subterrânea e Aérea',
+  'Infraestrutura Médio Porte',
+  'Fibra Óptica',
+  'Rádios',
+  'Painéis Fotovoltaicos',
+  'Laços Indutivos',
+];
+
 
 const emptyForm = {
   tipo_pessoa: 'PJ',

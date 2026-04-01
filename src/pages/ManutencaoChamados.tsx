@@ -721,77 +721,165 @@ export default function ManutencaoChamados() {
           </CardContent>
         </Card>
 
-        {/* Table */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Chamados ({filteredChamados.length})</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {loading ? (
-              <div className="flex justify-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-              </div>
-            ) : filteredChamados.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                Nenhum chamado encontrado
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Cliente</TableHead>
-                      <TableHead>Contrato</TableHead>
-                      <TableHead>Tipo</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Praça</TableHead>
-                      <TableHead>Data Agendada</TableHead>
-                      <TableHead>Técnico</TableHead>
-                      <TableHead>Ações</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredChamados.map((chamado) => (
-                      <TableRow key={chamado.id}>
-                        <TableCell className="font-medium max-w-[200px] truncate">
-                          {chamado.razao_social}
-                          {chamado.is_auditoria && (
-                            <Badge variant="outline" className="ml-2 text-xs">Auditoria</Badge>
-                          )}
-                        </TableCell>
-                        <TableCell>{chamado.contrato}</TableCell>
-                        <TableCell>{getTipoBadge(chamado.tipo)}</TableCell>
-                        <TableCell>{getStatusBadge(chamado.status)}</TableCell>
-                        <TableCell>
-                          {chamado.praca ? (
-                            <Badge variant="outline" className="flex items-center gap-1 w-fit">
-                              <MapPin className="h-3 w-3" />
-                              {chamado.praca}
-                            </Badge>
-                          ) : '-'}
-                        </TableCell>
-                        <TableCell>
-                          {format(parseISO(chamado.data_agendada), 'dd/MM/yyyy', { locale: ptBR })}
-                        </TableCell>
-                        <TableCell>{chamado.tecnico_executor || chamado.tecnico_responsavel || '-'}</TableCell>
-                        <TableCell>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleEditChamado(chamado)}
-                          >
-                            <Edit className="h-4 w-4 mr-1" />
-                            Editar
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        {/* Table with Tabs */}
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList>
+            <TabsTrigger value="abertos" className="flex items-center gap-2">
+              <Clock className="h-4 w-4" />
+              Abertos ({chamadosAbertos.length})
+            </TabsTrigger>
+            <TabsTrigger value="concluidos" className="flex items-center gap-2">
+              <CheckCircle className="h-4 w-4" />
+              Concluídos ({chamadosConcluidos.length})
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="abertos">
+            <Card>
+              <CardContent className="pt-6">
+                {loading ? (
+                  <div className="flex justify-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                  </div>
+                ) : chamadosAbertos.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    Nenhum chamado em aberto
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Cliente</TableHead>
+                          <TableHead>Contrato</TableHead>
+                          <TableHead>Tipo</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead>Praça</TableHead>
+                          <TableHead>Data Agendada</TableHead>
+                          <TableHead>Técnico</TableHead>
+                          <TableHead>Ações</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {chamadosAbertos.map((chamado) => (
+                          <TableRow key={chamado.id}>
+                            <TableCell className="font-medium max-w-[200px] truncate">
+                              {chamado.razao_social}
+                              {chamado.is_auditoria && (
+                                <Badge variant="outline" className="ml-2 text-xs">Auditoria</Badge>
+                              )}
+                            </TableCell>
+                            <TableCell>{chamado.contrato}</TableCell>
+                            <TableCell>{getTipoBadge(chamado.tipo)}</TableCell>
+                            <TableCell>{getStatusBadge(chamado.status)}</TableCell>
+                            <TableCell>
+                              {chamado.praca ? (
+                                <Badge variant="outline" className="flex items-center gap-1 w-fit">
+                                  <MapPin className="h-3 w-3" />
+                                  {chamado.praca}
+                                </Badge>
+                              ) : '-'}
+                            </TableCell>
+                            <TableCell>
+                              {format(parseISO(chamado.data_agendada), 'dd/MM/yyyy', { locale: ptBR })}
+                            </TableCell>
+                            <TableCell>{chamado.tecnico_executor || chamado.tecnico_responsavel || '-'}</TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-1">
+                                <Button
+                                  variant="default"
+                                  size="sm"
+                                  onClick={() => handleOpenExec(chamado)}
+                                  className="bg-green-600 hover:bg-green-700"
+                                >
+                                  <PlayCircle className="h-4 w-4 mr-1" />
+                                  Executar
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleEditChamado(chamado)}
+                                >
+                                  <Edit className="h-4 w-4 mr-1" />
+                                  Editar
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="concluidos">
+            <Card>
+              <CardContent className="pt-6">
+                {chamadosConcluidos.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    Nenhum chamado concluído
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Cliente</TableHead>
+                          <TableHead>Contrato</TableHead>
+                          <TableHead>Tipo</TableHead>
+                          <TableHead>Praça</TableHead>
+                          <TableHead>Data Agendada</TableHead>
+                          <TableHead>Data Conclusão</TableHead>
+                          <TableHead>Técnico Executor</TableHead>
+                          <TableHead>Ações</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {chamadosConcluidos.map((chamado) => (
+                          <TableRow key={chamado.id}>
+                            <TableCell className="font-medium max-w-[200px] truncate">
+                              {chamado.razao_social}
+                            </TableCell>
+                            <TableCell>{chamado.contrato}</TableCell>
+                            <TableCell>{getTipoBadge(chamado.tipo)}</TableCell>
+                            <TableCell>
+                              {chamado.praca ? (
+                                <Badge variant="outline" className="flex items-center gap-1 w-fit">
+                                  <MapPin className="h-3 w-3" />
+                                  {chamado.praca}
+                                </Badge>
+                              ) : '-'}
+                            </TableCell>
+                            <TableCell>
+                              {format(parseISO(chamado.data_agendada), 'dd/MM/yyyy', { locale: ptBR })}
+                            </TableCell>
+                            <TableCell>
+                              {chamado.data_conclusao ? format(parseISO(chamado.data_conclusao), 'dd/MM/yyyy', { locale: ptBR }) : '-'}
+                            </TableCell>
+                            <TableCell>{chamado.tecnico_executor || '-'}</TableCell>
+                            <TableCell>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleEditChamado(chamado)}
+                              >
+                                <Edit className="h-4 w-4 mr-1" />
+                                Ver
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
 
         {/* Edit Dialog */}
         <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>

@@ -1536,6 +1536,74 @@ export type Database = {
           },
         ]
       }
+      noc_alertas_reincidencia: {
+        Row: {
+          categoria: string | null
+          contrato: string
+          created_at: string
+          customer_id: string | null
+          dados_extras: Json | null
+          descricao: string | null
+          id: string
+          notificado: boolean
+          periodo_referencia: string | null
+          quantidade_ocorrencias: number | null
+          razao_social: string
+          resolvido: boolean
+          resolvido_at: string | null
+          resolvido_por: string | null
+          severidade: string
+          tipo_alerta: string
+          updated_at: string
+        }
+        Insert: {
+          categoria?: string | null
+          contrato: string
+          created_at?: string
+          customer_id?: string | null
+          dados_extras?: Json | null
+          descricao?: string | null
+          id?: string
+          notificado?: boolean
+          periodo_referencia?: string | null
+          quantidade_ocorrencias?: number | null
+          razao_social: string
+          resolvido?: boolean
+          resolvido_at?: string | null
+          resolvido_por?: string | null
+          severidade?: string
+          tipo_alerta?: string
+          updated_at?: string
+        }
+        Update: {
+          categoria?: string | null
+          contrato?: string
+          created_at?: string
+          customer_id?: string | null
+          dados_extras?: Json | null
+          descricao?: string | null
+          id?: string
+          notificado?: boolean
+          periodo_referencia?: string | null
+          quantidade_ocorrencias?: number | null
+          razao_social?: string
+          resolvido?: boolean
+          resolvido_at?: string | null
+          resolvido_por?: string | null
+          severidade?: string
+          tipo_alerta?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "noc_alertas_reincidencia_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customer_portfolio"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       orcamento_encaminhamentos_engenharia: {
         Row: {
           created_at: string

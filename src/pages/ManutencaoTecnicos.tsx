@@ -123,7 +123,9 @@ const ManutencaoTecnicos = () => {
   const [viewingTecnico, setViewingTecnico] = useState<Tecnico | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [docs, setDocs] = useState<TecnicoDoc[]>([]);
+  const [formDocs, setFormDocs] = useState<TecnicoDoc[]>([]);
   const [uploading, setUploading] = useState(false);
+  const [uploadingCategory, setUploadingCategory] = useState<string | null>(null);
 
   const fetchTecnicos = async () => {
     const { data, error } = await supabase

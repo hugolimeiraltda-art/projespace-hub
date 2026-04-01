@@ -3235,6 +3235,50 @@ export type Database = {
           },
         ]
       }
+      tecnico_certificacoes: {
+        Row: {
+          created_at: string
+          data_homologacao: string | null
+          homologado: boolean
+          id: string
+          modulo: number
+          nome_modulo: string
+          observacoes: string | null
+          tecnico_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          data_homologacao?: string | null
+          homologado?: boolean
+          id?: string
+          modulo: number
+          nome_modulo: string
+          observacoes?: string | null
+          tecnico_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          data_homologacao?: string | null
+          homologado?: boolean
+          id?: string
+          modulo?: number
+          nome_modulo?: string
+          observacoes?: string | null
+          tecnico_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tecnico_certificacoes_tecnico_id_fkey"
+            columns: ["tecnico_id"]
+            isOneToOne: false
+            referencedRelation: "manutencao_tecnicos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_menu_overrides: {
         Row: {
           access_level: Database["public"]["Enums"]["access_level"]

@@ -262,6 +262,7 @@ const ManutencaoTecnicos = () => {
     await supabase.from('manutencao_tecnico_documentos').delete().eq('id', docId);
     toast.success('Documento removido');
     fetchDocs(tecnicoId);
+    fetchFormDocs(tecnicoId);
   };
 
   const handleToggleAtivo = async (t: Tecnico) => {

@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend, LineChart, Line } from 'recharts';
-import { BarChart3, Clock, DollarSign, TrendingUp, Calendar, Building, FileBarChart } from 'lucide-react';
+import { BarChart3, Clock, DollarSign, TrendingUp, Calendar, Building, FileBarChart, Check, X, Save } from 'lucide-react';
 import { format, parseISO, differenceInDays, startOfMonth, addMonths, subMonths, isWithinInterval, endOfMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { PlanejamentoAtivacoes } from '@/components/PlanejamentoAtivacoes';
@@ -15,6 +15,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { MapaRegional } from '@/components/MapaRegional';
 import { MapPin } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
+import { toast } from 'sonner';
 
 interface ProjectData {
   id: string;
@@ -56,6 +59,8 @@ interface ContratoDetalhe {
   dataAtivacao: string | null;
   praca: string;
   tipoObra: string;
+  projectId: string;
+  portfolioProjectId: string | null;
 }
 
 interface PlanData {
@@ -88,6 +93,52 @@ export default function ImplantacaoAnalytics() {
   const [plans, setPlans] = useState<PlanData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedMonth, setSelectedMonth] = useState<number | null>(null);
+  const [activationEdits, setActivationEdits] = useState<Record<string, { confirmed: boolean; newDate: string }>>({});
+  const [savingActivation, setSavingActivation] = useState<string | null>(null);
+
+  const handleActivationConfirmToggle = (projectId: string, currentDate: string | null) => {
+    setActivationEdits(prev => {
+      const existing = prev[projectId];
+      if (existing) {
+        const { [projectId]: _, ...rest } = prev;
+        return rest;
+      }
+      return { ...prev, [projectId]: { confirmed: false, newDate: currentDate ? currentDate.split('T')[0] : '' } };
+    });
+  };
+
+  const handleActivationDateChange = (projectId: string, date: string) => {
+    setActivationEdits(prev => ({
+      ...prev,
+      [projectId]: { ...prev[projectId], newDate: date },
+    }));
+  };
+
+  const handleSaveActivationDate = async (projectId: string, contrato: string) => {
+    const edit = activationEdits[projectId];
+    if (!edit?.newDate) {
+      toast.error('Informe a data de ativação real.');
+      return;
+    }
+    setSavingActivation(projectId);
+    try {
+      const { error } = await supabase
+        .from('customer_portfolio')
+        .update({ data_ativacao: edit.newDate })
+        .eq('project_id', projectId);
+      if (error) throw error;
+      toast.success(`Data de ativação de ${contrato} atualizada.`);
+      setActivationEdits(prev => {
+        const { [projectId]: _, ...rest } = prev;
+        return rest;
+      });
+      fetchData();
+    } catch (err) {
+      toast.error('Erro ao salvar data de ativação.');
+    } finally {
+      setSavingActivation(null);
+    }
+  };
 
   const fetchPlans = useCallback(async () => {
     const { data } = await supabase
@@ -286,6 +337,8 @@ export default function ImplantacaoAnalytics() {
             dataAtivacao: port.data_ativacao || p.prazo_entrega_projeto || null,
             praca: getPraca(port.filial, port.praca),
             tipoObra: p.tipo_obra || 'nova',
+            projectId: p.id,
+            portfolioProjectId: port.project_id,
           });
         }
       });
@@ -609,37 +662,85 @@ export default function ImplantacaoAnalytics() {
                           <TableRow>
                             <TableHead>Condomínio</TableHead>
                             <TableHead>Tipo</TableHead>
-                             <TableHead>Contrato</TableHead>
-                             <TableHead>Data</TableHead>
-                             <TableHead>Praça</TableHead>
-                             <TableHead className="text-right">Venda</TableHead>
-                             <TableHead className="text-right">Mensalidade</TableHead>
-                           </TableRow>
-                         </TableHeader>
-                         <TableBody>
-                           {m.contratos.map((c, j) => (
-                             <TableRow key={j}>
-                               <TableCell className="text-sm font-medium">{c.nome}</TableCell>
-                               <TableCell>
-                                 <Badge variant="outline" className={`text-[10px] ${c.tipoObra === 'acrescimo' ? 'border-chart-4 text-chart-4' : ''}`}>
-                                   {c.tipoObra === 'acrescimo' ? 'Acréscimo' : 'Novo Contrato'}
-                                 </Badge>
-                               </TableCell>
-                               <TableCell className="text-sm text-muted-foreground">{c.contrato}</TableCell>
-                               <TableCell className="text-sm text-muted-foreground">
-                                 {c.dataAtivacao ? format(parseISO(c.dataAtivacao), 'dd/MM/yyyy') : '—'}
-                               </TableCell>
-                               <TableCell>
-                                 <Badge variant="outline" className="text-[10px]">{c.praca}</Badge>
-                               </TableCell>
-                               <TableCell className="text-sm text-right font-medium">
-                                 R$ {c.taxaAtivacao.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                               </TableCell>
-                               <TableCell className="text-sm text-right font-medium">
-                                 R$ {c.mensalidade.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                               </TableCell>
-                            </TableRow>
-                          ))}
+                            <TableHead>Contrato</TableHead>
+                            <TableHead>Data Prevista</TableHead>
+                            <TableHead>Ativação Confirmada</TableHead>
+                            <TableHead>Praça</TableHead>
+                            <TableHead className="text-right">Venda</TableHead>
+                            <TableHead className="text-right">Mensalidade</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {m.contratos.map((c, j) => {
+                            const edit = activationEdits[c.projectId];
+                            const isEditing = !!edit;
+                            return (
+                              <TableRow key={j}>
+                                <TableCell className="text-sm font-medium">{c.nome}</TableCell>
+                                <TableCell>
+                                  <Badge variant="outline" className={`text-[10px] ${c.tipoObra === 'acrescimo' ? 'border-chart-4 text-chart-4' : ''}`}>
+                                    {c.tipoObra === 'acrescimo' ? 'Acréscimo' : 'Novo Contrato'}
+                                  </Badge>
+                                </TableCell>
+                                <TableCell className="text-sm text-muted-foreground">{c.contrato}</TableCell>
+                                <TableCell className="text-sm text-muted-foreground">
+                                  {c.dataAtivacao ? format(parseISO(c.dataAtivacao), 'dd/MM/yyyy') : '—'}
+                                </TableCell>
+                                <TableCell>
+                                  {!isEditing ? (
+                                    <div className="flex items-center gap-2">
+                                      <span className="flex items-center gap-1 text-xs text-chart-2 font-medium">
+                                        <Check className="w-3.5 h-3.5" /> Confirmado
+                                      </span>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="h-6 px-2 text-[10px] text-muted-foreground hover:text-destructive"
+                                        onClick={() => handleActivationConfirmToggle(c.projectId, c.dataAtivacao)}
+                                      >
+                                        Alterar data
+                                      </Button>
+                                    </div>
+                                  ) : (
+                                    <div className="flex items-center gap-2">
+                                      <Input
+                                        type="date"
+                                        value={edit.newDate}
+                                        onChange={(e) => handleActivationDateChange(c.projectId, e.target.value)}
+                                        className="h-7 text-xs w-36"
+                                      />
+                                      <Button
+                                        variant="default"
+                                        size="sm"
+                                        className="h-7 px-2"
+                                        disabled={savingActivation === c.projectId}
+                                        onClick={() => handleSaveActivationDate(c.projectId, c.contrato)}
+                                      >
+                                        <Save className="w-3.5 h-3.5" />
+                                      </Button>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="h-7 px-2"
+                                        onClick={() => handleActivationConfirmToggle(c.projectId, c.dataAtivacao)}
+                                      >
+                                        <X className="w-3.5 h-3.5" />
+                                      </Button>
+                                    </div>
+                                  )}
+                                </TableCell>
+                                <TableCell>
+                                  <Badge variant="outline" className="text-[10px]">{c.praca}</Badge>
+                                </TableCell>
+                                <TableCell className="text-sm text-right font-medium">
+                                  R$ {c.taxaAtivacao.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                </TableCell>
+                                <TableCell className="text-sm text-right font-medium">
+                                  R$ {c.mensalidade.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                </TableCell>
+                              </TableRow>
+                            );
+                          })}
                         </TableBody>
                       </Table>
                     </div>

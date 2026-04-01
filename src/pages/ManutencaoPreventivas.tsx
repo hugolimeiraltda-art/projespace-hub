@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Calendar, Search, Bell, Edit, Trash2, MapPin, User, AlertTriangle, CalendarDays, BarChart3 } from 'lucide-react';
+import { Plus, Calendar, Search, Bell, Edit, Trash2, MapPin, User, AlertTriangle, CalendarDays, BarChart3, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import { format, differenceInHours, parseISO, addMonths, addWeeks, isToday, isSameMonth, startOfMonth, endOfMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { ScrollArea } from '@/components/ui/scroll-area';

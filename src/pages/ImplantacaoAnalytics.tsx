@@ -662,37 +662,85 @@ export default function ImplantacaoAnalytics() {
                           <TableRow>
                             <TableHead>Condomínio</TableHead>
                             <TableHead>Tipo</TableHead>
-                             <TableHead>Contrato</TableHead>
-                             <TableHead>Data</TableHead>
-                             <TableHead>Praça</TableHead>
-                             <TableHead className="text-right">Venda</TableHead>
-                             <TableHead className="text-right">Mensalidade</TableHead>
-                           </TableRow>
-                         </TableHeader>
-                         <TableBody>
-                           {m.contratos.map((c, j) => (
-                             <TableRow key={j}>
-                               <TableCell className="text-sm font-medium">{c.nome}</TableCell>
-                               <TableCell>
-                                 <Badge variant="outline" className={`text-[10px] ${c.tipoObra === 'acrescimo' ? 'border-chart-4 text-chart-4' : ''}`}>
-                                   {c.tipoObra === 'acrescimo' ? 'Acréscimo' : 'Novo Contrato'}
-                                 </Badge>
-                               </TableCell>
-                               <TableCell className="text-sm text-muted-foreground">{c.contrato}</TableCell>
-                               <TableCell className="text-sm text-muted-foreground">
-                                 {c.dataAtivacao ? format(parseISO(c.dataAtivacao), 'dd/MM/yyyy') : '—'}
-                               </TableCell>
-                               <TableCell>
-                                 <Badge variant="outline" className="text-[10px]">{c.praca}</Badge>
-                               </TableCell>
-                               <TableCell className="text-sm text-right font-medium">
-                                 R$ {c.taxaAtivacao.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                               </TableCell>
-                               <TableCell className="text-sm text-right font-medium">
-                                 R$ {c.mensalidade.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                               </TableCell>
-                            </TableRow>
-                          ))}
+                            <TableHead>Contrato</TableHead>
+                            <TableHead>Data Prevista</TableHead>
+                            <TableHead>Ativação Confirmada</TableHead>
+                            <TableHead>Praça</TableHead>
+                            <TableHead className="text-right">Venda</TableHead>
+                            <TableHead className="text-right">Mensalidade</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {m.contratos.map((c, j) => {
+                            const edit = activationEdits[c.projectId];
+                            const isEditing = !!edit;
+                            return (
+                              <TableRow key={j}>
+                                <TableCell className="text-sm font-medium">{c.nome}</TableCell>
+                                <TableCell>
+                                  <Badge variant="outline" className={`text-[10px] ${c.tipoObra === 'acrescimo' ? 'border-chart-4 text-chart-4' : ''}`}>
+                                    {c.tipoObra === 'acrescimo' ? 'Acréscimo' : 'Novo Contrato'}
+                                  </Badge>
+                                </TableCell>
+                                <TableCell className="text-sm text-muted-foreground">{c.contrato}</TableCell>
+                                <TableCell className="text-sm text-muted-foreground">
+                                  {c.dataAtivacao ? format(parseISO(c.dataAtivacao), 'dd/MM/yyyy') : '—'}
+                                </TableCell>
+                                <TableCell>
+                                  {!isEditing ? (
+                                    <div className="flex items-center gap-2">
+                                      <span className="flex items-center gap-1 text-xs text-chart-2 font-medium">
+                                        <Check className="w-3.5 h-3.5" /> Confirmado
+                                      </span>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="h-6 px-2 text-[10px] text-muted-foreground hover:text-destructive"
+                                        onClick={() => handleActivationConfirmToggle(c.projectId, c.dataAtivacao)}
+                                      >
+                                        Alterar data
+                                      </Button>
+                                    </div>
+                                  ) : (
+                                    <div className="flex items-center gap-2">
+                                      <Input
+                                        type="date"
+                                        value={edit.newDate}
+                                        onChange={(e) => handleActivationDateChange(c.projectId, e.target.value)}
+                                        className="h-7 text-xs w-36"
+                                      />
+                                      <Button
+                                        variant="default"
+                                        size="sm"
+                                        className="h-7 px-2"
+                                        disabled={savingActivation === c.projectId}
+                                        onClick={() => handleSaveActivationDate(c.projectId, c.contrato)}
+                                      >
+                                        <Save className="w-3.5 h-3.5" />
+                                      </Button>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="h-7 px-2"
+                                        onClick={() => handleActivationConfirmToggle(c.projectId, c.dataAtivacao)}
+                                      >
+                                        <X className="w-3.5 h-3.5" />
+                                      </Button>
+                                    </div>
+                                  )}
+                                </TableCell>
+                                <TableCell>
+                                  <Badge variant="outline" className="text-[10px]">{c.praca}</Badge>
+                                </TableCell>
+                                <TableCell className="text-sm text-right font-medium">
+                                  R$ {c.taxaAtivacao.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                </TableCell>
+                                <TableCell className="text-sm text-right font-medium">
+                                  R$ {c.mensalidade.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                </TableCell>
+                              </TableRow>
+                            );
+                          })}
                         </TableBody>
                       </Table>
                     </div>

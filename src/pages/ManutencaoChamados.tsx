@@ -946,6 +946,97 @@ export default function ManutencaoChamados() {
             </div>
           </DialogContent>
         </Dialog>
+
+        {/* Execution Dialog */}
+        <Dialog open={execDialogOpen} onOpenChange={setExecDialogOpen}>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <PlayCircle className="h-5 w-5 text-green-600" />
+                Executar Chamado - {selectedChamado?.razao_social}
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="exec-tecnico">Técnico Executor *</Label>
+                  <Input
+                    id="exec-tecnico"
+                    value={execForm.tecnico_executor}
+                    onChange={(e) => setExecForm(prev => ({ ...prev, tecnico_executor: e.target.value }))}
+                    placeholder="Nome do técnico que executou"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="exec-cliente">Cliente que Acompanhou</Label>
+                  <Input
+                    id="exec-cliente"
+                    value={execForm.cliente_acompanhante}
+                    onChange={(e) => setExecForm(prev => ({ ...prev, cliente_acompanhante: e.target.value }))}
+                    placeholder="Nome do representante do cliente"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="exec-laudo">Laudo / Descrição da Execução</Label>
+                <Textarea
+                  id="exec-laudo"
+                  value={execForm.laudo_texto}
+                  onChange={(e) => setExecForm(prev => ({ ...prev, laudo_texto: e.target.value }))}
+                  placeholder="Descreva o que foi realizado na visita..."
+                  rows={5}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Fotos do Laudo</Label>
+                <div className="flex flex-wrap gap-3">
+                  {execFotos.map((url, idx) => (
+                    <div key={idx} className="relative group w-24 h-24 rounded-md overflow-hidden border">
+                      <img src={url} alt={`Foto ${idx + 1}`} className="w-full h-full object-cover" />
+                      <button
+                        type="button"
+                        onClick={() => setExecFotos(prev => prev.filter((_, i) => i !== idx))}
+                        className="absolute top-1 right-1 bg-destructive text-destructive-foreground rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ))}
+                  <label className="w-24 h-24 rounded-md border-2 border-dashed border-muted-foreground/30 flex flex-col items-center justify-center cursor-pointer hover:border-primary transition-colors">
+                    {uploadingFoto ? (
+                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+                    ) : (
+                      <>
+                        <Image className="h-6 w-6 text-muted-foreground" />
+                        <span className="text-xs text-muted-foreground mt-1">Adicionar</span>
+                      </>
+                    )}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      className="hidden"
+                      onChange={handleUploadFoto}
+                      disabled={uploadingFoto}
+                    />
+                  </label>
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2">
+                <Button type="button" variant="outline" onClick={() => setExecDialogOpen(false)}>
+                  Cancelar
+                </Button>
+                <Button onClick={handleExecSubmit} className="bg-green-600 hover:bg-green-700">
+                  <CheckCircle className="h-4 w-4 mr-2" />
+                  Concluir Chamado
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </Layout>
   );

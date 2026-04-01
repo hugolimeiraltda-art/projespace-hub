@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Calendar, Search, Bell, Edit, Trash2, MapPin, User, AlertTriangle, CalendarDays, BarChart3 } from 'lucide-react';
+import { Plus, Calendar, Search, Bell, Edit, Trash2, MapPin, User, AlertTriangle, CalendarDays, BarChart3, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import { format, differenceInHours, parseISO, addMonths, addWeeks, isToday, isSameMonth, startOfMonth, endOfMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -79,6 +79,10 @@ export default function ManutencaoPreventivas() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterPraca, setFilterPraca] = useState<string>('all');
   const [filterSupervisor, setFilterSupervisor] = useState<string>('all');
+  const [filterFrequencia, setFilterFrequencia] = useState<string>('all');
+  const [filterTecnico, setFilterTecnico] = useState<string>('all');
+  const [sortColumn, setSortColumn] = useState<string>('proxima_execucao');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
 
   // Form state
   const [formData, setFormData] = useState({
@@ -309,9 +313,42 @@ export default function ManutencaoPreventivas() {
     
     const matchesPraca = filterPraca === 'all' || agenda.praca === filterPraca;
     const matchesSupervisor = filterSupervisor === 'all' || agenda.supervisor_responsavel_id === filterSupervisor;
+    const matchesFrequencia = filterFrequencia === 'all' || agenda.frequencia === filterFrequencia;
+    const matchesTecnico = filterTecnico === 'all' || (agenda.tecnico_responsavel || '') === filterTecnico;
 
-    return matchesSearch && matchesPraca && matchesSupervisor;
+    return matchesSearch && matchesPraca && matchesSupervisor && matchesFrequencia && matchesTecnico;
+  }).sort((a, b) => {
+    const dir = sortDirection === 'asc' ? 1 : -1;
+    switch (sortColumn) {
+      case 'razao_social': return a.razao_social.localeCompare(b.razao_social) * dir;
+      case 'contrato': return a.contrato.localeCompare(b.contrato) * dir;
+      case 'praca': return (a.praca || '').localeCompare(b.praca || '') * dir;
+      case 'supervisor': return (a.supervisor_responsavel_nome || '').localeCompare(b.supervisor_responsavel_nome || '') * dir;
+      case 'frequencia': return a.frequencia.localeCompare(b.frequencia) * dir;
+      case 'proxima_execucao': return a.proxima_execucao.localeCompare(b.proxima_execucao) * dir;
+      case 'tecnico': return (a.tecnico_responsavel || '').localeCompare(b.tecnico_responsavel || '') * dir;
+      default: return 0;
+    }
   });
+
+  // Unique technicians for filter
+  const tecnicos = [...new Set(agendas.map(a => a.tecnico_responsavel).filter(Boolean))] as string[];
+
+  const handleSort = (column: string) => {
+    if (sortColumn === column) {
+      setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortColumn(column);
+      setSortDirection('asc');
+    }
+  };
+
+  const SortIcon = ({ column }: { column: string }) => {
+    if (sortColumn !== column) return <ArrowUpDown className="h-3 w-3 ml-1 opacity-40" />;
+    return sortDirection === 'asc' 
+      ? <ArrowUp className="h-3 w-3 ml-1" /> 
+      : <ArrowDown className="h-3 w-3 ml-1" />;
+  };
 
   // Check for notifications (48h before)
   const agendasProximas = agendas.filter(agenda => {
@@ -601,9 +638,9 @@ export default function ManutencaoPreventivas() {
                 </div>
               </div>
               <Select value={filterPraca} onValueChange={setFilterPraca}>
-                <SelectTrigger className="w-[180px]">
-                  <MapPin className="h-4 w-4 mr-2" />
-                  <SelectValue placeholder="Filtrar por praça" />
+                <SelectTrigger className="w-[170px]">
+                  <MapPin className="h-4 w-4 mr-1" />
+                  <SelectValue placeholder="Praça" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Todas as praças</SelectItem>
@@ -613,14 +650,36 @@ export default function ManutencaoPreventivas() {
                 </SelectContent>
               </Select>
               <Select value={filterSupervisor} onValueChange={setFilterSupervisor}>
-                <SelectTrigger className="w-[200px]">
-                  <User className="h-4 w-4 mr-2" />
-                  <SelectValue placeholder="Filtrar por supervisor" />
+                <SelectTrigger className="w-[180px]">
+                  <User className="h-4 w-4 mr-1" />
+                  <SelectValue placeholder="Supervisor" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Todos os supervisores</SelectItem>
+                  <SelectItem value="all">Todos supervisores</SelectItem>
                   {supervisors.map((sup) => (
                     <SelectItem key={sup.id} value={sup.id}>{sup.nome}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={filterFrequencia} onValueChange={setFilterFrequencia}>
+                <SelectTrigger className="w-[160px]">
+                  <SelectValue placeholder="Frequência" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todas frequências</SelectItem>
+                  {FREQUENCIAS.map((f) => (
+                    <SelectItem key={f.value} value={f.value}>{f.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={filterTecnico} onValueChange={setFilterTecnico}>
+                <SelectTrigger className="w-[170px]">
+                  <SelectValue placeholder="Técnico" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos técnicos</SelectItem>
+                  {tecnicos.map((t) => (
+                    <SelectItem key={t} value={t}>{t}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -647,13 +706,27 @@ export default function ManutencaoPreventivas() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Cliente</TableHead>
-                      <TableHead>Contrato</TableHead>
-                      <TableHead>Praça</TableHead>
-                      <TableHead>Supervisor</TableHead>
-                      <TableHead>Frequência</TableHead>
-                      <TableHead>Próxima Execução</TableHead>
-                      <TableHead>Técnico</TableHead>
+                      <TableHead className="cursor-pointer select-none" onClick={() => handleSort('razao_social')}>
+                        <div className="flex items-center">Cliente <SortIcon column="razao_social" /></div>
+                      </TableHead>
+                      <TableHead className="cursor-pointer select-none" onClick={() => handleSort('contrato')}>
+                        <div className="flex items-center">Contrato <SortIcon column="contrato" /></div>
+                      </TableHead>
+                      <TableHead className="cursor-pointer select-none" onClick={() => handleSort('praca')}>
+                        <div className="flex items-center">Praça <SortIcon column="praca" /></div>
+                      </TableHead>
+                      <TableHead className="cursor-pointer select-none" onClick={() => handleSort('supervisor')}>
+                        <div className="flex items-center">Supervisor <SortIcon column="supervisor" /></div>
+                      </TableHead>
+                      <TableHead className="cursor-pointer select-none" onClick={() => handleSort('frequencia')}>
+                        <div className="flex items-center">Frequência <SortIcon column="frequencia" /></div>
+                      </TableHead>
+                      <TableHead className="cursor-pointer select-none" onClick={() => handleSort('proxima_execucao')}>
+                        <div className="flex items-center">Próxima Execução <SortIcon column="proxima_execucao" /></div>
+                      </TableHead>
+                      <TableHead className="cursor-pointer select-none" onClick={() => handleSort('tecnico')}>
+                        <div className="flex items-center">Técnico <SortIcon column="tecnico" /></div>
+                      </TableHead>
                       <TableHead>Ações</TableHead>
                     </TableRow>
                   </TableHeader>

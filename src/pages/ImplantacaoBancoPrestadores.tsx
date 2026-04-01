@@ -317,7 +317,7 @@ export default function ImplantacaoBancoPrestadores() {
 
         {/* Create/Edit Dialog */}
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
+          <DialogContent className="max-w-[95vw] w-full max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>{editingId ? 'Editar Prestador' : 'Novo Prestador'}</DialogTitle>
             </DialogHeader>

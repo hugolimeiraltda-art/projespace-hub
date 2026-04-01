@@ -162,13 +162,22 @@ const ManutencaoTecnicos = () => {
       const { created_by, created_by_name, ...updatePayload } = payload;
       ({ error } = await supabase.from('manutencao_tecnicos').update(updatePayload).eq('id', editingId));
     } else {
-      ({ error } = await supabase.from('manutencao_tecnicos').insert(payload));
+      const { data: insertData, error: insertError } = await supabase.from('manutencao_tecnicos').insert(payload).select().single();
+      error = insertError;
+      if (!insertError && insertData) {
+        toast.success('Técnico cadastrado! Agora você pode anexar documentos.');
+        setEditingId(insertData.id);
+        fetchFormDocs(insertData.id);
+        fetchTecnicos();
+        return;
+      }
     }
     if (error) { toast.error('Erro ao salvar técnico'); return; }
-    toast.success(editingId ? 'Técnico atualizado!' : 'Técnico cadastrado!');
+    toast.success('Técnico atualizado!');
     setDialogOpen(false);
     setForm(emptyForm);
     setEditingId(null);
+    setFormDocs([]);
     fetchTecnicos();
   };
 
@@ -253,6 +262,7 @@ const ManutencaoTecnicos = () => {
     await supabase.from('manutencao_tecnico_documentos').delete().eq('id', docId);
     toast.success('Documento removido');
     fetchDocs(tecnicoId);
+    fetchFormDocs(tecnicoId);
   };
 
   const handleToggleAtivo = async (t: Tecnico) => {
@@ -422,10 +432,14 @@ const ManutencaoTecnicos = () => {
                   <div><Label>Observações</Label><Textarea value={form.observacoes} onChange={e => updateField('observacoes', e.target.value)} /></div>
                 </div>
 
-                {/* Documentos - só aparece em edição */}
-                {editingId && (
-                  <div className="border-t pt-4 space-y-3">
-                    <h3 className="font-semibold text-foreground">Documentos</h3>
+                {/* Documentos */}
+                <div className="border-t pt-4 space-y-3">
+                  <h3 className="font-semibold text-foreground">Documentos</h3>
+                  {!editingId ? (
+                    <p className="text-sm text-muted-foreground bg-muted/30 rounded-lg p-4 text-center">
+                      Salve o cadastro primeiro para anexar documentos.
+                    </p>
+                  ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                       {TIPOS_DOCUMENTO.map(tipo => {
                         const docExistente = formDocs.find(d => d.tipo_documento === tipo.value);
@@ -461,8 +475,8 @@ const ManutencaoTecnicos = () => {
                         );
                       })}
                     </div>
-                  </div>
-                )}
+                  )}
+                </div>
                 <div className="flex justify-end gap-2 pt-4">
                   <Button variant="outline" onClick={() => { setDialogOpen(false); setForm(emptyForm); setEditingId(null); }}>Cancelar</Button>
                   <Button onClick={handleSave}>{editingId ? 'Salvar Alterações' : 'Cadastrar'}</Button>

@@ -217,9 +217,12 @@ export default function ManutencaoAlertasNOC() {
                   <TableHead>Data</TableHead>
                   <TableHead>Contrato</TableHead>
                   <TableHead>Cliente</TableHead>
-                  <TableHead>Categoria</TableHead>
+                  <TableHead>Origem</TableHead>
                   <TableHead>Severidade</TableHead>
                   <TableHead className="text-center">Ocorrências</TableHead>
+                  <TableHead>Período</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Ações</TableHead>
                   <TableHead>Período</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="text-right">Ações</TableHead>

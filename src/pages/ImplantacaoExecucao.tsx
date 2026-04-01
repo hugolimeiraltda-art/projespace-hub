@@ -507,6 +507,28 @@ export default function ImplantacaoExecucao() {
 
       setEtapas(prev => prev ? { ...prev, ...updateData } as ImplantacaoEtapas : null);
 
+      // Auto-create preventive agenda when Etapa 6 is fully completed
+      if (field === 'confirmacao_ativacao_financeira' && value === true && project) {
+        const updatedEtapas = { ...etapas, ...updateData } as ImplantacaoEtapas;
+        const etapa6Complete = nocChamado?.item_6_1_status === 'success' 
+          && updatedEtapas.check_programacao 
+          && updatedEtapas.confirmacao_ativacao_financeira;
+        
+        if (etapa6Complete) {
+          const unidades = (saleForm as any)?.qtd_apartamentos || 0;
+          const contrato = contratoInfo?.contrato || `TEMP-${project.numero_projeto}`;
+          const praca = contratoInfo?.filial || null;
+          
+          createPreventivaOnActivation(
+            id!,
+            project.cliente_condominio_nome,
+            contrato,
+            unidades,
+            praca || undefined,
+          );
+        }
+      }
+
       toast({
         title: 'Salvo',
         description: 'Etapa atualizada com sucesso.',

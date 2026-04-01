@@ -364,6 +364,9 @@ export default function ManutencaoChamados() {
     return matchesSearch && matchesTipo && matchesStatus && matchesPraca && matchesData;
   });
 
+  const chamadosAbertos = filteredChamados.filter(c => c.status !== 'CONCLUIDO' && c.status !== 'CANCELADO');
+  const chamadosConcluidos = filteredChamados.filter(c => c.status === 'CONCLUIDO');
+
   // Dashboard metrics for preventive
   const chamadosPreventivos = chamados.filter(c => c.tipo === 'PREVENTIVO');
   const preventivosConcluidos = chamadosPreventivos.filter(c => c.status === 'CONCLUIDO').length;

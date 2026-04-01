@@ -79,6 +79,10 @@ export default function ManutencaoPreventivas() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterPraca, setFilterPraca] = useState<string>('all');
   const [filterSupervisor, setFilterSupervisor] = useState<string>('all');
+  const [filterFrequencia, setFilterFrequencia] = useState<string>('all');
+  const [filterTecnico, setFilterTecnico] = useState<string>('all');
+  const [sortColumn, setSortColumn] = useState<string>('proxima_execucao');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
 
   // Form state
   const [formData, setFormData] = useState({

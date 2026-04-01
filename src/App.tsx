@@ -43,6 +43,7 @@ import Manutencao from "./pages/Manutencao";
 import ManutencaoPreventivas from "./pages/ManutencaoPreventivas";
 import ManutencaoChamados from "./pages/ManutencaoChamados";
 import ManutencaoPendencias from "./pages/ManutencaoPendencias";
+import ManutencaoAlertasNOC from "./pages/ManutencaoAlertasNOC";
 import Orcamentos from "./pages/Orcamentos";
 import OrcamentoChat from "./pages/OrcamentoChat";
 import OrcamentoProdutos from "./pages/OrcamentoProdutos";

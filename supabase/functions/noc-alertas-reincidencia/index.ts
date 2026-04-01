@@ -14,12 +14,27 @@ serve(async (req) => {
 
   try {
     // Authenticate via EIXONOC API key
-    const nocApiKey = Deno.env.get("EIXONOC_API_KEY");
-    const providedKey =
+    const nocApiKey = Deno.env.get("EIXONOC_API_KEY")?.trim();
+    const providedKey = (
       req.headers.get("x-api-key") ||
-      req.headers.get("authorization")?.replace("Bearer ", "");
+      req.headers.get("authorization")?.replace("Bearer ", "") ||
+      ""
+    ).trim();
 
-    if (!nocApiKey || providedKey !== nocApiKey) {
+    if (!nocApiKey) {
+      console.error("EIXONOC_API_KEY não configurada");
+      return new Response(JSON.stringify({ error: "Server configuration error" }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    if (!providedKey || providedKey !== nocApiKey) {
+      console.error("Webhook NOC não autorizado", {
+        hasProvidedKey: Boolean(providedKey),
+        providedKeyLength: providedKey.length,
+        configuredKeyLength: nocApiKey.length,
+      });
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },

@@ -16,7 +16,6 @@ import { toast } from 'sonner';
 import { Plus, Search, Upload, FileText, Trash2, User, Building2, Edit, Eye } from 'lucide-react';
 import { format } from 'date-fns';
 import { Checkbox } from '@/components/ui/checkbox';
-import { format } from 'date-fns';
 
 interface Prestador {
   id: string;

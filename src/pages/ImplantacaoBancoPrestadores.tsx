@@ -165,6 +165,9 @@ export default function ImplantacaoBancoPrestadores() {
       pix: p.pix || '',
       especialidade: p.especialidade || '',
       observacoes: p.observacoes || '',
+      empresa: p.empresa || [],
+      praca: p.praca || [],
+      produtos_homologados: p.produtos_homologados || [],
     });
     setDialogOpen(true);
   };

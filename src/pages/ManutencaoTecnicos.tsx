@@ -142,7 +142,7 @@ const ManutencaoTecnicos = () => {
     const payload = {
       ...form,
       created_by: user?.id,
-      created_by_name: profile?.nome || user?.email,
+      created_by_name: user?.email,
     };
     let error;
     if (editingId) {

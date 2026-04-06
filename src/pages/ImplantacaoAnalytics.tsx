@@ -57,6 +57,7 @@ interface ContratoDetalhe {
   mensalidade: number;
   taxaAtivacao: number;
   dataAtivacao: string | null;
+  dataBoleto: string | null;
   praca: string;
   tipoObra: string;
   projectId: string;
@@ -89,21 +90,22 @@ export default function ImplantacaoAnalytics() {
   const [projects, setProjects] = useState<ProjectData[]>([]);
   const [portfolio, setPortfolio] = useState<PortfolioData[]>([]);
   const [allPortfolio, setAllPortfolio] = useState<PortfolioData[]>([]);
+  const [etapasMap, setEtapasMap] = useState<Record<string, { data_vencimento_primeiro_boleto: string | null }>>({});
   const [cancelamentos, setCancelamentos] = useState<CancelamentoData[]>([]);
   const [plans, setPlans] = useState<PlanData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedMonth, setSelectedMonth] = useState<number | null>(null);
-  const [activationEdits, setActivationEdits] = useState<Record<string, { confirmed: boolean; newDate: string }>>({});
+  const [activationEdits, setActivationEdits] = useState<Record<string, { confirmed: boolean; newDate: string; boletoDate: string }>>({});
   const [savingActivation, setSavingActivation] = useState<string | null>(null);
 
-  const handleActivationConfirmToggle = (projectId: string, currentDate: string | null) => {
+  const handleActivationConfirmToggle = (projectId: string, currentDate: string | null, currentBoleto: string | null) => {
     setActivationEdits(prev => {
       const existing = prev[projectId];
       if (existing) {
         const { [projectId]: _, ...rest } = prev;
         return rest;
       }
-      return { ...prev, [projectId]: { confirmed: false, newDate: currentDate ? currentDate.split('T')[0] : '' } };
+      return { ...prev, [projectId]: { confirmed: false, newDate: currentDate ? currentDate.split('T')[0] : '', boletoDate: currentBoleto ? currentBoleto.split('T')[0] : '' } };
     });
   };
 
@@ -111,6 +113,13 @@ export default function ImplantacaoAnalytics() {
     setActivationEdits(prev => ({
       ...prev,
       [projectId]: { ...prev[projectId], newDate: date },
+    }));
+  };
+
+  const handleBoletoDateChange = (projectId: string, date: string) => {
+    setActivationEdits(prev => ({
+      ...prev,
+      [projectId]: { ...prev[projectId], boletoDate: date },
     }));
   };
 
@@ -122,19 +131,29 @@ export default function ImplantacaoAnalytics() {
     }
     setSavingActivation(projectId);
     try {
+      // Save data_ativacao on customer_portfolio
       const { error } = await supabase
         .from('customer_portfolio')
         .update({ data_ativacao: edit.newDate })
         .eq('project_id', projectId);
       if (error) throw error;
-      toast.success(`Data de ativação de ${contrato} atualizada.`);
+
+      // Save data_vencimento_primeiro_boleto on implantacao_etapas if provided
+      if (edit.boletoDate) {
+        await supabase
+          .from('implantacao_etapas')
+          .update({ data_vencimento_primeiro_boleto: edit.boletoDate } as any)
+          .eq('project_id', projectId);
+      }
+
+      toast.success(`Dados de ${contrato} atualizados.`);
       setActivationEdits(prev => {
         const { [projectId]: _, ...rest } = prev;
         return rest;
       });
       fetchData();
     } catch (err) {
-      toast.error('Erro ao salvar data de ativação.');
+      toast.error('Erro ao salvar dados.');
     } finally {
       setSavingActivation(null);
     }
@@ -154,7 +173,7 @@ export default function ImplantacaoAnalytics() {
 
   const fetchData = async () => {
     try {
-      const [projectsRes, portfolioRes, allPortfolioRes, cancelamentosRes] = await Promise.all([
+      const [projectsRes, portfolioRes, allPortfolioRes, cancelamentosRes, etapasRes] = await Promise.all([
         supabase
           .from('projects')
           .select('id, numero_projeto, cliente_condominio_nome, implantacao_status, implantacao_started_at, implantacao_completed_at, prazo_entrega_projeto, created_at, tipo_obra')
@@ -170,12 +189,20 @@ export default function ImplantacaoAnalytics() {
         supabase
           .from('customer_cancelamentos')
           .select('id, data_cancelamento, valor_contrato, motivo, customer_id'),
+        supabase
+          .from('implantacao_etapas')
+          .select('project_id, data_vencimento_primeiro_boleto'),
       ]);
 
       if (projectsRes.data) setProjects(projectsRes.data);
       if (portfolioRes.data) setPortfolio(portfolioRes.data);
       if (allPortfolioRes.data) setAllPortfolio(allPortfolioRes.data);
       if (cancelamentosRes.data) setCancelamentos(cancelamentosRes.data);
+      if (etapasRes.data) {
+        const map: Record<string, { data_vencimento_primeiro_boleto: string | null }> = {};
+        (etapasRes.data as any[]).forEach((e: any) => { map[e.project_id] = { data_vencimento_primeiro_boleto: e.data_vencimento_primeiro_boleto }; });
+        setEtapasMap(map);
+      }
     } catch (error) {
       console.error('Error:', error);
     } finally {
@@ -336,6 +363,7 @@ export default function ImplantacaoAnalytics() {
             dataAtivacao: port.data_ativacao || p.prazo_entrega_projeto || null,
             praca: getPraca(port.filial, port.praca),
             tipoObra: p.tipo_obra || 'nova',
+            dataBoleto: etapasMap[p.id]?.data_vencimento_primeiro_boleto || null,
             projectId: p.id,
             portfolioProjectId: port.project_id,
           });
@@ -663,7 +691,7 @@ export default function ImplantacaoAnalytics() {
                             <TableHead>Tipo</TableHead>
                             <TableHead>Contrato</TableHead>
                             <TableHead>Data Prevista</TableHead>
-                            <TableHead>Ativação Confirmada</TableHead>
+                            <TableHead>Ativação / Boleto</TableHead>
                             <TableHead>Praça</TableHead>
                             <TableHead className="text-right">Venda</TableHead>
                             <TableHead className="text-right">Mensalidade</TableHead>
@@ -687,44 +715,65 @@ export default function ImplantacaoAnalytics() {
                                 </TableCell>
                                 <TableCell>
                                   {!isEditing ? (
-                                    <div className="flex items-center gap-2">
-                                      <span className="flex items-center gap-1 text-xs text-chart-2 font-medium">
-                                        <Check className="w-3.5 h-3.5" /> Confirmado
-                                      </span>
-                                      <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        className="h-6 px-2 text-[10px] text-muted-foreground hover:text-destructive"
-                                        onClick={() => handleActivationConfirmToggle(c.projectId, c.dataAtivacao)}
-                                      >
-                                        Alterar data
-                                      </Button>
+                                    <div className="space-y-1">
+                                      <div className="flex items-center gap-2">
+                                        <span className="flex items-center gap-1 text-xs text-chart-2 font-medium">
+                                          <Check className="w-3.5 h-3.5" /> Confirmado
+                                        </span>
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          className="h-6 px-2 text-[10px] text-muted-foreground hover:text-destructive"
+                                          onClick={() => handleActivationConfirmToggle(c.projectId, c.dataAtivacao, c.dataBoleto)}
+                                        >
+                                          Alterar
+                                        </Button>
+                                      </div>
+                                      {c.dataBoleto && (
+                                        <p className="text-[10px] text-muted-foreground">
+                                          Boleto: {format(parseISO(c.dataBoleto), 'dd/MM/yyyy')}
+                                        </p>
+                                      )}
                                     </div>
                                   ) : (
-                                    <div className="flex items-center gap-2">
-                                      <Input
-                                        type="date"
-                                        value={edit.newDate}
-                                        onChange={(e) => handleActivationDateChange(c.projectId, e.target.value)}
-                                        className="h-7 text-xs w-36"
-                                      />
-                                      <Button
-                                        variant="default"
-                                        size="sm"
-                                        className="h-7 px-2"
-                                        disabled={savingActivation === c.projectId}
-                                        onClick={() => handleSaveActivationDate(c.projectId, c.contrato)}
-                                      >
-                                        <Save className="w-3.5 h-3.5" />
-                                      </Button>
-                                      <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        className="h-7 px-2"
-                                        onClick={() => handleActivationConfirmToggle(c.projectId, c.dataAtivacao)}
-                                      >
-                                        <X className="w-3.5 h-3.5" />
-                                      </Button>
+                                    <div className="space-y-2">
+                                      <div>
+                                        <p className="text-[10px] text-muted-foreground mb-0.5">Data Ativação</p>
+                                        <Input
+                                          type="date"
+                                          value={edit.newDate}
+                                          onChange={(e) => handleActivationDateChange(c.projectId, e.target.value)}
+                                          className="h-7 text-xs w-36"
+                                        />
+                                      </div>
+                                      <div>
+                                        <p className="text-[10px] text-muted-foreground mb-0.5">Venc. 1º Boleto</p>
+                                        <Input
+                                          type="date"
+                                          value={edit.boletoDate}
+                                          onChange={(e) => handleBoletoDateChange(c.projectId, e.target.value)}
+                                          className="h-7 text-xs w-36"
+                                        />
+                                      </div>
+                                      <div className="flex items-center gap-1">
+                                        <Button
+                                          variant="default"
+                                          size="sm"
+                                          className="h-7 px-2"
+                                          disabled={savingActivation === c.projectId}
+                                          onClick={() => handleSaveActivationDate(c.projectId, c.contrato)}
+                                        >
+                                          <Save className="w-3.5 h-3.5 mr-1" /> Salvar
+                                        </Button>
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          className="h-7 px-2"
+                                          onClick={() => handleActivationConfirmToggle(c.projectId, c.dataAtivacao, c.dataBoleto)}
+                                        >
+                                          <X className="w-3.5 h-3.5" />
+                                        </Button>
+                                      </div>
                                     </div>
                                   )}
                                 </TableCell>

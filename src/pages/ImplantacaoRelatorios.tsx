@@ -68,16 +68,22 @@ export default function ImplantacaoRelatorios() {
 
   const fetchData = async () => {
     setLoading(true);
-    const [projRes, portRes, cancRes, planRes] = await Promise.all([
+    const [projRes, portRes, cancRes, planRes, etapasRes] = await Promise.all([
       supabase.from('projects').select('id, numero_projeto, cliente_condominio_nome, implantacao_status, implantacao_started_at, implantacao_completed_at, prazo_entrega_projeto, created_at, tipo_obra').eq('sale_status', 'CONCLUIDO'),
       supabase.from('customer_portfolio').select('project_id, mensalidade, taxa_ativacao, data_ativacao, contrato, razao_social, filial, praca, status_implantacao'),
       supabase.from('customer_cancelamentos').select('id, data_cancelamento, valor_contrato, motivo, customer_id'),
       supabase.from('implantacao_planejamento_ativacoes').select('*'),
+      supabase.from('implantacao_etapas').select('project_id, data_vencimento_primeiro_boleto'),
     ]);
     setProjects(projRes.data || []);
     setPortfolio(portRes.data || []);
     setCancelamentos(cancRes.data || []);
     setPlans(planRes.data || []);
+    if (etapasRes.data) {
+      const map: Record<string, string | null> = {};
+      (etapasRes.data as any[]).forEach((e: any) => { map[e.project_id] = e.data_vencimento_primeiro_boleto; });
+      setEtapasMap(map);
+    }
     setLoading(false);
   };
 

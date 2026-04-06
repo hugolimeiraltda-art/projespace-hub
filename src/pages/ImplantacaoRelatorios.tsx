@@ -9,7 +9,7 @@ import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, FileText, FileSpreadsheet, Download, Calendar, Building,
-  TrendingUp, BarChart3, MapPin, Clock, Filter, ChevronDown, ChevronRight,
+  TrendingUp, BarChart3, MapPin, Clock, Filter, ChevronDown, ChevronRight, DollarSign,
 } from 'lucide-react';
 import { format, parseISO, differenceInDays, differenceInMonths, startOfMonth, endOfMonth, eachMonthOfInterval, isWithinInterval, subMonths, addMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -38,10 +38,11 @@ const formatCurrency = (v: number) =>
 
 
 
-type ReportType = 'resumo_mensal' | 'por_praca' | 'historico' | 'indicadores';
+type ReportType = 'resumo_mensal' | 'por_praca' | 'historico' | 'indicadores' | 'resultado_financeiro';
 
 const REPORT_TYPES: { value: ReportType; label: string; desc: string; icon: typeof BarChart3 }[] = [
   { value: 'resumo_mensal', label: 'Resumo Mensal de Ativações', desc: 'Ativações, churn, receita por mês com comparativo planejado vs realizado', icon: Calendar },
+  { value: 'resultado_financeiro', label: 'Resultado Financeiro', desc: 'Receita ativada vs entrada no caixa por mês (baseado em boletos)', icon: DollarSign },
   { value: 'por_praca', label: 'Relatório por Praça', desc: 'Detalhamento de KPIs separado por BHZ, RIO, VIX, SPO', icon: MapPin },
   { value: 'historico', label: 'Histórico de Projetos', desc: 'Lista completa dos projetos com datas, status e valores', icon: Building },
   { value: 'indicadores', label: 'Indicadores de Desempenho', desc: 'Tempo médio, taxa de conclusão, SLA por período', icon: TrendingUp },
@@ -322,7 +323,112 @@ export default function ImplantacaoRelatorios() {
     };
   }, [filteredProjects, filteredPortfolio]);
 
-  // ========== EXPORT FUNCTIONS ==========
+  // ========== RESULTADO FINANCEIRO ==========
+  const resultadoFinanceiro = useMemo(() => {
+    // For each month in the period, calculate:
+    // 1. Receita Ativada: sum of mensalidade for contracts activated in that month
+    // 2. Receita no Caixa: sum of boleto amounts due in that month
+    //    - First boleto covers activation_date to end_of_month, due on boleto_date
+    //    - Subsequent boletos cover full months, due on same day of following months
+
+    return periodMonths.map(month => {
+      const ms = startOfMonth(month);
+      const me = endOfMonth(month);
+      const mesLabel = format(month, 'MMM/yyyy', { locale: ptBR });
+
+      // Receita Ativada: contracts where data_ativacao falls in this month
+      let receitaAtivada = 0;
+      let countAtivados = 0;
+      const detalhesAtivados: { cliente: string; contrato: string; mensalidade: number; dataAtivacao: string; praca: string }[] = [];
+
+      filteredPortfolio.forEach(p => {
+        if (!p.data_ativacao) return;
+        const actDate = parseISO(p.data_ativacao);
+        if (isWithinInterval(actDate, { start: ms, end: me })) {
+          receitaAtivada += p.mensalidade || 0;
+          countAtivados++;
+          const proj = p.project_id ? projectMap[p.project_id] : null;
+          detalhesAtivados.push({
+            cliente: p.razao_social || proj?.cliente_condominio_nome || '—',
+            contrato: p.contrato || '—',
+            mensalidade: p.mensalidade || 0,
+            dataAtivacao: format(actDate, 'dd/MM/yyyy'),
+            praca: getPraca(p.filial, p.praca),
+          });
+        }
+      });
+
+      // Receita no Caixa: boletos that are due in this month
+      let receitaCaixa = 0;
+      const detalhesCaixa: { cliente: string; contrato: string; valor: number; referencia: string; vencimento: string; praca: string }[] = [];
+
+      filteredPortfolio.forEach(p => {
+        if (!p.data_ativacao || !p.project_id) return;
+        const boletoDateStr = etapasMap[p.project_id];
+        if (!boletoDateStr) return;
+
+        const actDate = parseISO(p.data_ativacao);
+        const firstBoletoDate = parseISO(boletoDateStr);
+        const mensalidade = p.mensalidade || 0;
+        if (mensalidade === 0) return;
+
+        const boletoDay = firstBoletoDate.getDate();
+        const proj = p.project_id ? projectMap[p.project_id] : null;
+        const cliente = p.razao_social || proj?.cliente_condominio_nome || '—';
+        const praca = getPraca(p.filial, p.praca);
+
+        // First boleto: proportional, due on firstBoletoDate
+        if (isWithinInterval(firstBoletoDate, { start: ms, end: me })) {
+          const lastDayOfActMonth = endOfMonth(actDate).getDate();
+          const daysActive = lastDayOfActMonth - actDate.getDate() + 1;
+          const proporcional = Math.round((mensalidade * daysActive / lastDayOfActMonth) * 100) / 100;
+          receitaCaixa += proporcional;
+          const refStart = format(actDate, 'dd/MM');
+          const refEnd = format(endOfMonth(actDate), 'dd/MM');
+          detalhesCaixa.push({
+            cliente, contrato: p.contrato || '—', valor: proporcional,
+            referencia: `${refStart} a ${refEnd}`, vencimento: format(firstBoletoDate, 'dd/MM/yyyy'), praca,
+          });
+        }
+
+        // Subsequent boletos: full month, due on boletoDay of following months
+        // The 2nd boleto covers the month after activation, due boletoDay of month+2, etc.
+        const actMonth = startOfMonth(actDate);
+        // Generate boletos for up to 24 months ahead
+        for (let i = 1; i <= 24; i++) {
+          const refMonth = addMonths(actMonth, i); // month the boleto covers
+          const dueMonth = addMonths(refMonth, 1); // due in the next month
+          const maxDayInDueMonth = endOfMonth(dueMonth).getDate();
+          const actualDay = Math.min(boletoDay, maxDayInDueMonth);
+          const dueDate = new Date(dueMonth.getFullYear(), dueMonth.getMonth(), actualDay);
+
+          if (isWithinInterval(dueDate, { start: ms, end: me })) {
+            receitaCaixa += mensalidade;
+            detalhesCaixa.push({
+              cliente, contrato: p.contrato || '—', valor: mensalidade,
+              referencia: format(refMonth, 'MMM/yyyy', { locale: ptBR }),
+              vencimento: format(dueDate, 'dd/MM/yyyy'), praca,
+            });
+          }
+          // Stop if due date is past our period
+          if (dueDate > parseISO(dataFim)) break;
+        }
+      });
+
+      const diferenca = receitaCaixa - receitaAtivada;
+
+      return {
+        mes: mesLabel,
+        receitaAtivada,
+        countAtivados,
+        receitaCaixa: Math.round(receitaCaixa * 100) / 100,
+        diferenca: Math.round(diferenca * 100) / 100,
+        detalhesAtivados,
+        detalhesCaixa,
+      };
+    });
+  }, [periodMonths, filteredPortfolio, etapasMap, projectMap, dataFim]);
+
   const exportPDF = () => {
     const reportLabel = REPORT_TYPES.find(r => r.value === selectedReport)!.label;
     const periodo = `${format(parseISO(dataInicio), 'dd/MM/yyyy')} a ${format(parseISO(dataFim), 'dd/MM/yyyy')}`;
@@ -495,6 +601,135 @@ export default function ImplantacaoRelatorios() {
       );
     }
 
+    if (selectedReport === 'resultado_financeiro') {
+      const totAtivada = resultadoFinanceiro.reduce((s, r) => s + r.receitaAtivada, 0);
+      const totCaixa = resultadoFinanceiro.reduce((s, r) => s + r.receitaCaixa, 0);
+      return (
+        <div className="space-y-6">
+          {/* Summary cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <Card className="p-4">
+              <p className="text-xs text-muted-foreground">Total Receita Ativada</p>
+              <p className="text-lg font-bold text-primary">{formatCurrency(totAtivada)}</p>
+            </Card>
+            <Card className="p-4">
+              <p className="text-xs text-muted-foreground">Total Entrada no Caixa</p>
+              <p className="text-lg font-bold text-chart-2">{formatCurrency(totCaixa)}</p>
+            </Card>
+            <Card className="p-4">
+              <p className="text-xs text-muted-foreground">Diferença (Caixa - Ativada)</p>
+              <p className={`text-lg font-bold ${totCaixa - totAtivada >= 0 ? 'text-chart-2' : 'text-destructive'}`}>
+                {formatCurrency(totCaixa - totAtivada)}
+              </p>
+            </Card>
+          </div>
+
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Mês</TableHead>
+                <TableHead className="text-right">Ativações</TableHead>
+                <TableHead className="text-right">Receita Ativada</TableHead>
+                <TableHead className="text-right">Entrada no Caixa</TableHead>
+                <TableHead className="text-right">Diferença</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {resultadoFinanceiro.map((r, i) => (
+                <>
+                  <TableRow key={i} className="cursor-pointer hover:bg-muted/50" onClick={() => setExpandedMonths(prev => {
+                    const next = new Set(prev);
+                    next.has(i + 1000) ? next.delete(i + 1000) : next.add(i + 1000);
+                    return next;
+                  })}>
+                    <TableCell className="font-medium">
+                      <div className="flex items-center gap-1">
+                        {expandedMonths.has(i + 1000) ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
+                        {r.mes}
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-right font-medium">{r.countAtivados}</TableCell>
+                    <TableCell className="text-right text-primary font-medium">{formatCurrency(r.receitaAtivada)}</TableCell>
+                    <TableCell className="text-right text-chart-2 font-medium">{formatCurrency(r.receitaCaixa)}</TableCell>
+                    <TableCell className={`text-right font-semibold ${r.diferenca >= 0 ? 'text-chart-2' : 'text-destructive'}`}>
+                      {formatCurrency(r.diferenca)}
+                    </TableCell>
+                  </TableRow>
+                  {expandedMonths.has(i + 1000) && (
+                    <TableRow key={`${i}-fin-detail`}>
+                      <TableCell colSpan={5} className="p-0">
+                        <div className="bg-muted/30 px-6 py-3 space-y-4">
+                          {r.detalhesAtivados.length > 0 && (
+                            <div>
+                              <p className="text-xs font-semibold mb-2 text-primary">Receita Ativada neste mês</p>
+                              <Table>
+                                <TableHeader>
+                                  <TableRow>
+                                    <TableHead className="text-xs">Cliente</TableHead>
+                                    <TableHead className="text-xs">Contrato</TableHead>
+                                    <TableHead className="text-xs">Praça</TableHead>
+                                    <TableHead className="text-xs">Data Ativação</TableHead>
+                                    <TableHead className="text-xs text-right">Mensalidade</TableHead>
+                                  </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                  {r.detalhesAtivados.map((d, k) => (
+                                    <TableRow key={k}>
+                                      <TableCell className="text-xs">{d.cliente}</TableCell>
+                                      <TableCell className="text-xs">{d.contrato}</TableCell>
+                                      <TableCell className="text-xs"><Badge variant="outline" className="text-[9px]">{d.praca}</Badge></TableCell>
+                                      <TableCell className="text-xs">{d.dataAtivacao}</TableCell>
+                                      <TableCell className="text-xs text-right">{formatCurrency(d.mensalidade)}</TableCell>
+                                    </TableRow>
+                                  ))}
+                                </TableBody>
+                              </Table>
+                            </div>
+                          )}
+                          {r.detalhesCaixa.length > 0 && (
+                            <div>
+                              <p className="text-xs font-semibold mb-2 text-chart-2">Boletos com vencimento neste mês</p>
+                              <Table>
+                                <TableHeader>
+                                  <TableRow>
+                                    <TableHead className="text-xs">Cliente</TableHead>
+                                    <TableHead className="text-xs">Contrato</TableHead>
+                                    <TableHead className="text-xs">Praça</TableHead>
+                                    <TableHead className="text-xs">Referência</TableHead>
+                                    <TableHead className="text-xs">Vencimento</TableHead>
+                                    <TableHead className="text-xs text-right">Valor</TableHead>
+                                  </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                  {r.detalhesCaixa.map((d, k) => (
+                                    <TableRow key={k}>
+                                      <TableCell className="text-xs">{d.cliente}</TableCell>
+                                      <TableCell className="text-xs">{d.contrato}</TableCell>
+                                      <TableCell className="text-xs"><Badge variant="outline" className="text-[9px]">{d.praca}</Badge></TableCell>
+                                      <TableCell className="text-xs">{d.referencia}</TableCell>
+                                      <TableCell className="text-xs">{d.vencimento}</TableCell>
+                                      <TableCell className="text-xs text-right font-medium">{formatCurrency(d.valor)}</TableCell>
+                                    </TableRow>
+                                  ))}
+                                </TableBody>
+                              </Table>
+                            </div>
+                          )}
+                          {r.detalhesCaixa.length === 0 && r.detalhesAtivados.length === 0 && (
+                            <p className="text-xs text-muted-foreground text-center py-2">Sem movimentação neste mês</p>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      );
+    }
+
     if (selectedReport === 'por_praca') {
       return (
         <Table>
@@ -622,7 +857,7 @@ export default function ImplantacaoRelatorios() {
         </div>
 
         {/* Report selector */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
           {REPORT_TYPES.map(rt => {
             const Icon = rt.icon;
             return (

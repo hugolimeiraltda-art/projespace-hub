@@ -419,27 +419,76 @@ export default function ImplantacaoRelatorios() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {resumoMensal.map((r, i) => (
-              <TableRow key={i}>
-                <TableCell className="font-medium">{r.mes}</TableCell>
-                <TableCell className="text-right">{r.previsto}</TableCell>
-                <TableCell className="text-right text-green-600 font-medium">{r.ativacoes}</TableCell>
-                <TableCell className="text-right text-orange-500">{r.churnPrevisto}</TableCell>
-                <TableCell className="text-right text-destructive">{r.cancelamentos}</TableCell>
-                <TableCell className={`text-right font-semibold ${r.saldo < 0 ? 'text-destructive' : ''}`}>{r.saldo}</TableCell>
-                <TableCell className="text-right">{formatCurrency(r.receitaPrevista)}</TableCell>
-                <TableCell className="text-right">{formatCurrency(r.receitaAtivada)}</TableCell>
-                <TableCell className="text-right">{formatCurrency(r.vendaPrevista)}</TableCell>
-                <TableCell className="text-right">{formatCurrency(r.vendaAtivada)}</TableCell>
-                <TableCell className={`text-right font-semibold ${r.saldoReceita < 0 ? 'text-destructive' : 'text-emerald-600'}`}>{formatCurrency(r.saldoReceita)}</TableCell>
-                <TableCell className="text-right">
-                  {r.atingimento !== null ? (
-                    <Badge variant={r.atingimento >= 100 ? 'default' : r.atingimento >= 50 ? 'secondary' : 'destructive'}>
-                      {r.atingimento}%
-                    </Badge>
-                  ) : '—'}
-                </TableCell>
-              </TableRow>
+            {resumoMensalComDetalhe.map((r, i) => (
+              <>
+                <TableRow key={i} className="cursor-pointer hover:bg-muted/50" onClick={() => setExpandedMonths(prev => {
+                  const next = new Set(prev);
+                  next.has(i) ? next.delete(i) : next.add(i);
+                  return next;
+                })}>
+                  <TableCell className="font-medium">
+                    <div className="flex items-center gap-1">
+                      {expandedMonths.has(i) ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
+                      {r.mes}
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-right">{r.previsto}</TableCell>
+                  <TableCell className="text-right text-green-600 font-medium">{r.ativacoes}</TableCell>
+                  <TableCell className="text-right text-orange-500">{r.churnPrevisto}</TableCell>
+                  <TableCell className="text-right text-destructive">{r.cancelamentos}</TableCell>
+                  <TableCell className={`text-right font-semibold ${r.saldo < 0 ? 'text-destructive' : ''}`}>{r.saldo}</TableCell>
+                  <TableCell className="text-right">{formatCurrency(r.receitaPrevista)}</TableCell>
+                  <TableCell className="text-right">{formatCurrency(r.receitaAtivada)}</TableCell>
+                  <TableCell className="text-right">{formatCurrency(r.vendaPrevista)}</TableCell>
+                  <TableCell className="text-right">{formatCurrency(r.vendaAtivada)}</TableCell>
+                  <TableCell className={`text-right font-semibold ${r.saldoReceita < 0 ? 'text-destructive' : 'text-emerald-600'}`}>{formatCurrency(r.saldoReceita)}</TableCell>
+                  <TableCell className="text-right">
+                    {r.atingimento !== null ? (
+                      <Badge variant={r.atingimento >= 100 ? 'default' : r.atingimento >= 50 ? 'secondary' : 'destructive'}>
+                        {r.atingimento}%
+                      </Badge>
+                    ) : '—'}
+                  </TableCell>
+                </TableRow>
+                {expandedMonths.has(i) && r.detalheAtivacoes.length > 0 && (
+                  <TableRow key={`${i}-detail`}>
+                    <TableCell colSpan={12} className="p-0">
+                      <div className="bg-muted/30 px-6 py-3">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead className="text-xs">Cliente</TableHead>
+                              <TableHead className="text-xs">Contrato</TableHead>
+                              <TableHead className="text-xs">Praça</TableHead>
+                              <TableHead className="text-xs">Data Ativação</TableHead>
+                              <TableHead className="text-xs">Venc. 1º Boleto</TableHead>
+                              <TableHead className="text-xs text-right">Mensalidade</TableHead>
+                              <TableHead className="text-xs text-right">Venda</TableHead>
+                              <TableHead className="text-xs">Status</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {r.detalheAtivacoes.map((d, k) => (
+                              <TableRow key={k}>
+                                <TableCell className="text-xs">{d.cliente}</TableCell>
+                                <TableCell className="text-xs">{d.contrato}</TableCell>
+                                <TableCell className="text-xs"><Badge variant="outline" className="text-[9px]">{d.praca}</Badge></TableCell>
+                                <TableCell className="text-xs">{d.dataAtivacao}</TableCell>
+                                <TableCell className="text-xs font-medium">{d.dataBoleto}</TableCell>
+                                <TableCell className="text-xs text-right">{formatCurrency(d.mensalidade)}</TableCell>
+                                <TableCell className="text-xs text-right">{formatCurrency(d.taxaAtivacao)}</TableCell>
+                                <TableCell className="text-xs">
+                                  <Badge variant={d.status === 'Ativado' ? 'default' : 'secondary'} className="text-[9px]">{d.status}</Badge>
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                )}
+              </>
             ))}
           </TableBody>
         </Table>

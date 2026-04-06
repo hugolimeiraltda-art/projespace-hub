@@ -89,7 +89,7 @@ export default function ImplantacaoAnalytics() {
   const navigate = useNavigate();
   const [projects, setProjects] = useState<ProjectData[]>([]);
   const [portfolio, setPortfolio] = useState<PortfolioData[]>([]);
-  const [allPortfolio, setAllPortfolio] = useState<PortfolioData[]>([]);
+  const [etapasMap, setEtapasMap] = useState<Record<string, { data_vencimento_primeiro_boleto: string | null }>>({});
   const [cancelamentos, setCancelamentos] = useState<CancelamentoData[]>([]);
   const [plans, setPlans] = useState<PlanData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -172,7 +172,7 @@ export default function ImplantacaoAnalytics() {
 
   const fetchData = async () => {
     try {
-      const [projectsRes, portfolioRes, allPortfolioRes, cancelamentosRes] = await Promise.all([
+      const [projectsRes, portfolioRes, allPortfolioRes, cancelamentosRes, etapasRes] = await Promise.all([
         supabase
           .from('projects')
           .select('id, numero_projeto, cliente_condominio_nome, implantacao_status, implantacao_started_at, implantacao_completed_at, prazo_entrega_projeto, created_at, tipo_obra')
@@ -188,12 +188,20 @@ export default function ImplantacaoAnalytics() {
         supabase
           .from('customer_cancelamentos')
           .select('id, data_cancelamento, valor_contrato, motivo, customer_id'),
+        supabase
+          .from('implantacao_etapas')
+          .select('project_id, data_vencimento_primeiro_boleto'),
       ]);
 
       if (projectsRes.data) setProjects(projectsRes.data);
       if (portfolioRes.data) setPortfolio(portfolioRes.data);
       if (allPortfolioRes.data) setAllPortfolio(allPortfolioRes.data);
       if (cancelamentosRes.data) setCancelamentos(cancelamentosRes.data);
+      if (etapasRes.data) {
+        const map: Record<string, { data_vencimento_primeiro_boleto: string | null }> = {};
+        (etapasRes.data as any[]).forEach((e: any) => { map[e.project_id] = { data_vencimento_primeiro_boleto: e.data_vencimento_primeiro_boleto }; });
+        setEtapasMap(map);
+      }
     } catch (error) {
       console.error('Error:', error);
     } finally {

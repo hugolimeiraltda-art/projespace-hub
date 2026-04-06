@@ -197,6 +197,7 @@ export default function ImplantacaoRelatorios() {
           mensalidade: a.mensalidade || 0,
           taxaAtivacao: a.taxa_ativacao || 0,
           dataAtivacao: a.data_ativacao ? format(parseISO(a.data_ativacao), 'dd/MM/yyyy') : '—',
+          dataBoleto: a.project_id && etapasMap[a.project_id] ? format(parseISO(etapasMap[a.project_id]!), 'dd/MM/yyyy') : '—',
           status: isAtivo ? 'Ativado' : 'Previsto',
         };
       });

@@ -14,6 +14,7 @@ import {
 import { format, parseISO, differenceInDays, differenceInMonths, startOfMonth, endOfMonth, eachMonthOfInterval, isWithinInterval, subMonths, addMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -62,6 +63,7 @@ export default function ImplantacaoRelatorios() {
   const [plans, setPlans] = useState<any[]>([]);
   const [etapasMap, setEtapasMap] = useState<Record<string, string | null>>({});
   const [expandedMonths, setExpandedMonths] = useState<Set<number>>(new Set());
+  const [financeiroView, setFinanceiroView] = useState<'geral' | 'ativada' | 'caixa'>('geral');
 
   useEffect(() => {
     fetchData();

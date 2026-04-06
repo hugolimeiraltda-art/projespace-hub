@@ -38,10 +38,11 @@ const formatCurrency = (v: number) =>
 
 
 
-type ReportType = 'resumo_mensal' | 'por_praca' | 'historico' | 'indicadores';
+type ReportType = 'resumo_mensal' | 'por_praca' | 'historico' | 'indicadores' | 'resultado_financeiro';
 
 const REPORT_TYPES: { value: ReportType; label: string; desc: string; icon: typeof BarChart3 }[] = [
   { value: 'resumo_mensal', label: 'Resumo Mensal de Ativações', desc: 'Ativações, churn, receita por mês com comparativo planejado vs realizado', icon: Calendar },
+  { value: 'resultado_financeiro', label: 'Resultado Financeiro', desc: 'Receita ativada vs entrada no caixa por mês (baseado em boletos)', icon: DollarSign },
   { value: 'por_praca', label: 'Relatório por Praça', desc: 'Detalhamento de KPIs separado por BHZ, RIO, VIX, SPO', icon: MapPin },
   { value: 'historico', label: 'Histórico de Projetos', desc: 'Lista completa dos projetos com datas, status e valores', icon: Building },
   { value: 'indicadores', label: 'Indicadores de Desempenho', desc: 'Tempo médio, taxa de conclusão, SLA por período', icon: TrendingUp },

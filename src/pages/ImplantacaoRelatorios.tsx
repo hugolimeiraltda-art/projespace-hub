@@ -857,7 +857,7 @@ export default function ImplantacaoRelatorios() {
         </div>
 
         {/* Report selector */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
           {REPORT_TYPES.map(rt => {
             const Icon = rt.icon;
             return (

@@ -93,17 +93,17 @@ export default function ImplantacaoAnalytics() {
   const [plans, setPlans] = useState<PlanData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedMonth, setSelectedMonth] = useState<number | null>(null);
-  const [activationEdits, setActivationEdits] = useState<Record<string, { confirmed: boolean; newDate: string }>>({});
+  const [activationEdits, setActivationEdits] = useState<Record<string, { confirmed: boolean; newDate: string; boletoDate: string }>>({});
   const [savingActivation, setSavingActivation] = useState<string | null>(null);
 
-  const handleActivationConfirmToggle = (projectId: string, currentDate: string | null) => {
+  const handleActivationConfirmToggle = (projectId: string, currentDate: string | null, currentBoleto: string | null) => {
     setActivationEdits(prev => {
       const existing = prev[projectId];
       if (existing) {
         const { [projectId]: _, ...rest } = prev;
         return rest;
       }
-      return { ...prev, [projectId]: { confirmed: false, newDate: currentDate ? currentDate.split('T')[0] : '' } };
+      return { ...prev, [projectId]: { confirmed: false, newDate: currentDate ? currentDate.split('T')[0] : '', boletoDate: currentBoleto ? currentBoleto.split('T')[0] : '' } };
     });
   };
 
@@ -111,6 +111,13 @@ export default function ImplantacaoAnalytics() {
     setActivationEdits(prev => ({
       ...prev,
       [projectId]: { ...prev[projectId], newDate: date },
+    }));
+  };
+
+  const handleBoletoDateChange = (projectId: string, date: string) => {
+    setActivationEdits(prev => ({
+      ...prev,
+      [projectId]: { ...prev[projectId], boletoDate: date },
     }));
   };
 
@@ -122,19 +129,29 @@ export default function ImplantacaoAnalytics() {
     }
     setSavingActivation(projectId);
     try {
+      // Save data_ativacao on customer_portfolio
       const { error } = await supabase
         .from('customer_portfolio')
         .update({ data_ativacao: edit.newDate })
         .eq('project_id', projectId);
       if (error) throw error;
-      toast.success(`Data de ativação de ${contrato} atualizada.`);
+
+      // Save data_vencimento_primeiro_boleto on implantacao_etapas if provided
+      if (edit.boletoDate) {
+        await supabase
+          .from('implantacao_etapas')
+          .update({ data_vencimento_primeiro_boleto: edit.boletoDate } as any)
+          .eq('project_id', projectId);
+      }
+
+      toast.success(`Dados de ${contrato} atualizados.`);
       setActivationEdits(prev => {
         const { [projectId]: _, ...rest } = prev;
         return rest;
       });
       fetchData();
     } catch (err) {
-      toast.error('Erro ao salvar data de ativação.');
+      toast.error('Erro ao salvar dados.');
     } finally {
       setSavingActivation(null);
     }

@@ -601,6 +601,135 @@ export default function ImplantacaoRelatorios() {
       );
     }
 
+    if (selectedReport === 'resultado_financeiro') {
+      const totAtivada = resultadoFinanceiro.reduce((s, r) => s + r.receitaAtivada, 0);
+      const totCaixa = resultadoFinanceiro.reduce((s, r) => s + r.receitaCaixa, 0);
+      return (
+        <div className="space-y-6">
+          {/* Summary cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <Card className="p-4">
+              <p className="text-xs text-muted-foreground">Total Receita Ativada</p>
+              <p className="text-lg font-bold text-primary">{formatCurrency(totAtivada)}</p>
+            </Card>
+            <Card className="p-4">
+              <p className="text-xs text-muted-foreground">Total Entrada no Caixa</p>
+              <p className="text-lg font-bold text-chart-2">{formatCurrency(totCaixa)}</p>
+            </Card>
+            <Card className="p-4">
+              <p className="text-xs text-muted-foreground">Diferença (Caixa - Ativada)</p>
+              <p className={`text-lg font-bold ${totCaixa - totAtivada >= 0 ? 'text-chart-2' : 'text-destructive'}`}>
+                {formatCurrency(totCaixa - totAtivada)}
+              </p>
+            </Card>
+          </div>
+
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Mês</TableHead>
+                <TableHead className="text-right">Ativações</TableHead>
+                <TableHead className="text-right">Receita Ativada</TableHead>
+                <TableHead className="text-right">Entrada no Caixa</TableHead>
+                <TableHead className="text-right">Diferença</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {resultadoFinanceiro.map((r, i) => (
+                <>
+                  <TableRow key={i} className="cursor-pointer hover:bg-muted/50" onClick={() => setExpandedMonths(prev => {
+                    const next = new Set(prev);
+                    next.has(i + 1000) ? next.delete(i + 1000) : next.add(i + 1000);
+                    return next;
+                  })}>
+                    <TableCell className="font-medium">
+                      <div className="flex items-center gap-1">
+                        {expandedMonths.has(i + 1000) ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
+                        {r.mes}
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-right font-medium">{r.countAtivados}</TableCell>
+                    <TableCell className="text-right text-primary font-medium">{formatCurrency(r.receitaAtivada)}</TableCell>
+                    <TableCell className="text-right text-chart-2 font-medium">{formatCurrency(r.receitaCaixa)}</TableCell>
+                    <TableCell className={`text-right font-semibold ${r.diferenca >= 0 ? 'text-chart-2' : 'text-destructive'}`}>
+                      {formatCurrency(r.diferenca)}
+                    </TableCell>
+                  </TableRow>
+                  {expandedMonths.has(i + 1000) && (
+                    <TableRow key={`${i}-fin-detail`}>
+                      <TableCell colSpan={5} className="p-0">
+                        <div className="bg-muted/30 px-6 py-3 space-y-4">
+                          {r.detalhesAtivados.length > 0 && (
+                            <div>
+                              <p className="text-xs font-semibold mb-2 text-primary">Receita Ativada neste mês</p>
+                              <Table>
+                                <TableHeader>
+                                  <TableRow>
+                                    <TableHead className="text-xs">Cliente</TableHead>
+                                    <TableHead className="text-xs">Contrato</TableHead>
+                                    <TableHead className="text-xs">Praça</TableHead>
+                                    <TableHead className="text-xs">Data Ativação</TableHead>
+                                    <TableHead className="text-xs text-right">Mensalidade</TableHead>
+                                  </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                  {r.detalhesAtivados.map((d, k) => (
+                                    <TableRow key={k}>
+                                      <TableCell className="text-xs">{d.cliente}</TableCell>
+                                      <TableCell className="text-xs">{d.contrato}</TableCell>
+                                      <TableCell className="text-xs"><Badge variant="outline" className="text-[9px]">{d.praca}</Badge></TableCell>
+                                      <TableCell className="text-xs">{d.dataAtivacao}</TableCell>
+                                      <TableCell className="text-xs text-right">{formatCurrency(d.mensalidade)}</TableCell>
+                                    </TableRow>
+                                  ))}
+                                </TableBody>
+                              </Table>
+                            </div>
+                          )}
+                          {r.detalhesCaixa.length > 0 && (
+                            <div>
+                              <p className="text-xs font-semibold mb-2 text-chart-2">Boletos com vencimento neste mês</p>
+                              <Table>
+                                <TableHeader>
+                                  <TableRow>
+                                    <TableHead className="text-xs">Cliente</TableHead>
+                                    <TableHead className="text-xs">Contrato</TableHead>
+                                    <TableHead className="text-xs">Praça</TableHead>
+                                    <TableHead className="text-xs">Referência</TableHead>
+                                    <TableHead className="text-xs">Vencimento</TableHead>
+                                    <TableHead className="text-xs text-right">Valor</TableHead>
+                                  </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                  {r.detalhesCaixa.map((d, k) => (
+                                    <TableRow key={k}>
+                                      <TableCell className="text-xs">{d.cliente}</TableCell>
+                                      <TableCell className="text-xs">{d.contrato}</TableCell>
+                                      <TableCell className="text-xs"><Badge variant="outline" className="text-[9px]">{d.praca}</Badge></TableCell>
+                                      <TableCell className="text-xs">{d.referencia}</TableCell>
+                                      <TableCell className="text-xs">{d.vencimento}</TableCell>
+                                      <TableCell className="text-xs text-right font-medium">{formatCurrency(d.valor)}</TableCell>
+                                    </TableRow>
+                                  ))}
+                                </TableBody>
+                              </Table>
+                            </div>
+                          )}
+                          {r.detalhesCaixa.length === 0 && r.detalhesAtivados.length === 0 && (
+                            <p className="text-xs text-muted-foreground text-center py-2">Sem movimentação neste mês</p>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      );
+    }
+
     if (selectedReport === 'por_praca') {
       return (
         <Table>

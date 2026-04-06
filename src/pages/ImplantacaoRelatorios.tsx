@@ -140,16 +140,14 @@ export default function ImplantacaoRelatorios() {
   }, [projects]);
 
   // Helper: get the effective activation date for a portfolio record.
-  // Only use data_ativacao when the project is CONCLUIDO (actually activated).
-  // For projects still in progress, use prazo_entrega_projeto as projected date.
+  // Always prioritize data_ativacao when it exists (user may have manually set it).
+  // Fallback to prazo_entrega_projeto for projects without data_ativacao.
   const getEffectiveDate = (portRecord: any): string | null => {
-    const proj = portRecord.project_id ? projectMap[portRecord.project_id] : null;
-    const isCompleted = proj?.implantacao_status === 'CONCLUIDO' || portRecord.status_implantacao === 'ATIVO';
-    if (isCompleted && portRecord.data_ativacao) {
+    if (portRecord.data_ativacao) {
       return portRecord.data_ativacao;
     }
-    // Fallback to prazo_entrega_projeto for non-completed projects
-    return proj?.prazo_entrega_projeto || portRecord.data_ativacao || null;
+    const proj = portRecord.project_id ? projectMap[portRecord.project_id] : null;
+    return proj?.prazo_entrega_projeto || null;
   };
 
   const resumoMensalComDetalhe = useMemo(() => {

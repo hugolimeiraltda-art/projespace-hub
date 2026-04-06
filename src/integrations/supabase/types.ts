@@ -847,6 +847,7 @@ export type Database = {
           contrato_cadastrado_at: string | null
           created_at: string
           data_ativacao_realizada: string | null
+          data_vencimento_primeiro_boleto: string | null
           etapa_atual: number | null
           id: string
           laudo_conclusao_supervisor: boolean | null
@@ -918,6 +919,7 @@ export type Database = {
           contrato_cadastrado_at?: string | null
           created_at?: string
           data_ativacao_realizada?: string | null
+          data_vencimento_primeiro_boleto?: string | null
           etapa_atual?: number | null
           id?: string
           laudo_conclusao_supervisor?: boolean | null
@@ -989,6 +991,7 @@ export type Database = {
           contrato_cadastrado_at?: string | null
           created_at?: string
           data_ativacao_realizada?: string | null
+          data_vencimento_primeiro_boleto?: string | null
           etapa_atual?: number | null
           id?: string
           laudo_conclusao_supervisor?: boolean | null

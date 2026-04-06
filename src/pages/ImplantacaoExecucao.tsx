@@ -2263,6 +2263,17 @@ export default function ImplantacaoExecucao() {
                      />
                    </div>
 
+                   {/* Data de Vencimento do Primeiro Boleto */}
+                   <div className="px-4 pt-2">
+                     <Label className="text-sm font-medium">Data de Vencimento do Primeiro Boleto</Label>
+                     <Input 
+                       type="date"
+                       value={(etapas as any).data_vencimento_primeiro_boleto || ''}
+                       onChange={(e) => updateEtapa('data_vencimento_primeiro_boleto' as any, e.target.value || null)}
+                       className="w-48 mt-1"
+                     />
+                   </div>
+
                   <div className="px-4 pt-4">
                     <Button onClick={generatePDF} variant="outline" className="w-full">
                       <FileDown className="w-4 h-4 mr-2" />

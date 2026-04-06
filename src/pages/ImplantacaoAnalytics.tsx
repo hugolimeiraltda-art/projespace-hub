@@ -89,6 +89,7 @@ export default function ImplantacaoAnalytics() {
   const navigate = useNavigate();
   const [projects, setProjects] = useState<ProjectData[]>([]);
   const [portfolio, setPortfolio] = useState<PortfolioData[]>([]);
+  const [allPortfolio, setAllPortfolio] = useState<PortfolioData[]>([]);
   const [etapasMap, setEtapasMap] = useState<Record<string, { data_vencimento_primeiro_boleto: string | null }>>({});
   const [cancelamentos, setCancelamentos] = useState<CancelamentoData[]>([]);
   const [plans, setPlans] = useState<PlanData[]>([]);

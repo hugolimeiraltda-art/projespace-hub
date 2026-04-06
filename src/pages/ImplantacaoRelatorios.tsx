@@ -219,7 +219,7 @@ export default function ImplantacaoRelatorios() {
         detalheAtivacoes,
       };
     });
-  }, [periodMonths, filteredPortfolio, cancelamentos, plans, selectedPraca, projectMap]);
+  }, [periodMonths, filteredPortfolio, cancelamentos, plans, selectedPraca, projectMap, etapasMap]);
 
   const resumoMensal = useMemo(() => resumoMensalComDetalhe.map(({ detalheAtivacoes, ...rest }) => rest), [resumoMensalComDetalhe]);
 

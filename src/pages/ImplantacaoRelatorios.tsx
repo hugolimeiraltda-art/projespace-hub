@@ -323,7 +323,112 @@ export default function ImplantacaoRelatorios() {
     };
   }, [filteredProjects, filteredPortfolio]);
 
-  // ========== EXPORT FUNCTIONS ==========
+  // ========== RESULTADO FINANCEIRO ==========
+  const resultadoFinanceiro = useMemo(() => {
+    // For each month in the period, calculate:
+    // 1. Receita Ativada: sum of mensalidade for contracts activated in that month
+    // 2. Receita no Caixa: sum of boleto amounts due in that month
+    //    - First boleto covers activation_date to end_of_month, due on boleto_date
+    //    - Subsequent boletos cover full months, due on same day of following months
+
+    return periodMonths.map(month => {
+      const ms = startOfMonth(month);
+      const me = endOfMonth(month);
+      const mesLabel = format(month, 'MMM/yyyy', { locale: ptBR });
+
+      // Receita Ativada: contracts where data_ativacao falls in this month
+      let receitaAtivada = 0;
+      let countAtivados = 0;
+      const detalhesAtivados: { cliente: string; contrato: string; mensalidade: number; dataAtivacao: string; praca: string }[] = [];
+
+      filteredPortfolio.forEach(p => {
+        if (!p.data_ativacao) return;
+        const actDate = parseISO(p.data_ativacao);
+        if (isWithinInterval(actDate, { start: ms, end: me })) {
+          receitaAtivada += p.mensalidade || 0;
+          countAtivados++;
+          const proj = p.project_id ? projectMap[p.project_id] : null;
+          detalhesAtivados.push({
+            cliente: p.razao_social || proj?.cliente_condominio_nome || '—',
+            contrato: p.contrato || '—',
+            mensalidade: p.mensalidade || 0,
+            dataAtivacao: format(actDate, 'dd/MM/yyyy'),
+            praca: getPraca(p.filial, p.praca),
+          });
+        }
+      });
+
+      // Receita no Caixa: boletos that are due in this month
+      let receitaCaixa = 0;
+      const detalhesCaixa: { cliente: string; contrato: string; valor: number; referencia: string; vencimento: string; praca: string }[] = [];
+
+      filteredPortfolio.forEach(p => {
+        if (!p.data_ativacao || !p.project_id) return;
+        const boletoDateStr = etapasMap[p.project_id];
+        if (!boletoDateStr) return;
+
+        const actDate = parseISO(p.data_ativacao);
+        const firstBoletoDate = parseISO(boletoDateStr);
+        const mensalidade = p.mensalidade || 0;
+        if (mensalidade === 0) return;
+
+        const boletoDay = firstBoletoDate.getDate();
+        const proj = p.project_id ? projectMap[p.project_id] : null;
+        const cliente = p.razao_social || proj?.cliente_condominio_nome || '—';
+        const praca = getPraca(p.filial, p.praca);
+
+        // First boleto: proportional, due on firstBoletoDate
+        if (isWithinInterval(firstBoletoDate, { start: ms, end: me })) {
+          const lastDayOfActMonth = endOfMonth(actDate).getDate();
+          const daysActive = lastDayOfActMonth - actDate.getDate() + 1;
+          const proporcional = Math.round((mensalidade * daysActive / lastDayOfActMonth) * 100) / 100;
+          receitaCaixa += proporcional;
+          const refStart = format(actDate, 'dd/MM');
+          const refEnd = format(endOfMonth(actDate), 'dd/MM');
+          detalhesCaixa.push({
+            cliente, contrato: p.contrato || '—', valor: proporcional,
+            referencia: `${refStart} a ${refEnd}`, vencimento: format(firstBoletoDate, 'dd/MM/yyyy'), praca,
+          });
+        }
+
+        // Subsequent boletos: full month, due on boletoDay of following months
+        // The 2nd boleto covers the month after activation, due boletoDay of month+2, etc.
+        const actMonth = startOfMonth(actDate);
+        // Generate boletos for up to 24 months ahead
+        for (let i = 1; i <= 24; i++) {
+          const refMonth = addMonths(actMonth, i); // month the boleto covers
+          const dueMonth = addMonths(refMonth, 1); // due in the next month
+          const maxDayInDueMonth = endOfMonth(dueMonth).getDate();
+          const actualDay = Math.min(boletoDay, maxDayInDueMonth);
+          const dueDate = new Date(dueMonth.getFullYear(), dueMonth.getMonth(), actualDay);
+
+          if (isWithinInterval(dueDate, { start: ms, end: me })) {
+            receitaCaixa += mensalidade;
+            detalhesCaixa.push({
+              cliente, contrato: p.contrato || '—', valor: mensalidade,
+              referencia: format(refMonth, 'MMM/yyyy', { locale: ptBR }),
+              vencimento: format(dueDate, 'dd/MM/yyyy'), praca,
+            });
+          }
+          // Stop if due date is past our period
+          if (dueDate > parseISO(dataFim)) break;
+        }
+      });
+
+      const diferenca = receitaCaixa - receitaAtivada;
+
+      return {
+        mes: mesLabel,
+        receitaAtivada,
+        countAtivados,
+        receitaCaixa: Math.round(receitaCaixa * 100) / 100,
+        diferenca: Math.round(diferenca * 100) / 100,
+        detalhesAtivados,
+        detalhesCaixa,
+      };
+    });
+  }, [periodMonths, filteredPortfolio, etapasMap, projectMap, dataFim]);
+
   const exportPDF = () => {
     const reportLabel = REPORT_TYPES.find(r => r.value === selectedReport)!.label;
     const periodo = `${format(parseISO(dataInicio), 'dd/MM/yyyy')} a ${format(parseISO(dataFim), 'dd/MM/yyyy')}`;

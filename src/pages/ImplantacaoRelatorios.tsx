@@ -59,6 +59,8 @@ export default function ImplantacaoRelatorios() {
   const [portfolio, setPortfolio] = useState<any[]>([]);
   const [cancelamentos, setCancelamentos] = useState<any[]>([]);
   const [plans, setPlans] = useState<any[]>([]);
+  const [etapasMap, setEtapasMap] = useState<Record<string, string | null>>({});
+  const [expandedMonths, setExpandedMonths] = useState<Set<number>>(new Set());
 
   useEffect(() => {
     fetchData();

@@ -1,0 +1,1 @@
+ALTER TABLE public.implantacao_etapas ADD COLUMN data_vencimento_primeiro_boleto date;

@@ -691,7 +691,7 @@ export default function ImplantacaoAnalytics() {
                             <TableHead>Tipo</TableHead>
                             <TableHead>Contrato</TableHead>
                             <TableHead>Data Prevista</TableHead>
-                            <TableHead>Ativação Confirmada</TableHead>
+                            <TableHead>Ativação / Boleto</TableHead>
                             <TableHead>Praça</TableHead>
                             <TableHead className="text-right">Venda</TableHead>
                             <TableHead className="text-right">Mensalidade</TableHead>
@@ -715,44 +715,65 @@ export default function ImplantacaoAnalytics() {
                                 </TableCell>
                                 <TableCell>
                                   {!isEditing ? (
-                                    <div className="flex items-center gap-2">
-                                      <span className="flex items-center gap-1 text-xs text-chart-2 font-medium">
-                                        <Check className="w-3.5 h-3.5" /> Confirmado
-                                      </span>
-                                      <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        className="h-6 px-2 text-[10px] text-muted-foreground hover:text-destructive"
-                                        onClick={() => handleActivationConfirmToggle(c.projectId, c.dataAtivacao)}
-                                      >
-                                        Alterar data
-                                      </Button>
+                                    <div className="space-y-1">
+                                      <div className="flex items-center gap-2">
+                                        <span className="flex items-center gap-1 text-xs text-chart-2 font-medium">
+                                          <Check className="w-3.5 h-3.5" /> Confirmado
+                                        </span>
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          className="h-6 px-2 text-[10px] text-muted-foreground hover:text-destructive"
+                                          onClick={() => handleActivationConfirmToggle(c.projectId, c.dataAtivacao, c.dataBoleto)}
+                                        >
+                                          Alterar
+                                        </Button>
+                                      </div>
+                                      {c.dataBoleto && (
+                                        <p className="text-[10px] text-muted-foreground">
+                                          Boleto: {format(parseISO(c.dataBoleto), 'dd/MM/yyyy')}
+                                        </p>
+                                      )}
                                     </div>
                                   ) : (
-                                    <div className="flex items-center gap-2">
-                                      <Input
-                                        type="date"
-                                        value={edit.newDate}
-                                        onChange={(e) => handleActivationDateChange(c.projectId, e.target.value)}
-                                        className="h-7 text-xs w-36"
-                                      />
-                                      <Button
-                                        variant="default"
-                                        size="sm"
-                                        className="h-7 px-2"
-                                        disabled={savingActivation === c.projectId}
-                                        onClick={() => handleSaveActivationDate(c.projectId, c.contrato)}
-                                      >
-                                        <Save className="w-3.5 h-3.5" />
-                                      </Button>
-                                      <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        className="h-7 px-2"
-                                        onClick={() => handleActivationConfirmToggle(c.projectId, c.dataAtivacao)}
-                                      >
-                                        <X className="w-3.5 h-3.5" />
-                                      </Button>
+                                    <div className="space-y-2">
+                                      <div>
+                                        <p className="text-[10px] text-muted-foreground mb-0.5">Data Ativação</p>
+                                        <Input
+                                          type="date"
+                                          value={edit.newDate}
+                                          onChange={(e) => handleActivationDateChange(c.projectId, e.target.value)}
+                                          className="h-7 text-xs w-36"
+                                        />
+                                      </div>
+                                      <div>
+                                        <p className="text-[10px] text-muted-foreground mb-0.5">Venc. 1º Boleto</p>
+                                        <Input
+                                          type="date"
+                                          value={edit.boletoDate}
+                                          onChange={(e) => handleBoletoDateChange(c.projectId, e.target.value)}
+                                          className="h-7 text-xs w-36"
+                                        />
+                                      </div>
+                                      <div className="flex items-center gap-1">
+                                        <Button
+                                          variant="default"
+                                          size="sm"
+                                          className="h-7 px-2"
+                                          disabled={savingActivation === c.projectId}
+                                          onClick={() => handleSaveActivationDate(c.projectId, c.contrato)}
+                                        >
+                                          <Save className="w-3.5 h-3.5 mr-1" /> Salvar
+                                        </Button>
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          className="h-7 px-2"
+                                          onClick={() => handleActivationConfirmToggle(c.projectId, c.dataAtivacao, c.dataBoleto)}
+                                        >
+                                          <X className="w-3.5 h-3.5" />
+                                        </Button>
+                                      </div>
                                     </div>
                                   )}
                                 </TableCell>

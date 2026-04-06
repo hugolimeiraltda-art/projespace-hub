@@ -316,7 +316,7 @@ export default function ImplantacaoAnalytics() {
         if (!port) return;
 
         // Only use data_ativacao for completed projects; otherwise use prazo_entrega_projeto
-        const isCompleted = p.implantacao_status === 'CONCLUIDO' || port.status_implantacao === 'ATIVO';
+        const isCompleted = p.implantacao_status === 'CONCLUIDO' || p.implantacao_status === 'CONCLUIDO_IMPLANTACAO' || port.status_implantacao === 'ATIVO';
         const activationDate = (isCompleted && port.data_ativacao)
           ? parseISO(port.data_ativacao)
           : p.prazo_entrega_projeto

@@ -14,6 +14,7 @@ import {
 import { format, parseISO, differenceInDays, differenceInMonths, startOfMonth, endOfMonth, eachMonthOfInterval, isWithinInterval, subMonths, addMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -62,6 +63,7 @@ export default function ImplantacaoRelatorios() {
   const [plans, setPlans] = useState<any[]>([]);
   const [etapasMap, setEtapasMap] = useState<Record<string, string | null>>({});
   const [expandedMonths, setExpandedMonths] = useState<Set<number>>(new Set());
+  const [financeiroView, setFinanceiroView] = useState<'geral' | 'ativada' | 'caixa'>('geral');
 
   useEffect(() => {
     fetchData();
@@ -604,38 +606,60 @@ export default function ImplantacaoRelatorios() {
     if (selectedReport === 'resultado_financeiro') {
       const totAtivada = resultadoFinanceiro.reduce((s, r) => s + r.receitaAtivada, 0);
       const totCaixa = resultadoFinanceiro.reduce((s, r) => s + r.receitaCaixa, 0);
+      
+      const finView = financeiroView;
+      
       return (
         <div className="space-y-6">
+          {/* Tabs */}
+          <Tabs value={finView} onValueChange={(v) => setFinanceiroView(v as 'geral' | 'ativada' | 'caixa')}>
+            <TabsList>
+              <TabsTrigger value="geral">Visão Geral</TabsTrigger>
+              <TabsTrigger value="ativada">Receita Ativada</TabsTrigger>
+              <TabsTrigger value="caixa">Boletos do Mês</TabsTrigger>
+            </TabsList>
+          </Tabs>
+
           {/* Summary cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <Card className="p-4">
-              <p className="text-xs text-muted-foreground">Total Receita Ativada</p>
-              <p className="text-lg font-bold text-primary">{formatCurrency(totAtivada)}</p>
-            </Card>
-            <Card className="p-4">
-              <p className="text-xs text-muted-foreground">Total Entrada no Caixa</p>
-              <p className="text-lg font-bold text-chart-2">{formatCurrency(totCaixa)}</p>
-            </Card>
-            <Card className="p-4">
-              <p className="text-xs text-muted-foreground">Diferença (Caixa - Ativada)</p>
-              <p className={`text-lg font-bold ${totCaixa - totAtivada >= 0 ? 'text-chart-2' : 'text-destructive'}`}>
-                {formatCurrency(totCaixa - totAtivada)}
-              </p>
-            </Card>
+          <div className={`grid grid-cols-1 ${finView === 'geral' ? 'sm:grid-cols-3' : 'sm:grid-cols-2'} gap-4`}>
+            {(finView === 'geral' || finView === 'ativada') && (
+              <Card className="p-4">
+                <p className="text-xs text-muted-foreground">Total Receita Ativada</p>
+                <p className="text-lg font-bold text-primary">{formatCurrency(totAtivada)}</p>
+              </Card>
+            )}
+            {(finView === 'geral' || finView === 'caixa') && (
+              <Card className="p-4">
+                <p className="text-xs text-muted-foreground">Total Entrada no Caixa</p>
+                <p className="text-lg font-bold text-chart-2">{formatCurrency(totCaixa)}</p>
+              </Card>
+            )}
+            {finView === 'geral' && (
+              <Card className="p-4">
+                <p className="text-xs text-muted-foreground">Diferença (Caixa - Ativada)</p>
+                <p className={`text-lg font-bold ${totCaixa - totAtivada >= 0 ? 'text-chart-2' : 'text-destructive'}`}>
+                  {formatCurrency(totCaixa - totAtivada)}
+                </p>
+              </Card>
+            )}
           </div>
 
           <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>Mês</TableHead>
-                <TableHead className="text-right">Ativações</TableHead>
-                <TableHead className="text-right">Receita Ativada</TableHead>
-                <TableHead className="text-right">Entrada no Caixa</TableHead>
-                <TableHead className="text-right">Diferença</TableHead>
+                {(finView === 'geral' || finView === 'ativada') && <TableHead className="text-right">Ativações</TableHead>}
+                {(finView === 'geral' || finView === 'ativada') && <TableHead className="text-right">Receita Ativada</TableHead>}
+                {(finView === 'geral' || finView === 'caixa') && <TableHead className="text-right">Entrada no Caixa</TableHead>}
+                {finView === 'geral' && <TableHead className="text-right">Diferença</TableHead>}
               </TableRow>
             </TableHeader>
             <TableBody>
-              {resultadoFinanceiro.map((r, i) => (
+              {resultadoFinanceiro.map((r, i) => {
+                const hasData = finView === 'ativada' ? r.detalhesAtivados.length > 0 
+                  : finView === 'caixa' ? r.detalhesCaixa.length > 0 
+                  : (r.detalhesAtivados.length > 0 || r.detalhesCaixa.length > 0);
+                return (
                 <>
                   <TableRow key={i} className="cursor-pointer hover:bg-muted/50" onClick={() => setExpandedMonths(prev => {
                     const next = new Set(prev);
@@ -648,18 +672,20 @@ export default function ImplantacaoRelatorios() {
                         {r.mes}
                       </div>
                     </TableCell>
-                    <TableCell className="text-right font-medium">{r.countAtivados}</TableCell>
-                    <TableCell className="text-right text-primary font-medium">{formatCurrency(r.receitaAtivada)}</TableCell>
-                    <TableCell className="text-right text-chart-2 font-medium">{formatCurrency(r.receitaCaixa)}</TableCell>
-                    <TableCell className={`text-right font-semibold ${r.diferenca >= 0 ? 'text-chart-2' : 'text-destructive'}`}>
-                      {formatCurrency(r.diferenca)}
-                    </TableCell>
+                    {(finView === 'geral' || finView === 'ativada') && <TableCell className="text-right font-medium">{r.countAtivados}</TableCell>}
+                    {(finView === 'geral' || finView === 'ativada') && <TableCell className="text-right text-primary font-medium">{formatCurrency(r.receitaAtivada)}</TableCell>}
+                    {(finView === 'geral' || finView === 'caixa') && <TableCell className="text-right text-chart-2 font-medium">{formatCurrency(r.receitaCaixa)}</TableCell>}
+                    {finView === 'geral' && (
+                      <TableCell className={`text-right font-semibold ${r.diferenca >= 0 ? 'text-chart-2' : 'text-destructive'}`}>
+                        {formatCurrency(r.diferenca)}
+                      </TableCell>
+                    )}
                   </TableRow>
                   {expandedMonths.has(i + 1000) && (
                     <TableRow key={`${i}-fin-detail`}>
-                      <TableCell colSpan={5} className="p-0">
+                      <TableCell colSpan={finView === 'geral' ? 5 : finView === 'ativada' ? 3 : 2} className="p-0">
                         <div className="bg-muted/30 px-6 py-3 space-y-4">
-                          {r.detalhesAtivados.length > 0 && (
+                          {(finView === 'geral' || finView === 'ativada') && r.detalhesAtivados.length > 0 && (
                             <div>
                               <p className="text-xs font-semibold mb-2 text-primary">Receita Ativada neste mês</p>
                               <Table>
@@ -686,7 +712,7 @@ export default function ImplantacaoRelatorios() {
                               </Table>
                             </div>
                           )}
-                          {r.detalhesCaixa.length > 0 && (
+                          {(finView === 'geral' || finView === 'caixa') && r.detalhesCaixa.length > 0 && (
                             <div>
                               <p className="text-xs font-semibold mb-2 text-chart-2">Boletos com vencimento neste mês</p>
                               <Table>
@@ -715,7 +741,7 @@ export default function ImplantacaoRelatorios() {
                               </Table>
                             </div>
                           )}
-                          {r.detalhesCaixa.length === 0 && r.detalhesAtivados.length === 0 && (
+                          {!hasData && (
                             <p className="text-xs text-muted-foreground text-center py-2">Sem movimentação neste mês</p>
                           )}
                         </div>
@@ -723,7 +749,8 @@ export default function ImplantacaoRelatorios() {
                     </TableRow>
                   )}
                 </>
-              ))}
+              );
+              })}
             </TableBody>
           </Table>
         </div>

@@ -221,7 +221,7 @@ export default function SucessoCliente() {
     try {
       const { data, error } = await supabase
         .from('customer_portfolio')
-        .select('id, contrato, razao_social, filial, unidades, data_ativacao, data_termino')
+        .select('id, contrato, razao_social, filial, unidades, data_ativacao, data_termino, mensalidade')
         .order('contrato', { ascending: true });
 
       if (error) throw error;

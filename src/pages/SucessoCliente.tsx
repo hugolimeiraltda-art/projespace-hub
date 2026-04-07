@@ -63,6 +63,7 @@ interface Customer {
   unidades: number | null;
   data_ativacao: string | null;
   data_termino: string | null;
+  mensalidade: number | null;
 }
 
 interface CustomerPortfolioRef {

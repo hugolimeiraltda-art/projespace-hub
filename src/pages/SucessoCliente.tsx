@@ -804,6 +804,7 @@ export default function SucessoCliente() {
                   <div>
                     <p className="text-sm text-muted-foreground">Vencendo em 3 meses</p>
                     <p className="text-2xl font-bold text-red-600">{contractsExpiring3Months.length}</p>
+                    <p className="text-xs text-muted-foreground">R$ {contractsExpiring3Months.reduce((s, c) => s + (c.mensalidade || 0), 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
                   </div>
                 </div>
               </CardContent>
@@ -820,6 +821,7 @@ export default function SucessoCliente() {
                   <div>
                     <p className="text-sm text-muted-foreground">Vencendo em 6 meses</p>
                     <p className="text-2xl font-bold text-amber-600">{contractsExpiring6Months.length}</p>
+                    <p className="text-xs text-muted-foreground">R$ {contractsExpiring6Months.reduce((s, c) => s + (c.mensalidade || 0), 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
                   </div>
                 </div>
               </CardContent>
@@ -836,6 +838,7 @@ export default function SucessoCliente() {
                   <div>
                     <p className="text-sm text-muted-foreground">Vencendo em 1 ano</p>
                     <p className="text-2xl font-bold text-blue-600">{contractsExpiring1Year.length}</p>
+                    <p className="text-xs text-muted-foreground">R$ {contractsExpiring1Year.reduce((s, c) => s + (c.mensalidade || 0), 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
                   </div>
                 </div>
               </CardContent>

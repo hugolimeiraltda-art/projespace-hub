@@ -1234,6 +1234,7 @@ export default function SucessoCliente() {
                     <TableHead>Razão Social</TableHead>
                     <TableHead>Filial</TableHead>
                     <TableHead>Término</TableHead>
+                    <TableHead className="text-right">Mensalidade</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -1250,9 +1251,22 @@ export default function SucessoCliente() {
                       <TableCell>{customer.razao_social}</TableCell>
                       <TableCell>{customer.filial || '-'}</TableCell>
                       <TableCell>{calculateTermino(customer)}</TableCell>
+                      <TableCell className="text-right">
+                        {customer.mensalidade
+                          ? `R$ ${customer.mensalidade.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
+                          : '-'}
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
+                <tfoot>
+                  <TableRow className="bg-muted/50 font-semibold border-t-2">
+                    <TableCell colSpan={4} className="text-right">Total ({filteredExpiringCustomers.length} contratos)</TableCell>
+                    <TableCell className="text-right">
+                      R$ {filteredExpiringCustomers.reduce((sum, c) => sum + (c.mensalidade || 0), 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                    </TableCell>
+                  </TableRow>
+                </tfoot>
               </Table>
             )}
           </DialogContent>

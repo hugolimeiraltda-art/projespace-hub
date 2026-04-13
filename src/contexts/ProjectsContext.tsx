@@ -634,6 +634,82 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
           if (notifications.length > 0) {
             await supabase.from('project_notifications').insert(notifications);
           }
+
+          // Send email notification for comment
+          try {
+            // Get vendedor email if commenter is not the vendedor
+            if (comment.user_id !== project.created_by_user_id) {
+              const { data: vendedorProfile } = await supabase
+                .from('profiles')
+                .select('email, nome')
+                .eq('id', project.created_by_user_id)
+                .single();
+
+              if (vendedorProfile?.email) {
+                await supabase.functions.invoke('send-email-resend', {
+                  body: {
+                    action: 'send',
+                    template_id: 'status_projeto',
+                    to: vendedorProfile.email,
+                    subject: `Novo Comentário: Projeto "${project.cliente_condominio_nome}"`,
+                    variables: {
+                      nome: vendedorProfile.nome || 'Usuário',
+                      projeto_nome: project.cliente_condominio_nome,
+                      novo_status: 'Novo Comentário',
+                      status_color: '#3B82F6',
+                      alterado_por: comment.user_name,
+                      comentario: comment.content,
+                      link_projeto: `https://eixopci.lovable.app/projetos/${projectId}`,
+                    },
+                  },
+                });
+              }
+            }
+
+            // Get projetos team emails if commenter is not projetos
+            if (user?.role !== 'projetos') {
+              const { data: projetosRoles } = await supabase
+                .from('user_roles')
+                .select('user_id')
+                .eq('role', 'projetos');
+
+              if (projetosRoles && projetosRoles.length > 0) {
+                const projetosUserIds = projetosRoles.map(r => r.user_id).filter(uid => uid !== comment.user_id);
+                if (projetosUserIds.length > 0) {
+                  const { data: projetosProfiles } = await supabase
+                    .from('profiles')
+                    .select('email, nome')
+                    .in('id', projetosUserIds);
+
+                  if (projetosProfiles) {
+                    for (const profile of projetosProfiles) {
+                      if (profile.email) {
+                        await supabase.functions.invoke('send-email-resend', {
+                          body: {
+                            action: 'send',
+                            template_id: 'status_projeto',
+                            to: profile.email,
+                            subject: `Novo Comentário: Projeto "${project.cliente_condominio_nome}"`,
+                            variables: {
+                              nome: profile.nome || 'Usuário',
+                              projeto_nome: project.cliente_condominio_nome,
+                              novo_status: 'Novo Comentário',
+                              status_color: '#3B82F6',
+                              alterado_por: comment.user_name,
+                              comentario: comment.content,
+                              link_projeto: `https://eixopci.lovable.app/projetos/${projectId}`,
+                            },
+                          },
+                        });
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          } catch (emailError) {
+            console.error('Error sending comment email notification:', emailError);
+          }
         }
       }
 

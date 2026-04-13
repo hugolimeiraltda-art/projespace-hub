@@ -566,7 +566,38 @@ export default function ImplantacaoAnalytics() {
                 </CardTitle>
                 <p className="text-xs text-muted-foreground mt-1">Comparação entre orçado (planejado) e realizado</p>
               </div>
-              <PlanejamentoAtivacoes onUpdate={fetchPlans} />
+              <div className="flex items-center gap-4">
+                {(() => {
+                  const totals = revenueByMonthData.reduce((acc, m) => ({
+                    contratos: acc.contratos + m.realizadoCount,
+                    taxa: acc.taxa + m.contratos.reduce((s, c) => {
+                      const etapa = etapasMap[c.projectId];
+                      const ativReal = etapa?.data_ativacao_realizada;
+                      return ativReal ? s + c.taxaAtivacao : s;
+                    }, 0),
+                    mensalidade: acc.mensalidade + m.realizadoMensalidade,
+                  }), { contratos: 0, taxa: 0, mensalidade: 0 });
+                  return (
+                    <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                      <div className="text-right">
+                        <span className="block font-medium text-foreground">{totals.contratos}</span>
+                        <span>Ativados</span>
+                      </div>
+                      <div className="h-8 w-px bg-border" />
+                      <div className="text-right">
+                        <span className="block font-medium text-foreground">R$ {totals.taxa.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                        <span>Taxa Instal.</span>
+                      </div>
+                      <div className="h-8 w-px bg-border" />
+                      <div className="text-right">
+                        <span className="block font-medium text-foreground">R$ {totals.mensalidade.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                        <span>Mensalidade</span>
+                      </div>
+                    </div>
+                  );
+                })()}
+                <PlanejamentoAtivacoes onUpdate={fetchPlans} />
+              </div>
             </div>
           </CardHeader>
           <CardContent>

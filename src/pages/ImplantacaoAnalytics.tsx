@@ -703,22 +703,30 @@ export default function ImplantacaoAnalytics() {
                   </DialogHeader>
 
                   {/* Summary */}
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+                  <div className="grid grid-cols-3 sm:grid-cols-6 gap-3 mb-4">
                     <div className="text-center p-2 rounded-lg bg-muted/50">
                       <p className="text-[10px] text-muted-foreground uppercase">Contratos Orçados</p>
                       <p className="text-lg font-bold">{m.hasPlan ? m.planejadoQtd : '—'}</p>
                     </div>
                     <div className="text-center p-2 rounded-lg bg-muted/50">
-                      <p className="text-[10px] text-muted-foreground uppercase">Contratos Realizados</p>
-                      <p className="text-lg font-bold">{m.count}</p>
+                      <p className="text-[10px] text-muted-foreground uppercase">Contratos Previstos</p>
+                      <p className="text-lg font-bold text-chart-4">{m.previstoCount}</p>
                     </div>
                     <div className="text-center p-2 rounded-lg bg-muted/50">
-                      <p className="text-[10px] text-muted-foreground uppercase">Receita Prevista</p>
+                      <p className="text-[10px] text-muted-foreground uppercase">Contratos Realizados</p>
+                      <p className="text-lg font-bold">{m.realizadoCount}</p>
+                    </div>
+                    <div className="text-center p-2 rounded-lg bg-muted/50">
+                      <p className="text-[10px] text-muted-foreground uppercase">Receita Orçada</p>
                       <p className="text-sm font-bold">{m.hasPlan ? `R$ ${m.planejadoValor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '—'}</p>
                     </div>
                     <div className="text-center p-2 rounded-lg bg-muted/50">
+                      <p className="text-[10px] text-muted-foreground uppercase">Receita Prevista</p>
+                      <p className="text-sm font-bold text-chart-4">R$ {m.previstoMensalidade.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                    </div>
+                    <div className="text-center p-2 rounded-lg bg-muted/50">
                       <p className="text-[10px] text-muted-foreground uppercase">Receita Realizada</p>
-                      <p className="text-sm font-bold">R$ {m.totalMensalidade.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                      <p className="text-sm font-bold">R$ {m.realizadoMensalidade.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
                     </div>
                   </div>
 

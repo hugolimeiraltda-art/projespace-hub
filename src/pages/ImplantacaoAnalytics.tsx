@@ -133,7 +133,7 @@ export default function ImplantacaoAnalytics() {
       // Save data_ativacao_realizada on implantacao_etapas
       const { error } = await supabase
         .from('implantacao_etapas')
-        .update({ data_ativacao_realizada: edit.newDate } as any)
+        .update({ data_ativacao_realizada: edit.newDate || null } as any)
         .eq('project_id', projectId);
       if (error) throw error;
 

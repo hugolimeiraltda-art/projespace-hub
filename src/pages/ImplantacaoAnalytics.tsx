@@ -573,7 +573,7 @@ export default function ImplantacaoAnalytics() {
                     {/* Contratos: Previsto vs Realizado */}
                     <div className="grid grid-cols-2 gap-2 text-center">
                       <div>
-                        <p className="text-[10px] text-muted-foreground uppercase">Previsto</p>
+                        <p className="text-[10px] text-muted-foreground uppercase">Orçado</p>
                         <p className="text-sm font-semibold text-muted-foreground">{m.hasPlan ? m.planejadoQtd : '—'}</p>
                       </div>
                       <div>
@@ -597,7 +597,7 @@ export default function ImplantacaoAnalytics() {
                     {/* Receita: Prevista vs Realizada */}
                     <div className="border-t border-border/50 pt-1.5 space-y-1">
                       <div className="flex items-center justify-between text-[10px] text-muted-foreground">
-                        <span>Receita Prevista</span>
+                        <span>Receita Orçada</span>
                         <span className="font-medium">{m.hasPlan ? `R$ ${m.planejadoValor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '—'}</span>
                       </div>
                       <div className="flex items-center justify-between text-[10px]">

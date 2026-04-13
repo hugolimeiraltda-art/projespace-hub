@@ -127,7 +127,6 @@ export default function ImplantacaoAnalytics() {
   const handleSaveActivationDate = async (projectId: string, contrato: string) => {
     const edit = activationEdits[projectId];
     if (!edit) return;
-    }
     setSavingActivation(projectId);
     try {
       // Save data_ativacao_realizada on implantacao_etapas

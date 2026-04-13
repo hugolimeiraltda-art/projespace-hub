@@ -8,97 +8,28 @@ const corsHeaders = {
 
 function escapeHtml(text: string): string {
   const map: Record<string, string> = {
-    '&': '&amp;',
-    '<': '&lt;',
-    '>': '&gt;',
-    '"': '&quot;',
-    "'": '&#039;'
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'
   };
   return text.replace(/[&<>"']/g, m => map[m]);
 }
 
-async function sendSMTP(from: string, to: string[], subject: string, htmlBody: string) {
-  const host = Deno.env.get("SMTP_HOST");
-  const user = Deno.env.get("SMTP_USER");
-  const password = Deno.env.get("SMTP_PASSWORD");
-  const port = parseInt(Deno.env.get("SMTP_PORT") || "465");
+const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
+const RESEND_FROM_EMAIL = Deno.env.get("RESEND_FROM_EMAIL") || "Eixo PCI <noreply@eixopci.com.br>";
 
-  if (!host || !user || !password) {
-    throw new Error("SMTP credentials not configured");
+async function sendViaResend(to: string[], subject: string, html: string) {
+  if (!RESEND_API_KEY) throw new Error("RESEND_API_KEY not configured");
+  
+  // Resend supports multiple recipients
+  const res = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: { "Authorization": `Bearer ${RESEND_API_KEY}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ from: RESEND_FROM_EMAIL, to, subject, html }),
+  });
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.message || `Resend API error: ${res.status}`);
   }
-
-  const encoder = new TextEncoder();
-  const decoder = new TextDecoder();
-
-  // Direct SSL connection on port 465
-  const tlsConn = await Deno.connectTls({ hostname: host, port });
-
-  async function tlsRead(): Promise<string> {
-    const buf = new Uint8Array(4096);
-    const n = await tlsConn.read(buf);
-    if (n === null) throw new Error("TLS Connection closed");
-    return decoder.decode(buf.subarray(0, n));
-  }
-
-  async function tlsWrite(cmd: string) {
-    await tlsConn.write(encoder.encode(cmd + "\r\n"));
-  }
-
-  async function tlsCommand(cmd: string, expectedCode: string): Promise<string> {
-    await tlsWrite(cmd);
-    const resp = await tlsRead();
-    if (!resp.startsWith(expectedCode)) {
-      throw new Error(`SMTP error on "${cmd}": ${resp}`);
-    }
-    return resp;
-  }
-
-  // Read greeting
-  const greeting = await tlsRead();
-  if (!greeting.startsWith("220")) throw new Error("SMTP greeting failed: " + greeting);
-
-  await tlsCommand("EHLO localhost", "250");
-
-  // AUTH LOGIN
-  await tlsCommand("AUTH LOGIN", "334");
-  await tlsCommand(btoa(user), "334");
-  await tlsCommand(btoa(password), "235");
-
-  await tlsCommand(`MAIL FROM:<${user}>`, "250");
-  for (const recipient of to) {
-    await tlsCommand(`RCPT TO:<${recipient}>`, "250");
-  }
-  await tlsCommand("DATA", "354");
-
-  const boundary = "boundary_" + crypto.randomUUID().replace(/-/g, "");
-  const message = [
-    `From: Eixo PCI <${user}>`,
-    `To: ${to.join(", ")}`,
-    `Subject: ${subject}`,
-    `MIME-Version: 1.0`,
-    `Content-Type: multipart/alternative; boundary="${boundary}"`,
-    ``,
-    `--${boundary}`,
-    `Content-Type: text/plain; charset=UTF-8`,
-    ``,
-    `Notificação de projeto`,
-    ``,
-    `--${boundary}`,
-    `Content-Type: text/html; charset=UTF-8`,
-    ``,
-    htmlBody,
-    ``,
-    `--${boundary}--`,
-    ``,
-    `.`,
-  ].join("\r\n");
-
-  await tlsConn.write(encoder.encode(message));
-  const dataResp = await tlsRead();
-  if (!dataResp.startsWith("250")) throw new Error("DATA send failed: " + dataResp);
-
-  await tlsCommand("QUIT", "221");
-  tlsConn.close();
+  return await res.json();
 }
 
 interface NotifyProjectRequest {
@@ -215,7 +146,7 @@ const handler = async (req: Request): Promise<Response> => {
       console.error("Error creating notifications:", notifError);
     }
 
-    // Send emails via SMTP
+    // Send emails via Resend
     if (emails.length > 0) {
       try {
         const location = cidade && estado ? `${cidade} - ${estado}` : cidade || estado || 'Não informado';
@@ -255,14 +186,8 @@ const handler = async (req: Request): Promise<Response> => {
           </div>
         `;
 
-        await sendSMTP(
-          Deno.env.get("SMTP_USER") || "",
-          emails,
-          emailSubject,
-          htmlContent
-        );
-
-        console.log("Emails sent successfully via SMTP");
+        await sendViaResend(emails, emailSubject, htmlContent);
+        console.log("Emails sent successfully via Resend");
       } catch (emailError) {
         console.error("Error sending emails:", emailError);
       }

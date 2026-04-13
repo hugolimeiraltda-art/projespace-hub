@@ -345,7 +345,7 @@ export default function ImplantacaoAnalytics() {
 
         const etapa = etapasMap[p.id];
         const ativacaoReal = etapa?.data_ativacao_realizada || null;
-        const dataPrevista = port.data_ativacao || p.prazo_entrega_projeto || null;
+        const dataPrevista = p.prazo_entrega_projeto || port.data_ativacao || null;
 
         // For month grouping: prioritize real activation date, then planned
         const activationDate = ativacaoReal

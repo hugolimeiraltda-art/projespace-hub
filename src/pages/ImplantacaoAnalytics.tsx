@@ -126,9 +126,7 @@ export default function ImplantacaoAnalytics() {
 
   const handleSaveActivationDate = async (projectId: string, contrato: string) => {
     const edit = activationEdits[projectId];
-    if (!edit?.newDate) {
-      toast.error('Informe a data de ativação real.');
-      return;
+    if (!edit) return;
     }
     setSavingActivation(projectId);
     try {

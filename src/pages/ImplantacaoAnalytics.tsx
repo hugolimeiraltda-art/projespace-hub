@@ -126,16 +126,13 @@ export default function ImplantacaoAnalytics() {
 
   const handleSaveActivationDate = async (projectId: string, contrato: string) => {
     const edit = activationEdits[projectId];
-    if (!edit?.newDate) {
-      toast.error('Informe a data de ativação real.');
-      return;
-    }
+    if (!edit) return;
     setSavingActivation(projectId);
     try {
       // Save data_ativacao_realizada on implantacao_etapas
       const { error } = await supabase
         .from('implantacao_etapas')
-        .update({ data_ativacao_realizada: edit.newDate } as any)
+        .update({ data_ativacao_realizada: edit.newDate || null } as any)
         .eq('project_id', projectId);
       if (error) throw error;
 

@@ -343,11 +343,15 @@ export default function ImplantacaoAnalytics() {
         const port = portfolioMap[p.id];
         if (!port) return;
 
-        // Always prioritize data_ativacao when it exists; fallback to prazo_entrega_projeto
-        const activationDate = port.data_ativacao
-          ? parseISO(port.data_ativacao)
-          : p.prazo_entrega_projeto
-            ? parseISO(p.prazo_entrega_projeto)
+        const etapa = etapasMap[p.id];
+        const ativacaoReal = etapa?.data_ativacao_realizada || null;
+        const dataPrevista = port.data_ativacao || p.prazo_entrega_projeto || null;
+
+        // For month grouping: prioritize real activation date, then planned
+        const activationDate = ativacaoReal
+          ? parseISO(ativacaoReal)
+          : dataPrevista
+            ? parseISO(dataPrevista)
             : null;
 
         if (!activationDate) return;
@@ -361,10 +365,11 @@ export default function ImplantacaoAnalytics() {
             contrato: port.contrato || '—',
             mensalidade: Number(port.mensalidade) || 0,
             taxaAtivacao: Number(port.taxa_ativacao) || 0,
-            dataAtivacao: port.data_ativacao || p.prazo_entrega_projeto || null,
+            dataPrevista,
+            dataAtivacaoReal: ativacaoReal,
             praca: getPraca(port.filial, port.praca),
             tipoObra: p.tipo_obra || 'nova',
-            dataBoleto: etapasMap[p.id]?.data_vencimento_primeiro_boleto || null,
+            dataBoleto: etapa?.data_vencimento_primeiro_boleto || null,
             projectId: p.id,
             portfolioProjectId: port.project_id,
           });

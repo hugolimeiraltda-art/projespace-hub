@@ -575,8 +575,8 @@ export default function ImplantacaoAnalytics() {
           <CardContent>
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
               {revenueByMonthData.map((m, i) => {
-                const pctValor = m.planejadoValor > 0 ? Math.min(100, Math.round((m.totalMensalidade / m.planejadoValor) * 100)) : 0;
-                const pctQtd = m.planejadoQtd > 0 ? Math.min(100, Math.round((m.count / m.planejadoQtd) * 100)) : 0;
+                const pctValor = m.planejadoValor > 0 ? Math.min(100, Math.round((m.realizadoMensalidade / m.planejadoValor) * 100)) : 0;
+                const pctQtd = m.planejadoQtd > 0 ? Math.min(100, Math.round((m.realizadoCount / m.planejadoQtd) * 100)) : 0;
 
                 return (
                   <div

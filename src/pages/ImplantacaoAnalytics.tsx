@@ -337,6 +337,10 @@ export default function ImplantacaoAnalytics() {
       let totalMensalidade = 0;
       let totalTaxa = 0;
       let count = 0;
+      let previstoCount = 0;
+      let previstoMensalidade = 0;
+      let realizadoCount = 0;
+      let realizadoMensalidade = 0;
       const contratos: ContratoDetalhe[] = [];
 
       projects.forEach(p => {
@@ -347,7 +351,25 @@ export default function ImplantacaoAnalytics() {
         const ativacaoReal = etapa?.data_ativacao_realizada || null;
         const dataPrevista = p.prazo_entrega_projeto || port.data_ativacao || null;
 
-        // For month grouping: prioritize real activation date, then planned
+        // Check if project is "Previsto" for this month (based on planned date)
+        if (dataPrevista) {
+          const previstoDate = parseISO(dataPrevista);
+          if (isWithinInterval(previstoDate, { start: monthStart, end: monthEnd })) {
+            previstoCount++;
+            previstoMensalidade += Number(port.mensalidade) || 0;
+          }
+        }
+
+        // Check if project is "Realizado" for this month (based on confirmed real activation)
+        if (ativacaoReal) {
+          const realDate = parseISO(ativacaoReal);
+          if (isWithinInterval(realDate, { start: monthStart, end: monthEnd })) {
+            realizadoCount++;
+            realizadoMensalidade += Number(port.mensalidade) || 0;
+          }
+        }
+
+        // For the contratos list and general count, use either date
         const activationDate = ativacaoReal
           ? parseISO(ativacaoReal)
           : dataPrevista
@@ -392,13 +414,17 @@ export default function ImplantacaoAnalytics() {
       const planejadoValor = plan ? Number(plan.valor_total) : 0;
       const planejadoQtd = plan ? plan.qtd_contratos : 0;
 
-      const saldo = (totalMensalidade + canceladosReceita) - planejadoValor;
+      const saldo = (realizadoMensalidade + canceladosReceita) - planejadoValor;
 
       return {
         label,
         totalMensalidade,
         totalTaxa,
         count,
+        previstoCount,
+        previstoMensalidade,
+        realizadoCount,
+        realizadoMensalidade,
         contratos,
         isCurrentMonth,
         isPast,
@@ -411,7 +437,7 @@ export default function ImplantacaoAnalytics() {
         saldo,
       };
     });
-  }, [projects, portfolioMap, plans, cancelamentos]);
+  }, [projects, portfolioMap, plans, cancelamentos, etapasMap]);
 
   // Regional activation data
   const regionalData = useMemo(() => {
@@ -549,8 +575,8 @@ export default function ImplantacaoAnalytics() {
           <CardContent>
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
               {revenueByMonthData.map((m, i) => {
-                const pctValor = m.planejadoValor > 0 ? Math.min(100, Math.round((m.totalMensalidade / m.planejadoValor) * 100)) : 0;
-                const pctQtd = m.planejadoQtd > 0 ? Math.min(100, Math.round((m.count / m.planejadoQtd) * 100)) : 0;
+                const pctValor = m.planejadoValor > 0 ? Math.min(100, Math.round((m.realizadoMensalidade / m.planejadoValor) * 100)) : 0;
+                const pctQtd = m.planejadoQtd > 0 ? Math.min(100, Math.round((m.realizadoCount / m.planejadoQtd) * 100)) : 0;
 
                 return (
                   <div
@@ -570,15 +596,19 @@ export default function ImplantacaoAnalytics() {
                       {m.isFuture && <span className="ml-1 text-[10px] text-muted-foreground">(prev.)</span>}
                     </p>
 
-                    {/* Contratos: Previsto vs Realizado */}
-                    <div className="grid grid-cols-2 gap-2 text-center">
+                    {/* Contratos: Orçado vs Previsto vs Realizado */}
+                    <div className="grid grid-cols-3 gap-1 text-center">
                       <div>
                         <p className="text-[10px] text-muted-foreground uppercase">Orçado</p>
                         <p className="text-sm font-semibold text-muted-foreground">{m.hasPlan ? m.planejadoQtd : '—'}</p>
                       </div>
                       <div>
+                        <p className="text-[10px] text-muted-foreground uppercase">Previsto</p>
+                        <p className="text-sm font-semibold text-chart-4">{m.previstoCount}</p>
+                      </div>
+                      <div>
                         <p className="text-[10px] text-muted-foreground uppercase">Realizado</p>
-                        <p className="text-sm font-bold text-foreground">{m.count}</p>
+                        <p className="text-sm font-bold text-foreground">{m.realizadoCount}</p>
                       </div>
                     </div>
 
@@ -594,15 +624,19 @@ export default function ImplantacaoAnalytics() {
                       </div>
                     )}
 
-                    {/* Receita: Prevista vs Realizada */}
+                    {/* Receita */}
                     <div className="border-t border-border/50 pt-1.5 space-y-1">
                       <div className="flex items-center justify-between text-[10px] text-muted-foreground">
                         <span>Receita Orçada</span>
                         <span className="font-medium">{m.hasPlan ? `R$ ${m.planejadoValor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '—'}</span>
                       </div>
+                      <div className="flex items-center justify-between text-[10px] text-muted-foreground">
+                        <span>Receita Prevista</span>
+                        <span className="font-medium">R$ {m.previstoMensalidade.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                      </div>
                       <div className="flex items-center justify-between text-[10px]">
                         <span className="text-muted-foreground">Receita Ativada</span>
-                        <span className="font-bold text-foreground">R$ {m.totalMensalidade.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                        <span className="font-bold text-foreground">R$ {m.realizadoMensalidade.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
                       </div>
                     </div>
 
@@ -669,22 +703,30 @@ export default function ImplantacaoAnalytics() {
                   </DialogHeader>
 
                   {/* Summary */}
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+                  <div className="grid grid-cols-3 sm:grid-cols-6 gap-3 mb-4">
                     <div className="text-center p-2 rounded-lg bg-muted/50">
                       <p className="text-[10px] text-muted-foreground uppercase">Contratos Orçados</p>
                       <p className="text-lg font-bold">{m.hasPlan ? m.planejadoQtd : '—'}</p>
                     </div>
                     <div className="text-center p-2 rounded-lg bg-muted/50">
-                      <p className="text-[10px] text-muted-foreground uppercase">Contratos Realizados</p>
-                      <p className="text-lg font-bold">{m.count}</p>
+                      <p className="text-[10px] text-muted-foreground uppercase">Contratos Previstos</p>
+                      <p className="text-lg font-bold text-chart-4">{m.previstoCount}</p>
                     </div>
                     <div className="text-center p-2 rounded-lg bg-muted/50">
-                      <p className="text-[10px] text-muted-foreground uppercase">Receita Prevista</p>
+                      <p className="text-[10px] text-muted-foreground uppercase">Contratos Realizados</p>
+                      <p className="text-lg font-bold">{m.realizadoCount}</p>
+                    </div>
+                    <div className="text-center p-2 rounded-lg bg-muted/50">
+                      <p className="text-[10px] text-muted-foreground uppercase">Receita Orçada</p>
                       <p className="text-sm font-bold">{m.hasPlan ? `R$ ${m.planejadoValor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '—'}</p>
                     </div>
                     <div className="text-center p-2 rounded-lg bg-muted/50">
+                      <p className="text-[10px] text-muted-foreground uppercase">Receita Prevista</p>
+                      <p className="text-sm font-bold text-chart-4">R$ {m.previstoMensalidade.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                    </div>
+                    <div className="text-center p-2 rounded-lg bg-muted/50">
                       <p className="text-[10px] text-muted-foreground uppercase">Receita Realizada</p>
-                      <p className="text-sm font-bold">R$ {m.totalMensalidade.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                      <p className="text-sm font-bold">R$ {m.realizadoMensalidade.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
                     </div>
                   </div>
 

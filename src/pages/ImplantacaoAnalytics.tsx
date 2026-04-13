@@ -56,7 +56,8 @@ interface ContratoDetalhe {
   contrato: string;
   mensalidade: number;
   taxaAtivacao: number;
-  dataAtivacao: string | null;
+  dataPrevista: string | null;
+  dataAtivacaoReal: string | null;
   dataBoleto: string | null;
   praca: string;
   tipoObra: string;
@@ -191,7 +192,7 @@ export default function ImplantacaoAnalytics() {
           .select('id, data_cancelamento, valor_contrato, motivo, customer_id'),
         supabase
           .from('implantacao_etapas')
-          .select('project_id, data_vencimento_primeiro_boleto'),
+          .select('project_id, data_vencimento_primeiro_boleto, data_ativacao_realizada'),
       ]);
 
       if (projectsRes.data) setProjects(projectsRes.data);
@@ -199,8 +200,8 @@ export default function ImplantacaoAnalytics() {
       if (allPortfolioRes.data) setAllPortfolio(allPortfolioRes.data);
       if (cancelamentosRes.data) setCancelamentos(cancelamentosRes.data);
       if (etapasRes.data) {
-        const map: Record<string, { data_vencimento_primeiro_boleto: string | null }> = {};
-        (etapasRes.data as any[]).forEach((e: any) => { map[e.project_id] = { data_vencimento_primeiro_boleto: e.data_vencimento_primeiro_boleto }; });
+        const map: Record<string, { data_vencimento_primeiro_boleto: string | null; data_ativacao_realizada: string | null }> = {};
+        (etapasRes.data as any[]).forEach((e: any) => { map[e.project_id] = { data_vencimento_primeiro_boleto: e.data_vencimento_primeiro_boleto, data_ativacao_realizada: e.data_ativacao_realizada || null }; });
         setEtapasMap(map);
       }
     } catch (error) {

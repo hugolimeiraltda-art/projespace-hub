@@ -349,16 +349,18 @@ export default function ImplantacaoAnalytics() {
         const dataPrevista = p.prazo_entrega_projeto || port.data_ativacao || null;
 
         // Check if project is "Previsto" for this month (based on planned date)
-        const isPrevistoThisMonth = dataPrevista
-          ? isWithinInterval(parseISO(dataPrevista), { start: monthStart, end: monthEnd })
-          : false;
+        if (dataPrevista) {
+          const previstoDate = parseISO(dataPrevista);
+          if (isWithinInterval(previstoDate, { start: monthStart, end: monthEnd })) {
+            previstoCount++;
+            previstoMensalidade += Number(port.mensalidade) || 0;
+          }
+        }
 
-        if (isPrevistoThisMonth) {
-          previstoCount++;
-          previstoMensalidade += Number(port.mensalidade) || 0;
-
-          // "Realizado" = previsto neste mês E já possui ativação real confirmada (qualquer data)
-          if (ativacaoReal) {
+        // Check if project is "Realizado" for this month (based on confirmed real activation)
+        if (ativacaoReal) {
+          const realDate = parseISO(ativacaoReal);
+          if (isWithinInterval(realDate, { start: monthStart, end: monthEnd })) {
             realizadoCount++;
             realizadoMensalidade += Number(port.mensalidade) || 0;
           }

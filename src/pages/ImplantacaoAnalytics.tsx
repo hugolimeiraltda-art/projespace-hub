@@ -56,7 +56,8 @@ interface ContratoDetalhe {
   contrato: string;
   mensalidade: number;
   taxaAtivacao: number;
-  dataAtivacao: string | null;
+  dataPrevista: string | null;
+  dataAtivacaoReal: string | null;
   dataBoleto: string | null;
   praca: string;
   tipoObra: string;
@@ -90,7 +91,7 @@ export default function ImplantacaoAnalytics() {
   const [projects, setProjects] = useState<ProjectData[]>([]);
   const [portfolio, setPortfolio] = useState<PortfolioData[]>([]);
   const [allPortfolio, setAllPortfolio] = useState<PortfolioData[]>([]);
-  const [etapasMap, setEtapasMap] = useState<Record<string, { data_vencimento_primeiro_boleto: string | null }>>({});
+  const [etapasMap, setEtapasMap] = useState<Record<string, { data_vencimento_primeiro_boleto: string | null; data_ativacao_realizada: string | null }>>({});
   const [cancelamentos, setCancelamentos] = useState<CancelamentoData[]>([]);
   const [plans, setPlans] = useState<PlanData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -98,14 +99,14 @@ export default function ImplantacaoAnalytics() {
   const [activationEdits, setActivationEdits] = useState<Record<string, { confirmed: boolean; newDate: string; boletoDate: string }>>({});
   const [savingActivation, setSavingActivation] = useState<string | null>(null);
 
-  const handleActivationConfirmToggle = (projectId: string, currentDate: string | null, currentBoleto: string | null) => {
+  const handleActivationConfirmToggle = (projectId: string, currentRealDate: string | null, currentBoleto: string | null) => {
     setActivationEdits(prev => {
       const existing = prev[projectId];
       if (existing) {
         const { [projectId]: _, ...rest } = prev;
         return rest;
       }
-      return { ...prev, [projectId]: { confirmed: false, newDate: currentDate ? currentDate.split('T')[0] : '', boletoDate: currentBoleto ? currentBoleto.split('T')[0] : '' } };
+      return { ...prev, [projectId]: { confirmed: false, newDate: currentRealDate ? currentRealDate.split('T')[0] : '', boletoDate: currentBoleto ? currentBoleto.split('T')[0] : '' } };
     });
   };
 
@@ -131,10 +132,10 @@ export default function ImplantacaoAnalytics() {
     }
     setSavingActivation(projectId);
     try {
-      // Save data_ativacao on customer_portfolio
+      // Save data_ativacao_realizada on implantacao_etapas
       const { error } = await supabase
-        .from('customer_portfolio')
-        .update({ data_ativacao: edit.newDate })
+        .from('implantacao_etapas')
+        .update({ data_ativacao_realizada: edit.newDate } as any)
         .eq('project_id', projectId);
       if (error) throw error;
 
@@ -191,7 +192,7 @@ export default function ImplantacaoAnalytics() {
           .select('id, data_cancelamento, valor_contrato, motivo, customer_id'),
         supabase
           .from('implantacao_etapas')
-          .select('project_id, data_vencimento_primeiro_boleto'),
+          .select('project_id, data_vencimento_primeiro_boleto, data_ativacao_realizada'),
       ]);
 
       if (projectsRes.data) setProjects(projectsRes.data);
@@ -199,8 +200,8 @@ export default function ImplantacaoAnalytics() {
       if (allPortfolioRes.data) setAllPortfolio(allPortfolioRes.data);
       if (cancelamentosRes.data) setCancelamentos(cancelamentosRes.data);
       if (etapasRes.data) {
-        const map: Record<string, { data_vencimento_primeiro_boleto: string | null }> = {};
-        (etapasRes.data as any[]).forEach((e: any) => { map[e.project_id] = { data_vencimento_primeiro_boleto: e.data_vencimento_primeiro_boleto }; });
+        const map: Record<string, { data_vencimento_primeiro_boleto: string | null; data_ativacao_realizada: string | null }> = {};
+        (etapasRes.data as any[]).forEach((e: any) => { map[e.project_id] = { data_vencimento_primeiro_boleto: e.data_vencimento_primeiro_boleto, data_ativacao_realizada: e.data_ativacao_realizada || null }; });
         setEtapasMap(map);
       }
     } catch (error) {
@@ -342,11 +343,15 @@ export default function ImplantacaoAnalytics() {
         const port = portfolioMap[p.id];
         if (!port) return;
 
-        // Always prioritize data_ativacao when it exists; fallback to prazo_entrega_projeto
-        const activationDate = port.data_ativacao
-          ? parseISO(port.data_ativacao)
-          : p.prazo_entrega_projeto
-            ? parseISO(p.prazo_entrega_projeto)
+        const etapa = etapasMap[p.id];
+        const ativacaoReal = etapa?.data_ativacao_realizada || null;
+        const dataPrevista = port.data_ativacao || p.prazo_entrega_projeto || null;
+
+        // For month grouping: prioritize real activation date, then planned
+        const activationDate = ativacaoReal
+          ? parseISO(ativacaoReal)
+          : dataPrevista
+            ? parseISO(dataPrevista)
             : null;
 
         if (!activationDate) return;
@@ -360,10 +365,11 @@ export default function ImplantacaoAnalytics() {
             contrato: port.contrato || '—',
             mensalidade: Number(port.mensalidade) || 0,
             taxaAtivacao: Number(port.taxa_ativacao) || 0,
-            dataAtivacao: port.data_ativacao || p.prazo_entrega_projeto || null,
+            dataPrevista,
+            dataAtivacaoReal: ativacaoReal,
             praca: getPraca(port.filial, port.praca),
             tipoObra: p.tipo_obra || 'nova',
-            dataBoleto: etapasMap[p.id]?.data_vencimento_primeiro_boleto || null,
+            dataBoleto: etapa?.data_vencimento_primeiro_boleto || null,
             projectId: p.id,
             portfolioProjectId: port.project_id,
           });
@@ -691,7 +697,7 @@ export default function ImplantacaoAnalytics() {
                             <TableHead>Tipo</TableHead>
                             <TableHead>Contrato</TableHead>
                             <TableHead>Data Prevista</TableHead>
-                            <TableHead>Ativação / Boleto</TableHead>
+                            <TableHead>Ativação Real / Boleto</TableHead>
                             <TableHead>Praça</TableHead>
                             <TableHead className="text-right">Venda</TableHead>
                             <TableHead className="text-right">Mensalidade</TableHead>
@@ -711,24 +717,35 @@ export default function ImplantacaoAnalytics() {
                                 </TableCell>
                                 <TableCell className="text-sm text-muted-foreground">{c.contrato}</TableCell>
                                 <TableCell className="text-sm text-muted-foreground">
-                                  {c.dataAtivacao ? format(parseISO(c.dataAtivacao), 'dd/MM/yyyy') : '—'}
+                                  {c.dataPrevista ? format(parseISO(c.dataPrevista), 'dd/MM/yyyy') : '—'}
                                 </TableCell>
                                 <TableCell>
                                   {!isEditing ? (
                                     <div className="space-y-1">
-                                      <div className="flex items-center gap-2">
-                                        <span className="flex items-center gap-1 text-xs text-chart-2 font-medium">
-                                          <Check className="w-3.5 h-3.5" /> Confirmado
-                                        </span>
+                                      {c.dataAtivacaoReal ? (
+                                        <div className="flex items-center gap-2">
+                                          <span className="flex items-center gap-1 text-xs text-chart-2 font-medium">
+                                            <Check className="w-3.5 h-3.5" /> {format(parseISO(c.dataAtivacaoReal), 'dd/MM/yyyy')}
+                                          </span>
+                                          <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            className="h-6 px-2 text-[10px] text-muted-foreground hover:text-destructive"
+                                            onClick={() => handleActivationConfirmToggle(c.projectId, c.dataAtivacaoReal, c.dataBoleto)}
+                                          >
+                                            Alterar data
+                                          </Button>
+                                        </div>
+                                      ) : (
                                         <Button
-                                          variant="ghost"
+                                          variant="outline"
                                           size="sm"
-                                          className="h-6 px-2 text-[10px] text-muted-foreground hover:text-destructive"
-                                          onClick={() => handleActivationConfirmToggle(c.projectId, c.dataAtivacao, c.dataBoleto)}
+                                          className="h-6 px-2 text-[10px]"
+                                          onClick={() => handleActivationConfirmToggle(c.projectId, c.dataAtivacaoReal, c.dataBoleto)}
                                         >
-                                          Alterar
+                                          Definir ativação real
                                         </Button>
-                                      </div>
+                                      )}
                                       {c.dataBoleto && (
                                         <p className="text-[10px] text-muted-foreground">
                                           Boleto: {format(parseISO(c.dataBoleto), 'dd/MM/yyyy')}
@@ -738,7 +755,7 @@ export default function ImplantacaoAnalytics() {
                                   ) : (
                                     <div className="space-y-2">
                                       <div>
-                                        <p className="text-[10px] text-muted-foreground mb-0.5">Data Ativação</p>
+                                        <p className="text-[10px] text-muted-foreground mb-0.5">Data Ativação Real</p>
                                         <Input
                                           type="date"
                                           value={edit.newDate}
@@ -769,7 +786,7 @@ export default function ImplantacaoAnalytics() {
                                           variant="ghost"
                                           size="sm"
                                           className="h-7 px-2"
-                                          onClick={() => handleActivationConfirmToggle(c.projectId, c.dataAtivacao, c.dataBoleto)}
+                                          onClick={() => handleActivationConfirmToggle(c.projectId, c.dataAtivacaoReal, c.dataBoleto)}
                                         >
                                           <X className="w-3.5 h-3.5" />
                                         </Button>

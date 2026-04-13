@@ -102,6 +102,15 @@ const mapToDbAttachmentType = (type: AttachmentType): string => {
   return typeMap[type] || 'OUTRO';
 };
 
+const sendEmailResend = async (body: Record<string, unknown>) => {
+  const { data, error } = await supabase.functions.invoke('send-email-resend', { body });
+
+  if (error) throw error;
+  if (data?.error) throw new Error(data.error);
+
+  return data;
+};
+
 export function ProjectsProvider({ children }: { children: ReactNode }) {
   const [projects, setProjects] = useState<ProjectWithDetails[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -637,72 +646,66 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
 
           // Send email notification for comment
           try {
-            // Get vendedor email if commenter is not the vendedor
-            if (comment.user_id !== project.created_by_user_id) {
-              const { data: vendedorProfile } = await supabase
-                .from('profiles')
-                .select('email, nome')
-                .eq('id', project.created_by_user_id)
-                .single();
+            const projectLink = `${window.location.origin}/projetos/${projectId}`;
+            const buildCommentVariables = (nome: string) => ({
+              nome: nome || 'Usuário',
+              projeto_nome: project.cliente_condominio_nome,
+              novo_status: 'Novo Comentário',
+              status_color: '#3B82F6',
+              alterado_por: comment.user_name,
+              comentario: comment.content,
+              link_projeto: projectLink,
+            });
 
-              if (vendedorProfile?.email) {
-                await supabase.functions.invoke('send-email-resend', {
-                  body: {
-                    action: 'send',
-                    template_id: 'status_projeto',
-                    to: vendedorProfile.email,
-                    subject: `Novo Comentário: Projeto "${project.cliente_condominio_nome}"`,
-                    variables: {
-                      nome: vendedorProfile.nome || 'Usuário',
-                      projeto_nome: project.cliente_condominio_nome,
-                      novo_status: 'Novo Comentário',
-                      status_color: '#3B82F6',
-                      alterado_por: comment.user_name,
-                      comentario: comment.content,
-                      link_projeto: `https://eixopci.lovable.app/projetos/${projectId}`,
-                    },
-                  },
+            // Notify vendedor using the e-mail already stored on the project
+            if (comment.user_id !== project.created_by_user_id) {
+              const vendedorEmail = project.vendedor_email?.trim();
+
+              if (vendedorEmail) {
+                await sendEmailResend({
+                  action: 'send',
+                  template_id: 'status_projeto',
+                  to: vendedorEmail,
+                  subject: `Novo Comentário: Projeto "${project.cliente_condominio_nome}"`,
+                  variables: buildCommentVariables(project.vendedor_nome || 'Usuário'),
                 });
               }
             }
 
             // Get projetos team emails if commenter is not projetos
             if (user?.role !== 'projetos') {
-              const { data: projetosRoles } = await supabase
+              const { data: projetosRoles, error: projetosRolesError } = await supabase
                 .from('user_roles')
                 .select('user_id')
                 .eq('role', 'projetos');
 
+              if (projetosRolesError) throw projetosRolesError;
+
               if (projetosRoles && projetosRoles.length > 0) {
                 const projetosUserIds = projetosRoles.map(r => r.user_id).filter(uid => uid !== comment.user_id);
+
                 if (projetosUserIds.length > 0) {
-                  const { data: projetosProfiles } = await supabase
+                  const { data: projetosProfiles, error: projetosProfilesError } = await supabase
                     .from('profiles')
                     .select('email, nome')
                     .in('id', projetosUserIds);
 
+                  if (projetosProfilesError) throw projetosProfilesError;
+
                   if (projetosProfiles) {
-                    for (const profile of projetosProfiles) {
-                      if (profile.email) {
-                        await supabase.functions.invoke('send-email-resend', {
-                          body: {
+                    await Promise.all(
+                      projetosProfiles
+                        .filter((profile) => !!profile.email)
+                        .map((profile) =>
+                          sendEmailResend({
                             action: 'send',
                             template_id: 'status_projeto',
                             to: profile.email,
                             subject: `Novo Comentário: Projeto "${project.cliente_condominio_nome}"`,
-                            variables: {
-                              nome: profile.nome || 'Usuário',
-                              projeto_nome: project.cliente_condominio_nome,
-                              novo_status: 'Novo Comentário',
-                              status_color: '#3B82F6',
-                              alterado_por: comment.user_name,
-                              comentario: comment.content,
-                              link_projeto: `https://eixopci.lovable.app/projetos/${projectId}`,
-                            },
-                          },
-                        });
-                      }
-                    }
+                            variables: buildCommentVariables(profile.nome || 'Usuário'),
+                          })
+                        )
+                    );
                   }
                 }
               }

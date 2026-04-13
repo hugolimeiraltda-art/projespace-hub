@@ -596,15 +596,19 @@ export default function ImplantacaoAnalytics() {
                       {m.isFuture && <span className="ml-1 text-[10px] text-muted-foreground">(prev.)</span>}
                     </p>
 
-                    {/* Contratos: Previsto vs Realizado */}
-                    <div className="grid grid-cols-2 gap-2 text-center">
+                    {/* Contratos: Orçado vs Previsto vs Realizado */}
+                    <div className="grid grid-cols-3 gap-1 text-center">
                       <div>
                         <p className="text-[10px] text-muted-foreground uppercase">Orçado</p>
                         <p className="text-sm font-semibold text-muted-foreground">{m.hasPlan ? m.planejadoQtd : '—'}</p>
                       </div>
                       <div>
+                        <p className="text-[10px] text-muted-foreground uppercase">Previsto</p>
+                        <p className="text-sm font-semibold text-chart-4">{m.previstoCount}</p>
+                      </div>
+                      <div>
                         <p className="text-[10px] text-muted-foreground uppercase">Realizado</p>
-                        <p className="text-sm font-bold text-foreground">{m.count}</p>
+                        <p className="text-sm font-bold text-foreground">{m.realizadoCount}</p>
                       </div>
                     </div>
 
@@ -620,15 +624,19 @@ export default function ImplantacaoAnalytics() {
                       </div>
                     )}
 
-                    {/* Receita: Prevista vs Realizada */}
+                    {/* Receita */}
                     <div className="border-t border-border/50 pt-1.5 space-y-1">
                       <div className="flex items-center justify-between text-[10px] text-muted-foreground">
                         <span>Receita Orçada</span>
                         <span className="font-medium">{m.hasPlan ? `R$ ${m.planejadoValor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '—'}</span>
                       </div>
+                      <div className="flex items-center justify-between text-[10px] text-muted-foreground">
+                        <span>Receita Prevista</span>
+                        <span className="font-medium">R$ {m.previstoMensalidade.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                      </div>
                       <div className="flex items-center justify-between text-[10px]">
                         <span className="text-muted-foreground">Receita Ativada</span>
-                        <span className="font-bold text-foreground">R$ {m.totalMensalidade.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                        <span className="font-bold text-foreground">R$ {m.realizadoMensalidade.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
                       </div>
                     </div>
 

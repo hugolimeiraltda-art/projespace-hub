@@ -8,87 +8,21 @@ const corsHeaders = {
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
+const RESEND_FROM_EMAIL = Deno.env.get("RESEND_FROM_EMAIL") || "Emive Visitas <noreply@eixopci.com.br>";
 
-async function sendSMTP(from: string, to: string, subject: string, htmlBody: string) {
-  const host = Deno.env.get("SMTP_HOST");
-  const user = Deno.env.get("SMTP_USER");
-  const password = Deno.env.get("SMTP_PASSWORD");
-  const port = parseInt(Deno.env.get("SMTP_PORT") || "465");
-
-  if (!host || !user || !password) {
-    throw new Error("SMTP credentials not configured (SMTP_HOST, SMTP_USER, SMTP_PASSWORD)");
+async function sendViaResend(to: string, subject: string, html: string) {
+  if (!RESEND_API_KEY) throw new Error("RESEND_API_KEY not configured");
+  const res = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: { "Authorization": `Bearer ${RESEND_API_KEY}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ from: RESEND_FROM_EMAIL, to: [to], subject, html }),
+  });
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.message || `Resend API error: ${res.status}`);
   }
-
-  const encoder = new TextEncoder();
-  const decoder = new TextDecoder();
-
-  // Direct SSL connection on port 465
-  const tlsConn = await Deno.connectTls({ hostname: host, port });
-
-  async function tlsRead(): Promise<string> {
-    const buf = new Uint8Array(4096);
-    const n = await tlsConn.read(buf);
-    if (n === null) throw new Error("TLS Connection closed");
-    return decoder.decode(buf.subarray(0, n));
-  }
-
-  async function tlsWrite(cmd: string) {
-    await tlsConn.write(encoder.encode(cmd + "\r\n"));
-  }
-
-  async function tlsCommand(cmd: string, expectedCode: string): Promise<string> {
-    await tlsWrite(cmd);
-    const resp = await tlsRead();
-    if (!resp.startsWith(expectedCode)) {
-      throw new Error(`SMTP error on "${cmd}": ${resp}`);
-    }
-    return resp;
-  }
-
-  // Read greeting
-  const greeting = await tlsRead();
-  if (!greeting.startsWith("220")) throw new Error("SMTP greeting failed: " + greeting);
-
-  await tlsCommand("EHLO localhost", "250");
-
-  // AUTH LOGIN
-  await tlsCommand("AUTH LOGIN", "334");
-  await tlsCommand(btoa(user), "334");
-  await tlsCommand(btoa(password), "235");
-
-  await tlsCommand(`MAIL FROM:<${user}>`, "250");
-  await tlsCommand(`RCPT TO:<${to}>`, "250");
-  await tlsCommand("DATA", "354");
-
-  const boundary = "boundary_" + crypto.randomUUID().replace(/-/g, "");
-  const message = [
-    `From: Emive Visitas <${user}>`,
-    `To: ${to}`,
-    `Subject: ${subject}`,
-    `MIME-Version: 1.0`,
-    `Content-Type: multipart/alternative; boundary="${boundary}"`,
-    ``,
-    `--${boundary}`,
-    `Content-Type: text/plain; charset=UTF-8`,
-    ``,
-    `Relatório de Visita Técnica`,
-    ``,
-    `--${boundary}`,
-    `Content-Type: text/html; charset=UTF-8`,
-    ``,
-    htmlBody,
-    ``,
-    `--${boundary}--`,
-    ``,
-    `.`,
-  ].join("\r\n");
-
-  await tlsConn.write(encoder.encode(message));
-  const dataResp = await tlsRead();
-  if (!dataResp.startsWith("250")) throw new Error("DATA send failed: " + dataResp);
-
-  await tlsCommand("QUIT", "221");
-  tlsConn.close();
+  return await res.json();
 }
 
 serve(async (req) => {
@@ -102,7 +36,6 @@ serve(async (req) => {
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-    // Fetch session info
     const { data: sessao } = await supabase
       .from("orcamento_sessoes")
       .select("nome_cliente, vendedor_nome, vendedor_id")
@@ -111,7 +44,6 @@ serve(async (req) => {
 
     if (!sessao) throw new Error("Sessão não encontrada");
 
-    // If no email provided, get vendedor's email
     let targetEmail = email_destino;
     if (!targetEmail && sessao.vendedor_id) {
       const { data: profile } = await supabase
@@ -124,21 +56,15 @@ serve(async (req) => {
 
     if (!targetEmail) throw new Error("Nenhum email de destino encontrado");
 
-    // Send email via corporate SMTP
-    await sendSMTP(
-      Deno.env.get("SMTP_USER") || "",
+    await sendViaResend(
       targetEmail,
       `Relatório de Visita Técnica - ${sessao.nome_cliente}`,
       html_content
     );
 
-    // Update session status
     await supabase
       .from("orcamento_sessoes")
-      .update({
-        status: "relatorio_enviado",
-        updated_at: new Date().toISOString(),
-      })
+      .update({ status: "relatorio_enviado", updated_at: new Date().toISOString() })
       .eq("id", sessao_id);
 
     return new Response(

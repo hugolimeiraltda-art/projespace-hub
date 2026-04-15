@@ -133,6 +133,7 @@ async function compressVideo(file: File, onProgress: (p: number) => void): Promi
 
 export function SectionFileUpload({ projectId, secao, disabled }: SectionFileUploadProps) {
   const { toast } = useToast();
+  const { openAttachment, isRefreshing } = useAttachmentUrl();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [files, setFiles] = useState<UploadedFile[]>([]);
   const [isUploading, setIsUploading] = useState(false);

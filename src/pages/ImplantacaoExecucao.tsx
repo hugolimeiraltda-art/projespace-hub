@@ -636,10 +636,7 @@ export default function ImplantacaoExecucao() {
       { title: '4.1 Check de Projeto', completed: etapas.check_projeto, date: etapas.check_projeto_at },
       { title: '4.2 Agendamento Visita Implantação', completed: etapas.agendamento_visita_startup, date: etapas.agendamento_visita_startup_at },
       { title: '4.3 Laudo Visita Implantação', completed: etapas.laudo_visita_startup, date: etapas.laudo_visita_startup_at },
-      { title: '5.1 Laudo Instalador', completed: etapas.laudo_instalador, date: etapas.laudo_instalador_at },
-      { title: '5.2 Laudo Vidraceiro', completed: etapas.laudo_vidraceiro, date: etapas.laudo_vidraceiro_at },
-      { title: '5.3 Laudo Serralheiro', completed: etapas.laudo_serralheiro, date: etapas.laudo_serralheiro_at },
-      { title: '5.4 Laudo Conclusão Supervisor', completed: etapas.laudo_conclusao_supervisor, date: etapas.laudo_conclusao_supervisor_at },
+      { title: '5.1 Checklist Execução da Obra', completed: etapas.laudo_instalador, date: etapas.laudo_instalador_at },
       { title: '6.1 Abertura Chamado NOC', completed: nocChamado?.item_6_1_status === 'success', date: nocChamado?.opened_at || null },
       { title: '6.2 Check de Programação', completed: etapas.check_programacao, date: etapas.check_programacao_at },
       { title: '6.3 Confirmação Ativação Financeira', completed: etapas.confirmacao_ativacao_financeira, date: etapas.confirmacao_ativacao_financeira_at },
@@ -705,7 +702,7 @@ export default function ImplantacaoExecucao() {
       case 2: return etapas.contrato_cadastrado;
       case 3: return etapas.ligacao_boas_vindas && etapas.cadastro_gear && etapas.sindico_app && etapas.conferencia_tags;
       case 4: return etapas.check_projeto && etapas.agendamento_visita_startup && etapas.laudo_visita_startup;
-      case 5: return etapas.laudo_instalador && etapas.laudo_vidraceiro && etapas.laudo_serralheiro && etapas.laudo_conclusao_supervisor;
+      case 5: return etapas.laudo_instalador;
       case 6: return nocChamado?.item_6_1_status === 'success' && etapas.check_programacao && etapas.confirmacao_ativacao_financeira;
       case 7: return etapas.agendamento_visita_comercial && etapas.laudo_visita_comercial;
       case 8: return (etapas.operacao_assistida_interacoes?.length || 0) > 0;

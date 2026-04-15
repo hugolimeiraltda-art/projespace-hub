@@ -89,6 +89,39 @@ export type Database = {
         }
         Relationships: []
       }
+      cs_politicas: {
+        Row: {
+          descricao: string
+          icone: string
+          id: string
+          itens: Json
+          titulo: string
+          updated_at: string
+          updated_by: string | null
+          updated_by_name: string | null
+        }
+        Insert: {
+          descricao: string
+          icone?: string
+          id: string
+          itens?: Json
+          titulo: string
+          updated_at?: string
+          updated_by?: string | null
+          updated_by_name?: string | null
+        }
+        Update: {
+          descricao?: string
+          icone?: string
+          id?: string
+          itens?: Json
+          titulo?: string
+          updated_at?: string
+          updated_by?: string | null
+          updated_by_name?: string | null
+        }
+        Relationships: []
+      }
       customer_administradores: {
         Row: {
           atende_celular: boolean | null

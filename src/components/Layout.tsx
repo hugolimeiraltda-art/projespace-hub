@@ -108,6 +108,7 @@ const ALL_NAV_ITEMS: NavItem[] = [
       { path: '/sucesso-cliente/ativos', label: 'Clientes Ativos', icon: UserCheck, menuKey: 'sucesso-cliente' },
       { path: '/sucesso-cliente/inativos', label: 'Clientes Inativos', icon: UserX, menuKey: 'sucesso-cliente' },
       { path: '/sucesso-cliente/relatorios', label: 'Relatórios', icon: FileBarChart, menuKey: 'sucesso-cliente' },
+      { path: '/sucesso-cliente/politica-cs', label: 'Política de CS', icon: ShieldCheck, menuKey: 'sucesso-cliente' },
     ],
   },
   {

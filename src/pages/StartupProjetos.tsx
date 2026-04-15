@@ -229,13 +229,20 @@ export default function StartupProjetos() {
       
       let projectsQuery = supabase
         .from('projects')
-        .select('id, numero_projeto, cliente_condominio_nome, cliente_cidade, cliente_estado, vendedor_nome, created_at, updated_at, implantacao_status, implantacao_started_at, implantacao_completed_at, prazo_entrega_projeto, tipo_obra')
+        .select('id, numero_projeto, cliente_condominio_nome, cliente_cidade, cliente_estado, vendedor_nome, created_at, updated_at, implantacao_status, implantacao_started_at, implantacao_completed_at, prazo_entrega_projeto, tipo_obra, tipo_implantacao')
         .eq('sale_status', 'CONCLUIDO');
       
       if (activeTab === 'historico') {
         projectsQuery = projectsQuery.eq('implantacao_status', 'CONCLUIDO_IMPLANTACAO');
       } else {
         projectsQuery = projectsQuery.neq('implantacao_status', 'CONCLUIDO_IMPLANTACAO');
+      }
+
+      // Filter by tipo_implantacao based on active tab
+      if (activeTab === 'em-implantacao') {
+        projectsQuery = projectsQuery.eq('tipo_implantacao', 'PCI');
+      } else if (activeTab === 'ppe') {
+        projectsQuery = projectsQuery.eq('tipo_implantacao', 'PPE');
       }
       
       projectsQuery = projectsQuery.order('created_at', { ascending: false });

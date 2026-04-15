@@ -1,0 +1,1 @@
+ALTER TABLE public.projects ADD COLUMN IF NOT EXISTS tipo_implantacao text NOT NULL DEFAULT 'PCI';

@@ -5,6 +5,7 @@ import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
 import { Upload, FileText, Image, Video, Trash2, AlertTriangle, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useAttachmentUrl } from '@/hooks/useAttachmentUrl';
 
 interface SectionFileUploadProps {
   projectId: string | null;

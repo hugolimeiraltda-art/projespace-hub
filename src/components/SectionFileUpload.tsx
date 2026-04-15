@@ -5,6 +5,7 @@ import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
 import { Upload, FileText, Image, Video, Trash2, AlertTriangle, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useAttachmentUrl } from '@/hooks/useAttachmentUrl';
 
 interface SectionFileUploadProps {
   projectId: string | null;
@@ -132,6 +133,7 @@ async function compressVideo(file: File, onProgress: (p: number) => void): Promi
 
 export function SectionFileUpload({ projectId, secao, disabled }: SectionFileUploadProps) {
   const { toast } = useToast();
+  const { openAttachment, isRefreshing } = useAttachmentUrl();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [files, setFiles] = useState<UploadedFile[]>([]);
   const [isUploading, setIsUploading] = useState(false);
@@ -385,14 +387,14 @@ export function SectionFileUpload({ projectId, secao, disabled }: SectionFileUpl
               >
                 <Icon className="h-5 w-5 text-primary flex-shrink-0" />
                 <div className="flex-1 min-w-0">
-                  <a
-                    href={file.arquivo_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-sm font-medium truncate block hover:underline"
+                  <button
+                    type="button"
+                    onClick={(e) => openAttachment(file.arquivo_url, e, file.nome_arquivo)}
+                    className="text-sm font-medium truncate block hover:underline text-left w-full"
+                    disabled={isRefreshing}
                   >
                     {file.nome_arquivo}
-                  </a>
+                  </button>
                   {file.tamanho && (
                     <p className="text-xs text-muted-foreground">{formatFileSize(file.tamanho)}</p>
                   )}

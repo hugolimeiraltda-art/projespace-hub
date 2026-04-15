@@ -470,7 +470,7 @@ export default function StartupProjetos() {
               {activeTab === 'historico' && 'Obras concluídas com sucesso'}
             </p>
           </div>
-          {activeTab === 'em-implantacao' && (
+          {(activeTab === 'em-implantacao' || activeTab === 'ppe') && (
             <Dialog open={showNewObra} onOpenChange={setShowNewObra}>
               <DialogTrigger asChild>
                 <Button><Plus className="mr-2 h-4 w-4" />Cadastrar Nova Obra</Button>

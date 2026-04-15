@@ -57,6 +57,7 @@ interface StartupProject {
   implantacao_completed_at: string | null;
   prazo_entrega_projeto: string | null;
   tipo_obra: 'nova' | 'acrescimo';
+  tipo_implantacao: 'PCI' | 'PPE';
 }
 
 const IMPLANTACAO_STATUS_LABELS: Record<ImplantacaoStatus, string> = {

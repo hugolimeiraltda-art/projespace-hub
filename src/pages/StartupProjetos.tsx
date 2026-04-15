@@ -175,6 +175,7 @@ export default function StartupProjetos() {
           sale_status: 'CONCLUIDO',
           implantacao_status: 'A_EXECUTAR',
           tipo_obra: newObraTipo,
+          tipo_implantacao: activeTab === 'ppe' ? 'PPE' : 'PCI',
         })
         .select('id')
         .single();
@@ -587,7 +588,7 @@ export default function StartupProjetos() {
           )}
         </div>
 
-        {activeTab === 'em-implantacao' && (
+        {(activeTab === 'em-implantacao' || activeTab === 'ppe') && (
           <>
             {/* Stats Cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">

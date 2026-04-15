@@ -387,14 +387,14 @@ export function SectionFileUpload({ projectId, secao, disabled }: SectionFileUpl
               >
                 <Icon className="h-5 w-5 text-primary flex-shrink-0" />
                 <div className="flex-1 min-w-0">
-                  <a
-                    href={file.arquivo_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-sm font-medium truncate block hover:underline"
+                  <button
+                    type="button"
+                    onClick={(e) => openAttachment(file.arquivo_url, e, file.nome_arquivo)}
+                    className="text-sm font-medium truncate block hover:underline text-left w-full"
+                    disabled={isRefreshing}
                   >
                     {file.nome_arquivo}
-                  </a>
+                  </button>
                   {file.tamanho && (
                     <p className="text-xs text-muted-foreground">{formatFileSize(file.tamanho)}</p>
                   )}

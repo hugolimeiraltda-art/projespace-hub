@@ -664,69 +664,6 @@ export default function CarteiraClientes() {
           </Card>
         </div>
 
-        {/* Contracts Expiring Cards */}
-        <div className="grid grid-cols-3 gap-4 mb-6">
-          <Card 
-            className="border-l-4 border-l-red-500 cursor-pointer hover:shadow-md transition-shadow"
-            onClick={() => {
-              setExpiringDialogData({ title: 'Contratos vencendo em 3 meses', customers: contractsExpiring3Months });
-              setExpiringDialogOpen(true);
-            }}
-          >
-            <CardContent className="pt-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-red-100 rounded-lg">
-                  <AlertTriangle className="w-5 h-5 text-red-600" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Vencendo em 3 meses</p>
-                  <p className="text-2xl font-bold text-red-600">{contractsExpiring3Months.length}</p>
-                  <p className="text-xs text-muted-foreground">R$ {contractsExpiring3Months.reduce((s, c) => s + (c.mensalidade || 0), 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card 
-            className="border-l-4 border-l-amber-500 cursor-pointer hover:shadow-md transition-shadow"
-            onClick={() => {
-              setExpiringDialogData({ title: 'Contratos vencendo em 6 meses', customers: contractsExpiring6Months });
-              setExpiringDialogOpen(true);
-            }}
-          >
-            <CardContent className="pt-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-amber-100 rounded-lg">
-                  <CalendarClock className="w-5 h-5 text-amber-600" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Vencendo em 6 meses</p>
-                  <p className="text-2xl font-bold text-amber-600">{contractsExpiring6Months.length}</p>
-                  <p className="text-xs text-muted-foreground">R$ {contractsExpiring6Months.reduce((s, c) => s + (c.mensalidade || 0), 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card 
-            className="border-l-4 border-l-blue-500 cursor-pointer hover:shadow-md transition-shadow"
-            onClick={() => {
-              setExpiringDialogData({ title: 'Contratos vencendo em 1 ano', customers: contractsExpiring1Year });
-              setExpiringDialogOpen(true);
-            }}
-          >
-            <CardContent className="pt-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-blue-100 rounded-lg">
-                  <CalendarClock className="w-5 h-5 text-blue-600" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Vencendo em 1 ano</p>
-                  <p className="text-2xl font-bold text-blue-600">{contractsExpiring1Year.length}</p>
-                  <p className="text-xs text-muted-foreground">R$ {contractsExpiring1Year.reduce((s, c) => s + (c.mensalidade || 0), 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
 
         {/* Active Clients by Praça */}
         <div className="grid grid-cols-5 gap-4 mb-6">

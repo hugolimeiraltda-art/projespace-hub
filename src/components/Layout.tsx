@@ -57,7 +57,8 @@ const ALL_NAV_ITEMS: NavItem[] = [
     menuKey: 'implantacao',
     subItems: [
       { path: '/implantacao-analytics', label: 'Analytics', icon: TrendingUp, menuKey: 'implantacao/analytics' },
-      { path: '/startup-projetos?tab=em-implantacao', label: 'Em Implantação', icon: PlayCircle, menuKey: 'implantacao/em-implantacao' },
+      { path: '/startup-projetos?tab=em-implantacao', label: 'PCI - Em Implantação', icon: PlayCircle, menuKey: 'implantacao/em-implantacao' },
+      { path: '/startup-projetos?tab=ppe', label: 'PPE - Totens', icon: Package, menuKey: 'implantacao/ppe' },
       { path: '/startup-projetos?tab=operacao-assistida', label: 'Operação Assistida', icon: HeadphonesIcon, menuKey: 'implantacao/operacao-assistida' },
       { path: '/startup-projetos?tab=pequenas-obras', label: 'Pequenas Obras', icon: Wrench, menuKey: 'implantacao/pequenas-obras' },
       { path: '/startup-projetos?tab=historico', label: 'Histórico', icon: CheckCircle2, menuKey: 'implantacao/historico' },

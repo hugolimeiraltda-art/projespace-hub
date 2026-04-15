@@ -57,6 +57,7 @@ interface StartupProject {
   implantacao_completed_at: string | null;
   prazo_entrega_projeto: string | null;
   tipo_obra: 'nova' | 'acrescimo';
+  tipo_implantacao: 'PCI' | 'PPE';
 }
 
 const IMPLANTACAO_STATUS_LABELS: Record<ImplantacaoStatus, string> = {
@@ -174,6 +175,7 @@ export default function StartupProjetos() {
           sale_status: 'CONCLUIDO',
           implantacao_status: 'A_EXECUTAR',
           tipo_obra: newObraTipo,
+          tipo_implantacao: activeTab === 'ppe' ? 'PPE' : 'PCI',
         })
         .select('id')
         .single();
@@ -228,13 +230,20 @@ export default function StartupProjetos() {
       
       let projectsQuery = supabase
         .from('projects')
-        .select('id, numero_projeto, cliente_condominio_nome, cliente_cidade, cliente_estado, vendedor_nome, created_at, updated_at, implantacao_status, implantacao_started_at, implantacao_completed_at, prazo_entrega_projeto, tipo_obra')
+        .select('id, numero_projeto, cliente_condominio_nome, cliente_cidade, cliente_estado, vendedor_nome, created_at, updated_at, implantacao_status, implantacao_started_at, implantacao_completed_at, prazo_entrega_projeto, tipo_obra, tipo_implantacao')
         .eq('sale_status', 'CONCLUIDO');
       
       if (activeTab === 'historico') {
         projectsQuery = projectsQuery.eq('implantacao_status', 'CONCLUIDO_IMPLANTACAO');
       } else {
         projectsQuery = projectsQuery.neq('implantacao_status', 'CONCLUIDO_IMPLANTACAO');
+      }
+
+      // Filter by tipo_implantacao based on active tab
+      if (activeTab === 'em-implantacao') {
+        projectsQuery = projectsQuery.eq('tipo_implantacao', 'PCI');
+      } else if (activeTab === 'ppe') {
+        projectsQuery = projectsQuery.eq('tipo_implantacao', 'PPE');
       }
       
       projectsQuery = projectsQuery.order('created_at', { ascending: false });
@@ -447,20 +456,22 @@ export default function StartupProjetos() {
             <div className="flex items-center gap-3 mb-2">
               <Rocket className="w-8 h-8 text-primary" />
               <h1 className="text-2xl font-bold text-foreground">
-                {activeTab === 'em-implantacao' && 'Implantação de Projetos'}
+                {activeTab === 'em-implantacao' && 'Implantação de Projetos - PCI'}
+                {activeTab === 'ppe' && 'Implantação de Projetos - PPE (Totens)'}
                 {activeTab === 'operacao-assistida' && 'Operação Assistida'}
                 {activeTab === 'pequenas-obras' && 'Pequenas Obras'}
                 {activeTab === 'historico' && 'Histórico de Implantações'}
               </h1>
             </div>
             <p className="text-muted-foreground">
-              {activeTab === 'em-implantacao' && 'Gerencie a implantação dos projetos vendidos'}
+              {activeTab === 'em-implantacao' && 'Gerencie a implantação dos projetos PCI vendidos'}
+              {activeTab === 'ppe' && 'Gerencie a implantação de Totens (PPE)'}
               {activeTab === 'operacao-assistida' && 'Acompanhe os projetos em fase de operação assistida'}
               {activeTab === 'pequenas-obras' && 'Gerencie as pequenas obras e serviços'}
               {activeTab === 'historico' && 'Obras concluídas com sucesso'}
             </p>
           </div>
-          {activeTab === 'em-implantacao' && (
+          {(activeTab === 'em-implantacao' || activeTab === 'ppe') && (
             <Dialog open={showNewObra} onOpenChange={setShowNewObra}>
               <DialogTrigger asChild>
                 <Button><Plus className="mr-2 h-4 w-4" />Cadastrar Nova Obra</Button>
@@ -577,7 +588,7 @@ export default function StartupProjetos() {
           )}
         </div>
 
-        {activeTab === 'em-implantacao' && (
+        {(activeTab === 'em-implantacao' || activeTab === 'ppe') && (
           <>
             {/* Stats Cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">

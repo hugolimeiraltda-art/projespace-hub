@@ -241,6 +241,10 @@ function AppRoutes() {
         element={<ProtectedRoute><SucessoClienteRelatorios /></ProtectedRoute>} 
       />
       <Route 
+        path="/sucesso-cliente/politica-cs" 
+        element={<ProtectedRoute><SucessoClientePoliticaCS /></ProtectedRoute>} 
+      />
+      <Route 
         path="/sucesso-cliente/cliente/:id" 
         element={<ProtectedRoute><SucessoClienteDetalhe /></ProtectedRoute>} 
       />

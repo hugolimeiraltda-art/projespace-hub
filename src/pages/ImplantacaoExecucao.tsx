@@ -636,10 +636,7 @@ export default function ImplantacaoExecucao() {
       { title: '4.1 Check de Projeto', completed: etapas.check_projeto, date: etapas.check_projeto_at },
       { title: '4.2 Agendamento Visita Implantação', completed: etapas.agendamento_visita_startup, date: etapas.agendamento_visita_startup_at },
       { title: '4.3 Laudo Visita Implantação', completed: etapas.laudo_visita_startup, date: etapas.laudo_visita_startup_at },
-      { title: '5.1 Laudo Instalador', completed: etapas.laudo_instalador, date: etapas.laudo_instalador_at },
-      { title: '5.2 Laudo Vidraceiro', completed: etapas.laudo_vidraceiro, date: etapas.laudo_vidraceiro_at },
-      { title: '5.3 Laudo Serralheiro', completed: etapas.laudo_serralheiro, date: etapas.laudo_serralheiro_at },
-      { title: '5.4 Laudo Conclusão Supervisor', completed: etapas.laudo_conclusao_supervisor, date: etapas.laudo_conclusao_supervisor_at },
+      { title: '5.1 Checklist Execução da Obra', completed: etapas.laudo_instalador, date: etapas.laudo_instalador_at },
       { title: '6.1 Abertura Chamado NOC', completed: nocChamado?.item_6_1_status === 'success', date: nocChamado?.opened_at || null },
       { title: '6.2 Check de Programação', completed: etapas.check_programacao, date: etapas.check_programacao_at },
       { title: '6.3 Confirmação Ativação Financeira', completed: etapas.confirmacao_ativacao_financeira, date: etapas.confirmacao_ativacao_financeira_at },
@@ -705,7 +702,7 @@ export default function ImplantacaoExecucao() {
       case 2: return etapas.contrato_cadastrado;
       case 3: return etapas.ligacao_boas_vindas && etapas.cadastro_gear && etapas.sindico_app && etapas.conferencia_tags;
       case 4: return etapas.check_projeto && etapas.agendamento_visita_startup && etapas.laudo_visita_startup;
-      case 5: return etapas.laudo_instalador && etapas.laudo_vidraceiro && etapas.laudo_serralheiro && etapas.laudo_conclusao_supervisor;
+      case 5: return etapas.laudo_instalador;
       case 6: return nocChamado?.item_6_1_status === 'success' && etapas.check_programacao && etapas.confirmacao_ativacao_financeira;
       case 7: return etapas.agendamento_visita_comercial && etapas.laudo_visita_comercial;
       case 8: return (etapas.operacao_assistida_interacoes?.length || 0) > 0;
@@ -2049,9 +2046,9 @@ export default function ImplantacaoExecucao() {
               <CollapsibleContent>
                 <CardContent className="pt-0 space-y-4">
                   <p className="text-xs text-muted-foreground px-4">
-                    Faça upload dos laudos/checklists preenchidos (PDF ou fotos). Se o documento não estiver devidamente preenchido, ficará com mensagem de pendência de informação.
+                    Faça upload do checklist de execução da obra preenchido (PDF ou fotos). Se o documento não estiver devidamente preenchido, ficará com mensagem de pendência de informação.
                   </p>
-                  {/* 5.1 - Instalador */}
+                  {/* 5.1 - Checklist de Execução da Obra */}
                   <div className="py-2 px-4">
                     <div className="flex items-center gap-3 mb-2">
                       <Checkbox 
@@ -2060,7 +2057,7 @@ export default function ImplantacaoExecucao() {
                           if (value === true && !secoesComAnexo.includes('implantacao_laudo_instalador')) {
                             toast({
                               title: 'Upload obrigatório',
-                              description: 'Anexe o laudo/checklist do instalador antes de marcar como concluído.',
+                              description: 'Anexe o checklist de execução da obra antes de marcar como concluído.',
                               variant: 'destructive',
                             });
                             return;
@@ -2070,7 +2067,7 @@ export default function ImplantacaoExecucao() {
                         disabled={isSaving} 
                       />
                       <span className={cn("text-sm font-medium", etapas.laudo_instalador && "text-muted-foreground line-through")}>
-                        5.1 - Laudo e Check-list do Instalador
+                        5.1 - Checklist de Execução da Obra
                         {!secoesComAnexo.includes('implantacao_laudo_instalador') && !etapas.laudo_instalador && (
                           <span className="text-destructive ml-2 text-xs font-medium">(Upload obrigatório)</span>
                         )}
@@ -2078,33 +2075,6 @@ export default function ImplantacaoExecucao() {
                       {etapas.laudo_instalador_at && <span className="text-xs text-muted-foreground">{format(parseISO(etapas.laudo_instalador_at), "dd/MM/yyyy", { locale: ptBR })}</span>}
                     </div>
                     <div className="ml-8"><SectionFileUpload projectId={id || null} secao="implantacao_laudo_instalador" /></div>
-                  </div>
-                  {/* 5.2 - Vidraceiro */}
-                  <div className="py-2 px-4">
-                    <div className="flex items-center gap-3 mb-2">
-                      <Checkbox checked={etapas.laudo_vidraceiro} onCheckedChange={(value) => updateEtapa('laudo_vidraceiro', value, 'laudo_vidraceiro_at')} disabled={isSaving} />
-                      <span className={cn("text-sm font-medium", etapas.laudo_vidraceiro && "text-muted-foreground line-through")}>5.2 - Laudo e Check-list do Vidraceiro</span>
-                      {etapas.laudo_vidraceiro_at && <span className="text-xs text-muted-foreground">{format(parseISO(etapas.laudo_vidraceiro_at), "dd/MM/yyyy", { locale: ptBR })}</span>}
-                    </div>
-                    <div className="ml-8"><SectionFileUpload projectId={id || null} secao="implantacao_laudo_vidraceiro" /></div>
-                  </div>
-                  {/* 5.3 - Serralheiro */}
-                  <div className="py-2 px-4">
-                    <div className="flex items-center gap-3 mb-2">
-                      <Checkbox checked={etapas.laudo_serralheiro} onCheckedChange={(value) => updateEtapa('laudo_serralheiro', value, 'laudo_serralheiro_at')} disabled={isSaving} />
-                      <span className={cn("text-sm font-medium", etapas.laudo_serralheiro && "text-muted-foreground line-through")}>5.3 - Laudo e Check-list do Serralheiro</span>
-                      {etapas.laudo_serralheiro_at && <span className="text-xs text-muted-foreground">{format(parseISO(etapas.laudo_serralheiro_at), "dd/MM/yyyy", { locale: ptBR })}</span>}
-                    </div>
-                    <div className="ml-8"><SectionFileUpload projectId={id || null} secao="implantacao_laudo_serralheiro" /></div>
-                  </div>
-                  {/* 5.4 - Conclusão do Supervisor */}
-                  <div className="py-2 px-4">
-                    <div className="flex items-center gap-3 mb-2">
-                      <Checkbox checked={etapas.laudo_conclusao_supervisor} onCheckedChange={(value) => updateEtapa('laudo_conclusao_supervisor', value, 'laudo_conclusao_supervisor_at')} disabled={isSaving} />
-                      <span className={cn("text-sm font-medium", etapas.laudo_conclusao_supervisor && "text-muted-foreground line-through")}>5.4 - Laudo e Check-list de Conclusão do Supervisor</span>
-                      {etapas.laudo_conclusao_supervisor_at && <span className="text-xs text-muted-foreground">{format(parseISO(etapas.laudo_conclusao_supervisor_at), "dd/MM/yyyy", { locale: ptBR })}</span>}
-                    </div>
-                    <div className="ml-8"><SectionFileUpload projectId={id || null} secao="implantacao_laudo_conclusao" /></div>
                   </div>
                 </CardContent>
               </CollapsibleContent>

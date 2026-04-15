@@ -41,7 +41,6 @@ import SucessoClienteSatisfacao from "./pages/SucessoClienteSatisfacao";
 import SucessoClienteInativos from "./pages/SucessoClienteInativos";
 import SucessoClienteRelatorios from "./pages/SucessoClienteRelatorios";
 import SucessoClienteAtivos from "./pages/SucessoClienteAtivos";
-import SucessoClientePoliticaCS from "./pages/SucessoClientePoliticaCS";
 import Manutencao from "./pages/Manutencao";
 import ManutencaoPreventivas from "./pages/ManutencaoPreventivas";
 import ManutencaoChamados from "./pages/ManutencaoChamados";
@@ -239,10 +238,6 @@ function AppRoutes() {
       <Route 
         path="/sucesso-cliente/relatorios" 
         element={<ProtectedRoute><SucessoClienteRelatorios /></ProtectedRoute>} 
-      />
-      <Route 
-        path="/sucesso-cliente/politica-cs" 
-        element={<ProtectedRoute><SucessoClientePoliticaCS /></ProtectedRoute>} 
       />
       <Route 
         path="/sucesso-cliente/cliente/:id" 

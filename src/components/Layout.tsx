@@ -5,7 +5,7 @@ import { useMenuPermissions } from '@/hooks/useMenuPermissions';
 import { Button } from '@/components/ui/button';
 import { NotificationsSidebarItem } from '@/components/NotificationsSidebarItem';
 import { cn } from '@/lib/utils';
-import { LayoutDashboard, FolderPlus, List, Settings, LogOut, User, ClipboardList, Users, Briefcase, ShoppingCart, Package, Heart, Wrench, ChevronDown, ChevronRight, AlertTriangle, Calendar, Bot, Boxes, Percent, Brain, BookOpen, FileText, Menu, X, BarChart3, PlayCircle, HeadphonesIcon, TrendingUp, UserX, FileBarChart, UserCheck, CheckCircle2, DollarSign, HardHat, Building, Smartphone, ShieldCheck } from 'lucide-react';
+import { LayoutDashboard, FolderPlus, List, Settings, LogOut, User, ClipboardList, Users, Briefcase, ShoppingCart, Package, Heart, Wrench, ChevronDown, ChevronRight, AlertTriangle, Calendar, Bot, Boxes, Percent, Brain, BookOpen, FileText, Menu, X, BarChart3, PlayCircle, HeadphonesIcon, TrendingUp, UserX, FileBarChart, UserCheck, CheckCircle2, DollarSign, HardHat, Building } from 'lucide-react';
 import emiveLogo from '@/assets/emive-logo.png';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -58,7 +58,7 @@ const ALL_NAV_ITEMS: NavItem[] = [
     subItems: [
       { path: '/implantacao-analytics', label: 'Analytics', icon: TrendingUp, menuKey: 'implantacao/analytics' },
       { path: '/startup-projetos?tab=em-implantacao', label: 'PCI - Em Implantação', icon: Building, menuKey: 'implantacao/em-implantacao' },
-      { path: '/startup-projetos?tab=ppe', label: 'PPE - Totens', icon: Smartphone, menuKey: 'implantacao/ppe' },
+      { path: '/startup-projetos?tab=ppe', label: 'PPE - Totens', icon: Package, menuKey: 'implantacao/ppe' },
       { path: '/startup-projetos?tab=operacao-assistida', label: 'Operação Assistida', icon: HeadphonesIcon, menuKey: 'implantacao/operacao-assistida' },
       { path: '/startup-projetos?tab=pequenas-obras', label: 'Pequenas Obras', icon: Wrench, menuKey: 'implantacao/pequenas-obras' },
       { path: '/startup-projetos?tab=historico', label: 'Histórico', icon: CheckCircle2, menuKey: 'implantacao/historico' },
@@ -108,7 +108,6 @@ const ALL_NAV_ITEMS: NavItem[] = [
       { path: '/sucesso-cliente/ativos', label: 'Clientes Ativos', icon: UserCheck, menuKey: 'sucesso-cliente' },
       { path: '/sucesso-cliente/inativos', label: 'Clientes Inativos', icon: UserX, menuKey: 'sucesso-cliente' },
       { path: '/sucesso-cliente/relatorios', label: 'Relatórios', icon: FileBarChart, menuKey: 'sucesso-cliente' },
-      { path: '/sucesso-cliente/politica-cs', label: 'Política de CS', icon: ShieldCheck, menuKey: 'sucesso-cliente' },
     ],
   },
   {

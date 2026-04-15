@@ -593,42 +593,42 @@ export default function CarteiraClientes() {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-4 gap-3 mb-4">
           <Card>
-            <CardContent className="pt-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-primary/10 rounded-lg">
-                  <Users className="w-5 h-5 text-primary" />
+            <CardContent className="pt-3 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 bg-primary/10 rounded-lg">
+                  <Users className="w-4 h-4 text-primary" />
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Total Clientes</p>
-                  <p className="text-2xl font-bold">{customers.length}</p>
+                  <p className="text-xs text-muted-foreground">Total Clientes</p>
+                  <p className="text-xl font-bold">{customers.length}</p>
                 </div>
               </div>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="pt-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-primary/10 rounded-lg">
-                  <Building2 className="w-5 h-5 text-primary" />
+            <CardContent className="pt-3 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 bg-primary/10 rounded-lg">
+                  <Building2 className="w-4 h-4 text-primary" />
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Total Unidades</p>
-                  <p className="text-2xl font-bold">{totals.unidades.toLocaleString('pt-BR')}</p>
+                  <p className="text-xs text-muted-foreground">Total Unidades</p>
+                  <p className="text-xl font-bold">{totals.unidades.toLocaleString('pt-BR')}</p>
                 </div>
               </div>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="pt-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-primary/10 rounded-lg">
-                  <Camera className="w-5 h-5 text-primary" />
+            <CardContent className="pt-3 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 bg-primary/10 rounded-lg">
+                  <Camera className="w-4 h-4 text-primary" />
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Total Câmeras</p>
-                  <p className="text-2xl font-bold">{totals.cameras.toLocaleString('pt-BR')}</p>
+                  <p className="text-xs text-muted-foreground">Total Câmeras</p>
+                  <p className="text-xl font-bold">{totals.cameras.toLocaleString('pt-BR')}</p>
                 </div>
               </div>
             </CardContent>
@@ -637,14 +637,14 @@ export default function CarteiraClientes() {
             className="cursor-pointer hover:shadow-md transition-shadow"
             onClick={() => setFaciaisDialogOpen(true)}
           >
-            <CardContent className="pt-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-primary/10 rounded-lg">
-                  <DoorOpen className="w-5 h-5 text-primary" />
+            <CardContent className="pt-3 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 bg-primary/10 rounded-lg">
+                  <DoorOpen className="w-4 h-4 text-primary" />
                 </div>
                 <div className="flex-1">
-                  <p className="text-sm text-muted-foreground">Total Portas / Faciais</p>
-                  <p className="text-2xl font-bold">{totals.portas.toLocaleString('pt-BR')} / {totalFaciais.toLocaleString('pt-BR')}</p>
+                  <p className="text-xs text-muted-foreground">Total Portas / Faciais</p>
+                  <p className="text-xl font-bold">{totals.portas.toLocaleString('pt-BR')} / {totalFaciais.toLocaleString('pt-BR')}</p>
                   {totalFaciais > 0 && (
                     <div className="mt-1 text-xs text-muted-foreground space-y-0.5">
                       {totals.faciais_hik > 0 && (
@@ -666,30 +666,30 @@ export default function CarteiraClientes() {
 
 
         {/* Active Clients by Praça */}
-        <div className="grid grid-cols-5 gap-4 mb-6">
+        <div className="grid grid-cols-5 gap-3 mb-4">
           <Card className="border-l-4 border-l-green-500">
-            <CardContent className="pt-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-green-100 rounded-lg">
-                  <Users className="w-5 h-5 text-green-600" />
+            <CardContent className="pt-3 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 bg-green-100 rounded-lg">
+                  <Users className="w-4 h-4 text-green-600" />
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Ativos Total</p>
-                  <p className="text-2xl font-bold text-green-600">{activeByPraca._total || 0}</p>
+                  <p className="text-xs text-muted-foreground">Ativos Total</p>
+                  <p className="text-xl font-bold text-green-600">{activeByPraca._total || 0}</p>
                 </div>
               </div>
             </CardContent>
           </Card>
           {pracaEntries.map(({ praca, count }) => (
             <Card key={praca} className="border-l-4 border-l-primary">
-              <CardContent className="pt-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-primary/10 rounded-lg">
-                    <Building2 className="w-5 h-5 text-primary" />
+              <CardContent className="pt-3 pb-3">
+                <div className="flex items-center gap-2">
+                  <div className="p-1.5 bg-primary/10 rounded-lg">
+                    <Building2 className="w-4 h-4 text-primary" />
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground">Ativos {praca}</p>
-                    <p className="text-2xl font-bold">{count}</p>
+                    <p className="text-xs text-muted-foreground">Ativos {praca}</p>
+                    <p className="text-xl font-bold">{count}</p>
                   </div>
                 </div>
               </CardContent>

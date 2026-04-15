@@ -1,6 +1,6 @@
 import { Layout } from '@/components/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ShieldCheck, ClipboardCheck, BarChart3, AlertTriangle, RefreshCw, Users } from 'lucide-react';
+import { ShieldCheck, ClipboardCheck, BarChart3, AlertTriangle, RefreshCw, Users, TrendingUp } from 'lucide-react';
 
 const politicas = [
   {
@@ -69,6 +69,20 @@ const politicas = [
       'Pauta mínima: indicadores de operação, pendências, satisfação e melhorias',
       'Ata de reunião registrada no sistema em até 24h',
       'Itens de ação com responsável e prazo devem ser acompanhados no follow-up',
+    ],
+  },
+  {
+    icon: TrendingUp,
+    titulo: 'Indicadores de Desempenho do CS',
+    descricao: 'KPIs monitorados para avaliar a performance do Sucesso do Cliente.',
+    itens: [
+      'NPS (Net Promoter Score) — meta mínima de 50 pontos',
+      'Taxa de cancelamento (%) — acompanhamento mensal por praça e filial',
+      'Tempo médio de resposta e resolução de chamados e reclamações',
+      'Taxa de engajamento nas reuniões de sucesso (presença vs. agendadas)',
+      'Taxa de renovação contratual — meta acima de 90%',
+      'Índice de satisfação geral (média das pesquisas aplicadas)',
+      'Volume de pendências abertas por cliente e tempo médio de resolução',
     ],
   },
 ];

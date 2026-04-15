@@ -1,6 +1,6 @@
 import { Layout } from '@/components/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ShieldCheck, ClipboardCheck, BarChart3, AlertTriangle, RefreshCw, Users } from 'lucide-react';
+import { ShieldCheck, ClipboardCheck, BarChart3, AlertTriangle, RefreshCw, Users, TrendingUp } from 'lucide-react';
 
 const politicas = [
   {

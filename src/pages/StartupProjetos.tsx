@@ -455,14 +455,16 @@ export default function StartupProjetos() {
             <div className="flex items-center gap-3 mb-2">
               <Rocket className="w-8 h-8 text-primary" />
               <h1 className="text-2xl font-bold text-foreground">
-                {activeTab === 'em-implantacao' && 'Implantação de Projetos'}
+                {activeTab === 'em-implantacao' && 'Implantação de Projetos - PCI'}
+                {activeTab === 'ppe' && 'Implantação de Projetos - PPE (Totens)'}
                 {activeTab === 'operacao-assistida' && 'Operação Assistida'}
                 {activeTab === 'pequenas-obras' && 'Pequenas Obras'}
                 {activeTab === 'historico' && 'Histórico de Implantações'}
               </h1>
             </div>
             <p className="text-muted-foreground">
-              {activeTab === 'em-implantacao' && 'Gerencie a implantação dos projetos vendidos'}
+              {activeTab === 'em-implantacao' && 'Gerencie a implantação dos projetos PCI vendidos'}
+              {activeTab === 'ppe' && 'Gerencie a implantação de Totens (PPE)'}
               {activeTab === 'operacao-assistida' && 'Acompanhe os projetos em fase de operação assistida'}
               {activeTab === 'pequenas-obras' && 'Gerencie as pequenas obras e serviços'}
               {activeTab === 'historico' && 'Obras concluídas com sucesso'}

@@ -2049,9 +2049,9 @@ export default function ImplantacaoExecucao() {
               <CollapsibleContent>
                 <CardContent className="pt-0 space-y-4">
                   <p className="text-xs text-muted-foreground px-4">
-                    Faça upload dos laudos/checklists preenchidos (PDF ou fotos). Se o documento não estiver devidamente preenchido, ficará com mensagem de pendência de informação.
+                    Faça upload do checklist de execução da obra preenchido (PDF ou fotos). Se o documento não estiver devidamente preenchido, ficará com mensagem de pendência de informação.
                   </p>
-                  {/* 5.1 - Instalador */}
+                  {/* 5.1 - Checklist de Execução da Obra */}
                   <div className="py-2 px-4">
                     <div className="flex items-center gap-3 mb-2">
                       <Checkbox 
@@ -2060,7 +2060,7 @@ export default function ImplantacaoExecucao() {
                           if (value === true && !secoesComAnexo.includes('implantacao_laudo_instalador')) {
                             toast({
                               title: 'Upload obrigatório',
-                              description: 'Anexe o laudo/checklist do instalador antes de marcar como concluído.',
+                              description: 'Anexe o checklist de execução da obra antes de marcar como concluído.',
                               variant: 'destructive',
                             });
                             return;
@@ -2070,7 +2070,7 @@ export default function ImplantacaoExecucao() {
                         disabled={isSaving} 
                       />
                       <span className={cn("text-sm font-medium", etapas.laudo_instalador && "text-muted-foreground line-through")}>
-                        5.1 - Laudo e Check-list do Instalador
+                        5.1 - Checklist de Execução da Obra
                         {!secoesComAnexo.includes('implantacao_laudo_instalador') && !etapas.laudo_instalador && (
                           <span className="text-destructive ml-2 text-xs font-medium">(Upload obrigatório)</span>
                         )}
@@ -2078,33 +2078,6 @@ export default function ImplantacaoExecucao() {
                       {etapas.laudo_instalador_at && <span className="text-xs text-muted-foreground">{format(parseISO(etapas.laudo_instalador_at), "dd/MM/yyyy", { locale: ptBR })}</span>}
                     </div>
                     <div className="ml-8"><SectionFileUpload projectId={id || null} secao="implantacao_laudo_instalador" /></div>
-                  </div>
-                  {/* 5.2 - Vidraceiro */}
-                  <div className="py-2 px-4">
-                    <div className="flex items-center gap-3 mb-2">
-                      <Checkbox checked={etapas.laudo_vidraceiro} onCheckedChange={(value) => updateEtapa('laudo_vidraceiro', value, 'laudo_vidraceiro_at')} disabled={isSaving} />
-                      <span className={cn("text-sm font-medium", etapas.laudo_vidraceiro && "text-muted-foreground line-through")}>5.2 - Laudo e Check-list do Vidraceiro</span>
-                      {etapas.laudo_vidraceiro_at && <span className="text-xs text-muted-foreground">{format(parseISO(etapas.laudo_vidraceiro_at), "dd/MM/yyyy", { locale: ptBR })}</span>}
-                    </div>
-                    <div className="ml-8"><SectionFileUpload projectId={id || null} secao="implantacao_laudo_vidraceiro" /></div>
-                  </div>
-                  {/* 5.3 - Serralheiro */}
-                  <div className="py-2 px-4">
-                    <div className="flex items-center gap-3 mb-2">
-                      <Checkbox checked={etapas.laudo_serralheiro} onCheckedChange={(value) => updateEtapa('laudo_serralheiro', value, 'laudo_serralheiro_at')} disabled={isSaving} />
-                      <span className={cn("text-sm font-medium", etapas.laudo_serralheiro && "text-muted-foreground line-through")}>5.3 - Laudo e Check-list do Serralheiro</span>
-                      {etapas.laudo_serralheiro_at && <span className="text-xs text-muted-foreground">{format(parseISO(etapas.laudo_serralheiro_at), "dd/MM/yyyy", { locale: ptBR })}</span>}
-                    </div>
-                    <div className="ml-8"><SectionFileUpload projectId={id || null} secao="implantacao_laudo_serralheiro" /></div>
-                  </div>
-                  {/* 5.4 - Conclusão do Supervisor */}
-                  <div className="py-2 px-4">
-                    <div className="flex items-center gap-3 mb-2">
-                      <Checkbox checked={etapas.laudo_conclusao_supervisor} onCheckedChange={(value) => updateEtapa('laudo_conclusao_supervisor', value, 'laudo_conclusao_supervisor_at')} disabled={isSaving} />
-                      <span className={cn("text-sm font-medium", etapas.laudo_conclusao_supervisor && "text-muted-foreground line-through")}>5.4 - Laudo e Check-list de Conclusão do Supervisor</span>
-                      {etapas.laudo_conclusao_supervisor_at && <span className="text-xs text-muted-foreground">{format(parseISO(etapas.laudo_conclusao_supervisor_at), "dd/MM/yyyy", { locale: ptBR })}</span>}
-                    </div>
-                    <div className="ml-8"><SectionFileUpload projectId={id || null} secao="implantacao_laudo_conclusao" /></div>
                   </div>
                 </CardContent>
               </CollapsibleContent>

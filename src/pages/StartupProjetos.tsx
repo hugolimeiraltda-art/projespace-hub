@@ -97,6 +97,14 @@ export default function StartupProjetos() {
   const [etapasMap, setEtapasMap] = useState<Record<string, ImplantacaoEtapasData>>({});
   const [pendenciasMap, setPendenciasMap] = useState<Record<string, number>>({});
   const [pendenciaFilter, setPendenciaFilter] = useState<'todas' | 'com' | 'sem'>('todas');
+  const [viewMode, setViewMode] = useState<'cards' | 'table'>(() => {
+    return (localStorage.getItem('startup-projetos-view') as 'cards' | 'table') || 'cards';
+  });
+
+  const handleViewModeChange = (mode: 'cards' | 'table') => {
+    setViewMode(mode);
+    localStorage.setItem('startup-projetos-view', mode);
+  };
 
   // New obra dialog state
   const [showNewObra, setShowNewObra] = useState(false);

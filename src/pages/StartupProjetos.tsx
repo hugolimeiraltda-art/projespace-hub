@@ -770,6 +770,28 @@ export default function StartupProjetos() {
                   <ArrowDown className="w-4 h-4" />
                 )}
               </Button>
+
+              {/* View mode toggle */}
+              <div className="flex border rounded-md overflow-hidden">
+                <Button
+                  variant={viewMode === 'cards' ? 'default' : 'ghost'}
+                  size="icon"
+                  onClick={() => handleViewModeChange('cards')}
+                  className="rounded-none border-0"
+                  title="Visualização em cards"
+                >
+                  <LayoutGrid className="w-4 h-4" />
+                </Button>
+                <Button
+                  variant={viewMode === 'table' ? 'default' : 'ghost'}
+                  size="icon"
+                  onClick={() => handleViewModeChange('table')}
+                  className="rounded-none border-0"
+                  title="Visualização em tabela"
+                >
+                  <TableIcon className="w-4 h-4" />
+                </Button>
+              </div>
             </div>
 
             {/* Projects List */}

@@ -807,174 +807,40 @@ export default function StartupProjetos() {
                   </p>
                 </CardContent>
               </Card>
+            ) : viewMode === 'table' ? (
+              <StartupProjectsTable
+                projects={filteredProjects}
+                etapasMap={etapasMap}
+                pendenciasMap={pendenciasMap}
+                isAdmin={user?.role === 'admin'}
+                onContinue={(id) => navigate(`/startup-projetos/${id}/execucao`)}
+                onStart={(project) => {
+                  handleStatusChange(project.id, 'EM_EXECUCAO', project as StartupProject);
+                  navigate(`/startup-projetos/${project.id}/execucao`);
+                }}
+                onViewForm={(id) => navigate(`/projetos/${id}/formulario-venda`)}
+                onViewDetails={(id) => navigate(`/projetos/${id}`)}
+                onDelete={(id, name) => handleDeleteProject(id, name)}
+              />
             ) : (
-              <div className="space-y-4">
-                {filteredProjects.map((project) => {
-                  const StatusIcon = project.implantacao_status 
-                    ? IMPLANTACAO_STATUS_ICONS[project.implantacao_status] 
-                    : Clock;
-                  
-                  return (
-                    <Card key={project.id} className="hover:shadow-md transition-shadow">
-                      <CardContent className="p-4">
-                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                          {/* Project Info */}
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-2">
-                              <span className="text-sm text-muted-foreground">#{project.numero_projeto}</span>
-                              {project.implantacao_status && (
-                                <Badge 
-                                  className={cn(
-                                    "border",
-                                    IMPLANTACAO_STATUS_COLORS[project.implantacao_status]
-                                  )}
-                                >
-                                  <StatusIcon className="w-3 h-3 mr-1" />
-                                  {IMPLANTACAO_STATUS_LABELS[project.implantacao_status]}
-                                </Badge>
-                              )}
-                              <Badge variant="outline" className="text-xs">
-                                {project.tipo_obra === 'acrescimo' ? 'Acréscimo' : 'Novo Contrato'}
-                              </Badge>
-                              {(pendenciasMap[project.id] || 0) > 0 && (
-                                <Badge className="bg-destructive text-destructive-foreground border-destructive text-xs">
-                                  <AlertTriangle className="w-3 h-3 mr-1" />
-                                  {pendenciasMap[project.id]} pendência{pendenciasMap[project.id] > 1 ? 's' : ''}
-                                </Badge>
-                              )}
-                            </div>
-                            
-                            <h3 className="text-lg font-semibold text-foreground mb-1">
-                              {project.cliente_condominio_nome}
-                            </h3>
-                            
-                            <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
-                              <span className="flex items-center gap-1">
-                                <Building className="w-4 h-4" />
-                                {project.cliente_cidade}, {project.cliente_estado}
-                              </span>
-                              <span className="flex items-center gap-1">
-                                <User className="w-4 h-4" />
-                                {project.vendedor_nome}
-                              </span>
-                              {project.implantacao_started_at && (
-                                <span className="flex items-center gap-1">
-                                  <Calendar className="w-4 h-4" />
-                                  Início: {format(parseISO(project.implantacao_started_at), "dd/MM/yyyy", { locale: ptBR })}
-                                </span>
-                              )}
-                              {project.prazo_entrega_projeto && (
-                                <span className="flex items-center gap-1">
-                                  <Calendar className="w-4 h-4" />
-                                  Previsão: {format(parseISO(project.prazo_entrega_projeto), "dd/MM/yyyy", { locale: ptBR })}
-                                </span>
-                              )}
-                              {!project.implantacao_started_at && !project.prazo_entrega_projeto && (
-                                <span className="flex items-center gap-1">
-                                  <Calendar className="w-4 h-4" />
-                                  {format(parseISO(project.created_at), "dd/MM/yyyy", { locale: ptBR })}
-                                </span>
-                              )}
-                            </div>
-                          </div>
-
-                          {/* Actions */}
-                          <div className="flex items-center gap-2 flex-wrap">
-                            {(!project.implantacao_status || project.implantacao_status === 'A_EXECUTAR') && (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="border-green-300 text-green-700 hover:bg-green-50"
-                                onClick={() => {
-                                  handleStatusChange(project.id, 'EM_EXECUCAO', project);
-                                  navigate(`/startup-projetos/${project.id}/execucao`);
-                                }}
-                              >
-                                <PlayCircle className="w-4 h-4 mr-1" />
-                                Iniciar
-                              </Button>
-                            )}
-                            {project.implantacao_status === 'EM_EXECUCAO' && (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="border-blue-300 text-blue-700 hover:bg-blue-50"
-                                onClick={() => navigate(`/startup-projetos/${project.id}/execucao`)}
-                              >
-                                <PlayCircle className="w-4 h-4 mr-1" />
-                                Continuar
-                              </Button>
-                            )}
-                            
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                navigate(`/projetos/${project.id}/formulario-venda`);
-                              }}
-                            >
-                              <Eye className="w-4 h-4 mr-2" />
-                              Formulário
-                            </Button>
-
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                navigate(`/projetos/${project.id}`);
-                              }}
-                            >
-                              <Eye className="w-4 h-4 mr-2" />
-                              Ver Detalhes
-                            </Button>
-
-                            {user?.role === 'admin' && (
-                              <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    className="border-destructive/50 text-destructive hover:bg-destructive/10"
-                                    onClick={(e) => e.stopPropagation()}
-                                  >
-                                    <Trash2 className="w-4 h-4" />
-                                  </Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                  <AlertDialogHeader>
-                                    <AlertDialogTitle>Excluir projeto</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                      Tem certeza que deseja excluir o projeto <strong>"{project.cliente_condominio_nome}"</strong>? 
-                                      Esta ação não pode ser desfeita. Todos os dados relacionados (etapas, checklists, formulários) serão removidos.
-                                    </AlertDialogDescription>
-                                  </AlertDialogHeader>
-                                  <AlertDialogFooter>
-                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                    <AlertDialogAction
-                                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                      onClick={() => handleDeleteProject(project.id, project.cliente_condominio_nome)}
-                                    >
-                                      Excluir
-                                    </AlertDialogAction>
-                                  </AlertDialogFooter>
-                                </AlertDialogContent>
-                              </AlertDialog>
-                            )}
-                          </div>
-                        </div>
-
-                        {/* Implantação Timeline */}
-                        <div className="mt-3 pt-3 border-t border-border">
-                          <ImplantacaoTimeline etapas={etapasMap[project.id] || null} />
-                        </div>
-                      </CardContent>
-                    </Card>
-                  );
-                })}
+              <div className="space-y-2">
+                {filteredProjects.map((project) => (
+                  <StartupProjectCardCompact
+                    key={project.id}
+                    project={project}
+                    etapas={etapasMap[project.id] || null}
+                    pendenciasCount={pendenciasMap[project.id] || 0}
+                    isAdmin={user?.role === 'admin'}
+                    onContinue={() => navigate(`/startup-projetos/${project.id}/execucao`)}
+                    onStart={() => {
+                      handleStatusChange(project.id, 'EM_EXECUCAO', project);
+                      navigate(`/startup-projetos/${project.id}/execucao`);
+                    }}
+                    onViewForm={() => navigate(`/projetos/${project.id}/formulario-venda`)}
+                    onViewDetails={() => navigate(`/projetos/${project.id}`)}
+                    onDelete={() => handleDeleteProject(project.id, project.cliente_condominio_nome)}
+                  />
+                ))}
               </div>
             )}
           </>

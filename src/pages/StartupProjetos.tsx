@@ -401,6 +401,22 @@ export default function StartupProjetos() {
     }
   };
 
+  // A project is in "Operação Assistida" when all 7 timeline steps are completed
+  // (but the implantação itself was not formally concluded yet).
+  const isInOperacaoAssistida = (projectId: string): boolean => {
+    const e = etapasMap[projectId];
+    if (!e) return false;
+    return !!(
+      e.contrato_assinado_at &&
+      e.ligacao_boas_vindas_at &&
+      e.agendamento_visita_startup_at &&
+      e.laudo_visita_startup_at &&
+      e.check_programacao_at &&
+      e.confirmacao_ativacao_financeira_at &&
+      e.operacao_assistida_inicio
+    );
+  };
+
   const filteredProjects = projects.filter(project => {
     const matchesSearch = 
       project.cliente_condominio_nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -415,6 +431,14 @@ export default function StartupProjetos() {
 
     const hasPend = (pendenciasMap[project.id] || 0) > 0;
     const matchesPendencia = pendenciaFilter === 'todas' || (pendenciaFilter === 'com' && hasPend) || (pendenciaFilter === 'sem' && !hasPend);
+
+    // Tab routing based on completion of all 7 timeline steps
+    const inOpAssistida = isInOperacaoAssistida(project.id);
+    if (activeTab === 'em-implantacao' || activeTab === 'ppe') {
+      if (inOpAssistida) return false;
+    } else if (activeTab === 'operacao-assistida') {
+      if (!inOpAssistida) return false;
+    }
     
     return matchesSearch && matchesStatus && matchesTipoObra && matchesPendencia;
   }).sort((a, b) => {

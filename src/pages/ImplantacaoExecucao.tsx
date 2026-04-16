@@ -560,12 +560,15 @@ export default function ImplantacaoExecucao() {
 
       const updatedInteracoes = [...(etapas.operacao_assistida_interacoes || []), newInteracao];
 
+      const inicioOpAssistida = etapas.operacao_assistida_inicio || new Date().toISOString();
+      const fimOpAssistida = addDays(parseISO(inicioOpAssistida), 30).toISOString();
+
       const { error } = await supabase
         .from('implantacao_etapas')
         .update({ 
           operacao_assistida_interacoes: JSON.parse(JSON.stringify(updatedInteracoes)),
-          operacao_assistida_inicio: etapas.operacao_assistida_inicio || new Date().toISOString(),
-          operacao_assistida_fim: addDays(new Date(), 30).toISOString()
+          operacao_assistida_inicio: inicioOpAssistida,
+          operacao_assistida_fim: fimOpAssistida
         })
         .eq('project_id', id);
 
@@ -574,8 +577,8 @@ export default function ImplantacaoExecucao() {
       setEtapas(prev => prev ? { 
         ...prev, 
         operacao_assistida_interacoes: updatedInteracoes,
-        operacao_assistida_inicio: prev.operacao_assistida_inicio || new Date().toISOString(),
-        operacao_assistida_fim: addDays(new Date(), 30).toISOString()
+        operacao_assistida_inicio: inicioOpAssistida,
+        operacao_assistida_fim: fimOpAssistida
       } : null);
       setNovaInteracao('');
 

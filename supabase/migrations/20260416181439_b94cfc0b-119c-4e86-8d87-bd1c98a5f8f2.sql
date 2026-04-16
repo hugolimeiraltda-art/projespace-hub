@@ -1,0 +1,1 @@
+UPDATE implantacao_etapas SET operacao_assistida_fim = (operacao_assistida_inicio::date + INTERVAL '30 days')::timestamptz WHERE operacao_assistida_inicio IS NOT NULL AND operacao_assistida_fim IS NOT NULL;

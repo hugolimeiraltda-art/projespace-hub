@@ -401,6 +401,22 @@ export default function StartupProjetos() {
     }
   };
 
+  // A project is in "Operação Assistida" when all 7 timeline steps are completed
+  // (but the implantação itself was not formally concluded yet).
+  const isInOperacaoAssistida = (projectId: string): boolean => {
+    const e = etapasMap[projectId];
+    if (!e) return false;
+    return !!(
+      e.contrato_assinado_at &&
+      e.ligacao_boas_vindas_at &&
+      e.agendamento_visita_startup_at &&
+      e.laudo_visita_startup_at &&
+      e.check_programacao_at &&
+      e.confirmacao_ativacao_financeira_at &&
+      e.operacao_assistida_inicio
+    );
+  };
+
   const filteredProjects = projects.filter(project => {
     const matchesSearch = 
       project.cliente_condominio_nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -415,6 +431,14 @@ export default function StartupProjetos() {
 
     const hasPend = (pendenciasMap[project.id] || 0) > 0;
     const matchesPendencia = pendenciaFilter === 'todas' || (pendenciaFilter === 'com' && hasPend) || (pendenciaFilter === 'sem' && !hasPend);
+
+    // Tab routing based on completion of all 7 timeline steps
+    const inOpAssistida = isInOperacaoAssistida(project.id);
+    if (activeTab === 'em-implantacao' || activeTab === 'ppe') {
+      if (inOpAssistida) return false;
+    } else if (activeTab === 'operacao-assistida') {
+      if (!inOpAssistida) return false;
+    }
     
     return matchesSearch && matchesStatus && matchesTipoObra && matchesPendencia;
   }).sort((a, b) => {
@@ -923,15 +947,115 @@ export default function StartupProjetos() {
         )}
 
         {activeTab === 'operacao-assistida' && (
-          <Card>
-            <CardContent className="py-12 text-center">
-              <Headphones className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-foreground mb-2">Operação Assistida</h3>
-              <p className="text-muted-foreground">
-                Os projetos em fase de operação assistida aparecerão aqui.
+          <>
+            {/* Search */}
+            <div className="mb-6 flex flex-col sm:flex-row gap-4 items-center">
+              <div className="relative flex-1 max-w-md">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  placeholder="Buscar por nome, vendedor ou número..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+              <p className="text-sm text-muted-foreground">
+                {filteredProjects.length} projeto(s) em operação assistida
               </p>
-            </CardContent>
-          </Card>
+            </div>
+
+            {filteredProjects.length === 0 ? (
+              <Card>
+                <CardContent className="py-12 text-center">
+                  <Headphones className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-foreground mb-2">Operação Assistida</h3>
+                  <p className="text-muted-foreground">
+                    Nenhum projeto em operação assistida no momento. Projetos com as 7 etapas concluídas aparecem aqui automaticamente.
+                  </p>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="space-y-4">
+                {filteredProjects.map((project) => (
+                  <Card key={project.id} className="hover:shadow-md transition-shadow">
+                    <CardContent className="p-4">
+                      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className="text-sm text-muted-foreground">#{project.numero_projeto}</span>
+                            <Badge className="bg-purple-100 text-purple-800 border-purple-300 border">
+                              <Headphones className="w-3 h-3 mr-1" />
+                              Operação Assistida
+                            </Badge>
+                            <Badge variant="outline" className="text-xs">
+                              {project.tipo_obra === 'acrescimo' ? 'Acréscimo' : 'Novo Contrato'}
+                            </Badge>
+                            {(pendenciasMap[project.id] || 0) > 0 && (
+                              <Badge className="bg-destructive text-destructive-foreground border-destructive text-xs">
+                                <AlertTriangle className="w-3 h-3 mr-1" />
+                                {pendenciasMap[project.id]} pendência{pendenciasMap[project.id] > 1 ? 's' : ''}
+                              </Badge>
+                            )}
+                          </div>
+
+                          <h3 className="text-lg font-semibold text-foreground mb-1">
+                            {project.cliente_condominio_nome}
+                          </h3>
+
+                          <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
+                            <span className="flex items-center gap-1">
+                              <Building className="w-4 h-4" />
+                              {project.cliente_cidade}, {project.cliente_estado}
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <User className="w-4 h-4" />
+                              {project.vendedor_nome}
+                            </span>
+                            {etapasMap[project.id]?.operacao_assistida_inicio && (
+                              <span className="flex items-center gap-1">
+                                <Calendar className="w-4 h-4" />
+                                Início Op. Assistida: {format(parseISO(etapasMap[project.id].operacao_assistida_inicio!), "dd/MM/yyyy", { locale: ptBR })}
+                              </span>
+                            )}
+                            {etapasMap[project.id]?.operacao_assistida_fim && (
+                              <span className="flex items-center gap-1">
+                                <Calendar className="w-4 h-4" />
+                                Término previsto: {format(parseISO(etapasMap[project.id].operacao_assistida_fim!), "dd/MM/yyyy", { locale: ptBR })}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="border-blue-300 text-blue-700 hover:bg-blue-50"
+                            onClick={() => navigate(`/startup-projetos/${project.id}/execucao`)}
+                          >
+                            <PlayCircle className="w-4 h-4 mr-1" />
+                            Continuar
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => navigate(`/projetos/${project.id}`)}
+                          >
+                            <Eye className="w-4 h-4 mr-2" />
+                            Ver Detalhes
+                          </Button>
+                        </div>
+                      </div>
+
+                      <div className="mt-3 pt-3 border-t border-border">
+                        <ImplantacaoTimeline etapas={etapasMap[project.id] || null} />
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </>
         )}
 
         {activeTab === 'pequenas-obras' && (

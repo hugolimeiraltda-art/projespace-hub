@@ -15,6 +15,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useImplantacaoIntegration } from '@/hooks/useImplantacaoIntegration';
 import { cn } from '@/lib/utils';
 import { ImplantacaoTimeline, ImplantacaoEtapasData } from '@/components/ImplantacaoTimeline';
+import { StartupProjectCardCompact } from '@/components/StartupProjectCardCompact';
+import { StartupProjectsTable } from '@/components/StartupProjectsTable';
 import {
   Search,
   Filter,
@@ -37,6 +39,8 @@ import {
   ArrowUp,
   ArrowDown,
   AlertTriangle,
+  LayoutGrid,
+  Table as TableIcon,
 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';

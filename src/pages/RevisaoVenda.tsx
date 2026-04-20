@@ -74,7 +74,7 @@ export default function RevisaoVenda() {
 
       await supabase
         .from('projects')
-        .update({ sale_status: 'AGUARDANDO_VALIDACAO_ENGENHARIA' })
+        .update({ sale_status: 'AGUARDANDO_VALIDACAO_ENGENHARIA' as any })
         .eq('id', project.id);
 
       await supabase.from('project_notifications').insert({

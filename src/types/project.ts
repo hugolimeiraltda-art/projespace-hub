@@ -17,6 +17,7 @@ export type EngineeringStatus =
 export type SaleStatus = 
   | 'NAO_INICIADO'
   | 'EM_ANDAMENTO'
+  | 'AGUARDANDO_VALIDACAO_ENGENHARIA'
   | 'CONCLUIDO';
 
 export type SolicitacaoOrigem = 'EMAIL' | 'FORMS' | 'OUTRO';

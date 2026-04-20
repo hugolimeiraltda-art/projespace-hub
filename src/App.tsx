@@ -16,6 +16,8 @@ import ProjectDetail from "./pages/ProjectDetail";
 import SaleCompletedForm from "./pages/SaleCompletedForm";
 import SaleFormView from "./pages/SaleFormView";
 import InformarNovaVenda from "./pages/InformarNovaVenda";
+import RevisaoVenda from "./pages/RevisaoVenda";
+import ValidacaoVendaEngenharia from "./pages/ValidacaoVendaEngenharia";
 import MeusChamados from "./pages/MeusChamados";
 import MeuPerfil from "./pages/MeuPerfil";
 import Configuracoes from "./pages/Configuracoes";
@@ -135,6 +137,14 @@ function AppRoutes() {
       <Route 
         path="/projetos/:id/formulario-venda" 
         element={<ProtectedRoute><SaleFormView /></ProtectedRoute>} 
+      />
+      <Route 
+        path="/projetos/:id/revisao-venda" 
+        element={<ProtectedRoute><RevisaoVenda /></ProtectedRoute>} 
+      />
+      <Route 
+        path="/projetos/:id/validar-venda" 
+        element={<ProtectedRoute><ValidacaoVendaEngenharia /></ProtectedRoute>} 
       />
       <Route 
         path="/informar-venda" 

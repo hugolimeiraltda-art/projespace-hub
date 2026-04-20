@@ -17,6 +17,7 @@ export type EngineeringStatus =
 export type SaleStatus = 
   | 'NAO_INICIADO'
   | 'EM_ANDAMENTO'
+  | 'AGUARDANDO_VALIDACAO_ENGENHARIA'
   | 'CONCLUIDO';
 
 export type SolicitacaoOrigem = 'EMAIL' | 'FORMS' | 'OUTRO';
@@ -304,6 +305,7 @@ export const ENGINEERING_STATUS_DAYS: Record<EngineeringStatus, number> = {
 export const SALE_STATUS_LABELS: Record<SaleStatus, string> = {
   NAO_INICIADO: 'Não Iniciado',
   EM_ANDAMENTO: 'Em Andamento',
+  AGUARDANDO_VALIDACAO_ENGENHARIA: 'Aguardando Validação da Engenharia',
   CONCLUIDO: 'Concluído',
 };
 

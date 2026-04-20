@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Layout } from '@/components/Layout';
 import { Button } from '@/components/ui/button';
@@ -12,7 +12,7 @@ import { useProjects } from '@/contexts/ProjectsContext';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAttachmentUrl } from '@/hooks/useAttachmentUrl';
-import { ArrowLeft, FileText, Package, ClipboardList, Image as ImageIcon, CheckCircle2, AlertTriangle, Loader2 } from 'lucide-react';
+import { ArrowLeft, FileText, Package, ClipboardList, Image as ImageIcon, CheckCircle2, AlertTriangle, Loader2, Upload, X } from 'lucide-react';
 import { EquipmentListDialog } from '@/components/EquipmentListDialog';
 
 export default function RevisaoVenda() {
@@ -22,11 +22,13 @@ export default function RevisaoVenda() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { openAttachment } = useAttachmentUrl();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [project, setProject] = useState<ReturnType<typeof getProject>>(undefined);
   const [mesmoProjeto, setMesmoProjeto] = useState<'sim' | 'nao' | ''>('');
   const [alteracoes, setAlteracoes] = useState('');
   const [justificativa, setJustificativa] = useState('');
+  const [propostaFile, setPropostaFile] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showEquipmentDialog, setShowEquipmentDialog] = useState(false);
 
@@ -49,9 +51,35 @@ export default function RevisaoVenda() {
     ['IMAGENS', 'PLANTA_BAIXA', 'CROQUI', 'FOTOS_EQUIP_APROVEITADOS'].includes(a.tipo)
   );
 
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 20 * 1024 * 1024) {
+      toast({ title: 'Arquivo muito grande', description: 'A proposta deve ter no máximo 20MB.', variant: 'destructive' });
+      return;
+    }
+    setPropostaFile(file);
+  };
+
+  const uploadProposta = async (): Promise<{ url: string; nome: string } | null> => {
+    if (!propostaFile) return null;
+    const ext = propostaFile.name.split('.').pop();
+    const path = `${project.id}/proposta-fechada-${Date.now()}.${ext}`;
+    const { error } = await supabase.storage
+      .from('project-attachments')
+      .upload(path, propostaFile, { upsert: false });
+    if (error) throw error;
+    const { data: pub } = supabase.storage.from('project-attachments').getPublicUrl(path);
+    return { url: pub.publicUrl, nome: propostaFile.name };
+  };
+
   const handleSubmit = async () => {
     if (!mesmoProjeto) {
       toast({ title: 'Responda a pergunta', description: 'Informe se o projeto vendido foi o mesmo projetado.', variant: 'destructive' });
+      return;
+    }
+    if (!propostaFile) {
+      toast({ title: 'Proposta obrigatória', description: 'Anexe a proposta fechada com o cliente.', variant: 'destructive' });
       return;
     }
     if (mesmoProjeto === 'nao' && (!alteracoes.trim() || !justificativa.trim())) {
@@ -61,6 +89,8 @@ export default function RevisaoVenda() {
 
     setIsSubmitting(true);
     try {
+      const proposta = await uploadProposta();
+
       const { error: insertError } = await supabase.from('sale_validations').insert({
         project_id: project.id,
         submitted_by: user?.id,
@@ -68,6 +98,8 @@ export default function RevisaoVenda() {
         mesmo_projeto: mesmoProjeto === 'sim',
         alteracoes: mesmoProjeto === 'nao' ? alteracoes : null,
         justificativa_alteracoes: mesmoProjeto === 'nao' ? justificativa : null,
+        proposta_fechada_url: proposta?.url ?? null,
+        proposta_fechada_nome: proposta?.nome ?? null,
         validation_status: 'PENDENTE',
       });
       if (insertError) throw insertError;
@@ -91,7 +123,7 @@ export default function RevisaoVenda() {
           body: {
             to_role: 'projetos',
             subject: `Validação de venda pendente - ${project.cliente_condominio_nome}`,
-            message: `O vendedor ${user?.nome} enviou o projeto "${project.cliente_condominio_nome}" para validação da engenharia.\n\nMesmo projeto: ${mesmoProjeto === 'sim' ? 'Sim' : 'Não'}${mesmoProjeto === 'nao' ? `\n\nAlterações: ${alteracoes}\n\nJustificativa: ${justificativa}` : ''}`,
+            message: `O vendedor ${user?.nome} enviou o projeto "${project.cliente_condominio_nome}" para validação da engenharia.\n\nMesmo projeto: ${mesmoProjeto === 'sim' ? 'Sim' : 'Não'}${mesmoProjeto === 'nao' ? `\n\nAlterações: ${alteracoes}\n\nJustificativa: ${justificativa}` : ''}\n\nProposta fechada: ${proposta?.nome ?? 'não anexada'}`,
           },
         });
       } catch (e) {
@@ -226,6 +258,37 @@ export default function RevisaoVenda() {
                 </div>
               </div>
             )}
+
+            {/* Proposta fechada — SEMPRE obrigatória */}
+            <div className="space-y-2 p-4 border-2 border-dashed border-primary/40 rounded-md bg-primary/5">
+              <Label className="text-base font-medium flex items-center gap-2">
+                <Upload className="w-4 h-4" /> Proposta fechada com o cliente *
+              </Label>
+              <p className="text-xs text-muted-foreground">
+                Anexe obrigatoriamente o PDF/imagem da proposta assinada ou aceita pelo cliente.
+              </p>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".pdf,.png,.jpg,.jpeg,.webp,.heic"
+                onChange={handleFileSelect}
+                className="hidden"
+              />
+              {!propostaFile ? (
+                <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()} className="w-full">
+                  <Upload className="w-4 h-4 mr-2" /> Selecionar arquivo da proposta
+                </Button>
+              ) : (
+                <div className="flex items-center gap-2 p-3 bg-background border rounded-md">
+                  <FileText className="w-4 h-4 text-primary flex-shrink-0" />
+                  <span className="text-sm truncate flex-1">{propostaFile.name}</span>
+                  <span className="text-xs text-muted-foreground">{(propostaFile.size / 1024 / 1024).toFixed(2)} MB</span>
+                  <Button type="button" variant="ghost" size="icon" onClick={() => setPropostaFile(null)}>
+                    <X className="w-4 h-4" />
+                  </Button>
+                </div>
+              )}
+            </div>
           </CardContent>
         </Card>
 
@@ -233,7 +296,11 @@ export default function RevisaoVenda() {
           <Button variant="outline" onClick={() => navigate(`/projetos/${project.id}`)} disabled={isSubmitting}>
             Cancelar
           </Button>
-          <Button onClick={handleSubmit} disabled={isSubmitting || !mesmoProjeto} className="bg-status-approved hover:bg-status-approved/90">
+          <Button
+            onClick={handleSubmit}
+            disabled={isSubmitting || !mesmoProjeto || !propostaFile}
+            className="bg-status-approved hover:bg-status-approved/90"
+          >
             {isSubmitting ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Enviando...</> : <><CheckCircle2 className="w-4 h-4 mr-2" /> Enviar para Validação da Engenharia</>}
           </Button>
         </div>

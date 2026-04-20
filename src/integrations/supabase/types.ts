@@ -3197,6 +3197,8 @@ export type Database = {
           justificativa_alteracoes: string | null
           mesmo_projeto: boolean
           project_id: string
+          proposta_fechada_nome: string | null
+          proposta_fechada_url: string | null
           submitted_at: string
           submitted_by: string | null
           submitted_by_name: string | null
@@ -3214,6 +3216,8 @@ export type Database = {
           justificativa_alteracoes?: string | null
           mesmo_projeto: boolean
           project_id: string
+          proposta_fechada_nome?: string | null
+          proposta_fechada_url?: string | null
           submitted_at?: string
           submitted_by?: string | null
           submitted_by_name?: string | null
@@ -3231,6 +3235,8 @@ export type Database = {
           justificativa_alteracoes?: string | null
           mesmo_projeto?: boolean
           project_id?: string
+          proposta_fechada_nome?: string | null
+          proposta_fechada_url?: string | null
           submitted_at?: string
           submitted_by?: string | null
           submitted_by_name?: string | null

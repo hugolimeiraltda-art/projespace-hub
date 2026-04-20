@@ -11,9 +11,10 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useProjects } from '@/contexts/ProjectsContext';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { ArrowLeft, CheckCircle2, XCircle, AlertTriangle, Loader2, User, Calendar } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, XCircle, AlertTriangle, Loader2, User, Calendar, FileText } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { useAttachmentUrl } from '@/hooks/useAttachmentUrl';
 
 interface SaleValidation {
   id: string;
@@ -23,6 +24,8 @@ interface SaleValidation {
   mesmo_projeto: boolean;
   alteracoes: string | null;
   justificativa_alteracoes: string | null;
+  proposta_fechada_url: string | null;
+  proposta_fechada_nome: string | null;
   validation_status: string;
 }
 
@@ -32,6 +35,7 @@ export default function ValidacaoVendaEngenharia() {
   const { getProject, projects, submitSaleForm } = useProjects();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { openAttachment } = useAttachmentUrl();
 
   const [project, setProject] = useState<ReturnType<typeof getProject>>(undefined);
   const [validation, setValidation] = useState<SaleValidation | null>(null);
@@ -181,6 +185,19 @@ export default function ValidacaoVendaEngenharia() {
                   <div className="mt-1 p-3 bg-muted rounded-md text-sm whitespace-pre-wrap">{validation.justificativa_alteracoes}</div>
                 </div>
               </>
+            )}
+
+            {validation.proposta_fechada_url && (
+              <div>
+                <Label>Proposta fechada com o cliente</Label>
+                <button
+                  onClick={() => openAttachment(validation.proposta_fechada_url!, undefined, validation.proposta_fechada_nome ?? 'proposta')}
+                  className="mt-1 flex items-center gap-3 w-full p-3 border rounded-md hover:bg-accent text-left"
+                >
+                  <FileText className="w-4 h-4 text-primary" />
+                  <span className="text-sm truncate flex-1">{validation.proposta_fechada_nome ?? 'proposta-fechada'}</span>
+                </button>
+              </div>
             )}
           </CardContent>
         </Card>

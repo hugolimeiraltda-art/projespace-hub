@@ -74,7 +74,7 @@ export default function RevisaoVenda() {
 
       await supabase
         .from('projects')
-        .update({ sale_status: 'AGUARDANDO_VALIDACAO_ENGENHARIA' })
+        .update({ sale_status: 'AGUARDANDO_VALIDACAO_ENGENHARIA' as any })
         .eq('id', project.id);
 
       await supabase.from('project_notifications').insert({
@@ -140,7 +140,7 @@ export default function RevisaoVenda() {
               engineeringFiles.map(att => (
                 <button
                   key={att.id}
-                  onClick={() => openAttachment(att.arquivo_url, att.nome_arquivo)}
+                  onClick={() => openAttachment(att.arquivo_url, undefined, att.nome_arquivo)}
                   className="flex items-center gap-3 w-full p-3 border rounded-md hover:bg-accent text-left"
                 >
                   {att.tipo === 'LISTA_EQUIPAMENTOS' ? <Package className="w-4 h-4" /> :
@@ -170,7 +170,7 @@ export default function RevisaoVenda() {
               {projectPhotos.map(att => (
                 <button
                   key={att.id}
-                  onClick={() => openAttachment(att.arquivo_url, att.nome_arquivo)}
+                  onClick={() => openAttachment(att.arquivo_url, undefined, att.nome_arquivo)}
                   className="flex items-center gap-3 w-full p-3 border rounded-md hover:bg-accent text-left"
                 >
                   <ImageIcon className="w-4 h-4" />

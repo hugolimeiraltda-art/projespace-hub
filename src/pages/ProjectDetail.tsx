@@ -806,7 +806,7 @@ export default function ProjectDetail() {
             {canStartSaleForm && (
               <Button 
                 className="bg-status-approved hover:bg-status-approved/90"
-                onClick={() => setShowSaleConfirmDialog(true)}
+                onClick={() => navigate(`/projetos/${project.id}/revisao-venda`)}
               >
                 <ShoppingCart className="w-4 h-4 mr-2" />
                 Projeto Vendido
@@ -835,7 +835,7 @@ export default function ProjectDetail() {
               <Button 
                 size="sm" 
                 className="bg-status-approved hover:bg-status-approved/90"
-                onClick={() => setShowSaleConfirmDialog(true)}
+                onClick={() => navigate(`/projetos/${project.id}/revisao-venda`)}
               >
                 <ShoppingCart className="w-4 h-4 mr-2" />
                 Projeto Vendido

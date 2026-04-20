@@ -3188,6 +3188,60 @@ export type Database = {
           },
         ]
       }
+      sale_validations: {
+        Row: {
+          alteracoes: string | null
+          created_at: string
+          engenharia_observacoes: string | null
+          id: string
+          justificativa_alteracoes: string | null
+          mesmo_projeto: boolean
+          project_id: string
+          submitted_at: string
+          submitted_by: string | null
+          submitted_by_name: string | null
+          updated_at: string
+          validated_at: string | null
+          validated_by: string | null
+          validated_by_name: string | null
+          validation_status: string
+        }
+        Insert: {
+          alteracoes?: string | null
+          created_at?: string
+          engenharia_observacoes?: string | null
+          id?: string
+          justificativa_alteracoes?: string | null
+          mesmo_projeto: boolean
+          project_id: string
+          submitted_at?: string
+          submitted_by?: string | null
+          submitted_by_name?: string | null
+          updated_at?: string
+          validated_at?: string | null
+          validated_by?: string | null
+          validated_by_name?: string | null
+          validation_status?: string
+        }
+        Update: {
+          alteracoes?: string | null
+          created_at?: string
+          engenharia_observacoes?: string | null
+          id?: string
+          justificativa_alteracoes?: string | null
+          mesmo_projeto?: boolean
+          project_id?: string
+          submitted_at?: string
+          submitted_by?: string | null
+          submitted_by_name?: string | null
+          updated_at?: string
+          validated_at?: string | null
+          validated_by?: string | null
+          validated_by_name?: string | null
+          validation_status?: string
+        }
+        Relationships: []
+      }
       tap_forms: {
         Row: {
           alarme_descricao: string | null

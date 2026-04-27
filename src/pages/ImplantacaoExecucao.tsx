@@ -148,7 +148,7 @@ interface Project {
   implantacao_started_at: string | null;
   engineering_status: string | null;
   endereco_condominio: string | null;
-  tipo_implantacao: 'PCI' | 'PPE' | null;
+  tipo_implantacao: string | null;
 }
 
 interface ContratoInfo {

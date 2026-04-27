@@ -97,6 +97,10 @@ const ALL_NAV_ITEMS: NavItem[] = [
     label: 'Carteira de Clientes',
     icon: Briefcase,
     menuKey: 'carteira-clientes',
+    subItems: [
+      { path: '/carteira-clientes', label: 'Carteira de Clientes PCI', icon: Briefcase, menuKey: 'carteira-clientes' },
+      { path: '/carteira-clientes-ppe', label: 'Carteira de Clientes PPE', icon: Package, menuKey: 'carteira-clientes' },
+    ],
   },
   {
     path: '/sucesso-cliente',
@@ -158,6 +162,7 @@ export function Layout({ children }: LayoutProps) {
     if (path.startsWith('/manutencao')) initial.push('/manutencao');
     if (path.startsWith('/orcamentos') || path.startsWith('/orcamento')) initial.push('/orcamentos');
     if (path.startsWith('/startup-projetos') || path.startsWith('/implantacao')) initial.push('/startup-projetos');
+    if (path.startsWith('/carteira-clientes')) initial.push('/carteira-clientes');
     if (path.startsWith('/sucesso-cliente')) initial.push('/sucesso-cliente');
     return initial;
   });
@@ -165,7 +170,7 @@ export function Layout({ children }: LayoutProps) {
   // Auto-expand parent menu when navigating to a sub-route
   useEffect(() => {
     const path = location.pathname;
-    const parentPaths = ['/projetos', '/manutencao', '/orcamentos', '/startup-projetos', '/sucesso-cliente', '/configuracoes'];
+    const parentPaths = ['/projetos', '/manutencao', '/orcamentos', '/startup-projetos', '/carteira-clientes', '/sucesso-cliente', '/configuracoes'];
     setExpandedMenus(prev => {
       const toAdd = parentPaths.filter(p => path.startsWith(p) && !prev.includes(p));
       // Also expand /startup-projetos for /implantacao-* routes

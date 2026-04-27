@@ -19,6 +19,7 @@ interface Customer {
   alarme_codigo?: string | null;
   razao_social: string;
   filial: string | null;
+  tipo: string | null;
   data_ativacao: string | null;
   data_termino: string | null;
   taxa_ativacao: number | null;
@@ -34,7 +35,7 @@ interface ColumnFilter {
 }
 
 type SortDirection = 'asc' | 'desc' | null;
-type ColumnKey = 'contrato' | 'alarme_codigo' | 'razao_social' | 'filial' | 'data_ativacao' | 'data_termino' | 'taxa_ativacao' | 'portoes' | 'zonas_perimetro' | 'cameras' | 'mensalidade';
+type ColumnKey = 'contrato' | 'alarme_codigo' | 'razao_social' | 'filial' | 'tipo' | 'data_ativacao' | 'data_termino' | 'taxa_ativacao' | 'portoes' | 'zonas_perimetro' | 'cameras' | 'mensalidade';
 
 interface SortConfig {
   column: string;
@@ -52,6 +53,7 @@ const TABLE_COLUMNS: { key: ColumnKey; label: string; className: string; align?:
   { key: 'alarme_codigo', label: 'Código Alarme', className: 'min-w-[130px]' },
   { key: 'razao_social', label: 'Razão Social', className: 'min-w-[200px]' },
   { key: 'filial', label: 'Filial', className: 'min-w-[80px]' },
+  { key: 'tipo', label: 'Tipo de Produto', className: 'min-w-[130px]' },
   { key: 'data_ativacao', label: 'Início', className: 'min-w-[100px]' },
   { key: 'data_termino', label: 'Término', className: 'min-w-[100px]' },
   { key: 'taxa_ativacao', label: 'Taxa Ativação', className: 'min-w-[120px] text-right', align: 'right' },
@@ -127,6 +129,7 @@ export function CarteiraClientesTable({ customers, onDelete, basePath = '/cartei
         case 'alarme_codigo': return c.alarme_codigo || '-';
         case 'razao_social': return c.razao_social;
         case 'filial': return c.filial || '-';
+        case 'tipo': return c.tipo || '-';
         default: return '';
       }
     });
@@ -198,6 +201,7 @@ export function CarteiraClientesTable({ customers, onDelete, basePath = '/cartei
           case 'alarme_codigo': return (c.alarme_codigo || '-').toLowerCase().includes(filterLower);
           case 'razao_social': return c.razao_social.toLowerCase().includes(filterLower);
           case 'filial': return (c.filial || '-').toLowerCase().includes(filterLower);
+          case 'tipo': return (c.tipo || '-').toLowerCase().includes(filterLower);
           case 'data_ativacao': return formatDate(c.data_ativacao).includes(filter.value);
           case 'data_termino': return calculateTermino(c).includes(filter.value);
           case 'taxa_ativacao': 
@@ -236,6 +240,10 @@ export function CarteiraClientesTable({ customers, onDelete, basePath = '/cartei
           case 'filial':
             aValue = a.filial || '';
             bValue = b.filial || '';
+            break;
+          case 'tipo':
+            aValue = a.tipo || '';
+            bValue = b.tipo || '';
             break;
           case 'data_ativacao':
             aValue = a.data_ativacao ? new Date(a.data_ativacao).getTime() : 0;
@@ -302,7 +310,7 @@ export function CarteiraClientesTable({ customers, onDelete, basePath = '/cartei
           <PopoverContent className="w-64 p-3" align="start">
             <div className="space-y-3">
               <div className="font-medium text-sm">Filtrar {label}</div>
-              {column === 'filial' ? (
+              {column === 'filial' || column === 'tipo' ? (
                 <Select
                   value={getFilterValue(column)}
                   onValueChange={(value) => setFilter(column, value)}
@@ -354,6 +362,8 @@ export function CarteiraClientesTable({ customers, onDelete, basePath = '/cartei
         return <TableCell className="max-w-[200px] truncate text-primary hover:underline">{customer.razao_social}</TableCell>;
       case 'filial':
         return <TableCell>{customer.filial || '-'}</TableCell>;
+      case 'tipo':
+        return <TableCell>{customer.tipo || '-'}</TableCell>;
       case 'data_ativacao':
         return <TableCell>{formatDate(customer.data_ativacao)}</TableCell>;
       case 'data_termino':

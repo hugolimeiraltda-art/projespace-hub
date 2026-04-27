@@ -124,6 +124,7 @@ export function CarteiraClientesTable({ customers, onDelete, basePath = '/cartei
     const values = customers.map((c) => {
       switch (column) {
         case 'contrato': return c.contrato;
+        case 'alarme_codigo': return c.alarme_codigo || '-';
         case 'razao_social': return c.razao_social;
         case 'filial': return c.filial || '-';
         default: return '';
@@ -194,6 +195,7 @@ export function CarteiraClientesTable({ customers, onDelete, basePath = '/cartei
         const filterLower = filter.value.toLowerCase();
         switch (filter.column) {
           case 'contrato': return c.contrato.toLowerCase().includes(filterLower);
+          case 'alarme_codigo': return (c.alarme_codigo || '-').toLowerCase().includes(filterLower);
           case 'razao_social': return c.razao_social.toLowerCase().includes(filterLower);
           case 'filial': return (c.filial || '-').toLowerCase().includes(filterLower);
           case 'data_ativacao': return formatDate(c.data_ativacao).includes(filter.value);
@@ -222,6 +224,10 @@ export function CarteiraClientesTable({ customers, onDelete, basePath = '/cartei
           case 'contrato':
             aValue = a.contrato;
             bValue = b.contrato;
+            break;
+          case 'alarme_codigo':
+            aValue = a.alarme_codigo || '';
+            bValue = b.alarme_codigo || '';
             break;
           case 'razao_social':
             aValue = a.razao_social;

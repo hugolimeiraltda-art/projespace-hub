@@ -71,20 +71,19 @@ Deno.serve(async (req) => {
     const offset = Math.max(Number.parseInt(String(body.offset ?? url.searchParams.get('offset') ?? '0'), 10) || 0, 0)
 
     let query = supabase
-      .from('customer_portfolio')
-      .select('id, tipo_carteira, contrato, alarme_codigo, razao_social, endereco, filial, praca, tipo, sistema, noc, app, leitores, transbordo, gateway, portoes, portas, dvr_nvr, cameras, zonas_perimetro, cancelas, totem_simples, totem_duplo, catracas, faciais_hik, faciais_avicam, faciais_outros, status_implantacao, updated_at', { count: 'exact' })
-      .eq('tipo_carteira', 'PPE')
+      .from('ppe_customers')
+      .select('id, contrato, alarme_codigo, razao_social, endereco, filial, tipo, sistema, noc, app, cameras, observacoes, updated_at', { count: 'exact' })
 
     if (contrato) query = query.ilike('contrato', '%' + contrato + '%')
     if (alarmeCodigo) query = query.ilike('alarme_codigo', '%' + alarmeCodigo + '%')
     if (razaoSocial) query = query.ilike('razao_social', '%' + razaoSocial + '%')
     if (filial) query = query.eq('filial', filial)
-    if (praca) query = query.ilike('praca', '%' + praca + '%')
+    if (praca) query = query.ilike('filial', '%' + praca + '%')
     if (tipoProduto) query = query.ilike('tipo', '%' + tipoProduto + '%')
     if (status) query = query.ilike('sistema', '%' + status + '%')
     if (noc) query = query.ilike('noc', '%' + noc + '%')
     if (search) {
-      query = query.or('contrato.ilike.%' + search + '%,alarme_codigo.ilike.%' + search + '%,razao_social.ilike.%' + search + '%,endereco.ilike.%' + search + '%,praca.ilike.%' + search + '%,tipo.ilike.%' + search + '%')
+      query = query.or('contrato.ilike.%' + search + '%,alarme_codigo.ilike.%' + search + '%,razao_social.ilike.%' + search + '%,endereco.ilike.%' + search + '%,filial.ilike.%' + search + '%,tipo.ilike.%' + search + '%')
     }
 
     const { data, error, count } = await query
@@ -98,37 +97,21 @@ Deno.serve(async (req) => {
 
     const customers = (data || []).map((customer) => ({
       id: customer.id,
-      tipo_carteira: customer.tipo_carteira,
+      tipo_carteira: 'PPE',
       contrato: customer.contrato,
       codigo_alarme: customer.alarme_codigo,
       razao_social: customer.razao_social,
       endereco: customer.endereco,
       filial: customer.filial,
-      praca: customer.praca,
+      praca: customer.filial,
       tipo_produto: customer.tipo,
       status: customer.sistema,
-      status_implantacao: customer.status_implantacao,
       noc: customer.noc,
       app: customer.app,
-      acesso: {
-        transbordo: customer.transbordo,
-        gateway: customer.gateway,
-      },
       equipamentos_principais: {
-        portoes: customer.portoes,
-        portas: customer.portas,
-        dvr_nvr: customer.dvr_nvr,
         cameras: customer.cameras,
-        zonas_perimetro: customer.zonas_perimetro,
-        cancelas: customer.cancelas,
-        totem_simples: customer.totem_simples,
-        totem_duplo: customer.totem_duplo,
-        catracas: customer.catracas,
-        faciais_hik: customer.faciais_hik,
-        faciais_avicam: customer.faciais_avicam,
-        faciais_outros: customer.faciais_outros,
       },
-      observacoes_tecnicas: includeTechnicalNotes ? customer.leitores : undefined,
+      observacoes_tecnicas: includeTechnicalNotes ? customer.observacoes : undefined,
       atualizado_em: customer.updated_at,
     }))
 

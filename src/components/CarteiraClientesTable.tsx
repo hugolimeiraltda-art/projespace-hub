@@ -129,6 +129,7 @@ export function CarteiraClientesTable({ customers, onDelete, basePath = '/cartei
         case 'alarme_codigo': return c.alarme_codigo || '-';
         case 'razao_social': return c.razao_social;
         case 'filial': return c.filial || '-';
+        case 'tipo': return c.tipo || '-';
         default: return '';
       }
     });
@@ -200,6 +201,7 @@ export function CarteiraClientesTable({ customers, onDelete, basePath = '/cartei
           case 'alarme_codigo': return (c.alarme_codigo || '-').toLowerCase().includes(filterLower);
           case 'razao_social': return c.razao_social.toLowerCase().includes(filterLower);
           case 'filial': return (c.filial || '-').toLowerCase().includes(filterLower);
+          case 'tipo': return (c.tipo || '-').toLowerCase().includes(filterLower);
           case 'data_ativacao': return formatDate(c.data_ativacao).includes(filter.value);
           case 'data_termino': return calculateTermino(c).includes(filter.value);
           case 'taxa_ativacao': 
@@ -238,6 +240,10 @@ export function CarteiraClientesTable({ customers, onDelete, basePath = '/cartei
           case 'filial':
             aValue = a.filial || '';
             bValue = b.filial || '';
+            break;
+          case 'tipo':
+            aValue = a.tipo || '';
+            bValue = b.tipo || '';
             break;
           case 'data_ativacao':
             aValue = a.data_ativacao ? new Date(a.data_ativacao).getTime() : 0;

@@ -38,6 +38,7 @@ import { CarteiraClientesTable } from '@/components/CarteiraClientesTable';
 
 interface Customer {
   id: string;
+  tipo_carteira?: 'PCI' | 'PPE' | string | null;
   contrato: string;
   alarme_codigo: string | null;
   razao_social: string;
@@ -67,6 +68,10 @@ interface Customer {
   faciais_avicam: number;
   faciais_outros: number;
   created_at: string;
+}
+
+interface CarteiraClientesProps {
+  tipoCarteira?: 'PCI' | 'PPE';
 }
 
 const EMPTY_FORM = {
@@ -99,7 +104,7 @@ const EMPTY_FORM = {
   faciais_outros: '0',
 };
 
-export default function CarteiraClientes() {
+export default function CarteiraClientes({ tipoCarteira = 'PCI' }: CarteiraClientesProps) {
   const { toast } = useToast();
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -114,16 +119,19 @@ export default function CarteiraClientes() {
   const [faciaisDialogOpen, setFaciaisDialogOpen] = useState(false);
 
   const canCreate = user?.role === 'admin' || user?.role === 'implantacao';
+  const basePath = tipoCarteira === 'PPE' ? '/carteira-clientes-ppe' : '/carteira-clientes';
+  const pageTitle = `Carteira de Clientes ${tipoCarteira}`;
 
   useEffect(() => {
     fetchCustomers();
-  }, []);
+  }, [tipoCarteira]);
 
   const fetchCustomers = async () => {
     try {
-      const { data, error } = await supabase
-        .from('customer_portfolio')
+      const { data, error } = await (supabase
+        .from('customer_portfolio') as any)
         .select('*')
+        .eq('tipo_carteira', tipoCarteira)
         .order('contrato', { ascending: true });
 
       if (error) throw error;
@@ -132,7 +140,7 @@ export default function CarteiraClientes() {
       console.error('Error fetching customers:', error);
       toast({
         title: 'Erro ao carregar clientes',
-        description: 'Não foi possível carregar a carteira de clientes.',
+        description: `Não foi possível carregar a carteira de clientes ${tipoCarteira}.`,
         variant: 'destructive',
       });
     } finally {
@@ -158,6 +166,7 @@ export default function CarteiraClientes() {
     setSaving(true);
     try {
       const payload = {
+        tipo_carteira: tipoCarteira,
         contrato: form.contrato,
         alarme_codigo: form.alarme_codigo || null,
         razao_social: form.razao_social,
@@ -189,7 +198,7 @@ export default function CarteiraClientes() {
 
       const { error } = await supabase
         .from('customer_portfolio')
-        .insert(payload);
+        .insert(payload as any);
 
       if (error) throw error;
       toast({ title: 'Cliente cadastrado!', description: 'O novo cliente foi adicionado à carteira.' });
@@ -209,7 +218,7 @@ export default function CarteiraClientes() {
   };
 
   const handleRowClick = (customerId: string) => {
-    navigate(`/carteira-clientes/${customerId}`);
+    navigate(`${basePath}/${customerId}`);
   };
 
 
@@ -301,8 +310,8 @@ export default function CarteiraClientes() {
       <div className="p-6">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Carteira de Clientes</h1>
-            <p className="text-muted-foreground">Gerencie a carteira de clientes ativos</p>
+            <h1 className="text-2xl font-bold text-foreground">{pageTitle}</h1>
+            <p className="text-muted-foreground">Gerencie a carteira de clientes ativos {tipoCarteira}</p>
           </div>
           {canCreate && (
             <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
@@ -314,7 +323,7 @@ export default function CarteiraClientes() {
               </DialogTrigger>
               <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
-                  <DialogTitle>Novo Cliente</DialogTitle>
+                  <DialogTitle>Novo Cliente {tipoCarteira}</DialogTitle>
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
                   {/* Identificação */}
@@ -724,7 +733,7 @@ export default function CarteiraClientes() {
                         className="cursor-pointer hover:bg-muted/50"
                         onClick={() => {
                           setExpiringDialogOpen(false);
-                          navigate(`/carteira-clientes/${customer.id}`);
+                           navigate(`${basePath}/${customer.id}`);
                         }}
                       >
                         <TableCell className="font-medium text-primary">{customer.contrato}</TableCell>
@@ -761,7 +770,7 @@ export default function CarteiraClientes() {
                 <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
               </div>
             ) : (
-              <CarteiraClientesTable customers={customers} onDelete={fetchCustomers} />
+              <CarteiraClientesTable customers={customers} onDelete={fetchCustomers} basePath={basePath} />
             )}
           </CardContent>
         </Card>

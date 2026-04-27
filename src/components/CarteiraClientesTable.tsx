@@ -41,9 +41,10 @@ interface SortConfig {
 interface CarteiraClientesTableProps {
   customers: Customer[];
   onDelete?: () => void;
+  basePath?: string;
 }
 
-export function CarteiraClientesTable({ customers, onDelete }: CarteiraClientesTableProps) {
+export function CarteiraClientesTable({ customers, onDelete, basePath = '/carteira-clientes' }: CarteiraClientesTableProps) {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [columnFilters, setColumnFilters] = useState<ColumnFilter[]>([]);
@@ -356,7 +357,7 @@ export function CarteiraClientesTable({ customers, onDelete }: CarteiraClientesT
                 <TableRow 
                   key={customer.id} 
                   className="cursor-pointer hover:bg-muted/50"
-                  onClick={() => navigate(`/carteira-clientes/${customer.id}`)}
+                  onClick={() => navigate(`${basePath}/${customer.id}`)}
                 >
                   <TableCell className="p-1">
                     <Button

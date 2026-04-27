@@ -184,10 +184,18 @@ function AppRoutes() {
       />
       <Route 
         path="/carteira-clientes" 
-        element={<ProtectedRoute><CarteiraClientes /></ProtectedRoute>} 
+        element={<ProtectedRoute><CarteiraClientes tipoCarteira="PCI" /></ProtectedRoute>} 
       />
       <Route 
         path="/carteira-clientes/:id" 
+        element={<ProtectedRoute><CustomerDetail /></ProtectedRoute>} 
+      />
+      <Route 
+        path="/carteira-clientes-ppe" 
+        element={<ProtectedRoute><CarteiraClientes tipoCarteira="PPE" /></ProtectedRoute>} 
+      />
+      <Route 
+        path="/carteira-clientes-ppe/:id" 
         element={<ProtectedRoute><CustomerDetail /></ProtectedRoute>} 
       />
       <Route 

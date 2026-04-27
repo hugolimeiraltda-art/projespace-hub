@@ -348,6 +348,8 @@ export function CarteiraClientesTable({ customers, onDelete, basePath = '/cartei
     switch (column) {
       case 'contrato':
         return <TableCell className="font-medium text-primary hover:underline">{customer.contrato}</TableCell>;
+      case 'alarme_codigo':
+        return <TableCell>{customer.alarme_codigo || '-'}</TableCell>;
       case 'razao_social':
         return <TableCell className="max-w-[200px] truncate text-primary hover:underline">{customer.razao_social}</TableCell>;
       case 'filial':

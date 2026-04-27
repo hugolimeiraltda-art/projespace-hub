@@ -235,6 +235,22 @@ export default function CarteiraClientes({ tipoCarteira = 'PCI' }: CarteiraClien
 
   const totalFaciais = totals.faciais_hik + totals.faciais_avicam + totals.faciais_outros;
 
+  const filialContracts = customers.reduce((acc, c) => {
+    const filial = (c.filial || 'Sem filial').trim().toUpperCase() || 'Sem filial';
+    acc[filial] = (acc[filial] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+
+  const filialContractEntries = Object.entries(filialContracts).sort(([a], [b]) => a.localeCompare(b));
+
+  const productContractCounts = customers.reduce((acc, c) => {
+    const tipo = (c.tipo || '').trim().toLowerCase();
+    if (tipo.includes('mini')) acc.mini += 1;
+    else if (tipo.includes('parede')) acc.parede += 1;
+    else if (tipo.includes('360')) acc['360'] += 1;
+    return acc;
+  }, { mini: 0, parede: 0, '360': 0 });
+
   // Calculate contracts expiring
   const now = new Date();
   const in3Months = addMonths(now, 3);
@@ -601,6 +617,107 @@ export default function CarteiraClientes({ tipoCarteira = 'PCI' }: CarteiraClien
         </div>
 
         {/* Stats Cards */}
+        {tipoCarteira === 'PPE' ? (
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3 mb-4">
+              <Card>
+                <CardContent className="pt-3 pb-3">
+                  <div className="flex items-center gap-2">
+                    <div className="p-1.5 bg-primary/10 rounded-lg">
+                      <Users className="w-4 h-4 text-primary" />
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Total Clientes</p>
+                      <p className="text-xl font-bold">{customers.length}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="pt-3 pb-3">
+                  <div className="flex items-center gap-2">
+                    <div className="p-1.5 bg-primary/10 rounded-lg">
+                      <Camera className="w-4 h-4 text-primary" />
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Total Câmeras</p>
+                      <p className="text-xl font-bold">{totals.cameras.toLocaleString('pt-BR')}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="pt-3 pb-3">
+                  <div className="flex items-center gap-2">
+                    <div className="p-1.5 bg-primary/10 rounded-lg">
+                      <Building2 className="w-4 h-4 text-primary" />
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Contratos por Filial</p>
+                      <p className="text-xl font-bold">{customers.length}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="pt-3 pb-3">
+                  <div className="flex items-center gap-2">
+                    <div className="p-1.5 bg-primary/10 rounded-lg">
+                      <DoorOpen className="w-4 h-4 text-primary" />
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Contratos por Produto</p>
+                      <p className="text-xl font-bold">{customers.length}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 mb-4">
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium">Total de contratos por filial</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                    {filialContractEntries.map(([filial, count]) => (
+                      <div key={filial} className="rounded-md border bg-muted/30 p-3">
+                        <p className="text-xs text-muted-foreground">{filial}</p>
+                        <p className="text-xl font-bold">{count}</p>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium">Quantidade de contratos por tipo de produto</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-3 gap-2">
+                    <div className="rounded-md border bg-muted/30 p-3">
+                      <p className="text-xs text-muted-foreground">Mini</p>
+                      <p className="text-xl font-bold">{productContractCounts.mini}</p>
+                    </div>
+                    <div className="rounded-md border bg-muted/30 p-3">
+                      <p className="text-xs text-muted-foreground">Parede</p>
+                      <p className="text-xl font-bold">{productContractCounts.parede}</p>
+                    </div>
+                    <div className="rounded-md border bg-muted/30 p-3">
+                      <p className="text-xs text-muted-foreground">360</p>
+                      <p className="text-xl font-bold">{productContractCounts['360']}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </>
+        ) : (
         <div className="grid grid-cols-4 gap-3 mb-4">
           <Card>
             <CardContent className="pt-3 pb-3">
@@ -671,10 +788,11 @@ export default function CarteiraClientes({ tipoCarteira = 'PCI' }: CarteiraClien
             </CardContent>
           </Card>
         </div>
+        )}
 
 
         {/* Active Clients by Praça */}
-        <div className="grid grid-cols-5 gap-3 mb-4">
+        {tipoCarteira !== 'PPE' && <div className="grid grid-cols-5 gap-3 mb-4">
           <Card className="border-l-4 border-l-green-500">
             <CardContent className="pt-3 pb-3">
               <div className="flex items-center gap-2">
@@ -703,7 +821,7 @@ export default function CarteiraClientes({ tipoCarteira = 'PCI' }: CarteiraClien
               </CardContent>
             </Card>
           ))}
-        </div>
+        </div>}
 
         {/* Expiring Contracts Dialog */}
         <Dialog open={expiringDialogOpen} onOpenChange={setExpiringDialogOpen}>

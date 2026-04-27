@@ -80,6 +80,7 @@ const getRouteMenuKey = (pathname: string): string | null => {
   if (pathname.startsWith('/implantacao-pagamento-instaladores')) return 'implantacao/pagamento-instaladores';
   if (pathname.startsWith('/implantacao-orcamento-setor')) return 'implantacao/orcamento-setor';
   if (pathname.startsWith('/implantacao-banco-prestadores')) return 'implantacao/banco-prestadores';
+  if (pathname.startsWith('/implantacao')) return 'implantacao/ppe';
   if (pathname.startsWith('/projetos') || pathname.startsWith('/informar-venda')) return 'projetos';
   if (pathname.startsWith('/controle-estoque')) return 'controle-estoque';
   if (pathname.startsWith('/manutencao/pendencias')) return 'manutencao/pendencias';

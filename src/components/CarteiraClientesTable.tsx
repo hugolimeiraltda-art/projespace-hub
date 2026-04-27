@@ -310,7 +310,7 @@ export function CarteiraClientesTable({ customers, onDelete, basePath = '/cartei
           <PopoverContent className="w-64 p-3" align="start">
             <div className="space-y-3">
               <div className="font-medium text-sm">Filtrar {label}</div>
-              {column === 'filial' ? (
+              {column === 'filial' || column === 'tipo' ? (
                 <Select
                   value={getFilterValue(column)}
                   onValueChange={(value) => setFilter(column, value)}
@@ -362,6 +362,8 @@ export function CarteiraClientesTable({ customers, onDelete, basePath = '/cartei
         return <TableCell className="max-w-[200px] truncate text-primary hover:underline">{customer.razao_social}</TableCell>;
       case 'filial':
         return <TableCell>{customer.filial || '-'}</TableCell>;
+      case 'tipo':
+        return <TableCell>{customer.tipo || '-'}</TableCell>;
       case 'data_ativacao':
         return <TableCell>{formatDate(customer.data_ativacao)}</TableCell>;
       case 'data_termino':

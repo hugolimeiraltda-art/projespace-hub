@@ -16,6 +16,7 @@ import { useToast } from '@/hooks/use-toast';
 interface Customer {
   id: string;
   contrato: string;
+  alarme_codigo?: string | null;
   razao_social: string;
   filial: string | null;
   data_ativacao: string | null;
@@ -33,7 +34,7 @@ interface ColumnFilter {
 }
 
 type SortDirection = 'asc' | 'desc' | null;
-type ColumnKey = 'contrato' | 'razao_social' | 'filial' | 'data_ativacao' | 'data_termino' | 'taxa_ativacao' | 'portoes' | 'zonas_perimetro' | 'cameras' | 'mensalidade';
+type ColumnKey = 'contrato' | 'alarme_codigo' | 'razao_social' | 'filial' | 'data_ativacao' | 'data_termino' | 'taxa_ativacao' | 'portoes' | 'zonas_perimetro' | 'cameras' | 'mensalidade';
 
 interface SortConfig {
   column: string;
@@ -48,6 +49,7 @@ interface CarteiraClientesTableProps {
 
 const TABLE_COLUMNS: { key: ColumnKey; label: string; className: string; align?: 'left' | 'right' }[] = [
   { key: 'contrato', label: 'Contrato', className: 'min-w-[100px]' },
+  { key: 'alarme_codigo', label: 'Código Alarme', className: 'min-w-[130px]' },
   { key: 'razao_social', label: 'Razão Social', className: 'min-w-[200px]' },
   { key: 'filial', label: 'Filial', className: 'min-w-[80px]' },
   { key: 'data_ativacao', label: 'Início', className: 'min-w-[100px]' },

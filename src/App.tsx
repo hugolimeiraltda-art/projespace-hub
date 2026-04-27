@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { ProjectsProvider } from "@/contexts/ProjectsContext";
+import { useMenuPermissions } from "@/hooks/useMenuPermissions";
 
 import Login from "./pages/Login";
 import ChangePassword from "./pages/ChangePassword";
@@ -70,8 +71,9 @@ import ComparacaoPlanilhas from "./pages/ComparacaoPlanilhas";
 
 const queryClient = new QueryClient();
 
-function ProtectedRoute({ children, allowPasswordChange = false }: { children: React.ReactNode; allowPasswordChange?: boolean }) {
+function ProtectedRoute({ children, allowPasswordChange = false, menuKey }: { children: React.ReactNode; allowPasswordChange?: boolean; menuKey?: string }) {
   const { isAuthenticated, isLoading, user } = useAuth();
+  const { canAccess, loading: menuPermsLoading } = useMenuPermissions();
   
   if (isLoading) {
     return (
@@ -88,6 +90,20 @@ function ProtectedRoute({ children, allowPasswordChange = false }: { children: R
   // Force password change if required (unless we're already on the password change page)
   if (user?.must_change_password && !allowPasswordChange) {
     return <Navigate to="/alterar-senha" replace />;
+  }
+
+  if (menuKey) {
+    if (menuPermsLoading) {
+      return (
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </div>
+      );
+    }
+
+    if (!canAccess(menuKey)) {
+      return <Navigate to="/carteira-clientes-ppe" replace />;
+    }
   }
   
   return <>{children}</>;

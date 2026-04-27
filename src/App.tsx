@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { ProjectsProvider } from "@/contexts/ProjectsContext";
 import { useMenuPermissions } from "@/hooks/useMenuPermissions";
@@ -71,9 +71,34 @@ import ComparacaoPlanilhas from "./pages/ComparacaoPlanilhas";
 
 const queryClient = new QueryClient();
 
+const getRouteMenuKey = (pathname: string): string | null => {
+  if (pathname.startsWith('/carteira-clientes-ppe')) return 'carteira-clientes-ppe';
+  if (pathname.startsWith('/carteira-clientes')) return 'carteira-clientes';
+  if (pathname.startsWith('/startup-projetos')) return 'implantacao';
+  if (pathname.startsWith('/implantacao-analytics')) return 'implantacao/analytics';
+  if (pathname.startsWith('/implantacao-relatorios')) return 'implantacao/analytics';
+  if (pathname.startsWith('/implantacao-pagamento-instaladores')) return 'implantacao/pagamento-instaladores';
+  if (pathname.startsWith('/implantacao-orcamento-setor')) return 'implantacao/orcamento-setor';
+  if (pathname.startsWith('/implantacao-banco-prestadores')) return 'implantacao/banco-prestadores';
+  if (pathname.startsWith('/projetos') || pathname.startsWith('/informar-venda')) return 'projetos';
+  if (pathname.startsWith('/controle-estoque')) return 'controle-estoque';
+  if (pathname.startsWith('/manutencao/pendencias')) return 'manutencao/pendencias';
+  if (pathname.startsWith('/manutencao/preventivas')) return 'manutencao/preventivas';
+  if (pathname.startsWith('/manutencao/chamados')) return 'manutencao/chamados';
+  if (pathname.startsWith('/manutencao')) return 'manutencao';
+  if (pathname.startsWith('/sucesso-cliente')) return 'sucesso-cliente';
+  if (pathname.startsWith('/orcamentos') || pathname.startsWith('/orcamento')) return 'orcamentos';
+  if (pathname.startsWith('/painel-ia')) return 'painel-ia';
+  if (pathname.startsWith('/configuracoes/usuarios')) return 'configuracoes/usuarios';
+  if (pathname.startsWith('/configuracoes')) return 'configuracoes';
+  if (pathname.startsWith('/dashboard')) return 'dashboard';
+  return null;
+};
+
 function ProtectedRoute({ children, allowPasswordChange = false, menuKey }: { children: React.ReactNode; allowPasswordChange?: boolean; menuKey?: string }) {
   const { isAuthenticated, isLoading, user } = useAuth();
   const { canAccess, loading: menuPermsLoading } = useMenuPermissions();
+  const location = useLocation();
   
   if (isLoading) {
     return (
@@ -92,7 +117,9 @@ function ProtectedRoute({ children, allowPasswordChange = false, menuKey }: { ch
     return <Navigate to="/alterar-senha" replace />;
   }
 
-  if (menuKey) {
+  const requiredMenuKey = menuKey ?? getRouteMenuKey(location.pathname);
+
+  if (requiredMenuKey) {
     if (menuPermsLoading) {
       return (
         <div className="min-h-screen flex items-center justify-center">
@@ -101,7 +128,7 @@ function ProtectedRoute({ children, allowPasswordChange = false, menuKey }: { ch
       );
     }
 
-    if (!canAccess(menuKey)) {
+    if (!canAccess(requiredMenuKey)) {
       return <Navigate to="/carteira-clientes-ppe" replace />;
     }
   }

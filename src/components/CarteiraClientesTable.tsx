@@ -5,8 +5,9 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { ArrowUp, ArrowDown, ArrowUpDown, Filter, X, Trash2 } from 'lucide-react';
+import { ArrowUp, ArrowDown, ArrowUpDown, Filter, X, Trash2, Columns3 } from 'lucide-react';
 import { format, addMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { supabase } from '@/integrations/supabase/client';
@@ -32,6 +33,7 @@ interface ColumnFilter {
 }
 
 type SortDirection = 'asc' | 'desc' | null;
+type ColumnKey = 'contrato' | 'razao_social' | 'filial' | 'data_ativacao' | 'data_termino' | 'taxa_ativacao' | 'portoes' | 'zonas_perimetro' | 'cameras' | 'mensalidade';
 
 interface SortConfig {
   column: string;
@@ -43,6 +45,19 @@ interface CarteiraClientesTableProps {
   onDelete?: () => void;
   basePath?: string;
 }
+
+const TABLE_COLUMNS: { key: ColumnKey; label: string; className: string; align?: 'left' | 'right' }[] = [
+  { key: 'contrato', label: 'Contrato', className: 'min-w-[100px]' },
+  { key: 'razao_social', label: 'Razão Social', className: 'min-w-[200px]' },
+  { key: 'filial', label: 'Filial', className: 'min-w-[80px]' },
+  { key: 'data_ativacao', label: 'Início', className: 'min-w-[100px]' },
+  { key: 'data_termino', label: 'Término', className: 'min-w-[100px]' },
+  { key: 'taxa_ativacao', label: 'Taxa Ativação', className: 'min-w-[120px] text-right', align: 'right' },
+  { key: 'portoes', label: 'Portões', className: 'min-w-[80px] text-right', align: 'right' },
+  { key: 'zonas_perimetro', label: 'Zonas', className: 'min-w-[80px] text-right', align: 'right' },
+  { key: 'cameras', label: 'Câmeras', className: 'min-w-[80px] text-right', align: 'right' },
+  { key: 'mensalidade', label: 'Mensalidade', className: 'min-w-[120px] text-right', align: 'right' },
+];
 
 export function CarteiraClientesTable({ customers, onDelete, basePath = '/carteira-clientes' }: CarteiraClientesTableProps) {
   const navigate = useNavigate();

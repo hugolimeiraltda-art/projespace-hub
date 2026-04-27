@@ -103,7 +103,7 @@ const ALL_NAV_ITEMS: NavItem[] = [
     path: '/carteira-clientes-ppe',
     label: 'Carteira de Clientes PPE',
     icon: Package,
-    menuKey: 'carteira-clientes',
+    menuKey: 'carteira-clientes-ppe',
     exact: true,
   },
   {

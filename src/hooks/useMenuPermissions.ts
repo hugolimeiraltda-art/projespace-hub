@@ -34,6 +34,7 @@ export const MENU_KEYS = [
   { key: 'manutencao/chamados', label: 'Chamados', parent: 'manutencao' },
   { key: 'manutencao/pendencias', label: 'Controle de Pendências', parent: 'manutencao' },
   { key: 'carteira-clientes', label: 'Carteira de Clientes', parent: null },
+  { key: 'carteira-clientes-ppe', label: 'Carteira de Clientes PPE', parent: null },
   { key: 'sucesso-cliente', label: 'Sucesso do Cliente', parent: null },
   { key: 'orcamentos', label: 'Orçamentos IA', parent: null },
   { key: 'orcamentos/sessoes', label: 'Sessões', parent: 'orcamentos' },

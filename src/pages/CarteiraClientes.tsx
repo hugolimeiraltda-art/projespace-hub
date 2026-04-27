@@ -120,6 +120,7 @@ export default function CarteiraClientes({ tipoCarteira = 'PCI' }: CarteiraClien
 
   const canCreate = user?.role === 'admin' || user?.role === 'implantacao';
   const basePath = tipoCarteira === 'PPE' ? '/carteira-clientes-ppe' : '/carteira-clientes';
+  const dataTable = tipoCarteira === 'PPE' ? 'ppe_customers' : 'customer_portfolio';
   const pageTitle = `Carteira de Clientes ${tipoCarteira}`;
 
   useEffect(() => {
@@ -128,14 +129,38 @@ export default function CarteiraClientes({ tipoCarteira = 'PCI' }: CarteiraClien
 
   const fetchCustomers = async () => {
     try {
-      const { data, error } = await (supabase
-        .from('customer_portfolio') as any)
+      let query = (supabase.from(dataTable as any) as any)
         .select('*')
-        .eq('tipo_carteira', tipoCarteira)
         .order('contrato', { ascending: true });
 
+      if (tipoCarteira !== 'PPE') {
+        query = query.eq('tipo_carteira', tipoCarteira);
+      }
+
+      const { data, error } = await query;
+
       if (error) throw error;
-      setCustomers(data || []);
+      setCustomers((data || []).map((customer: any) => ({
+        ...customer,
+        tipo_carteira: tipoCarteira,
+        unidades: customer.unidades || 0,
+        quantidade_leitores: customer.quantidade_leitores || 0,
+        leitores: customer.leitores || customer.observacoes || null,
+        transbordo: customer.transbordo || false,
+        gateway: customer.gateway || false,
+        portoes: customer.portoes || 0,
+        portas: customer.portas || 0,
+        dvr_nvr: customer.dvr_nvr || 0,
+        cameras: customer.cameras || 0,
+        zonas_perimetro: customer.zonas_perimetro || 0,
+        cancelas: customer.cancelas || 0,
+        totem_simples: customer.totem_simples || 0,
+        totem_duplo: customer.totem_duplo || 0,
+        catracas: customer.catracas || 0,
+        faciais_hik: customer.faciais_hik || 0,
+        faciais_avicam: customer.faciais_avicam || 0,
+        faciais_outros: customer.faciais_outros || 0,
+      })));
     } catch (error) {
       console.error('Error fetching customers:', error);
       toast({
@@ -165,7 +190,20 @@ export default function CarteiraClientes({ tipoCarteira = 'PCI' }: CarteiraClien
 
     setSaving(true);
     try {
-      const payload = {
+      const payload = tipoCarteira === 'PPE' ? {
+        contrato: form.contrato,
+        alarme_codigo: form.alarme_codigo || null,
+        razao_social: form.razao_social,
+        mensalidade: form.mensalidade ? parseFloat(form.mensalidade.replace(',', '.')) : null,
+        taxa_ativacao: form.taxa_ativacao ? parseFloat(form.taxa_ativacao.replace(',', '.')) : null,
+        filial: form.filial || null,
+        tipo: form.tipo || null,
+        data_ativacao: form.data_ativacao || null,
+        noc: form.noc || null,
+        sistema: form.sistema || null,
+        cameras: parseInt(form.cameras) || 0,
+        observacoes: form.leitores || null,
+      } : {
         tipo_carteira: tipoCarteira,
         contrato: form.contrato,
         alarme_codigo: form.alarme_codigo || null,
@@ -197,7 +235,7 @@ export default function CarteiraClientes({ tipoCarteira = 'PCI' }: CarteiraClien
       };
 
       const { error } = await supabase
-        .from('customer_portfolio')
+        .from(dataTable as any)
         .insert(payload as any);
 
       if (error) throw error;
@@ -478,7 +516,7 @@ export default function CarteiraClientes({ tipoCarteira = 'PCI' }: CarteiraClien
                   </div>
 
                   {/* Equipamentos */}
-                  <div className="border-t pt-4">
+                  {tipoCarteira !== 'PPE' && <div className="border-t pt-4">
                     <h3 className="font-semibold mb-3">Equipamentos</h3>
                     <div className="grid grid-cols-5 gap-4">
                       <div>
@@ -599,7 +637,7 @@ export default function CarteiraClientes({ tipoCarteira = 'PCI' }: CarteiraClien
                         </div>
                       </div>
                     </div>
-                  </div>
+                  </div>}
 
                   <div className="flex justify-end gap-2 pt-4 border-t">
                     <Button variant="outline" onClick={() => setDialogOpen(false)}>
@@ -887,7 +925,7 @@ export default function CarteiraClientes({ tipoCarteira = 'PCI' }: CarteiraClien
                 <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
               </div>
             ) : (
-              <CarteiraClientesTable customers={customers} onDelete={fetchCustomers} basePath={basePath} />
+              <CarteiraClientesTable customers={customers} onDelete={fetchCustomers} basePath={basePath} tableName={dataTable} />
             )}
           </CardContent>
         </Card>

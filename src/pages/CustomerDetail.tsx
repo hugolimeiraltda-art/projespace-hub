@@ -80,6 +80,8 @@ export default function CustomerDetail() {
   const { user } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const basePath = window.location.pathname.startsWith('/carteira-clientes-ppe') ? '/carteira-clientes-ppe' : '/carteira-clientes';
+  const isPPE = basePath === '/carteira-clientes-ppe';
+  const dataTable = isPPE ? 'ppe_customers' : 'customer_portfolio';
 
   const [customer, setCustomer] = useState<Customer | null>(null);
   const [documents, setDocuments] = useState<CustomerDocument[]>([]);
@@ -133,33 +135,54 @@ export default function CustomerDetail() {
 
   const fetchCustomer = async () => {
     try {
-      const { data, error } = await supabase
-        .from('customer_portfolio')
+      const { data, error } = await (supabase
+        .from(dataTable as any) as any)
         .select('*')
         .eq('id', id)
         .single();
 
       if (error) throw error;
-      setCustomer(data);
+      const normalizedData = {
+        ...data,
+        tipo_carteira: isPPE ? 'PPE' : data.tipo_carteira,
+        leitores: data.leitores || data.observacoes || null,
+        quantidade_leitores: data.quantidade_leitores || null,
+        unidades: data.unidades || null,
+        transbordo: data.transbordo || false,
+        gateway: data.gateway || false,
+        portoes: data.portoes || 0,
+        portas: data.portas || 0,
+        dvr_nvr: data.dvr_nvr || 0,
+        cameras: data.cameras || 0,
+        zonas_perimetro: data.zonas_perimetro || 0,
+        cancelas: data.cancelas || 0,
+        totem_simples: data.totem_simples || 0,
+        totem_duplo: data.totem_duplo || 0,
+        catracas: data.catracas || 0,
+        faciais_hik: data.faciais_hik || 0,
+        faciais_avicam: data.faciais_avicam || 0,
+        faciais_outros: data.faciais_outros || 0,
+      };
+      setCustomer(normalizedData);
       setForm({
-        contrato: data.contrato,
-        alarme_codigo: data.alarme_codigo || '',
-        razao_social: data.razao_social,
-        endereco: data.endereco || '',
-        contato_nome: data.contato_nome || '',
-        contato_telefone: data.contato_telefone || '',
-        mensalidade: data.mensalidade?.toString() || '',
-        taxa_ativacao: data.taxa_ativacao?.toString() || '',
-        leitores: data.leitores || '',
-        quantidade_leitores: data.quantidade_leitores?.toString() || '',
-        filial: data.filial || '',
-        unidades: data.unidades?.toString() || '',
-        tipo: data.tipo || '',
-        data_ativacao: data.data_ativacao || '',
-        data_termino: data.data_termino || '',
-        noc: data.noc || '',
-        sistema: data.sistema || '',
-        app: data.app || '',
+        contrato: normalizedData.contrato,
+        alarme_codigo: normalizedData.alarme_codigo || '',
+        razao_social: normalizedData.razao_social,
+        endereco: normalizedData.endereco || '',
+        contato_nome: normalizedData.contato_nome || '',
+        contato_telefone: normalizedData.contato_telefone || '',
+        mensalidade: normalizedData.mensalidade?.toString() || '',
+        taxa_ativacao: normalizedData.taxa_ativacao?.toString() || '',
+        leitores: normalizedData.leitores || '',
+        quantidade_leitores: normalizedData.quantidade_leitores?.toString() || '',
+        filial: normalizedData.filial || '',
+        unidades: normalizedData.unidades?.toString() || '',
+        tipo: normalizedData.tipo || '',
+        data_ativacao: normalizedData.data_ativacao || '',
+        data_termino: normalizedData.data_termino || '',
+        noc: normalizedData.noc || '',
+        sistema: normalizedData.sistema || '',
+        app: normalizedData.app || '',
         empresa: (data as any).empresa || '',
         transbordo: data.transbordo,
         gateway: data.gateway,
@@ -209,7 +232,25 @@ export default function CustomerDetail() {
 
     setSaving(true);
     try {
-      const payload = {
+      const payload = isPPE ? {
+        contrato: form.contrato,
+        alarme_codigo: form.alarme_codigo || null,
+        razao_social: form.razao_social,
+        endereco: form.endereco || null,
+        contato_nome: form.contato_nome || null,
+        contato_telefone: form.contato_telefone || null,
+        mensalidade: form.mensalidade ? parseFloat(form.mensalidade.replace(',', '.')) : null,
+        taxa_ativacao: form.taxa_ativacao ? parseFloat(form.taxa_ativacao.replace(',', '.')) : null,
+        filial: form.filial || null,
+        tipo: form.tipo || null,
+        data_ativacao: form.data_ativacao || null,
+        data_termino: form.data_termino || null,
+        noc: form.noc || null,
+        sistema: form.sistema || null,
+        app: form.app || null,
+        cameras: parseInt(form.cameras) || 0,
+        observacoes: form.leitores || null,
+      } : {
         contrato: form.contrato,
         alarme_codigo: form.alarme_codigo || null,
         razao_social: form.razao_social,
@@ -246,7 +287,7 @@ export default function CustomerDetail() {
       };
 
       const { error } = await supabase
-        .from('customer_portfolio')
+        .from(dataTable as any)
         .update(payload)
         .eq('id', id);
 
@@ -640,7 +681,19 @@ export default function CustomerDetail() {
               </div>
 
               {/* Equipamentos */}
-              <div className="border-t pt-4 mt-2">
+              {isPPE && (
+                <div className="border-t pt-4 mt-2">
+                  <h3 className="font-semibold mb-3">Dados PPE</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <Label>Total de Câmeras</Label>
+                      <Input type="number" value={form.cameras} onChange={(e) => setForm({ ...form, cameras: e.target.value })} disabled={!canEdit} />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {!isPPE && <div className="border-t pt-4 mt-2">
                 <h3 className="font-semibold mb-3">Equipamentos</h3>
                 <div className="grid grid-cols-5 gap-4">
                   <div>
@@ -699,13 +752,13 @@ export default function CustomerDetail() {
                     </div>
                   </div>
                 </div>
-              </div>
+              </div>}
             </div>
           </CardContent>
         </Card>
 
         {/* Documentação */}
-        <AdministradoresCondominio customerId={id!} canEdit={canEdit} />
+        {!isPPE && <AdministradoresCondominio customerId={id!} canEdit={canEdit} />}
 
         {/* Documentação */}
         <Card>

@@ -2389,6 +2389,78 @@ export type Database = {
         }
         Relationships: []
       }
+      ppe_customers: {
+        Row: {
+          alarme_codigo: string | null
+          app: string | null
+          cameras: number
+          contato_nome: string | null
+          contato_telefone: string | null
+          contrato: string
+          created_at: string
+          data_ativacao: string | null
+          data_termino: string | null
+          endereco: string | null
+          filial: string | null
+          id: string
+          legacy_customer_id: string | null
+          mensalidade: number | null
+          noc: string | null
+          observacoes: string | null
+          razao_social: string
+          sistema: string | null
+          taxa_ativacao: number | null
+          tipo: string | null
+          updated_at: string
+        }
+        Insert: {
+          alarme_codigo?: string | null
+          app?: string | null
+          cameras?: number
+          contato_nome?: string | null
+          contato_telefone?: string | null
+          contrato: string
+          created_at?: string
+          data_ativacao?: string | null
+          data_termino?: string | null
+          endereco?: string | null
+          filial?: string | null
+          id?: string
+          legacy_customer_id?: string | null
+          mensalidade?: number | null
+          noc?: string | null
+          observacoes?: string | null
+          razao_social: string
+          sistema?: string | null
+          taxa_ativacao?: number | null
+          tipo?: string | null
+          updated_at?: string
+        }
+        Update: {
+          alarme_codigo?: string | null
+          app?: string | null
+          cameras?: number
+          contato_nome?: string | null
+          contato_telefone?: string | null
+          contrato?: string
+          created_at?: string
+          data_ativacao?: string | null
+          data_termino?: string | null
+          endereco?: string | null
+          filial?: string | null
+          id?: string
+          legacy_customer_id?: string | null
+          mensalidade?: number | null
+          noc?: string | null
+          observacoes?: string | null
+          razao_social?: string
+          sistema?: string | null
+          taxa_ativacao?: number | null
+          tipo?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       prestador_documentos: {
         Row: {
           arquivo_url: string

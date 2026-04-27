@@ -705,7 +705,9 @@ export default function ImplantacaoExecucao() {
     switch (etapaNum) {
       case 1: return etapas.contrato_assinado;
       case 2: return etapas.contrato_cadastrado;
-      case 3: return etapas.ligacao_boas_vindas && etapas.cadastro_gear && etapas.sindico_app && etapas.conferencia_tags;
+      case 3: return isPPE
+        ? etapas.ligacao_boas_vindas && etapas.cadastro_gear
+        : etapas.ligacao_boas_vindas && etapas.cadastro_gear && etapas.sindico_app && etapas.conferencia_tags;
       case 4: return etapas.check_projeto && etapas.agendamento_visita_startup && etapas.laudo_visita_startup;
       case 5: return etapas.laudo_instalador;
       case 6: return nocChamado?.item_6_1_status === 'success' && etapas.check_programacao && etapas.confirmacao_ativacao_financeira;
@@ -1669,26 +1671,30 @@ export default function ImplantacaoExecucao() {
                     date={etapas.ligacao_boas_vindas_at}
                   />
                   <SubItem 
-                    label="3.2 - Cadastro do Condomínio e Morador no Gear" 
+                    label={isPPE ? "3.2 - Agendamento de visita de startup" : "3.2 - Cadastro do Condomínio e Morador no Gear"} 
                     checked={etapas.cadastro_gear} 
                     field="cadastro_gear"
                     dateField="cadastro_gear_at"
                     date={etapas.cadastro_gear_at}
                   />
-                  <SubItem 
-                    label="3.3 - Síndico baixar APP" 
-                    checked={etapas.sindico_app} 
-                    field="sindico_app"
-                    dateField="sindico_app_at"
-                    date={etapas.sindico_app_at}
-                  />
-                  <SubItem 
-                    label="3.4 - Conferência de controle/Tags" 
-                    checked={etapas.conferencia_tags} 
-                    field="conferencia_tags"
-                    dateField="conferencia_tags_at"
-                    date={etapas.conferencia_tags_at}
-                   />
+                  {!isPPE && (
+                    <>
+                      <SubItem 
+                        label="3.3 - Síndico baixar APP" 
+                        checked={etapas.sindico_app} 
+                        field="sindico_app"
+                        dateField="sindico_app_at"
+                        date={etapas.sindico_app_at}
+                      />
+                      <SubItem 
+                        label="3.4 - Conferência de controle/Tags" 
+                        checked={etapas.conferencia_tags} 
+                        field="conferencia_tags"
+                        dateField="conferencia_tags_at"
+                        date={etapas.conferencia_tags_at}
+                       />
+                    </>
+                  )}
 
                   {/* 3.5 - Pendência de Departamento (Instalação) */}
                   <div className="px-4 py-3 space-y-2 border-t border-border">

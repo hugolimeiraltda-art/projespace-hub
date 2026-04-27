@@ -571,14 +571,13 @@ export default function CustomerDetail() {
                   <Input type="number" value={form.unidades} onChange={(e) => setForm({ ...form, unidades: e.target.value })} disabled={!canEdit} />
                 </div>
                 <div>
-                  <Label>Produto</Label>
+                  <Label>Tipo de Produto</Label>
                   <Select value={form.tipo} onValueChange={(v) => setForm({ ...form, tipo: v })} disabled={!canEdit}>
                     <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Portaria Digital">Portaria Digital</SelectItem>
-                      <SelectItem value="Portaria Remota">Portaria Remota</SelectItem>
-                      <SelectItem value="Portaria Presencial">Portaria Presencial</SelectItem>
-                      <SelectItem value="Portaria Expressa">Portaria Expressa</SelectItem>
+                      <SelectItem value="360">360</SelectItem>
+                      <SelectItem value="MINI">MINI</SelectItem>
+                      <SelectItem value="GRABER VISION">GRABER VISION</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

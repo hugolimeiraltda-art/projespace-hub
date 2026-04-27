@@ -38,6 +38,7 @@ import { CarteiraClientesTable } from '@/components/CarteiraClientesTable';
 
 interface Customer {
   id: string;
+  tipo_carteira?: 'PCI' | 'PPE' | string | null;
   contrato: string;
   alarme_codigo: string | null;
   razao_social: string;
@@ -67,6 +68,10 @@ interface Customer {
   faciais_avicam: number;
   faciais_outros: number;
   created_at: string;
+}
+
+interface CarteiraClientesProps {
+  tipoCarteira?: 'PCI' | 'PPE';
 }
 
 const EMPTY_FORM = {
@@ -99,7 +104,7 @@ const EMPTY_FORM = {
   faciais_outros: '0',
 };
 
-export default function CarteiraClientes() {
+export default function CarteiraClientes({ tipoCarteira = 'PCI' }: CarteiraClientesProps) {
   const { toast } = useToast();
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -117,13 +122,14 @@ export default function CarteiraClientes() {
 
   useEffect(() => {
     fetchCustomers();
-  }, []);
+  }, [tipoCarteira]);
 
   const fetchCustomers = async () => {
     try {
       const { data, error } = await supabase
         .from('customer_portfolio')
         .select('*')
+        .eq('tipo_carteira' as any, tipoCarteira)
         .order('contrato', { ascending: true });
 
       if (error) throw error;
@@ -132,7 +138,7 @@ export default function CarteiraClientes() {
       console.error('Error fetching customers:', error);
       toast({
         title: 'Erro ao carregar clientes',
-        description: 'Não foi possível carregar a carteira de clientes.',
+        description: `Não foi possível carregar a carteira de clientes ${tipoCarteira}.`,
         variant: 'destructive',
       });
     } finally {
@@ -158,6 +164,7 @@ export default function CarteiraClientes() {
     setSaving(true);
     try {
       const payload = {
+        tipo_carteira: tipoCarteira,
         contrato: form.contrato,
         alarme_codigo: form.alarme_codigo || null,
         razao_social: form.razao_social,
@@ -189,7 +196,7 @@ export default function CarteiraClientes() {
 
       const { error } = await supabase
         .from('customer_portfolio')
-        .insert(payload);
+        .insert(payload as any);
 
       if (error) throw error;
       toast({ title: 'Cliente cadastrado!', description: 'O novo cliente foi adicionado à carteira.' });

@@ -19,6 +19,7 @@ interface Customer {
   alarme_codigo?: string | null;
   razao_social: string;
   filial: string | null;
+  tipo: string | null;
   data_ativacao: string | null;
   data_termino: string | null;
   taxa_ativacao: number | null;
@@ -34,7 +35,7 @@ interface ColumnFilter {
 }
 
 type SortDirection = 'asc' | 'desc' | null;
-type ColumnKey = 'contrato' | 'alarme_codigo' | 'razao_social' | 'filial' | 'data_ativacao' | 'data_termino' | 'taxa_ativacao' | 'portoes' | 'zonas_perimetro' | 'cameras' | 'mensalidade';
+type ColumnKey = 'contrato' | 'alarme_codigo' | 'razao_social' | 'filial' | 'tipo' | 'data_ativacao' | 'data_termino' | 'taxa_ativacao' | 'portoes' | 'zonas_perimetro' | 'cameras' | 'mensalidade';
 
 interface SortConfig {
   column: string;
@@ -52,6 +53,7 @@ const TABLE_COLUMNS: { key: ColumnKey; label: string; className: string; align?:
   { key: 'alarme_codigo', label: 'Código Alarme', className: 'min-w-[130px]' },
   { key: 'razao_social', label: 'Razão Social', className: 'min-w-[200px]' },
   { key: 'filial', label: 'Filial', className: 'min-w-[80px]' },
+  { key: 'tipo', label: 'Tipo de Produto', className: 'min-w-[130px]' },
   { key: 'data_ativacao', label: 'Início', className: 'min-w-[100px]' },
   { key: 'data_termino', label: 'Término', className: 'min-w-[100px]' },
   { key: 'taxa_ativacao', label: 'Taxa Ativação', className: 'min-w-[120px] text-right', align: 'right' },

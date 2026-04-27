@@ -2386,6 +2386,8 @@ export default function ImplantacaoExecucao() {
             </Collapsible>
           </Card>
 
+          {!isPPE && (
+            <>
           {/* Etapa 8: Operação Assistida */}
           <Card>
             <Collapsible open={expandedEtapas.includes(8)} onOpenChange={() => toggleEtapa(8)}>
@@ -2617,6 +2619,8 @@ export default function ImplantacaoExecucao() {
               </CollapsibleContent>
             </Collapsible>
           </Card>
+            </>
+          )}
         </div>
       </div>
 

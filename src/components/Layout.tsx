@@ -94,13 +94,17 @@ const ALL_NAV_ITEMS: NavItem[] = [
   },
   {
     path: '/carteira-clientes',
-    label: 'Carteira de Clientes',
+    label: 'Carteira de Clientes PCI',
     icon: Briefcase,
     menuKey: 'carteira-clientes',
-    subItems: [
-      { path: '/carteira-clientes', label: 'Carteira de Clientes PCI', icon: Briefcase, menuKey: 'carteira-clientes' },
-      { path: '/carteira-clientes-ppe', label: 'Carteira de Clientes PPE', icon: Package, menuKey: 'carteira-clientes' },
-    ],
+    exact: true,
+  },
+  {
+    path: '/carteira-clientes-ppe',
+    label: 'Carteira de Clientes PPE',
+    icon: Package,
+    menuKey: 'carteira-clientes',
+    exact: true,
   },
   {
     path: '/sucesso-cliente',

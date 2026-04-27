@@ -148,6 +148,7 @@ interface Project {
   implantacao_started_at: string | null;
   engineering_status: string | null;
   endereco_condominio: string | null;
+  tipo_implantacao: string | null;
 }
 
 interface ContratoInfo {
@@ -260,7 +261,7 @@ export default function ImplantacaoExecucao() {
       // Fetch project
       const { data: projectData, error: projectError } = await supabase
         .from('projects')
-        .select('id, numero_projeto, cliente_condominio_nome, cliente_cidade, cliente_estado, vendedor_nome, created_at, prazo_entrega_projeto, implantacao_started_at, engineering_status, endereco_condominio')
+        .select('id, numero_projeto, cliente_condominio_nome, cliente_cidade, cliente_estado, vendedor_nome, created_at, prazo_entrega_projeto, implantacao_started_at, engineering_status, endereco_condominio, tipo_implantacao')
         .eq('id', id)
         .single();
 
@@ -699,6 +700,7 @@ export default function ImplantacaoExecucao() {
 
   const isEtapaComplete = (etapaNum: number): boolean => {
     if (!etapas) return false;
+    const isPPE = project?.tipo_implantacao === 'PPE';
     
     switch (etapaNum) {
       case 1: return etapas.contrato_assinado;
@@ -708,8 +710,8 @@ export default function ImplantacaoExecucao() {
       case 5: return etapas.laudo_instalador;
       case 6: return nocChamado?.item_6_1_status === 'success' && etapas.check_programacao && etapas.confirmacao_ativacao_financeira;
       case 7: return etapas.agendamento_visita_comercial && etapas.laudo_visita_comercial;
-      case 8: return (etapas.operacao_assistida_interacoes?.length || 0) > 0;
-      case 9: return etapas.concluido;
+      case 8: return isPPE ? true : (etapas.operacao_assistida_interacoes?.length || 0) > 0;
+      case 9: return isPPE ? true : etapas.concluido;
       default: return false;
     }
   };
@@ -844,6 +846,8 @@ export default function ImplantacaoExecucao() {
       </Layout>
     );
   }
+
+  const isPPE = project.tipo_implantacao === 'PPE';
 
   const SubItem = ({ 
     label, 
@@ -2382,6 +2386,8 @@ export default function ImplantacaoExecucao() {
             </Collapsible>
           </Card>
 
+          {!isPPE && (
+            <>
           {/* Etapa 8: Operação Assistida */}
           <Card>
             <Collapsible open={expandedEtapas.includes(8)} onOpenChange={() => toggleEtapa(8)}>
@@ -2613,6 +2619,8 @@ export default function ImplantacaoExecucao() {
               </CollapsibleContent>
             </Collapsible>
           </Card>
+            </>
+          )}
         </div>
       </div>
 

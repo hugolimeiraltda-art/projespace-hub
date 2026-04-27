@@ -23,6 +23,7 @@ import { AdministradoresCondominio } from '@/components/AdministradoresCondomini
 
 interface Customer {
   id: string;
+  tipo_carteira?: 'PCI' | 'PPE' | string | null;
   contrato: string;
   alarme_codigo: string | null;
   razao_social: string;
@@ -73,6 +74,7 @@ export default function CustomerDetail() {
   const { toast } = useToast();
   const { user } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const basePath = window.location.pathname.startsWith('/carteira-clientes-ppe') ? '/carteira-clientes-ppe' : '/carteira-clientes';
 
   const [customer, setCustomer] = useState<Customer | null>(null);
   const [documents, setDocuments] = useState<CustomerDocument[]>([]);
@@ -176,7 +178,7 @@ export default function CustomerDetail() {
         description: 'Não foi possível carregar os dados do cliente.',
         variant: 'destructive',
       });
-      navigate('/carteira-clientes');
+      navigate(basePath);
     } finally {
       setLoading(false);
     }
@@ -431,7 +433,7 @@ export default function CustomerDetail() {
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" onClick={() => navigate('/carteira-clientes')}>
+            <Button variant="ghost" size="icon" onClick={() => navigate(basePath)}>
               <ArrowLeft className="w-5 h-5" />
             </Button>
             <div>

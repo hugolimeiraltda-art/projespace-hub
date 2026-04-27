@@ -67,6 +67,21 @@ export function CarteiraClientesTable({ customers, onDelete, basePath = '/cartei
   const [deleting, setDeleting] = useState(false);
   const [sortConfig, setSortConfig] = useState<SortConfig>({ column: '', direction: null });
   const [activeFilterColumn, setActiveFilterColumn] = useState<string | null>(null);
+  const [visibleColumns, setVisibleColumns] = useState<ColumnKey[]>(TABLE_COLUMNS.map((column) => column.key));
+
+  const isColumnVisible = (column: ColumnKey) => visibleColumns.includes(column);
+  const visibleColumnCount = visibleColumns.length + 1;
+
+  const toggleColumn = (column: ColumnKey) => {
+    setVisibleColumns((prev) => {
+      if (prev.includes(column)) {
+        return prev.length === 1 ? prev : prev.filter((key) => key !== column);
+      }
+      return [...prev, column];
+    });
+  };
+
+  const resetColumns = () => setVisibleColumns(TABLE_COLUMNS.map((column) => column.key));
 
   const formatDate = (dateString: string | null) => {
     if (!dateString) return '-';
@@ -318,6 +333,31 @@ export function CarteiraClientesTable({ customers, onDelete, basePath = '/cartei
         </Popover>
       </div>
     );
+  };
+
+  const renderCell = (customer: Customer, column: ColumnKey) => {
+    switch (column) {
+      case 'contrato':
+        return <TableCell className="font-medium text-primary hover:underline">{customer.contrato}</TableCell>;
+      case 'razao_social':
+        return <TableCell className="max-w-[200px] truncate text-primary hover:underline">{customer.razao_social}</TableCell>;
+      case 'filial':
+        return <TableCell>{customer.filial || '-'}</TableCell>;
+      case 'data_ativacao':
+        return <TableCell>{formatDate(customer.data_ativacao)}</TableCell>;
+      case 'data_termino':
+        return <TableCell>{calculateTermino(customer)}</TableCell>;
+      case 'taxa_ativacao':
+        return <TableCell className="text-right">{customer.taxa_ativacao ? `R$ ${customer.taxa_ativacao.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '-'}</TableCell>;
+      case 'portoes':
+        return <TableCell className="text-right">{customer.portoes}</TableCell>;
+      case 'zonas_perimetro':
+        return <TableCell className="text-right">{customer.zonas_perimetro}</TableCell>;
+      case 'cameras':
+        return <TableCell className="text-right">{customer.cameras}</TableCell>;
+      case 'mensalidade':
+        return <TableCell className="text-right">{customer.mensalidade ? `R$ ${customer.mensalidade.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '-'}</TableCell>;
+    }
   };
 
   return (

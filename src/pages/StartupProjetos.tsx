@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
+import { useMenuPermissions } from '@/hooks/useMenuPermissions';
 import { supabase } from '@/integrations/supabase/client';
 import { useImplantacaoIntegration } from '@/hooks/useImplantacaoIntegration';
 import { cn } from '@/lib/utils';
@@ -86,8 +87,11 @@ export default function StartupProjetos() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { canAccess, loading: menuPermsLoading } = useMenuPermissions();
   const [searchParams] = useSearchParams();
-  const activeTab = searchParams.get('tab') || 'em-implantacao';
+  const requestedTab = searchParams.get('tab') || 'em-implantacao';
+  const canAccessPciImplantacao = canAccess('implantacao/em-implantacao');
+  const activeTab = !menuPermsLoading && requestedTab !== 'ppe' && !canAccessPciImplantacao ? 'ppe' : requestedTab;
   
   const [projects, setProjects] = useState<StartupProject[]>([]);
   const [isLoading, setIsLoading] = useState(true);

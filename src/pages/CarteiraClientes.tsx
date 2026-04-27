@@ -516,7 +516,7 @@ export default function CarteiraClientes({ tipoCarteira = 'PCI' }: CarteiraClien
                   </div>
 
                   {/* Equipamentos */}
-                  <div className="border-t pt-4">
+                  {tipoCarteira !== 'PPE' && <div className="border-t pt-4">
                     <h3 className="font-semibold mb-3">Equipamentos</h3>
                     <div className="grid grid-cols-5 gap-4">
                       <div>
@@ -637,7 +637,7 @@ export default function CarteiraClientes({ tipoCarteira = 'PCI' }: CarteiraClien
                         </div>
                       </div>
                     </div>
-                  </div>
+                  </div>}
 
                   <div className="flex justify-end gap-2 pt-4 border-t">
                     <Button variant="outline" onClick={() => setDialogOpen(false)}>
@@ -925,7 +925,7 @@ export default function CarteiraClientes({ tipoCarteira = 'PCI' }: CarteiraClien
                 <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
               </div>
             ) : (
-              <CarteiraClientesTable customers={customers} onDelete={fetchCustomers} basePath={basePath} />
+              <CarteiraClientesTable customers={customers} onDelete={fetchCustomers} basePath={basePath} tableName={dataTable} />
             )}
           </CardContent>
         </Card>

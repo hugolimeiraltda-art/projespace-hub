@@ -1,12 +1,13 @@
-import { useState, useMemo } from 'react';
+import { Fragment, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { ArrowUp, ArrowDown, ArrowUpDown, Filter, X, Trash2 } from 'lucide-react';
+import { ArrowUp, ArrowDown, ArrowUpDown, Filter, X, Trash2, Columns3 } from 'lucide-react';
 import { format, addMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { supabase } from '@/integrations/supabase/client';
@@ -32,6 +33,7 @@ interface ColumnFilter {
 }
 
 type SortDirection = 'asc' | 'desc' | null;
+type ColumnKey = 'contrato' | 'razao_social' | 'filial' | 'data_ativacao' | 'data_termino' | 'taxa_ativacao' | 'portoes' | 'zonas_perimetro' | 'cameras' | 'mensalidade';
 
 interface SortConfig {
   column: string;
@@ -44,6 +46,19 @@ interface CarteiraClientesTableProps {
   basePath?: string;
 }
 
+const TABLE_COLUMNS: { key: ColumnKey; label: string; className: string; align?: 'left' | 'right' }[] = [
+  { key: 'contrato', label: 'Contrato', className: 'min-w-[100px]' },
+  { key: 'razao_social', label: 'Razão Social', className: 'min-w-[200px]' },
+  { key: 'filial', label: 'Filial', className: 'min-w-[80px]' },
+  { key: 'data_ativacao', label: 'Início', className: 'min-w-[100px]' },
+  { key: 'data_termino', label: 'Término', className: 'min-w-[100px]' },
+  { key: 'taxa_ativacao', label: 'Taxa Ativação', className: 'min-w-[120px] text-right', align: 'right' },
+  { key: 'portoes', label: 'Portões', className: 'min-w-[80px] text-right', align: 'right' },
+  { key: 'zonas_perimetro', label: 'Zonas', className: 'min-w-[80px] text-right', align: 'right' },
+  { key: 'cameras', label: 'Câmeras', className: 'min-w-[80px] text-right', align: 'right' },
+  { key: 'mensalidade', label: 'Mensalidade', className: 'min-w-[120px] text-right', align: 'right' },
+];
+
 export function CarteiraClientesTable({ customers, onDelete, basePath = '/carteira-clientes' }: CarteiraClientesTableProps) {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -52,6 +67,22 @@ export function CarteiraClientesTable({ customers, onDelete, basePath = '/cartei
   const [deleting, setDeleting] = useState(false);
   const [sortConfig, setSortConfig] = useState<SortConfig>({ column: '', direction: null });
   const [activeFilterColumn, setActiveFilterColumn] = useState<string | null>(null);
+  const [visibleColumns, setVisibleColumns] = useState<ColumnKey[]>(TABLE_COLUMNS.map((column) => column.key));
+
+  const isColumnVisible = (column: ColumnKey) => visibleColumns.includes(column);
+  const visibleColumnCount = visibleColumns.length + 1;
+  const footerLabelColSpan = isColumnVisible('mensalidade') ? Math.max(1, visibleColumnCount - 1) : visibleColumnCount;
+
+  const toggleColumn = (column: ColumnKey) => {
+    setVisibleColumns((prev) => {
+      if (prev.includes(column)) {
+        return prev.length === 1 ? prev : prev.filter((key) => key !== column);
+      }
+      return [...prev, column];
+    });
+  };
+
+  const resetColumns = () => setVisibleColumns(TABLE_COLUMNS.map((column) => column.key));
 
   const formatDate = (dateString: string | null) => {
     if (!dateString) return '-';
@@ -305,8 +336,60 @@ export function CarteiraClientesTable({ customers, onDelete, basePath = '/cartei
     );
   };
 
+  const renderCell = (customer: Customer, column: ColumnKey) => {
+    switch (column) {
+      case 'contrato':
+        return <TableCell className="font-medium text-primary hover:underline">{customer.contrato}</TableCell>;
+      case 'razao_social':
+        return <TableCell className="max-w-[200px] truncate text-primary hover:underline">{customer.razao_social}</TableCell>;
+      case 'filial':
+        return <TableCell>{customer.filial || '-'}</TableCell>;
+      case 'data_ativacao':
+        return <TableCell>{formatDate(customer.data_ativacao)}</TableCell>;
+      case 'data_termino':
+        return <TableCell>{calculateTermino(customer)}</TableCell>;
+      case 'taxa_ativacao':
+        return <TableCell className="text-right">{customer.taxa_ativacao ? `R$ ${customer.taxa_ativacao.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '-'}</TableCell>;
+      case 'portoes':
+        return <TableCell className="text-right">{customer.portoes}</TableCell>;
+      case 'zonas_perimetro':
+        return <TableCell className="text-right">{customer.zonas_perimetro}</TableCell>;
+      case 'cameras':
+        return <TableCell className="text-right">{customer.cameras}</TableCell>;
+      case 'mensalidade':
+        return <TableCell className="text-right">{customer.mensalidade ? `R$ ${customer.mensalidade.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '-'}</TableCell>;
+    }
+  };
+
   return (
     <div className="space-y-2">
+      <div className="flex justify-end">
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant="outline" size="sm" className="gap-2">
+              <Columns3 className="h-4 w-4" />
+              Colunas
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-64 p-3" align="end">
+            <div className="space-y-3">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-sm font-medium">Exibir colunas</span>
+                <Button variant="ghost" size="sm" onClick={resetColumns}>Todas</Button>
+              </div>
+              <div className="space-y-2">
+                {TABLE_COLUMNS.map((column) => (
+                  <label key={column.key} className="flex cursor-pointer items-center gap-2 text-sm">
+                    <Checkbox checked={isColumnVisible(column.key)} onCheckedChange={() => toggleColumn(column.key)} />
+                    <span>{column.label}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          </PopoverContent>
+        </Popover>
+      </div>
+
       {/* Active filters display */}
       {columnFilters.length > 0 && (
         <div className="flex items-center gap-2 flex-wrap">
@@ -333,22 +416,15 @@ export function CarteiraClientesTable({ customers, onDelete, basePath = '/cartei
           <TableHeader>
             <TableRow className="bg-muted/30">
               <TableHead className="w-[40px]"></TableHead>
-              <TableHead className="min-w-[100px]">{renderColumnHeader('contrato', 'Contrato')}</TableHead>
-              <TableHead className="min-w-[200px]">{renderColumnHeader('razao_social', 'Razão Social')}</TableHead>
-              <TableHead className="min-w-[80px]">{renderColumnHeader('filial', 'Filial')}</TableHead>
-              <TableHead className="min-w-[100px]">{renderColumnHeader('data_ativacao', 'Início')}</TableHead>
-              <TableHead className="min-w-[100px]">{renderColumnHeader('data_termino', 'Término')}</TableHead>
-              <TableHead className="min-w-[120px] text-right">{renderColumnHeader('taxa_ativacao', 'Taxa Ativação', 'right')}</TableHead>
-              <TableHead className="min-w-[80px] text-right">{renderColumnHeader('portoes', 'Portões', 'right')}</TableHead>
-              <TableHead className="min-w-[80px] text-right">{renderColumnHeader('zonas_perimetro', 'Zonas', 'right')}</TableHead>
-              <TableHead className="min-w-[80px] text-right">{renderColumnHeader('cameras', 'Câmeras', 'right')}</TableHead>
-              <TableHead className="min-w-[120px] text-right">{renderColumnHeader('mensalidade', 'Mensalidade', 'right')}</TableHead>
+              {TABLE_COLUMNS.filter((column) => isColumnVisible(column.key)).map((column) => (
+                <TableHead key={column.key} className={column.className}>{renderColumnHeader(column.key, column.label, column.align)}</TableHead>
+              ))}
             </TableRow>
           </TableHeader>
           <TableBody>
             {filteredAndSortedCustomers.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={11} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={visibleColumnCount} className="text-center py-8 text-muted-foreground">
                   Nenhum cliente encontrado com os filtros aplicados
                 </TableCell>
               </TableRow>
@@ -372,30 +448,9 @@ export function CarteiraClientesTable({ customers, onDelete, basePath = '/cartei
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </TableCell>
-                  <TableCell className="font-medium text-primary hover:underline">
-                    {customer.contrato}
-                  </TableCell>
-                  <TableCell className="max-w-[200px] truncate text-primary hover:underline">
-                    {customer.razao_social}
-                  </TableCell>
-                  <TableCell>{customer.filial || '-'}</TableCell>
-                  <TableCell>{formatDate(customer.data_ativacao)}</TableCell>
-                  <TableCell>{calculateTermino(customer)}</TableCell>
-                  <TableCell className="text-right">
-                    {customer.taxa_ativacao 
-                      ? `R$ ${customer.taxa_ativacao.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
-                      : '-'
-                    }
-                  </TableCell>
-                  <TableCell className="text-right">{customer.portoes}</TableCell>
-                  <TableCell className="text-right">{customer.zonas_perimetro}</TableCell>
-                  <TableCell className="text-right">{customer.cameras}</TableCell>
-                  <TableCell className="text-right">
-                    {customer.mensalidade 
-                      ? `R$ ${customer.mensalidade.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
-                      : '-'
-                    }
-                  </TableCell>
+                  {TABLE_COLUMNS.filter((column) => isColumnVisible(column.key)).map((column) => (
+                    <Fragment key={column.key}>{renderCell(customer, column.key)}</Fragment>
+                  ))}
                 </TableRow>
               ))
             )}
@@ -407,20 +462,16 @@ export function CarteiraClientesTable({ customers, onDelete, basePath = '/cartei
             return (
               <tfoot>
                 <TableRow className="bg-muted/50 font-semibold border-t-2">
-                  <TableCell colSpan={10} className="text-right">
+                  <TableCell colSpan={footerLabelColSpan} className="text-right">
                     Total Mensalidades
                   </TableCell>
-                  <TableCell className="text-right">
-                    R$ {total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                  </TableCell>
+                  {isColumnVisible('mensalidade') && <TableCell className="text-right">R$ {total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</TableCell>}
                 </TableRow>
                 <TableRow className="bg-muted/30 font-semibold">
-                  <TableCell colSpan={10} className="text-right">
+                  <TableCell colSpan={footerLabelColSpan} className="text-right">
                     Ticket Médio ({comMensalidade.length} clientes)
                   </TableCell>
-                  <TableCell className="text-right">
-                    R$ {ticketMedio.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                  </TableCell>
+                  {isColumnVisible('mensalidade') && <TableCell className="text-right">R$ {ticketMedio.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</TableCell>}
                 </TableRow>
               </tfoot>
             );

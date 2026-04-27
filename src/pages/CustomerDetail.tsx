@@ -232,7 +232,25 @@ export default function CustomerDetail() {
 
     setSaving(true);
     try {
-      const payload = {
+      const payload = isPPE ? {
+        contrato: form.contrato,
+        alarme_codigo: form.alarme_codigo || null,
+        razao_social: form.razao_social,
+        endereco: form.endereco || null,
+        contato_nome: form.contato_nome || null,
+        contato_telefone: form.contato_telefone || null,
+        mensalidade: form.mensalidade ? parseFloat(form.mensalidade.replace(',', '.')) : null,
+        taxa_ativacao: form.taxa_ativacao ? parseFloat(form.taxa_ativacao.replace(',', '.')) : null,
+        filial: form.filial || null,
+        tipo: form.tipo || null,
+        data_ativacao: form.data_ativacao || null,
+        data_termino: form.data_termino || null,
+        noc: form.noc || null,
+        sistema: form.sistema || null,
+        app: form.app || null,
+        cameras: parseInt(form.cameras) || 0,
+        observacoes: form.leitores || null,
+      } : {
         contrato: form.contrato,
         alarme_codigo: form.alarme_codigo || null,
         razao_social: form.razao_social,
@@ -269,7 +287,7 @@ export default function CustomerDetail() {
       };
 
       const { error } = await supabase
-        .from('customer_portfolio')
+        .from(dataTable as any)
         .update(payload)
         .eq('id', id);
 
@@ -663,7 +681,19 @@ export default function CustomerDetail() {
               </div>
 
               {/* Equipamentos */}
-              <div className="border-t pt-4 mt-2">
+              {isPPE && (
+                <div className="border-t pt-4 mt-2">
+                  <h3 className="font-semibold mb-3">Dados PPE</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <Label>Total de Câmeras</Label>
+                      <Input type="number" value={form.cameras} onChange={(e) => setForm({ ...form, cameras: e.target.value })} disabled={!canEdit} />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {!isPPE && <div className="border-t pt-4 mt-2">
                 <h3 className="font-semibold mb-3">Equipamentos</h3>
                 <div className="grid grid-cols-5 gap-4">
                   <div>
@@ -722,13 +752,13 @@ export default function CustomerDetail() {
                     </div>
                   </div>
                 </div>
-              </div>
+              </div>}
             </div>
           </CardContent>
         </Card>
 
         {/* Documentação */}
-        <AdministradoresCondominio customerId={id!} canEdit={canEdit} />
+        {!isPPE && <AdministradoresCondominio customerId={id!} canEdit={canEdit} />}
 
         {/* Documentação */}
         <Card>

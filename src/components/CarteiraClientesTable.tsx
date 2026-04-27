@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { Fragment, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
@@ -71,6 +71,7 @@ export function CarteiraClientesTable({ customers, onDelete, basePath = '/cartei
 
   const isColumnVisible = (column: ColumnKey) => visibleColumns.includes(column);
   const visibleColumnCount = visibleColumns.length + 1;
+  const footerLabelColSpan = isColumnVisible('mensalidade') ? Math.max(1, visibleColumnCount - 1) : visibleColumnCount;
 
   const toggleColumn = (column: ColumnKey) => {
     setVisibleColumns((prev) => {
@@ -448,7 +449,7 @@ export function CarteiraClientesTable({ customers, onDelete, basePath = '/cartei
                     </Button>
                   </TableCell>
                   {TABLE_COLUMNS.filter((column) => isColumnVisible(column.key)).map((column) => (
-                    <>{renderCell(customer, column.key)}</>
+                    <Fragment key={column.key}>{renderCell(customer, column.key)}</Fragment>
                   ))}
                 </TableRow>
               ))
@@ -461,13 +462,13 @@ export function CarteiraClientesTable({ customers, onDelete, basePath = '/cartei
             return (
               <tfoot>
                 <TableRow className="bg-muted/50 font-semibold border-t-2">
-                  <TableCell colSpan={Math.max(1, visibleColumnCount - 1)} className="text-right">
+                  <TableCell colSpan={footerLabelColSpan} className="text-right">
                     Total Mensalidades
                   </TableCell>
                   {isColumnVisible('mensalidade') && <TableCell className="text-right">R$ {total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</TableCell>}
                 </TableRow>
                 <TableRow className="bg-muted/30 font-semibold">
-                  <TableCell colSpan={Math.max(1, visibleColumnCount - 1)} className="text-right">
+                  <TableCell colSpan={footerLabelColSpan} className="text-right">
                     Ticket Médio ({comMensalidade.length} clientes)
                   </TableCell>
                   {isColumnVisible('mensalidade') && <TableCell className="text-right">R$ {ticketMedio.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</TableCell>}

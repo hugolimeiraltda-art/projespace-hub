@@ -3381,6 +3381,27 @@ export type Database = {
           },
         ]
       }
+      user_data_scopes: {
+        Row: {
+          created_at: string
+          id: string
+          scope_key: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          scope_key: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          scope_key?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_menu_overrides: {
         Row: {
           access_level: Database["public"]["Enums"]["access_level"]
@@ -3470,6 +3491,10 @@ export type Database = {
       get_user_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
+      }
+      has_data_scope: {
+        Args: { _scope_key: string; _user_id: string }
+        Returns: boolean
       }
       has_role: {
         Args: {

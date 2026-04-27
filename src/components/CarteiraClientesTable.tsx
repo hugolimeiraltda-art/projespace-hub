@@ -16,6 +16,7 @@ import { useToast } from '@/hooks/use-toast';
 interface Customer {
   id: string;
   contrato: string;
+  alarme_codigo?: string | null;
   razao_social: string;
   filial: string | null;
   data_ativacao: string | null;
@@ -33,7 +34,7 @@ interface ColumnFilter {
 }
 
 type SortDirection = 'asc' | 'desc' | null;
-type ColumnKey = 'contrato' | 'razao_social' | 'filial' | 'data_ativacao' | 'data_termino' | 'taxa_ativacao' | 'portoes' | 'zonas_perimetro' | 'cameras' | 'mensalidade';
+type ColumnKey = 'contrato' | 'alarme_codigo' | 'razao_social' | 'filial' | 'data_ativacao' | 'data_termino' | 'taxa_ativacao' | 'portoes' | 'zonas_perimetro' | 'cameras' | 'mensalidade';
 
 interface SortConfig {
   column: string;
@@ -48,6 +49,7 @@ interface CarteiraClientesTableProps {
 
 const TABLE_COLUMNS: { key: ColumnKey; label: string; className: string; align?: 'left' | 'right' }[] = [
   { key: 'contrato', label: 'Contrato', className: 'min-w-[100px]' },
+  { key: 'alarme_codigo', label: 'Código Alarme', className: 'min-w-[130px]' },
   { key: 'razao_social', label: 'Razão Social', className: 'min-w-[200px]' },
   { key: 'filial', label: 'Filial', className: 'min-w-[80px]' },
   { key: 'data_ativacao', label: 'Início', className: 'min-w-[100px]' },
@@ -122,6 +124,7 @@ export function CarteiraClientesTable({ customers, onDelete, basePath = '/cartei
     const values = customers.map((c) => {
       switch (column) {
         case 'contrato': return c.contrato;
+        case 'alarme_codigo': return c.alarme_codigo || '-';
         case 'razao_social': return c.razao_social;
         case 'filial': return c.filial || '-';
         default: return '';
@@ -192,6 +195,7 @@ export function CarteiraClientesTable({ customers, onDelete, basePath = '/cartei
         const filterLower = filter.value.toLowerCase();
         switch (filter.column) {
           case 'contrato': return c.contrato.toLowerCase().includes(filterLower);
+          case 'alarme_codigo': return (c.alarme_codigo || '-').toLowerCase().includes(filterLower);
           case 'razao_social': return c.razao_social.toLowerCase().includes(filterLower);
           case 'filial': return (c.filial || '-').toLowerCase().includes(filterLower);
           case 'data_ativacao': return formatDate(c.data_ativacao).includes(filter.value);
@@ -220,6 +224,10 @@ export function CarteiraClientesTable({ customers, onDelete, basePath = '/cartei
           case 'contrato':
             aValue = a.contrato;
             bValue = b.contrato;
+            break;
+          case 'alarme_codigo':
+            aValue = a.alarme_codigo || '';
+            bValue = b.alarme_codigo || '';
             break;
           case 'razao_social':
             aValue = a.razao_social;
@@ -340,6 +348,8 @@ export function CarteiraClientesTable({ customers, onDelete, basePath = '/cartei
     switch (column) {
       case 'contrato':
         return <TableCell className="font-medium text-primary hover:underline">{customer.contrato}</TableCell>;
+      case 'alarme_codigo':
+        return <TableCell>{customer.alarme_codigo || '-'}</TableCell>;
       case 'razao_social':
         return <TableCell className="max-w-[200px] truncate text-primary hover:underline">{customer.razao_social}</TableCell>;
       case 'filial':

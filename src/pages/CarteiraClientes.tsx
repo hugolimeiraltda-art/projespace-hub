@@ -126,10 +126,10 @@ export default function CarteiraClientes({ tipoCarteira = 'PCI' }: CarteiraClien
 
   const fetchCustomers = async () => {
     try {
-      const { data, error } = await supabase
-        .from('customer_portfolio')
+      const { data, error } = await (supabase
+        .from('customer_portfolio') as any)
         .select('*')
-        .eq('tipo_carteira' as any, tipoCarteira)
+        .eq('tipo_carteira', tipoCarteira)
         .order('contrato', { ascending: true });
 
       if (error) throw error;

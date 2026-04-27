@@ -119,6 +119,8 @@ export default function CarteiraClientes({ tipoCarteira = 'PCI' }: CarteiraClien
   const [faciaisDialogOpen, setFaciaisDialogOpen] = useState(false);
 
   const canCreate = user?.role === 'admin' || user?.role === 'implantacao';
+  const basePath = tipoCarteira === 'PPE' ? '/carteira-clientes-ppe' : '/carteira-clientes';
+  const pageTitle = `Carteira de Clientes ${tipoCarteira}`;
 
   useEffect(() => {
     fetchCustomers();
@@ -216,7 +218,7 @@ export default function CarteiraClientes({ tipoCarteira = 'PCI' }: CarteiraClien
   };
 
   const handleRowClick = (customerId: string) => {
-    navigate(`/carteira-clientes/${customerId}`);
+    navigate(`${basePath}/${customerId}`);
   };
 
 
@@ -308,8 +310,8 @@ export default function CarteiraClientes({ tipoCarteira = 'PCI' }: CarteiraClien
       <div className="p-6">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Carteira de Clientes</h1>
-            <p className="text-muted-foreground">Gerencie a carteira de clientes ativos</p>
+            <h1 className="text-2xl font-bold text-foreground">{pageTitle}</h1>
+            <p className="text-muted-foreground">Gerencie a carteira de clientes ativos {tipoCarteira}</p>
           </div>
           {canCreate && (
             <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
@@ -321,7 +323,7 @@ export default function CarteiraClientes({ tipoCarteira = 'PCI' }: CarteiraClien
               </DialogTrigger>
               <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
-                  <DialogTitle>Novo Cliente</DialogTitle>
+                  <DialogTitle>Novo Cliente {tipoCarteira}</DialogTitle>
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
                   {/* Identificação */}
@@ -731,7 +733,7 @@ export default function CarteiraClientes({ tipoCarteira = 'PCI' }: CarteiraClien
                         className="cursor-pointer hover:bg-muted/50"
                         onClick={() => {
                           setExpiringDialogOpen(false);
-                          navigate(`/carteira-clientes/${customer.id}`);
+                           navigate(`${basePath}/${customer.id}`);
                         }}
                       >
                         <TableCell className="font-medium text-primary">{customer.contrato}</TableCell>
@@ -768,7 +770,7 @@ export default function CarteiraClientes({ tipoCarteira = 'PCI' }: CarteiraClien
                 <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
               </div>
             ) : (
-              <CarteiraClientesTable customers={customers} onDelete={fetchCustomers} />
+              <CarteiraClientesTable customers={customers} onDelete={fetchCustomers} basePath={basePath} />
             )}
           </CardContent>
         </Card>

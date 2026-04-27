@@ -406,16 +406,15 @@ export default function CarteiraClientes({ tipoCarteira = 'PCI' }: CarteiraClien
 
                   <div className="grid grid-cols-3 gap-4">
                     <div>
-                      <Label htmlFor="tipo">Tipo</Label>
+                      <Label htmlFor="tipo">Tipo de Produto</Label>
                       <Select value={form.tipo} onValueChange={(v) => setForm({ ...form, tipo: v })}>
                         <SelectTrigger>
                           <SelectValue placeholder="Selecione" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="VIRTUAL">Virtual</SelectItem>
-                          <SelectItem value="PRESENCIAL">Presencial</SelectItem>
-                          <SelectItem value="CA MONITORADO">CA Monitorado</SelectItem>
-                          <SelectItem value="VIRTUAL + APOIO">Virtual + Apoio</SelectItem>
+                          <SelectItem value="360">360</SelectItem>
+                          <SelectItem value="MINI">MINI</SelectItem>
+                          <SelectItem value="GRABER VISION">GRABER VISION</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>

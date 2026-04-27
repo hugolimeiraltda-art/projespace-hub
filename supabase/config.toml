@@ -18,6 +18,9 @@ verify_jwt = false
 [functions.eixo-noc-customer-query]
 verify_jwt = false
 
+[functions.eixo-noc-clientes-ppe]
+verify_jwt = false
+
 [functions.import-estoque]
 verify_jwt = false
 

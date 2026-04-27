@@ -362,6 +362,33 @@ export function CarteiraClientesTable({ customers, onDelete, basePath = '/cartei
 
   return (
     <div className="space-y-2">
+      <div className="flex justify-end">
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant="outline" size="sm" className="gap-2">
+              <Columns3 className="h-4 w-4" />
+              Colunas
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-64 p-3" align="end">
+            <div className="space-y-3">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-sm font-medium">Exibir colunas</span>
+                <Button variant="ghost" size="sm" onClick={resetColumns}>Todas</Button>
+              </div>
+              <div className="space-y-2">
+                {TABLE_COLUMNS.map((column) => (
+                  <label key={column.key} className="flex cursor-pointer items-center gap-2 text-sm">
+                    <Checkbox checked={isColumnVisible(column.key)} onCheckedChange={() => toggleColumn(column.key)} />
+                    <span>{column.label}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          </PopoverContent>
+        </Popover>
+      </div>
+
       {/* Active filters display */}
       {columnFilters.length > 0 && (
         <div className="flex items-center gap-2 flex-wrap">
@@ -388,22 +415,15 @@ export function CarteiraClientesTable({ customers, onDelete, basePath = '/cartei
           <TableHeader>
             <TableRow className="bg-muted/30">
               <TableHead className="w-[40px]"></TableHead>
-              <TableHead className="min-w-[100px]">{renderColumnHeader('contrato', 'Contrato')}</TableHead>
-              <TableHead className="min-w-[200px]">{renderColumnHeader('razao_social', 'Razão Social')}</TableHead>
-              <TableHead className="min-w-[80px]">{renderColumnHeader('filial', 'Filial')}</TableHead>
-              <TableHead className="min-w-[100px]">{renderColumnHeader('data_ativacao', 'Início')}</TableHead>
-              <TableHead className="min-w-[100px]">{renderColumnHeader('data_termino', 'Término')}</TableHead>
-              <TableHead className="min-w-[120px] text-right">{renderColumnHeader('taxa_ativacao', 'Taxa Ativação', 'right')}</TableHead>
-              <TableHead className="min-w-[80px] text-right">{renderColumnHeader('portoes', 'Portões', 'right')}</TableHead>
-              <TableHead className="min-w-[80px] text-right">{renderColumnHeader('zonas_perimetro', 'Zonas', 'right')}</TableHead>
-              <TableHead className="min-w-[80px] text-right">{renderColumnHeader('cameras', 'Câmeras', 'right')}</TableHead>
-              <TableHead className="min-w-[120px] text-right">{renderColumnHeader('mensalidade', 'Mensalidade', 'right')}</TableHead>
+              {TABLE_COLUMNS.filter((column) => isColumnVisible(column.key)).map((column) => (
+                <TableHead key={column.key} className={column.className}>{renderColumnHeader(column.key, column.label, column.align)}</TableHead>
+              ))}
             </TableRow>
           </TableHeader>
           <TableBody>
             {filteredAndSortedCustomers.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={11} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={visibleColumnCount} className="text-center py-8 text-muted-foreground">
                   Nenhum cliente encontrado com os filtros aplicados
                 </TableCell>
               </TableRow>
@@ -427,30 +447,9 @@ export function CarteiraClientesTable({ customers, onDelete, basePath = '/cartei
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </TableCell>
-                  <TableCell className="font-medium text-primary hover:underline">
-                    {customer.contrato}
-                  </TableCell>
-                  <TableCell className="max-w-[200px] truncate text-primary hover:underline">
-                    {customer.razao_social}
-                  </TableCell>
-                  <TableCell>{customer.filial || '-'}</TableCell>
-                  <TableCell>{formatDate(customer.data_ativacao)}</TableCell>
-                  <TableCell>{calculateTermino(customer)}</TableCell>
-                  <TableCell className="text-right">
-                    {customer.taxa_ativacao 
-                      ? `R$ ${customer.taxa_ativacao.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
-                      : '-'
-                    }
-                  </TableCell>
-                  <TableCell className="text-right">{customer.portoes}</TableCell>
-                  <TableCell className="text-right">{customer.zonas_perimetro}</TableCell>
-                  <TableCell className="text-right">{customer.cameras}</TableCell>
-                  <TableCell className="text-right">
-                    {customer.mensalidade 
-                      ? `R$ ${customer.mensalidade.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
-                      : '-'
-                    }
-                  </TableCell>
+                  {TABLE_COLUMNS.filter((column) => isColumnVisible(column.key)).map((column) => (
+                    <>{renderCell(customer, column.key)}</>
+                  ))}
                 </TableRow>
               ))
             )}
@@ -462,20 +461,16 @@ export function CarteiraClientesTable({ customers, onDelete, basePath = '/cartei
             return (
               <tfoot>
                 <TableRow className="bg-muted/50 font-semibold border-t-2">
-                  <TableCell colSpan={10} className="text-right">
+                  <TableCell colSpan={Math.max(1, visibleColumnCount - 1)} className="text-right">
                     Total Mensalidades
                   </TableCell>
-                  <TableCell className="text-right">
-                    R$ {total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                  </TableCell>
+                  {isColumnVisible('mensalidade') && <TableCell className="text-right">R$ {total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</TableCell>}
                 </TableRow>
                 <TableRow className="bg-muted/30 font-semibold">
-                  <TableCell colSpan={10} className="text-right">
+                  <TableCell colSpan={Math.max(1, visibleColumnCount - 1)} className="text-right">
                     Ticket Médio ({comMensalidade.length} clientes)
                   </TableCell>
-                  <TableCell className="text-right">
-                    R$ {ticketMedio.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                  </TableCell>
+                  {isColumnVisible('mensalidade') && <TableCell className="text-right">R$ {ticketMedio.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</TableCell>}
                 </TableRow>
               </tfoot>
             );

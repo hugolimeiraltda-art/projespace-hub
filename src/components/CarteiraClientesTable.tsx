@@ -46,6 +46,7 @@ interface CarteiraClientesTableProps {
   customers: Customer[];
   onDelete?: () => void;
   basePath?: string;
+  tableName?: string;
 }
 
 const TABLE_COLUMNS: { key: ColumnKey; label: string; className: string; align?: 'left' | 'right' }[] = [
@@ -73,7 +74,7 @@ const DEFAULT_VISIBLE_COLUMNS: ColumnKey[] = [
   'mensalidade',
 ];
 
-export function CarteiraClientesTable({ customers, onDelete, basePath = '/carteira-clientes' }: CarteiraClientesTableProps) {
+export function CarteiraClientesTable({ customers, onDelete, basePath = '/carteira-clientes', tableName = 'customer_portfolio' }: CarteiraClientesTableProps) {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [columnFilters, setColumnFilters] = useState<ColumnFilter[]>([]);
@@ -531,7 +532,7 @@ export function CarteiraClientesTable({ customers, onDelete, basePath = '/cartei
                 setDeleting(true);
                 try {
                   const { error } = await supabase
-                    .from('customer_portfolio')
+                    .from(tableName as any)
                     .delete()
                     .eq('id', deleteCustomer.id);
                   if (error) throw error;

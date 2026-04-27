@@ -21,6 +21,11 @@ import { format, addMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { AdministradoresCondominio } from '@/components/AdministradoresCondominio';
 
+const NOC_STATUS_OPTIONS = [
+  { value: 'ATIVADO', label: 'Ativado no NOC' },
+  { value: 'NAO_ATIVADO', label: 'Não ativado no NOC' },
+];
+
 interface Customer {
   id: string;
   tipo_carteira?: 'PCI' | 'PPE' | string | null;
@@ -604,11 +609,9 @@ export default function CustomerDetail() {
                   <Select value={form.noc || ''} onValueChange={(v) => setForm({ ...form, noc: v })} disabled={!canEdit}>
                     <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="SIM">SIM</SelectItem>
-                      <SelectItem value="NÃO">NÃO</SelectItem>
-                      <SelectItem value="RETROFIT">RETROFIT</SelectItem>
-                      <SelectItem value="FAZER">FAZER</SelectItem>
-                      <SelectItem value="OBRA NOVA">OBRA NOVA</SelectItem>
+                      {NOC_STATUS_OPTIONS.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>

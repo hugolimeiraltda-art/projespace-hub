@@ -11,6 +11,13 @@ import { Building2, Edit2, Save, X, MapPin, Phone, Calendar, Wifi, Settings } fr
 import { format, parseISO, addMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
+const NOC_STATUS_OPTIONS = [
+  { value: 'ATIVADO', label: 'Ativado no NOC' },
+  { value: 'NAO_ATIVADO', label: 'Não ativado no NOC' },
+];
+
+const formatNocStatus = (value: string | null) => NOC_STATUS_OPTIONS.find((option) => option.value === value)?.label || value || '-';
+
 interface Customer {
   id: string;
   contrato: string;
@@ -326,7 +333,14 @@ export function CustomerInfoSection({ customer, onUpdate }: CustomerInfoSectionP
               </div>
               <div>
                 <Label>NOC</Label>
-                <Input value={form.noc} onChange={(e) => setForm({ ...form, noc: e.target.value })} />
+                <Select value={form.noc} onValueChange={(v) => setForm({ ...form, noc: v })}>
+                  <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                  <SelectContent>
+                    {NOC_STATUS_OPTIONS.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div>
                 <Label>App</Label>
@@ -469,7 +483,7 @@ export function CustomerInfoSection({ customer, onUpdate }: CustomerInfoSectionP
           </h4>
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
             <InfoItem label="Sistema" value={customer.sistema} />
-            <InfoItem label="NOC" value={customer.noc} />
+            <InfoItem label="NOC" value={formatNocStatus(customer.noc)} />
             <InfoItem label="App" value={customer.app} />
             <InfoItem label="Leitores" value={customer.leitores} />
             <InfoItem label="Qtd Leitores" value={customer.quantidade_leitores} />

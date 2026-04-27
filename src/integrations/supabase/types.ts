@@ -467,6 +467,7 @@ export type Database = {
           supervisor_responsavel_id: string | null
           taxa_ativacao: number | null
           tipo: string | null
+          tipo_carteira: string
           totem_duplo: number | null
           totem_simples: number | null
           transbordo: boolean | null
@@ -509,6 +510,7 @@ export type Database = {
           supervisor_responsavel_id?: string | null
           taxa_ativacao?: number | null
           tipo?: string | null
+          tipo_carteira?: string
           totem_duplo?: number | null
           totem_simples?: number | null
           transbordo?: boolean | null
@@ -551,6 +553,7 @@ export type Database = {
           supervisor_responsavel_id?: string | null
           taxa_ativacao?: number | null
           tipo?: string | null
+          tipo_carteira?: string
           totem_duplo?: number | null
           totem_simples?: number | null
           transbordo?: boolean | null

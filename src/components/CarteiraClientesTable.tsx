@@ -63,6 +63,16 @@ const TABLE_COLUMNS: { key: ColumnKey; label: string; className: string; align?:
   { key: 'mensalidade', label: 'Mensalidade', className: 'min-w-[120px] text-right', align: 'right' },
 ];
 
+const DEFAULT_VISIBLE_COLUMNS: ColumnKey[] = [
+  'contrato',
+  'alarme_codigo',
+  'razao_social',
+  'filial',
+  'tipo',
+  'data_ativacao',
+  'mensalidade',
+];
+
 export function CarteiraClientesTable({ customers, onDelete, basePath = '/carteira-clientes' }: CarteiraClientesTableProps) {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -71,7 +81,7 @@ export function CarteiraClientesTable({ customers, onDelete, basePath = '/cartei
   const [deleting, setDeleting] = useState(false);
   const [sortConfig, setSortConfig] = useState<SortConfig>({ column: '', direction: null });
   const [activeFilterColumn, setActiveFilterColumn] = useState<string | null>(null);
-  const [visibleColumns, setVisibleColumns] = useState<ColumnKey[]>(TABLE_COLUMNS.map((column) => column.key));
+  const [visibleColumns, setVisibleColumns] = useState<ColumnKey[]>(DEFAULT_VISIBLE_COLUMNS);
 
   const isColumnVisible = (column: ColumnKey) => visibleColumns.includes(column);
   const visibleColumnCount = visibleColumns.length + 1;

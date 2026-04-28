@@ -131,7 +131,7 @@ Deno.serve(async (req) => {
           totem_simples: customer.totem_simples,
           totem_duplo: customer.totem_duplo,
           catracas: customer.catracas,
-          faciais_hik: customer.faciaishik ?? customer.faciais_hik,
+          faciais_hik: customer.faciais_hik,
           faciais_avicam: customer.faciais_avicam,
           faciais_outros: customer.faciais_outros,
         },

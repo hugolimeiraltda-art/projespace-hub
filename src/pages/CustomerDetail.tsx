@@ -16,6 +16,7 @@ import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useMenuPermissions } from '@/hooks/useMenuPermissions';
 import { ArrowLeft, Save, Loader2, Upload, Trash2, FileText, Image, Video, File, Calendar, Eye, Download } from 'lucide-react';
 import { format, addMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -78,6 +79,7 @@ export default function CustomerDetail() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user } = useAuth();
+  const { getAccess } = useMenuPermissions();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const basePath = window.location.pathname.startsWith('/carteira-clientes-ppe') ? '/carteira-clientes-ppe' : '/carteira-clientes';
   const isPPE = basePath === '/carteira-clientes-ppe';
@@ -124,7 +126,8 @@ export default function CustomerDetail() {
     faciais_outros: '0',
   });
 
-  const canEdit = user?.role === 'admin' || user?.role === 'implantacao';
+  const menuAccess = getAccess(isPPE ? 'carteira-clientes-ppe' : 'carteira-clientes');
+  const canEdit = user?.role === 'admin' || user?.role === 'implantacao' || menuAccess === 'completo';
 
   useEffect(() => {
     if (id) {
@@ -497,7 +500,7 @@ export default function CustomerDetail() {
 
         {!canEdit && (
           <div className="mb-4 p-3 bg-muted rounded-lg text-sm text-muted-foreground">
-            Você tem permissão apenas para visualização. Somente Administradores e Implantação podem editar.
+            Você tem permissão apenas para visualização. Solicite acesso completo para editar esta carteira.
           </div>
         )}
 

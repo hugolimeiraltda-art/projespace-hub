@@ -37,12 +37,13 @@ Deno.serve(async (req) => {
     const apiKey = req.headers.get('x-api-key') || req.headers.get('authorization')?.replace('Bearer ', '')
     const expectedApiKey = Deno.env.get('CUSTOMER_API_KEY')
     const additionalApiKey = Deno.env.get('CUSTOMER_API_KEY_ADDITIONAL')
+    const dedicatedPciApiKey = Deno.env.get('EIXO_PCI_API_KEY')
 
     if (!expectedApiKey) {
       return jsonResponse({ success: false, error: 'CUSTOMER_API_KEY is not configured' }, 500)
     }
 
-    const validApiKeys = [expectedApiKey, additionalApiKey].filter(Boolean)
+    const validApiKeys = [expectedApiKey, additionalApiKey, dedicatedPciApiKey].filter(Boolean)
 
     if (!apiKey || !validApiKeys.includes(apiKey)) {
       return jsonResponse({ success: false, error: 'Unauthorized - Invalid API key' }, 401)
@@ -62,6 +63,11 @@ Deno.serve(async (req) => {
 
     const search = getParam('search')
     const tipoCarteiraParam = getParam('tipo_carteira').toUpperCase()
+
+    if (tipoCarteiraParam && tipoCarteiraParam !== 'PCI') {
+      return jsonResponse({ success: false, error: 'Esta API atende exclusivamente a carteira PCI.' }, 400)
+    }
+
     const contrato = getParam('contrato')
     const alarmeCodigo = getParam('alarme_codigo')
     const razaoSocial = getParam('razao_social')

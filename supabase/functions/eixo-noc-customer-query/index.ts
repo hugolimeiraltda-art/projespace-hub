@@ -82,7 +82,7 @@ Deno.serve(async (req) => {
 
     let query = supabase
       .from('customer_portfolio')
-      .select('id, tipo_carteira, contrato, alarme_codigo, razao_social, endereco, filial, praca, tipo, sistema, noc, app, leitores, transbordo, gateway, portoes, portas, dvr_nvr, cameras, zonas_perimetro, cancelas, totem_simples, totem_duplo, catracas, faciais_hik, faciais_avicam, faciais_outros, status_implantacao, updated_at', { count: 'exact' })
+      .select('*', { count: 'exact' })
       .eq('tipo_carteira', 'PCI')
 
     if (contrato) query = query.ilike('contrato', '%' + contrato + '%')
@@ -107,41 +107,38 @@ Deno.serve(async (req) => {
       return jsonResponse({ success: false, error: 'Database query failed', details: error.message }, 500)
     }
 
-    const customers = (data || []).map((customer) => ({
-      id: customer.id,
-      tipo_carteira: customer.tipo_carteira,
-      contrato: customer.contrato,
-      codigo_alarme: customer.alarme_codigo,
-      razao_social: customer.razao_social,
-      endereco: customer.endereco,
-      filial: customer.filial,
-      praca: customer.praca,
-      tipo_produto: customer.tipo,
-      status: customer.sistema,
-      status_implantacao: customer.status_implantacao,
-      noc: customer.noc,
-      app: customer.app,
-      acesso: {
-        transbordo: customer.transbordo,
-        gateway: customer.gateway,
-      },
-      equipamentos_principais: {
-        portoes: customer.portoes,
-        portas: customer.portas,
-        dvr_nvr: customer.dvr_nvr,
-        cameras: customer.cameras,
-        zonas_perimetro: customer.zonas_perimetro,
-        cancelas: customer.cancelas,
-        totem_simples: customer.totem_simples,
-        totem_duplo: customer.totem_duplo,
-        catracas: customer.catracas,
-        faciais_hik: customer.faciais_hik,
-        faciais_avicam: customer.faciais_avicam,
-        faciais_outros: customer.faciais_outros,
-      },
-      observacoes_tecnicas: includeTechnicalNotes ? customer.leitores : undefined,
-      atualizado_em: customer.updated_at,
-    }))
+    const customers = (data || []).map((customer) => {
+      const customerData = includeTechnicalNotes
+        ? customer
+        : { ...customer, leitores: undefined }
+
+      return {
+        ...customerData,
+        codigo_alarme: customer.alarme_codigo,
+        tipo_produto: customer.tipo,
+        status: customer.sistema,
+        acesso: {
+          transbordo: customer.transbordo,
+          gateway: customer.gateway,
+        },
+        equipamentos_principais: {
+          portoes: customer.portoes,
+          portas: customer.portas,
+          dvr_nvr: customer.dvr_nvr,
+          cameras: customer.cameras,
+          zonas_perimetro: customer.zonas_perimetro,
+          cancelas: customer.cancelas,
+          totem_simples: customer.totem_simples,
+          totem_duplo: customer.totem_duplo,
+          catracas: customer.catracas,
+          faciais_hik: customer.faciaishik ?? customer.faciais_hik,
+          faciais_avicam: customer.faciais_avicam,
+          faciais_outros: customer.faciais_outros,
+        },
+        observacoes_tecnicas: includeTechnicalNotes ? customer.leitores : undefined,
+        atualizado_em: customer.updated_at,
+      }
+    })
 
     return jsonResponse({
       success: true,

@@ -58,7 +58,7 @@ Deno.serve(async (req) => {
     const getParam = (key: string) => (body[key] ?? url.searchParams.get(key) ?? '').toString().trim()
 
     const search = getParam('search')
-    const tipoCarteira = getParam('tipo_carteira').toUpperCase()
+    const tipoCarteiraParam = getParam('tipo_carteira').toUpperCase()
     const contrato = getParam('contrato')
     const alarmeCodigo = getParam('alarme_codigo')
     const razaoSocial = getParam('razao_social')
@@ -74,8 +74,8 @@ Deno.serve(async (req) => {
     let query = supabase
       .from('customer_portfolio')
       .select('id, tipo_carteira, contrato, alarme_codigo, razao_social, endereco, filial, praca, tipo, sistema, noc, app, leitores, transbordo, gateway, portoes, portas, dvr_nvr, cameras, zonas_perimetro, cancelas, totem_simples, totem_duplo, catracas, faciais_hik, faciais_avicam, faciais_outros, status_implantacao, updated_at', { count: 'exact' })
+      .eq('tipo_carteira', 'PCI')
 
-    if (tipoCarteira === 'PCI' || tipoCarteira === 'PPE') query = query.eq('tipo_carteira', tipoCarteira)
     if (contrato) query = query.ilike('contrato', '%' + contrato + '%')
     if (alarmeCodigo) query = query.ilike('alarme_codigo', '%' + alarmeCodigo + '%')
     if (razaoSocial) query = query.ilike('razao_social', '%' + razaoSocial + '%')
@@ -145,7 +145,8 @@ Deno.serve(async (req) => {
       },
       filters: {
         search,
-        tipo_carteira: tipoCarteira || null,
+        tipo_carteira: 'PCI',
+        tipo_carteira_solicitada: tipoCarteiraParam || null,
         contrato,
         alarme_codigo: alarmeCodigo,
         razao_social: razaoSocial,

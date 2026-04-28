@@ -36,12 +36,15 @@ Deno.serve(async (req) => {
   try {
     const apiKey = req.headers.get('x-api-key') || req.headers.get('authorization')?.replace('Bearer ', '')
     const expectedApiKey = Deno.env.get('CUSTOMER_API_KEY')
+    const additionalApiKey = Deno.env.get('CUSTOMER_API_KEY_ADDITIONAL')
 
     if (!expectedApiKey) {
       return jsonResponse({ success: false, error: 'CUSTOMER_API_KEY is not configured' }, 500)
     }
 
-    if (!apiKey || apiKey !== expectedApiKey) {
+    const validApiKeys = [expectedApiKey, additionalApiKey].filter(Boolean)
+
+    if (!apiKey || !validApiKeys.includes(apiKey)) {
       return jsonResponse({ success: false, error: 'Unauthorized - Invalid API key' }, 401)
     }
 

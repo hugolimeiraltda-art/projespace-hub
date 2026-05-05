@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { useMenuPermissions } from '@/hooks/useMenuPermissions';
@@ -687,77 +688,76 @@ export default function StartupProjetos() {
               </Card>
             </div>
 
-            {/* Search, Filter and Tipo de Obra */}
-            <div className="mb-6 flex flex-col sm:flex-row gap-4 items-center">
-              <div className="relative flex-1 max-w-md">
+            {/* Clean filter bar */}
+            <div className="mb-4 flex flex-wrap gap-2 items-center">
+              <div className="relative flex-1 min-w-[220px] max-w-sm">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
-                  placeholder="Buscar por nome, vendedor ou número..."
+                  placeholder="Buscar obra, vendedor ou número..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
+                  className="pl-9 h-9"
                 />
               </div>
-              
-              <Select
-                value={statusFilter}
-                onValueChange={(value) => setStatusFilter(value as ImplantacaoStatus | 'TODOS')}
-              >
-                <SelectTrigger className="w-full sm:w-[200px]">
-                  <Filter className="w-4 h-4 mr-2" />
-                  <SelectValue placeholder="Filtrar por status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="TODOS">Todos os status</SelectItem>
-                  <SelectItem value="A_EXECUTAR">A Executar</SelectItem>
-                  <SelectItem value="EM_EXECUCAO">Em Execução</SelectItem>
-                </SelectContent>
-              </Select>
 
-              <div className="flex gap-2">
-                {[
-                  { value: 'todas' as const, label: 'Todas' },
-                  { value: 'nova' as const, label: 'Obras Novas' },
-                  { value: 'acrescimo' as const, label: 'Acréscimos' },
-                ].map((tab) => (
-                  <Button
-                    key={tab.value}
-                    variant={tipoObraFilter === tab.value ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setTipoObraFilter(tab.value)}
-                  >
-                    {tab.label}
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" size="sm" className="h-9 gap-2">
+                    <Filter className="w-4 h-4" />
+                    Filtros
+                    {(statusFilter !== 'TODOS' || tipoObraFilter !== 'todas' || pendenciaFilter !== 'todas') && (
+                      <Badge variant="secondary" className="h-4 px-1.5 text-[10px]">•</Badge>
+                    )}
                   </Button>
-                ))}
-              </div>
-
-              <div className="flex gap-2">
-                {[
-                  { value: 'todas' as const, label: 'Todas' },
-                  { value: 'com' as const, label: '⚠ Com Pendências' },
-                  { value: 'sem' as const, label: 'Sem Pendências' },
-                ].map((tab) => (
-                  <Button
-                    key={tab.value}
-                    variant={pendenciaFilter === tab.value ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setPendenciaFilter(tab.value)}
-                    className={pendenciaFilter === tab.value && tab.value === 'com' ? 'bg-destructive text-destructive-foreground hover:bg-destructive/90' : ''}
-                  >
-                    {tab.label}
-                  </Button>
-                ))}
-              </div>
+                </PopoverTrigger>
+                <PopoverContent className="w-72" align="start">
+                  <div className="space-y-3">
+                    <div>
+                      <Label className="text-xs">Status</Label>
+                      <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as ImplantacaoStatus | 'TODOS')}>
+                        <SelectTrigger className="h-9 mt-1"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="TODOS">Todos</SelectItem>
+                          <SelectItem value="A_EXECUTAR">A executar</SelectItem>
+                          <SelectItem value="EM_EXECUCAO">Em execução</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label className="text-xs">Tipo de obra</Label>
+                      <Select value={tipoObraFilter} onValueChange={(v) => setTipoObraFilter(v as typeof tipoObraFilter)}>
+                        <SelectTrigger className="h-9 mt-1"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="todas">Todas</SelectItem>
+                          <SelectItem value="nova">Obras novas</SelectItem>
+                          <SelectItem value="acrescimo">Acréscimos</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label className="text-xs">Pendências</Label>
+                      <Select value={pendenciaFilter} onValueChange={(v) => setPendenciaFilter(v as typeof pendenciaFilter)}>
+                        <SelectTrigger className="h-9 mt-1"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="todas">Todas</SelectItem>
+                          <SelectItem value="com">Com pendências</SelectItem>
+                          <SelectItem value="sem">Sem pendências</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </PopoverContent>
+              </Popover>
 
               <Select value={sortField} onValueChange={(v) => setSortField(v as typeof sortField)}>
-                <SelectTrigger className="w-full sm:w-[220px]">
-                  <ArrowUpDown className="w-4 h-4 mr-2" />
-                  <SelectValue placeholder="Ordenar por" />
+                <SelectTrigger className="w-[180px] h-9">
+                  <ArrowUpDown className="w-4 h-4 mr-1" />
+                  <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="created_at">Data de Entrada</SelectItem>
-                  <SelectItem value="implantacao_started_at">Data de Início</SelectItem>
-                  <SelectItem value="prazo_entrega_projeto">Previsão Ativação</SelectItem>
+                  <SelectItem value="created_at">Data de entrada</SelectItem>
+                  <SelectItem value="implantacao_started_at">Data de início</SelectItem>
+                  <SelectItem value="prazo_entrega_projeto">Previsão</SelectItem>
                   <SelectItem value="cliente_condominio_nome">Nome (A-Z)</SelectItem>
                 </SelectContent>
               </Select>
@@ -767,22 +767,18 @@ export default function StartupProjetos() {
                 size="icon"
                 onClick={() => setSortDirection(d => d === 'asc' ? 'desc' : 'asc')}
                 title={sortDirection === 'asc' ? 'Crescente' : 'Decrescente'}
+                className="h-9 w-9"
               >
-                {sortDirection === 'asc' ? (
-                  <ArrowUp className="w-4 h-4" />
-                ) : (
-                  <ArrowDown className="w-4 h-4" />
-                )}
+                {sortDirection === 'asc' ? <ArrowUp className="w-4 h-4" /> : <ArrowDown className="w-4 h-4" />}
               </Button>
 
-              {/* View mode toggle */}
-              <div className="flex border rounded-md overflow-hidden">
+              <div className="flex border rounded-md overflow-hidden ml-auto">
                 <Button
                   variant={viewMode === 'cards' ? 'default' : 'ghost'}
                   size="icon"
                   onClick={() => handleViewModeChange('cards')}
-                  className="rounded-none border-0"
-                  title="Visualização em cards"
+                  className="rounded-none border-0 h-9 w-9"
+                  title="Cards"
                 >
                   <LayoutGrid className="w-4 h-4" />
                 </Button>
@@ -790,8 +786,8 @@ export default function StartupProjetos() {
                   variant={viewMode === 'table' ? 'default' : 'ghost'}
                   size="icon"
                   onClick={() => handleViewModeChange('table')}
-                  className="rounded-none border-0"
-                  title="Visualização em tabela"
+                  className="rounded-none border-0 h-9 w-9"
+                  title="Tabela"
                 >
                   <TableIcon className="w-4 h-4" />
                 </Button>

@@ -40,7 +40,8 @@ import {
   ShoppingCart,
   Upload,
   Hash,
-  Trash2
+  Trash2,
+  Edit
 } from 'lucide-react';
 import { ProjectStatus, STATUS_LABELS, ATTACHMENT_TYPE_LABELS, PORTARIA_VIRTUAL_LABELS, CFTV_ELEVADOR_LABELS, ENGINEERING_STATUS_LABELS, EngineeringStatus, SALE_STATUS_LABELS } from '@/types/project';
 import { format, parseISO } from 'date-fns';

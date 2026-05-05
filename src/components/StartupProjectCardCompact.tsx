@@ -45,6 +45,7 @@ interface ProjectData {
   implantacao_started_at: string | null;
   prazo_entrega_projeto: string | null;
   tipo_obra: 'nova' | 'acrescimo';
+  tipo_implantacao?: 'PCI' | 'PPE' | null;
 }
 
 interface Props {
@@ -66,13 +67,14 @@ export function StartupProjectCardCompact({
   const [expanded, setExpanded] = useState(false);
   const status = project.implantacao_status || 'A_EXECUTAR';
   const StatusIcon = STATUS_ICONS[status];
+  const isPPE = project.tipo_implantacao === 'PPE';
 
   // Compute progress
-  const STEP_KEYS: (keyof ImplantacaoEtapasData)[] = [
-    'contrato_assinado_at', 'ligacao_boas_vindas_at', 'agendamento_visita_startup_at',
-    'laudo_visita_startup_at', 'check_programacao_at', 'confirmacao_ativacao_financeira_at',
-    'operacao_assistida_inicio',
-  ];
+  const STEP_KEYS: (keyof ImplantacaoEtapasData)[] = isPPE
+    ? ['contrato_assinado_at', 'ligacao_boas_vindas_at', 'laudo_visita_startup_at', 'check_programacao_at', 'confirmacao_ativacao_financeira_at']
+    : ['contrato_assinado_at', 'ligacao_boas_vindas_at', 'agendamento_visita_startup_at',
+       'laudo_visita_startup_at', 'check_programacao_at', 'confirmacao_ativacao_financeira_at',
+       'operacao_assistida_inicio'];
   const completedCount = etapas ? STEP_KEYS.filter(k => etapas[k]).length : 0;
   const progressPct = Math.round((completedCount / STEP_KEYS.length) * 100);
 
@@ -233,7 +235,7 @@ export function StartupProjectCardCompact({
         {/* Expandable timeline */}
         {expanded && (
           <div className="mt-3 pt-3 border-t border-border animate-in fade-in slide-in-from-top-1 duration-200">
-            <ImplantacaoTimeline etapas={etapas} />
+            <ImplantacaoTimeline etapas={etapas} isPPE={isPPE} />
           </div>
         )}
       </CardContent>

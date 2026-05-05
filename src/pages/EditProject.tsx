@@ -85,6 +85,7 @@ export default function EditProject() {
   const [existingAttachments, setExistingAttachments] = useState<{ id: string; tipo: AttachmentType; nome: string; url: string }[]>([]);
   const [newAttachments, setNewAttachments] = useState<{ tipo: AttachmentType; nome: string; file?: File }[]>([]);
   const [removedAttachmentIds, setRemovedAttachmentIds] = useState<string[]>([]);
+  const [newAttachmentTipo, setNewAttachmentTipo] = useState<AttachmentType | ''>('');
 
   // Load project data
   useEffect(() => {

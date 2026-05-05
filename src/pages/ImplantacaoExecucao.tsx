@@ -3191,7 +3191,7 @@ export default function ImplantacaoExecucao() {
                             toast({ title: 'Upload obrigatório pendente', description: 'O laudo/checklist do instalador (etapa 5.1) é obrigatório para concluir a implantação.', variant: 'destructive' });
                             return;
                           }
-                          if (!secoesComAnexo.includes('implantacao_entrega_tecnica')) {
+                          if (!isPPE && !secoesComAnexo.includes('implantacao_entrega_tecnica')) {
                             toast({ title: 'Upload obrigatório pendente', description: 'O checklist de entrega técnica (etapa 7.3) é obrigatório para concluir a implantação.', variant: 'destructive' });
                             return;
                           }

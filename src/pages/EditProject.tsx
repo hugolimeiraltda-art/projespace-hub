@@ -21,7 +21,9 @@ import {
   Send,
   Check,
   Upload,
-  Loader2
+  Loader2,
+  Trash2,
+  FileText
 } from 'lucide-react';
 import {
   PortariaVirtualApp,

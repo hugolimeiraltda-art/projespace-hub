@@ -918,6 +918,10 @@ export type Database = {
           pagamento_instalacao_pedagio_auferido: number | null
           pagamento_instalacao_pontuacao: number | null
           pagamento_instalacao_pontuacao_auferido: number | null
+          pagamento_instalacao_sapata: number | null
+          pagamento_instalacao_sapata_auferido: number | null
+          pagamento_instalacao_totem: number | null
+          pagamento_instalacao_totem_auferido: number | null
           pesquisa_satisfacao_comentario: string | null
           pesquisa_satisfacao_nota: number | null
           pesquisa_satisfacao_pontos_negativos: string | null
@@ -999,6 +1003,10 @@ export type Database = {
           pagamento_instalacao_pedagio_auferido?: number | null
           pagamento_instalacao_pontuacao?: number | null
           pagamento_instalacao_pontuacao_auferido?: number | null
+          pagamento_instalacao_sapata?: number | null
+          pagamento_instalacao_sapata_auferido?: number | null
+          pagamento_instalacao_totem?: number | null
+          pagamento_instalacao_totem_auferido?: number | null
           pesquisa_satisfacao_comentario?: string | null
           pesquisa_satisfacao_nota?: number | null
           pesquisa_satisfacao_pontos_negativos?: string | null
@@ -1080,6 +1088,10 @@ export type Database = {
           pagamento_instalacao_pedagio_auferido?: number | null
           pagamento_instalacao_pontuacao?: number | null
           pagamento_instalacao_pontuacao_auferido?: number | null
+          pagamento_instalacao_sapata?: number | null
+          pagamento_instalacao_sapata_auferido?: number | null
+          pagamento_instalacao_totem?: number | null
+          pagamento_instalacao_totem_auferido?: number | null
           pesquisa_satisfacao_comentario?: string | null
           pesquisa_satisfacao_nota?: number | null
           pesquisa_satisfacao_pontos_negativos?: string | null

@@ -120,11 +120,15 @@ interface ImplantacaoEtapas {
   pagamento_instalacao_deslocamento: number | null;
   pagamento_instalacao_pedagio: number | null;
   pagamento_instalacao_diaria: number | null;
+  pagamento_instalacao_sapata: number | null;
+  pagamento_instalacao_totem: number | null;
   pagamento_instalacao_pontuacao_auferido: number | null;
   pagamento_instalacao_infra_auferido: number | null;
   pagamento_instalacao_deslocamento_auferido: number | null;
   pagamento_instalacao_pedagio_auferido: number | null;
   pagamento_instalacao_diaria_auferido: number | null;
+  pagamento_instalacao_sapata_auferido: number | null;
+  pagamento_instalacao_totem_auferido: number | null;
   pagamento_instalacao_divergencia_justificativa: string | null;
   pagamento_instalacao_conferido: boolean;
   pagamento_instalacao_conferido_at: string | null;
@@ -1821,6 +1825,8 @@ export default function ImplantacaoExecucao() {
                             { label: 'Qtd. Deslocamento', field: 'pagamento_instalacao_deslocamento', fieldAuf: 'pagamento_instalacao_deslocamento_auferido' },
                             { label: 'Qtd. Pedágio', field: 'pagamento_instalacao_pedagio', fieldAuf: 'pagamento_instalacao_pedagio_auferido' },
                             { label: 'Diária de Viagem', field: 'pagamento_instalacao_diaria', fieldAuf: 'pagamento_instalacao_diaria_auferido' },
+                            { label: 'Qtd. Instalação Sapata', field: 'pagamento_instalacao_sapata', fieldAuf: 'pagamento_instalacao_sapata_auferido' },
+                            { label: 'Qtd. Instalação Totem', field: 'pagamento_instalacao_totem', fieldAuf: 'pagamento_instalacao_totem_auferido' },
                           ];
                           const hasDivergencia = pagItems.some(item => {
                             const lib = (etapas as any)[item.field];
@@ -2293,6 +2299,8 @@ export default function ImplantacaoExecucao() {
                         { label: 'Qtd. Deslocamento', field: 'pagamento_instalacao_deslocamento', fieldAuf: 'pagamento_instalacao_deslocamento_auferido' },
                         { label: 'Qtd. Pedágio', field: 'pagamento_instalacao_pedagio', fieldAuf: 'pagamento_instalacao_pedagio_auferido' },
                         { label: 'Diária de Viagem', field: 'pagamento_instalacao_diaria', fieldAuf: 'pagamento_instalacao_diaria_auferido' },
+                            { label: 'Qtd. Instalação Sapata', field: 'pagamento_instalacao_sapata', fieldAuf: 'pagamento_instalacao_sapata_auferido' },
+                            { label: 'Qtd. Instalação Totem', field: 'pagamento_instalacao_totem', fieldAuf: 'pagamento_instalacao_totem_auferido' },
                       ];
                       const hasDivergencia = pagItems.some(item => {
                         const lib = (etapas as any)[item.field];

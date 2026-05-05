@@ -24,6 +24,7 @@ interface ChecklistItem {
   id: string;
   label: string;
   checked: boolean;
+  resposta?: 'sim' | 'nao' | null;
   observacao?: string;
 }
 

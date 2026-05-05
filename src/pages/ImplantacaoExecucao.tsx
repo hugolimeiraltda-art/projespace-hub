@@ -3155,7 +3155,7 @@ export default function ImplantacaoExecucao() {
                         </AlertDescription>
                       </Alert>
                     )}
-                    {!secoesComAnexo.includes('implantacao_entrega_tecnica') && !etapas.concluido && (
+                    {!isPPE && !secoesComAnexo.includes('implantacao_entrega_tecnica') && !etapas.concluido && (
                       <Alert variant="destructive" className="mb-4">
                         <AlertTriangle className="h-4 w-4" />
                         <AlertDescription>

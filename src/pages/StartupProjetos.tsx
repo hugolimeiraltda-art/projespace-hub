@@ -435,6 +435,24 @@ export default function StartupProjetos() {
     );
   };
 
+  // Determine current stage group based on next pending timeline step
+  const getStage = (projectId: string, isPPE: boolean): 'ONBOARDING' | 'OBRA' | 'PROGRAMACAO' | 'FINANCEIRO' | 'CONCLUIDO' => {
+    const e = etapasMap[projectId];
+    if (!e) return 'ONBOARDING';
+    if (isPPE) {
+      if (!e.contrato_assinado_at || !e.ligacao_boas_vindas_at) return 'ONBOARDING';
+      if (!e.laudo_visita_startup_at) return 'OBRA';
+      if (!e.check_programacao_at) return 'PROGRAMACAO';
+      if (!e.confirmacao_ativacao_financeira_at) return 'FINANCEIRO';
+      return 'CONCLUIDO';
+    }
+    if (!e.contrato_assinado_at || !e.ligacao_boas_vindas_at || !e.agendamento_visita_startup_at) return 'ONBOARDING';
+    if (!e.laudo_visita_startup_at) return 'OBRA';
+    if (!e.check_programacao_at) return 'PROGRAMACAO';
+    if (!e.confirmacao_ativacao_financeira_at) return 'FINANCEIRO';
+    return 'CONCLUIDO';
+  };
+
   const filteredProjects = projects.filter(project => {
     const matchesSearch = 
       project.cliente_condominio_nome.toLowerCase().includes(searchTerm.toLowerCase()) ||

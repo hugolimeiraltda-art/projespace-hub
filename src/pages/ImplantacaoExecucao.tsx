@@ -1715,6 +1715,25 @@ export default function ImplantacaoExecucao() {
                         </div>
                       </div>
 
+                      {/* 3.2 - Confirmar internet do cliente */}
+                      <div className="flex items-center justify-between py-2 px-4 hover:bg-muted/50 rounded-md gap-3 flex-wrap">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <Checkbox
+                            checked={etapas.ppe_confirmar_internet}
+                            onCheckedChange={(value) => updateEtapa('ppe_confirmar_internet', value, 'ppe_confirmar_internet_at')}
+                            disabled={isSaving}
+                          />
+                          <span className={cn("text-sm", etapas.ppe_confirmar_internet && "text-muted-foreground line-through")}>
+                            3.2 - Confirmar internet do cliente
+                          </span>
+                          {etapas.ppe_confirmar_internet_at && (
+                            <span className="text-xs text-muted-foreground">
+                              {format(parseISO(etapas.ppe_confirmar_internet_at), "dd/MM/yyyy", { locale: ptBR })}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
                       {/* 3.3 - Validar material liberado e conformidade de projeto */}
                       <div className="flex items-center justify-between py-2 px-4 hover:bg-muted/50 rounded-md gap-3 flex-wrap">
                         <div className="flex items-center gap-3 min-w-0">

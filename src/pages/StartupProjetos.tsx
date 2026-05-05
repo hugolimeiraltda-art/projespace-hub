@@ -952,7 +952,7 @@ export default function StartupProjetos() {
                       </div>
 
                       <div className="mt-3 pt-3 border-t border-border">
-                        <ImplantacaoTimeline etapas={etapasMap[project.id] || null} />
+                        <ImplantacaoTimeline etapas={etapasMap[project.id] || null} isPPE={project.tipo_implantacao === 'PPE'} />
                       </div>
                     </CardContent>
                   </Card>
@@ -1071,7 +1071,7 @@ export default function StartupProjetos() {
                         </div>
                       </div>
                       <div className="mt-3 pt-3 border-t border-border">
-                        <ImplantacaoTimeline etapas={etapasMap[project.id] || null} />
+                        <ImplantacaoTimeline etapas={etapasMap[project.id] || null} isPPE={project.tipo_implantacao === 'PPE'} />
                       </div>
                     </CardContent>
                   </Card>

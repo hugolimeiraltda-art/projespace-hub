@@ -22,7 +22,7 @@ interface Step {
   icon: typeof Check;
 }
 
-const STEPS: Step[] = [
+const STEPS_PCI: Step[] = [
   { key: 'contrato_assinado_at', label: 'Contrato Assinado', shortLabel: 'Contrato', icon: FileSignature },
   { key: 'ligacao_boas_vindas_at', label: 'Onboarding Iniciado', shortLabel: 'Onboarding', icon: Phone },
   { key: 'agendamento_visita_startup_at', label: 'Visita de Startup', shortLabel: 'Visita', icon: MapPin },
@@ -32,12 +32,22 @@ const STEPS: Step[] = [
   { key: 'operacao_assistida_inicio', label: 'Operação Assistida', shortLabel: 'Op. Assistida', icon: Headphones },
 ];
 
+const STEPS_PPE: Step[] = [
+  { key: 'contrato_assinado_at', label: 'Contrato Assinado', shortLabel: 'Contrato', icon: FileSignature },
+  { key: 'ligacao_boas_vindas_at', label: 'Ligação de Boas Vindas', shortLabel: 'Boas Vindas', icon: Phone },
+  { key: 'laudo_visita_startup_at', label: 'Instalação do Totem', shortLabel: 'Instalação', icon: HardHat },
+  { key: 'check_programacao_at', label: 'Programação', shortLabel: 'Programação', icon: Settings },
+  { key: 'confirmacao_ativacao_financeira_at', label: 'Ativação Financeira', shortLabel: 'Financeiro', icon: DollarSign },
+];
+
 interface ImplantacaoTimelineProps {
   etapas: ImplantacaoEtapasData | null;
   compact?: boolean;
+  isPPE?: boolean;
 }
 
-export function ImplantacaoTimeline({ etapas, compact = false }: ImplantacaoTimelineProps) {
+export function ImplantacaoTimeline({ etapas, compact = false, isPPE = false }: ImplantacaoTimelineProps) {
+  const STEPS = isPPE ? STEPS_PPE : STEPS_PCI;
   if (!etapas) {
     return (
       <div className="text-muted-foreground text-sm text-center py-2">

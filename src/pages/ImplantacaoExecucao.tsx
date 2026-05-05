@@ -731,7 +731,7 @@ export default function ImplantacaoExecucao() {
         ? etapas.ligacao_boas_vindas && etapas.cadastro_gear
         : etapas.ligacao_boas_vindas && etapas.cadastro_gear && etapas.sindico_app && etapas.conferencia_tags;
       case 4: return etapas.check_projeto && etapas.agendamento_visita_startup && etapas.laudo_visita_startup;
-      case 5: return etapas.laudo_instalador;
+      case 5: return isPPE ? true : etapas.laudo_instalador;
       case 6: return nocChamado?.item_6_1_status === 'success' && etapas.check_programacao && etapas.confirmacao_ativacao_financeira;
       case 7: return etapas.agendamento_visita_comercial && etapas.laudo_visita_comercial;
       case 8: return isPPE ? true : (etapas.operacao_assistida_interacoes?.length || 0) > 0;

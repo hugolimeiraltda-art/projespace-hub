@@ -925,6 +925,10 @@ export type Database = {
           pesquisa_satisfacao_realizada: boolean | null
           pesquisa_satisfacao_realizada_at: string | null
           pesquisa_satisfacao_recomendaria: boolean | null
+          ppe_agendamento_base_data: string | null
+          ppe_equipe_prestador_id: string | null
+          ppe_execucao_base_data: string | null
+          ppe_observacao_onboarding: string | null
           project_id: string
           sindico_app: boolean | null
           sindico_app_at: string | null
@@ -997,6 +1001,10 @@ export type Database = {
           pesquisa_satisfacao_realizada?: boolean | null
           pesquisa_satisfacao_realizada_at?: string | null
           pesquisa_satisfacao_recomendaria?: boolean | null
+          ppe_agendamento_base_data?: string | null
+          ppe_equipe_prestador_id?: string | null
+          ppe_execucao_base_data?: string | null
+          ppe_observacao_onboarding?: string | null
           project_id: string
           sindico_app?: boolean | null
           sindico_app_at?: string | null
@@ -1069,12 +1077,23 @@ export type Database = {
           pesquisa_satisfacao_realizada?: boolean | null
           pesquisa_satisfacao_realizada_at?: string | null
           pesquisa_satisfacao_recomendaria?: boolean | null
+          ppe_agendamento_base_data?: string | null
+          ppe_equipe_prestador_id?: string | null
+          ppe_execucao_base_data?: string | null
+          ppe_observacao_onboarding?: string | null
           project_id?: string
           sindico_app?: boolean | null
           sindico_app_at?: string | null
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "implantacao_etapas_ppe_equipe_prestador_id_fkey"
+            columns: ["ppe_equipe_prestador_id"]
+            isOneToOne: false
+            referencedRelation: "prestadores"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "implantacao_etapas_project_id_fkey"
             columns: ["project_id"]

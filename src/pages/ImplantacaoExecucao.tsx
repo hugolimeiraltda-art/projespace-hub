@@ -106,6 +106,10 @@ interface ImplantacaoEtapas {
   data_ativacao_realizada: string | null;
   etapa_atual: number;
   // Step 4.5: Pagamento de Instalação
+  ppe_agendamento_base_data: string | null;
+  ppe_execucao_base_data: string | null;
+  ppe_equipe_prestador_id: string | null;
+  ppe_observacao_onboarding: string | null;
   pagamento_instalacao_pontuacao: number | null;
   pagamento_instalacao_infra: number | null;
   pagamento_instalacao_deslocamento: number | null;
@@ -195,6 +199,8 @@ export default function ImplantacaoExecucao() {
   const [pendenciaClienteTexto, setPendenciaClienteTexto] = useState('');
   const [pendenciaDeptEntregaTexto, setPendenciaDeptEntregaTexto] = useState('');
   const [pendenciaClienteEntregaTexto, setPendenciaClienteEntregaTexto] = useState('');
+  const [prestadoresList, setPrestadoresList] = useState<Array<{ id: string; nome: string; empresa: string[] | null }>>([]);
+  const [localObsOnboardingPPE, setLocalObsOnboardingPPE] = useState('');
   const [criandoPendencia, setCriandoPendencia] = useState(false);
   const [enderecoInstalacao, setEnderecoInstalacao] = useState('');
   const [editingEndereco, setEditingEndereco] = useState(false);
@@ -302,6 +308,15 @@ export default function ImplantacaoExecucao() {
       setEtapas(etapasObj);
       setLocalLaudoTexto(etapasObj.laudo_visita_comercial_texto || '');
       setLocalObsManutencao(etapasObj.observacoes_manutencao || '');
+      setLocalObsOnboardingPPE(etapasObj.ppe_observacao_onboarding || '');
+
+      // Load prestadores for PPE installation team selection
+      const { data: prestData } = await supabase
+        .from('prestadores')
+        .select('id, nome, empresa')
+        .eq('ativo', true)
+        .order('nome');
+      setPrestadoresList(prestData || []);
 
       // Fetch customer_portfolio data for contract info
       const { data: portfolioData } = await supabase
@@ -1663,77 +1678,161 @@ export default function ImplantacaoExecucao() {
               </CollapsibleTrigger>
               <CollapsibleContent>
                 <CardContent className="pt-0 space-y-1">
-                  <SubItem 
-                    label="3.1 - Ligação de Boas Vindas" 
-                    checked={etapas.ligacao_boas_vindas} 
-                    field="ligacao_boas_vindas"
-                    dateField="ligacao_boas_vindas_at"
-                    date={etapas.ligacao_boas_vindas_at}
-                  />
-                  <SubItem 
-                    label={isPPE ? "3.2 - Agendamento de visita de startup" : "3.2 - Cadastro do Condomínio e Morador no Gear"} 
-                    checked={etapas.cadastro_gear} 
-                    field="cadastro_gear"
-                    dateField="cadastro_gear_at"
-                    date={etapas.cadastro_gear_at}
-                  />
-                  {!isPPE && (
+                  {isPPE ? (
                     <>
-                      <SubItem 
-                        label="3.3 - Síndico baixar APP" 
-                        checked={etapas.sindico_app} 
+                      {/* 3.1 - Agendamento da visita para instalação da base */}
+                      <div className="flex items-center justify-between py-2 px-4 hover:bg-muted/50 rounded-md gap-3 flex-wrap">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <Checkbox
+                            checked={etapas.ligacao_boas_vindas}
+                            onCheckedChange={(value) => updateEtapa('ligacao_boas_vindas', value, 'ligacao_boas_vindas_at')}
+                            disabled={isSaving}
+                          />
+                          <span className={cn("text-sm", etapas.ligacao_boas_vindas && "text-muted-foreground line-through")}>
+                            3.1 - Agendamento da visita para instalação da base
+                          </span>
+                        </div>
+                        <Input
+                          type="date"
+                          value={etapas.ppe_agendamento_base_data || ''}
+                          onChange={(e) => updateEtapa('ppe_agendamento_base_data', e.target.value)}
+                          className="w-44"
+                        />
+                      </div>
+
+                      {/* 3.2 - Data de execução da instalação sapata/engastamento */}
+                      <div className="flex items-center justify-between py-2 px-4 hover:bg-muted/50 rounded-md gap-3 flex-wrap">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <Checkbox
+                            checked={etapas.cadastro_gear}
+                            onCheckedChange={(value) => updateEtapa('cadastro_gear', value, 'cadastro_gear_at')}
+                            disabled={isSaving}
+                          />
+                          <span className={cn("text-sm", etapas.cadastro_gear && "text-muted-foreground line-through")}>
+                            3.2 - Data de execução da instalação sapata/engastamento
+                          </span>
+                        </div>
+                        <Input
+                          type="date"
+                          value={etapas.ppe_execucao_base_data || ''}
+                          onChange={(e) => updateEtapa('ppe_execucao_base_data', e.target.value)}
+                          className="w-44"
+                        />
+                      </div>
+
+                      {/* 3.3 - Equipe de instalação (Banco de Prestadores) */}
+                      <div className="flex items-center justify-between py-2 px-4 hover:bg-muted/50 rounded-md gap-3 flex-wrap">
+                        <span className="text-sm font-medium">3.3 - Equipe de instalação</span>
+                        <Select
+                          value={etapas.ppe_equipe_prestador_id || ''}
+                          onValueChange={(value) => updateEtapa('ppe_equipe_prestador_id', value)}
+                        >
+                          <SelectTrigger className="w-72">
+                            <SelectValue placeholder="Selecione a equipe..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {prestadoresList.length === 0 ? (
+                              <div className="px-3 py-2 text-xs text-muted-foreground">
+                                Nenhum prestador cadastrado
+                              </div>
+                            ) : (
+                              prestadoresList.map((p) => (
+                                <SelectItem key={p.id} value={p.id}>
+                                  {p.nome}{p.empresa && p.empresa.length > 0 ? ` — ${p.empresa.join(', ')}` : ''}
+                                </SelectItem>
+                              ))
+                            )}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      {/* 3.4 - Observação */}
+                      <div className="px-4 py-3 space-y-2 border-t border-border">
+                        <span className="text-sm font-medium">3.4 - Observações</span>
+                        <Textarea
+                          placeholder="Insira observações sobre o onboarding..."
+                          value={localObsOnboardingPPE}
+                          onChange={(e) => setLocalObsOnboardingPPE(e.target.value)}
+                          onBlur={() => {
+                            if (localObsOnboardingPPE !== (etapas.ppe_observacao_onboarding || '')) {
+                              updateEtapa('ppe_observacao_onboarding', localObsOnboardingPPE);
+                            }
+                          }}
+                          className="min-h-[80px]"
+                        />
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <SubItem
+                        label="3.1 - Ligação de Boas Vindas"
+                        checked={etapas.ligacao_boas_vindas}
+                        field="ligacao_boas_vindas"
+                        dateField="ligacao_boas_vindas_at"
+                        date={etapas.ligacao_boas_vindas_at}
+                      />
+                      <SubItem
+                        label="3.2 - Cadastro do Condomínio e Morador no Gear"
+                        checked={etapas.cadastro_gear}
+                        field="cadastro_gear"
+                        dateField="cadastro_gear_at"
+                        date={etapas.cadastro_gear_at}
+                      />
+                      <SubItem
+                        label="3.3 - Síndico baixar APP"
+                        checked={etapas.sindico_app}
                         field="sindico_app"
                         dateField="sindico_app_at"
                         date={etapas.sindico_app_at}
                       />
-                      <SubItem 
-                        label="3.4 - Conferência de controle/Tags" 
-                        checked={etapas.conferencia_tags} 
+                      <SubItem
+                        label="3.4 - Conferência de controle/Tags"
+                        checked={etapas.conferencia_tags}
                         field="conferencia_tags"
                         dateField="conferencia_tags_at"
                         date={etapas.conferencia_tags_at}
-                       />
+                      />
+
+                      {/* 3.5 - Pendência de Departamento (Instalação) */}
+                      <div className="px-4 py-3 space-y-2 border-t border-border">
+                        <span className="text-sm font-medium">3.5 - Abrir Pendência de Departamento (Instalação)</span>
+                        <Textarea
+                          placeholder="Descreva a pendência de departamento..."
+                          value={pendenciaDeptTexto}
+                          onChange={(e) => setPendenciaDeptTexto(e.target.value)}
+                          className="min-h-[60px]"
+                        />
+                        <Button
+                          size="sm"
+                          onClick={() => criarPendencia('DEPT_INSTALACAO', pendenciaDeptTexto)}
+                          disabled={criandoPendencia || !pendenciaDeptTexto.trim()}
+                        >
+                          <Plus className="w-4 h-4 mr-1" />
+                          Abrir Pendência Departamento
+                        </Button>
+                      </div>
+
+                      {/* 3.6 - Pendência de Cliente (Instalação) */}
+                      <div className="px-4 py-3 space-y-2 border-t border-border">
+                        <span className="text-sm font-medium">3.6 - Abrir Pendência Externa de Instalação (Cliente)</span>
+                        <Textarea
+                          placeholder="Descreva a pendência do cliente..."
+                          value={pendenciaClienteTexto}
+                          onChange={(e) => setPendenciaClienteTexto(e.target.value)}
+                          className="min-h-[60px]"
+                        />
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => criarPendencia('CLIENTE_INSTALACAO', pendenciaClienteTexto)}
+                          disabled={criandoPendencia || !pendenciaClienteTexto.trim()}
+                        >
+                          <Plus className="w-4 h-4 mr-1" />
+                          Abrir Pendência Cliente
+                        </Button>
+                      </div>
                     </>
                   )}
-
-                  {/* 3.5 - Pendência de Departamento (Instalação) */}
-                  <div className="px-4 py-3 space-y-2 border-t border-border">
-                    <span className="text-sm font-medium">3.5 - Abrir Pendência de Departamento (Instalação)</span>
-                    <Textarea
-                      placeholder="Descreva a pendência de departamento..."
-                      value={pendenciaDeptTexto}
-                      onChange={(e) => setPendenciaDeptTexto(e.target.value)}
-                      className="min-h-[60px]"
-                    />
-                    <Button
-                      size="sm"
-                      onClick={() => criarPendencia('DEPT_INSTALACAO', pendenciaDeptTexto)}
-                      disabled={criandoPendencia || !pendenciaDeptTexto.trim()}
-                    >
-                      <Plus className="w-4 h-4 mr-1" />
-                      Abrir Pendência Departamento
-                    </Button>
-                  </div>
-
-                  {/* 3.6 - Pendência de Cliente (Instalação) */}
-                  <div className="px-4 py-3 space-y-2 border-t border-border">
-                    <span className="text-sm font-medium">3.6 - Abrir Pendência Externa de Instalação (Cliente)</span>
-                    <Textarea
-                      placeholder="Descreva a pendência do cliente..."
-                      value={pendenciaClienteTexto}
-                      onChange={(e) => setPendenciaClienteTexto(e.target.value)}
-                      className="min-h-[60px]"
-                    />
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => criarPendencia('CLIENTE_INSTALACAO', pendenciaClienteTexto)}
-                      disabled={criandoPendencia || !pendenciaClienteTexto.trim()}
-                    >
-                      <Plus className="w-4 h-4 mr-1" />
-                      Abrir Pendência Cliente
-                    </Button>
-                  </div>
                 </CardContent>
               </CollapsibleContent>
             </Collapsible>

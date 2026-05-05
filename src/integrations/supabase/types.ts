@@ -936,6 +936,9 @@ export type Database = {
           ppe_execucao_base_data: string | null
           ppe_observacao_instalacao: string | null
           ppe_observacao_onboarding: string | null
+          ppe_totem_360_qtd: number
+          ppe_totem_mini_qtd: number
+          ppe_totem_parede_qtd: number
           ppe_validar_material: boolean
           ppe_validar_material_at: string | null
           project_id: string
@@ -1021,6 +1024,9 @@ export type Database = {
           ppe_execucao_base_data?: string | null
           ppe_observacao_instalacao?: string | null
           ppe_observacao_onboarding?: string | null
+          ppe_totem_360_qtd?: number
+          ppe_totem_mini_qtd?: number
+          ppe_totem_parede_qtd?: number
           ppe_validar_material?: boolean
           ppe_validar_material_at?: string | null
           project_id: string
@@ -1106,6 +1112,9 @@ export type Database = {
           ppe_execucao_base_data?: string | null
           ppe_observacao_instalacao?: string | null
           ppe_observacao_onboarding?: string | null
+          ppe_totem_360_qtd?: number
+          ppe_totem_mini_qtd?: number
+          ppe_totem_parede_qtd?: number
           ppe_validar_material?: boolean
           ppe_validar_material_at?: string | null
           project_id?: string

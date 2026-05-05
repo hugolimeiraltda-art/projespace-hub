@@ -409,34 +409,52 @@ export default function ImplantacaoChecklist() {
             <CardTitle className="text-base">Itens do Checklist</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {checklistItems.map((item) => (
-              <div key={item.id} className="space-y-2">
-                <div className="flex items-start gap-3">
-                  <Checkbox
-                    id={item.id}
-                    checked={item.checked}
-                    onCheckedChange={() => toggleItem(item.id)}
-                  />
-                  <div className="flex-1">
-                    <Label
-                      htmlFor={item.id}
-                      className={cn(
-                        "cursor-pointer",
-                        item.checked && "text-muted-foreground line-through"
-                      )}
-                    >
+            {checklistItems.map((item) => {
+              const resposta = item.resposta ?? (item.checked ? 'sim' : null);
+              return (
+                <div key={item.id} className="space-y-2 pb-3 border-b border-border last:border-0 last:pb-0">
+                  <div className="flex items-start justify-between gap-3">
+                    <Label className={cn("flex-1 pt-1.5", resposta === 'sim' && "text-muted-foreground")}>
                       {item.label}
                     </Label>
-                    <Input
-                      placeholder="Observação (opcional)"
+                    <div className="flex items-center gap-1 shrink-0 rounded-lg border border-border p-0.5 bg-muted/30">
+                      <button
+                        type="button"
+                        onClick={() => setItemResposta(item.id, 'sim')}
+                        className={cn(
+                          "px-3 py-1 text-xs font-semibold rounded-md transition-colors",
+                          resposta === 'sim'
+                            ? "bg-green-500 text-white shadow-sm"
+                            : "text-muted-foreground hover:text-foreground"
+                        )}
+                      >
+                        Sim
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setItemResposta(item.id, 'nao')}
+                        className={cn(
+                          "px-3 py-1 text-xs font-semibold rounded-md transition-colors",
+                          resposta === 'nao'
+                            ? "bg-destructive text-destructive-foreground shadow-sm"
+                            : "text-muted-foreground hover:text-foreground"
+                        )}
+                      >
+                        Não
+                      </button>
+                    </div>
+                  </div>
+                  {resposta === 'nao' && (
+                    <Textarea
+                      placeholder="Descreva o problema encontrado..."
                       value={item.observacao || ''}
                       onChange={(e) => updateItemObservacao(item.id, e.target.value)}
-                      className="mt-2 text-sm"
+                      className="text-sm min-h-[70px] animate-in fade-in slide-in-from-top-1"
                     />
-                  </div>
+                  )}
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </CardContent>
         </Card>
 

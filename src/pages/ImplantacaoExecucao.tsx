@@ -115,6 +115,8 @@ interface ImplantacaoEtapas {
   ppe_boas_vindas_at: string | null;
   ppe_validar_material: boolean;
   ppe_validar_material_at: string | null;
+  ppe_confirmar_internet: boolean;
+  ppe_confirmar_internet_at: string | null;
   ppe_totem_360_qtd: number;
   ppe_totem_parede_qtd: number;
   ppe_totem_mini_qtd: number;

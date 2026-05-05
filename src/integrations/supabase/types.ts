@@ -928,6 +928,7 @@ export type Database = {
           ppe_agendamento_base_data: string | null
           ppe_equipe_prestador_id: string | null
           ppe_execucao_base_data: string | null
+          ppe_observacao_instalacao: string | null
           ppe_observacao_onboarding: string | null
           project_id: string
           sindico_app: boolean | null
@@ -1004,6 +1005,7 @@ export type Database = {
           ppe_agendamento_base_data?: string | null
           ppe_equipe_prestador_id?: string | null
           ppe_execucao_base_data?: string | null
+          ppe_observacao_instalacao?: string | null
           ppe_observacao_onboarding?: string | null
           project_id: string
           sindico_app?: boolean | null
@@ -1080,6 +1082,7 @@ export type Database = {
           ppe_agendamento_base_data?: string | null
           ppe_equipe_prestador_id?: string | null
           ppe_execucao_base_data?: string | null
+          ppe_observacao_instalacao?: string | null
           ppe_observacao_onboarding?: string | null
           project_id?: string
           sindico_app?: boolean | null

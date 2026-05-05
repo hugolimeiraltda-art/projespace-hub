@@ -805,6 +805,15 @@ export default function ProjectDetail() {
                 Editar TAP
               </Button>
             )}
+            {canRevise && (
+              <Button
+                className="bg-status-approved hover:bg-status-approved/90 text-white"
+                onClick={() => navigate(`/projetos/${project.id}/editar?revisao=1`)}
+              >
+                <Edit className="w-4 h-4 mr-2" />
+                Revisar Projeto
+              </Button>
+            )}
             {canStartSaleForm && (
               <Button 
                 className="bg-status-approved hover:bg-status-approved/90"

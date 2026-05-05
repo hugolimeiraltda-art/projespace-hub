@@ -44,9 +44,11 @@ const ESTADOS_BR = [
 export default function EditProject() {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
-  const { getProject, updateProject, updateStatus, addAttachment, projects, isLoading: contextLoading } = useProjects();
+  const { getProject, updateProject, updateStatus, addAttachment, removeAttachment, projects, isLoading: contextLoading } = useProjects();
   const { uploadFile, isUploading } = useFileUpload();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const isRevisao = searchParams.get('revisao') === '1';
   const { toast } = useToast();
 
   const [isFormLoading, setIsFormLoading] = useState(true);

@@ -952,7 +952,7 @@ export default function StartupProjetos() {
                       </div>
 
                       <div className="mt-3 pt-3 border-t border-border">
-                        <ImplantacaoTimeline etapas={etapasMap[project.id] || null} isPPE={activeTab === 'ppe'} />
+                        <ImplantacaoTimeline etapas={etapasMap[project.id] || null} />
                       </div>
                     </CardContent>
                   </Card>

@@ -43,6 +43,7 @@ import {
   AlertTriangle,
   LayoutGrid,
   Table as TableIcon,
+  Phone, HardHat, DollarSign,
 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -98,6 +99,7 @@ export default function StartupProjetos() {
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<ImplantacaoStatus | 'TODOS'>('TODOS');
+  const [stageFilter, setStageFilter] = useState<'TODOS' | 'ONBOARDING' | 'OBRA' | 'PROGRAMACAO'>('TODOS');
   const [portfolioMap, setPortfolioMap] = useState<Record<string, { mensalidade: number | null; taxa_ativacao: number | null }>>({});
   const [etapasMap, setEtapasMap] = useState<Record<string, ImplantacaoEtapasData>>({});
   const [pendenciasMap, setPendenciasMap] = useState<Record<string, number>>({});
@@ -434,6 +436,24 @@ export default function StartupProjetos() {
     );
   };
 
+  // Determine current stage group based on next pending timeline step
+  const getStage = (projectId: string, isPPE: boolean): 'ONBOARDING' | 'OBRA' | 'PROGRAMACAO' | 'FINANCEIRO' | 'CONCLUIDO' => {
+    const e = etapasMap[projectId];
+    if (!e) return 'ONBOARDING';
+    if (isPPE) {
+      if (!e.contrato_assinado_at || !e.ligacao_boas_vindas_at) return 'ONBOARDING';
+      if (!e.laudo_visita_startup_at) return 'OBRA';
+      if (!e.check_programacao_at) return 'PROGRAMACAO';
+      if (!e.confirmacao_ativacao_financeira_at) return 'FINANCEIRO';
+      return 'CONCLUIDO';
+    }
+    if (!e.contrato_assinado_at || !e.ligacao_boas_vindas_at || !e.agendamento_visita_startup_at) return 'ONBOARDING';
+    if (!e.laudo_visita_startup_at) return 'OBRA';
+    if (!e.check_programacao_at) return 'PROGRAMACAO';
+    if (!e.confirmacao_ativacao_financeira_at) return 'FINANCEIRO';
+    return 'CONCLUIDO';
+  };
+
   const filteredProjects = projects.filter(project => {
     const matchesSearch = 
       project.cliente_condominio_nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -457,7 +477,10 @@ export default function StartupProjetos() {
       if (!inOpAssistida) return false;
     }
     
-    return matchesSearch && matchesStatus && matchesTipoObra && matchesPendencia;
+    const stage = getStage(project.id, project.tipo_implantacao === 'PPE');
+    const matchesStage = stageFilter === 'TODOS' || stage === stageFilter;
+
+    return matchesSearch && matchesStatus && matchesTipoObra && matchesPendencia && matchesStage;
   }).sort((a, b) => {
     let result: number;
     if (sortField === 'cliente_condominio_nome') {
@@ -475,6 +498,16 @@ export default function StartupProjetos() {
     A_EXECUTAR: projects.filter(p => !p.implantacao_status || p.implantacao_status === 'A_EXECUTAR').length,
     EM_EXECUCAO: projects.filter(p => p.implantacao_status === 'EM_EXECUCAO').length,
     CONCLUIDO_IMPLANTACAO: projects.filter(p => p.implantacao_status === 'CONCLUIDO_IMPLANTACAO').length,
+  };
+
+  // Stage counts for current tab projects (excluding op assistida)
+  const tabProjects = projects.filter(p => !isInOperacaoAssistida(p.id));
+  const stageCounts = {
+    TODOS: tabProjects.length,
+    ONBOARDING: tabProjects.filter(p => getStage(p.id, p.tipo_implantacao === 'PPE') === 'ONBOARDING').length,
+    OBRA: tabProjects.filter(p => getStage(p.id, p.tipo_implantacao === 'PPE') === 'OBRA').length,
+    PROGRAMACAO: tabProjects.filter(p => getStage(p.id, p.tipo_implantacao === 'PPE') === 'PROGRAMACAO').length,
+    FINANCEIRO: tabProjects.filter(p => getStage(p.id, p.tipo_implantacao === 'PPE') === 'FINANCEIRO').length,
   };
 
   if (isLoading) {
@@ -631,61 +664,34 @@ export default function StartupProjetos() {
 
         {(activeTab === 'em-implantacao' || activeTab === 'ppe') && (
           <>
-            {/* Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-              <Card 
-                className={cn(
-                  "cursor-pointer transition-all hover:shadow-md",
-                  statusFilter === 'TODOS' && "ring-2 ring-primary"
-                )}
-                onClick={() => setStatusFilter('TODOS')}
-              >
-                <CardContent className="pt-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-muted-foreground">Total</p>
-                      <p className="text-2xl font-bold">{statusCounts.TODOS}</p>
+            {/* Stage Cards */}
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
+              {([
+                { key: 'TODOS', label: 'Total', icon: Filter, color: 'text-foreground', ring: 'ring-primary' },
+                { key: 'ONBOARDING', label: 'Em Onboarding', icon: Phone, color: 'text-amber-600', ring: 'ring-amber-500' },
+                { key: 'OBRA', label: activeTab === 'ppe' ? 'Em Instalação' : 'Em Obra', icon: HardHat, color: 'text-blue-600', ring: 'ring-blue-500' },
+                { key: 'PROGRAMACAO', label: 'Em Programação', icon: Settings, color: 'text-purple-600', ring: 'ring-purple-500' },
+                { key: 'FINANCEIRO', label: 'Ativação Financeira', icon: DollarSign, color: 'text-green-600', ring: 'ring-green-500' },
+              ] as const).map(({ key, label, icon: Icon, color, ring }) => (
+                <Card
+                  key={key}
+                  className={cn(
+                    "cursor-pointer transition-all hover:shadow-md",
+                    stageFilter === key && `ring-2 ${ring}`
+                  )}
+                  onClick={() => setStageFilter(key as typeof stageFilter)}
+                >
+                  <CardContent className="pt-4">
+                    <div className="flex items-center justify-between">
+                      <div className="min-w-0">
+                        <p className="text-xs text-muted-foreground truncate">{label}</p>
+                        <p className={cn("text-2xl font-bold", color)}>{stageCounts[key as keyof typeof stageCounts]}</p>
+                      </div>
+                      <Icon className={cn("w-7 h-7 shrink-0", color)} />
                     </div>
-                    <Filter className="w-8 h-8 text-muted-foreground" />
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card 
-                className={cn(
-                  "cursor-pointer transition-all hover:shadow-md",
-                  statusFilter === 'A_EXECUTAR' && "ring-2 ring-amber-500"
-                )}
-                onClick={() => setStatusFilter('A_EXECUTAR')}
-              >
-                <CardContent className="pt-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-muted-foreground">A Executar</p>
-                      <p className="text-2xl font-bold text-amber-600">{statusCounts.A_EXECUTAR}</p>
-                    </div>
-                    <Clock className="w-8 h-8 text-amber-500" />
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card 
-                className={cn(
-                  "cursor-pointer transition-all hover:shadow-md",
-                  statusFilter === 'EM_EXECUCAO' && "ring-2 ring-blue-500"
-                )}
-                onClick={() => setStatusFilter('EM_EXECUCAO')}
-              >
-                <CardContent className="pt-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-muted-foreground">Em Execução</p>
-                      <p className="text-2xl font-bold text-blue-600">{statusCounts.EM_EXECUCAO}</p>
-                    </div>
-                    <PlayCircle className="w-8 h-8 text-blue-500" />
-                  </div>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
+              ))}
             </div>
 
             {/* Clean filter bar */}

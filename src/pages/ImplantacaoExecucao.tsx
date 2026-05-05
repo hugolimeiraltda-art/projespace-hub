@@ -110,6 +110,7 @@ interface ImplantacaoEtapas {
   ppe_execucao_base_data: string | null;
   ppe_equipe_prestador_id: string | null;
   ppe_observacao_onboarding: string | null;
+  ppe_observacao_instalacao: string | null;
   pagamento_instalacao_pontuacao: number | null;
   pagamento_instalacao_infra: number | null;
   pagamento_instalacao_deslocamento: number | null;

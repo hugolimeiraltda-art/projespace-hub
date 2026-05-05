@@ -299,10 +299,19 @@ ${infoAdicionais || 'Não informado'}`;
             <ArrowLeft className="w-5 h-5" />
           </Button>
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Editar Projeto</h1>
+            <h1 className="text-2xl font-bold text-foreground">{isRevisao ? 'Revisar Projeto' : 'Editar Projeto'}</h1>
             <p className="text-sm text-muted-foreground">{project.cliente_condominio_nome}</p>
           </div>
         </div>
+
+        {isRevisao && (
+          <Alert className="mb-6 bg-primary/5 border-primary/30">
+            <AlertTriangle className="h-4 w-4 text-primary" />
+            <AlertDescription className="text-foreground">
+              Modo revisão: edite as informações e adicione/remova anexos. As alterações serão salvas sem alterar o status do projeto.
+            </AlertDescription>
+          </Alert>
+        )}
 
         {project.status === 'PENDENTE_INFO' && (
           <Alert className="mb-6 bg-status-pending-bg border-status-pending/30">

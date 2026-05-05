@@ -122,6 +122,9 @@ interface ImplantacaoEtapas {
   ppe_totem_360_qtd: number;
   ppe_totem_parede_qtd: number;
   ppe_totem_mini_qtd: number;
+  ppe_totem_360_cameras: number;
+  ppe_totem_parede_cameras: number;
+  ppe_totem_mini_cameras: number;
   pagamento_instalacao_pontuacao: number | null;
   pagamento_instalacao_infra: number | null;
   pagamento_instalacao_deslocamento: number | null;
@@ -1780,33 +1783,58 @@ export default function ImplantacaoExecucao() {
                         <p className="text-xs text-muted-foreground">Informe quantos totens de cada modelo serão instalados.</p>
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-2">
                           {([
-                            { label: 'Totem 360', field: 'ppe_totem_360_qtd' as const },
-                            { label: 'Totem Parede', field: 'ppe_totem_parede_qtd' as const },
-                            { label: 'Totem Mini', field: 'ppe_totem_mini_qtd' as const },
+                            { label: 'Totem 360', field: 'ppe_totem_360_qtd' as const, camField: 'ppe_totem_360_cameras' as const },
+                            { label: 'Totem Parede', field: 'ppe_totem_parede_qtd' as const, camField: 'ppe_totem_parede_cameras' as const },
+                            { label: 'Totem Mini', field: 'ppe_totem_mini_qtd' as const, camField: 'ppe_totem_mini_cameras' as const },
                           ]).map((t) => (
-                            <div key={t.field} className="space-y-1">
-                              <label className="text-xs text-muted-foreground">{t.label}</label>
-                              <Input
-                                type="number"
-                                min={0}
-                                value={(etapas as any)[t.field] ?? 0}
-                                onChange={(e) => {
-                                  const val = e.target.value === '' ? 0 : Math.max(0, Number(e.target.value));
-                                  setEtapas(prev => prev ? { ...prev, [t.field]: val } as ImplantacaoEtapas : null);
-                                }}
-                                onBlur={(e) => {
-                                  const val = e.target.value === '' ? 0 : Math.max(0, Number(e.target.value));
-                                  updateEtapa(t.field as any, val);
-                                }}
-                                className="h-9"
-                              />
+                            <div key={t.field} className="space-y-2 border border-border rounded-md p-2">
+                              <label className="text-xs font-medium">{t.label}</label>
+                              <div className="space-y-1">
+                                <label className="text-[11px] text-muted-foreground">Quantidade</label>
+                                <Input
+                                  type="number"
+                                  min={0}
+                                  value={(etapas as any)[t.field] ?? 0}
+                                  onChange={(e) => {
+                                    const val = e.target.value === '' ? 0 : Math.max(0, Number(e.target.value));
+                                    setEtapas(prev => prev ? { ...prev, [t.field]: val } as ImplantacaoEtapas : null);
+                                  }}
+                                  onBlur={(e) => {
+                                    const val = e.target.value === '' ? 0 : Math.max(0, Number(e.target.value));
+                                    updateEtapa(t.field as any, val);
+                                  }}
+                                  className="h-9"
+                                />
+                              </div>
+                              <div className="space-y-1">
+                                <label className="text-[11px] text-muted-foreground">Câmeras por totem</label>
+                                <Input
+                                  type="number"
+                                  min={0}
+                                  value={(etapas as any)[t.camField] ?? 0}
+                                  onChange={(e) => {
+                                    const val = e.target.value === '' ? 0 : Math.max(0, Number(e.target.value));
+                                    setEtapas(prev => prev ? { ...prev, [t.camField]: val } as ImplantacaoEtapas : null);
+                                  }}
+                                  onBlur={(e) => {
+                                    const val = e.target.value === '' ? 0 : Math.max(0, Number(e.target.value));
+                                    updateEtapa(t.camField as any, val);
+                                  }}
+                                  className="h-9"
+                                />
+                              </div>
                             </div>
                           ))}
                         </div>
-                        <div className="text-xs text-muted-foreground pt-1">
-                          Total: <span className="font-semibold text-foreground">
+                        <div className="text-xs text-muted-foreground pt-1 flex flex-wrap gap-x-4">
+                          <span>Total totens: <span className="font-semibold text-foreground">
                             {(etapas.ppe_totem_360_qtd || 0) + (etapas.ppe_totem_parede_qtd || 0) + (etapas.ppe_totem_mini_qtd || 0)}
-                          </span> totens
+                          </span></span>
+                          <span>Total câmeras: <span className="font-semibold text-foreground">
+                            {((etapas.ppe_totem_360_qtd || 0) * (etapas.ppe_totem_360_cameras || 0))
+                              + ((etapas.ppe_totem_parede_qtd || 0) * (etapas.ppe_totem_parede_cameras || 0))
+                              + ((etapas.ppe_totem_mini_qtd || 0) * (etapas.ppe_totem_mini_cameras || 0))}
+                          </span></span>
                         </div>
                       </div>
                       {/* 3.5 - Agendamento da visita para instalação da base */}

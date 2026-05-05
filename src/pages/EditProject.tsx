@@ -124,7 +124,7 @@ export default function EditProject() {
   }, [id, projects, getProject, contextLoading]);
 
   const project = getProject(id!);
-  const canSubmit = project?.status === 'PENDENTE_INFO' || project?.status === 'RASCUNHO';
+  const canSubmit = !isRevisao && (project?.status === 'PENDENTE_INFO' || project?.status === 'RASCUNHO');
 
   const hasCroquiAttachment = existingAttachments.some(a => a.tipo === 'CROQUI') || newAttachments.some(a => a.tipo === 'CROQUI');
 

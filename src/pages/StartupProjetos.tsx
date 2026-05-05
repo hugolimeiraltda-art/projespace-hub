@@ -664,61 +664,34 @@ export default function StartupProjetos() {
 
         {(activeTab === 'em-implantacao' || activeTab === 'ppe') && (
           <>
-            {/* Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-              <Card 
-                className={cn(
-                  "cursor-pointer transition-all hover:shadow-md",
-                  statusFilter === 'TODOS' && "ring-2 ring-primary"
-                )}
-                onClick={() => setStatusFilter('TODOS')}
-              >
-                <CardContent className="pt-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-muted-foreground">Total</p>
-                      <p className="text-2xl font-bold">{statusCounts.TODOS}</p>
+            {/* Stage Cards */}
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
+              {([
+                { key: 'TODOS', label: 'Total', icon: Filter, color: 'text-foreground', ring: 'ring-primary' },
+                { key: 'ONBOARDING', label: 'Em Onboarding', icon: Phone, color: 'text-amber-600', ring: 'ring-amber-500' },
+                { key: 'OBRA', label: isPPETab ? 'Em Instalação' : 'Em Obra', icon: HardHat, color: 'text-blue-600', ring: 'ring-blue-500' },
+                { key: 'PROGRAMACAO', label: 'Em Programação', icon: Settings, color: 'text-purple-600', ring: 'ring-purple-500' },
+                { key: 'FINANCEIRO', label: 'Ativação Financeira', icon: DollarSign, color: 'text-green-600', ring: 'ring-green-500' },
+              ] as const).map(({ key, label, icon: Icon, color, ring }) => (
+                <Card
+                  key={key}
+                  className={cn(
+                    "cursor-pointer transition-all hover:shadow-md",
+                    stageFilter === key && `ring-2 ${ring}`
+                  )}
+                  onClick={() => setStageFilter(key as typeof stageFilter)}
+                >
+                  <CardContent className="pt-4">
+                    <div className="flex items-center justify-between">
+                      <div className="min-w-0">
+                        <p className="text-xs text-muted-foreground truncate">{label}</p>
+                        <p className={cn("text-2xl font-bold", color)}>{stageCounts[key as keyof typeof stageCounts]}</p>
+                      </div>
+                      <Icon className={cn("w-7 h-7 shrink-0", color)} />
                     </div>
-                    <Filter className="w-8 h-8 text-muted-foreground" />
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card 
-                className={cn(
-                  "cursor-pointer transition-all hover:shadow-md",
-                  statusFilter === 'A_EXECUTAR' && "ring-2 ring-amber-500"
-                )}
-                onClick={() => setStatusFilter('A_EXECUTAR')}
-              >
-                <CardContent className="pt-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-muted-foreground">A Executar</p>
-                      <p className="text-2xl font-bold text-amber-600">{statusCounts.A_EXECUTAR}</p>
-                    </div>
-                    <Clock className="w-8 h-8 text-amber-500" />
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card 
-                className={cn(
-                  "cursor-pointer transition-all hover:shadow-md",
-                  statusFilter === 'EM_EXECUCAO' && "ring-2 ring-blue-500"
-                )}
-                onClick={() => setStatusFilter('EM_EXECUCAO')}
-              >
-                <CardContent className="pt-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-muted-foreground">Em Execução</p>
-                      <p className="text-2xl font-bold text-blue-600">{statusCounts.EM_EXECUCAO}</p>
-                    </div>
-                    <PlayCircle className="w-8 h-8 text-blue-500" />
-                  </div>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
+              ))}
             </div>
 
             {/* Clean filter bar */}

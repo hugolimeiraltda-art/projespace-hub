@@ -1710,7 +1710,7 @@ export default function ImplantacaoExecucao() {
                             disabled={isSaving}
                           />
                           <span className={cn("text-sm", etapas.ppe_boas_vindas && "text-muted-foreground line-through")}>
-                            3.1 - Boas Vindas
+                            3.1 - Ligação de Boas Vindas
                           </span>
                           {etapas.ppe_boas_vindas_at && (
                             <span className="text-xs text-muted-foreground">

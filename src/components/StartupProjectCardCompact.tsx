@@ -110,7 +110,7 @@ export function StartupProjectCardCompact({
               <Badge className={cn("border text-xs font-semibold px-2.5 py-0.5 shrink-0", statusBadgeClass)} title={`Status: ${STATUS_LABELS[status]}`}>
                 {currentStageLabel}
               </Badge>
-              <span className="text-xs text-muted-foreground font-mono shrink-0">#{project.numero_projeto}</span>
+              <span className="text-xs text-muted-foreground font-mono shrink-0">{isPPE ? 'PPE' : 'PCI'}-{project.numero_projeto}</span>
               <h3 className="text-sm font-semibold text-foreground truncate">
                 {project.cliente_condominio_nome}
               </h3>

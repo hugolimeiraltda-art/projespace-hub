@@ -2690,6 +2690,8 @@ export default function ImplantacaoExecucao() {
               </CollapsibleTrigger>
               <CollapsibleContent>
                 <CardContent className="pt-0 space-y-4">
+                  {!isPPE && (
+                  <>
                   {/* 6.1 - Abertura de chamado no NOC */}
                   <div className="py-3 px-4 rounded-md border">
                     <div className="flex items-center gap-3 mb-3">

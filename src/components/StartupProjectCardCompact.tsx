@@ -203,11 +203,7 @@ export function StartupProjectCardCompact({
         </div>
 
         {/* Mobile metadata row */}
-        <div className="md:hidden mt-2 grid grid-cols-3 gap-2 text-xs pl-4">
-          <div>
-            <div className="text-[10px] text-muted-foreground">Status</div>
-            <div className="font-medium">{STATUS_LABELS[status]}</div>
-          </div>
+        <div className="md:hidden mt-2 grid grid-cols-2 gap-2 text-xs">
           <div>
             <div className="text-[10px] text-muted-foreground">Início</div>
             <div className="font-medium tabular-nums">{fmt(project.implantacao_started_at)}</div>

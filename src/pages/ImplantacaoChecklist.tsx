@@ -258,6 +258,22 @@ export default function ImplantacaoChecklist() {
     );
   };
 
+  const setItemResposta = (itemId: string, resposta: 'sim' | 'nao') => {
+    setChecklistItems(prev =>
+      prev.map(item =>
+        item.id === itemId
+          ? {
+              ...item,
+              resposta,
+              checked: resposta === 'sim',
+              // clear observation when switching to "sim" since it's no longer required
+              observacao: resposta === 'sim' ? '' : item.observacao,
+            }
+          : item
+      )
+    );
+  };
+
   const handleSave = async () => {
     if (!id || !tipo) return;
 

@@ -111,6 +111,10 @@ interface ImplantacaoEtapas {
   ppe_equipe_prestador_id: string | null;
   ppe_observacao_onboarding: string | null;
   ppe_observacao_instalacao: string | null;
+  ppe_boas_vindas: boolean;
+  ppe_boas_vindas_at: string | null;
+  ppe_validar_material: boolean;
+  ppe_validar_material_at: string | null;
   pagamento_instalacao_pontuacao: number | null;
   pagamento_instalacao_infra: number | null;
   pagamento_instalacao_deslocamento: number | null;
@@ -1683,7 +1687,45 @@ export default function ImplantacaoExecucao() {
                 <CardContent className="pt-0 space-y-1">
                   {isPPE ? (
                     <>
-                      {/* 3.1 - Agendamento da visita para instalação da base */}
+                      {/* 3.1 - Boas Vindas */}
+                      <div className="flex items-center justify-between py-2 px-4 hover:bg-muted/50 rounded-md gap-3 flex-wrap">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <Checkbox
+                            checked={etapas.ppe_boas_vindas}
+                            onCheckedChange={(value) => updateEtapa('ppe_boas_vindas', value, 'ppe_boas_vindas_at')}
+                            disabled={isSaving}
+                          />
+                          <span className={cn("text-sm", etapas.ppe_boas_vindas && "text-muted-foreground line-through")}>
+                            3.1 - Boas Vindas
+                          </span>
+                          {etapas.ppe_boas_vindas_at && (
+                            <span className="text-xs text-muted-foreground">
+                              {format(parseISO(etapas.ppe_boas_vindas_at), "dd/MM/yyyy", { locale: ptBR })}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* 3.2 - Validar material liberado e conformidade de projeto */}
+                      <div className="flex items-center justify-between py-2 px-4 hover:bg-muted/50 rounded-md gap-3 flex-wrap">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <Checkbox
+                            checked={etapas.ppe_validar_material}
+                            onCheckedChange={(value) => updateEtapa('ppe_validar_material', value, 'ppe_validar_material_at')}
+                            disabled={isSaving}
+                          />
+                          <span className={cn("text-sm", etapas.ppe_validar_material && "text-muted-foreground line-through")}>
+                            3.2 - Validar material liberado e conformidade de projeto
+                          </span>
+                          {etapas.ppe_validar_material_at && (
+                            <span className="text-xs text-muted-foreground">
+                              {format(parseISO(etapas.ppe_validar_material_at), "dd/MM/yyyy", { locale: ptBR })}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* 3.3 - Agendamento da visita para instalação da base */}
                       <div className="flex items-center justify-between py-2 px-4 hover:bg-muted/50 rounded-md gap-3 flex-wrap">
                         <div className="flex items-center gap-3 min-w-0">
                           <Checkbox
@@ -1692,7 +1734,7 @@ export default function ImplantacaoExecucao() {
                             disabled={isSaving}
                           />
                           <span className={cn("text-sm", etapas.ligacao_boas_vindas && "text-muted-foreground line-through")}>
-                            3.1 - Agendamento da visita para instalação da base
+                            3.3 - Agendamento da visita para instalação da base
                           </span>
                         </div>
                         <Input
@@ -1703,7 +1745,7 @@ export default function ImplantacaoExecucao() {
                         />
                       </div>
 
-                      {/* 3.2 - Data de execução da instalação sapata/engastamento */}
+                      {/* 3.4 - Data de execução da instalação sapata/engastamento */}
                       <div className="flex items-center justify-between py-2 px-4 hover:bg-muted/50 rounded-md gap-3 flex-wrap">
                         <div className="flex items-center gap-3 min-w-0">
                           <Checkbox
@@ -1712,7 +1754,7 @@ export default function ImplantacaoExecucao() {
                             disabled={isSaving}
                           />
                           <span className={cn("text-sm", etapas.cadastro_gear && "text-muted-foreground line-through")}>
-                            3.2 - Data de execução da instalação sapata/engastamento
+                            3.4 - Data de execução da instalação sapata/engastamento
                           </span>
                         </div>
                         <Input
@@ -1723,9 +1765,9 @@ export default function ImplantacaoExecucao() {
                         />
                       </div>
 
-                      {/* 3.3 - Equipe de instalação (Banco de Prestadores) */}
+                      {/* 3.5 - Equipe de instalação (Banco de Prestadores) */}
                       <div className="flex items-center justify-between py-2 px-4 hover:bg-muted/50 rounded-md gap-3 flex-wrap">
-                        <span className="text-sm font-medium">3.3 - Equipe de instalação</span>
+                        <span className="text-sm font-medium">3.5 - Equipe de instalação</span>
                         <Select
                           value={etapas.ppe_equipe_prestador_id || ''}
                           onValueChange={(value) => updateEtapa('ppe_equipe_prestador_id', value)}
@@ -1749,7 +1791,7 @@ export default function ImplantacaoExecucao() {
                         </Select>
                       </div>
 
-                      {/* 3.5 - Pagamento de Instalação */}
+                      {/* 3.6 - Pagamento de Instalação */}
                       <div className="px-4 py-3 space-y-3 border-t border-border">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-3">
@@ -1759,7 +1801,7 @@ export default function ImplantacaoExecucao() {
                               disabled={isSaving}
                             />
                             <span className={cn("text-sm font-medium", etapas.pagamento_instalacao_conferido && "text-muted-foreground line-through")}>
-                              3.5 - Pagamento de Instalação
+                              3.6 - Pagamento de Instalação
                             </span>
                             {etapas.pagamento_instalacao_conferido_at && (
                               <span className="text-xs text-muted-foreground">
@@ -1884,9 +1926,9 @@ export default function ImplantacaoExecucao() {
                         })()}
                       </div>
 
-                      {/* 3.6 - Observação */}
+                      {/* 3.7 - Observação */}
                       <div className="px-4 py-3 space-y-2 border-t border-border">
-                        <span className="text-sm font-medium">3.6 - Observações</span>
+                        <span className="text-sm font-medium">3.7 - Observações</span>
                         <Textarea
                           placeholder="Insira observações sobre o onboarding..."
                           value={localObsOnboardingPPE}

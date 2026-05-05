@@ -40,7 +40,8 @@ import {
   ShoppingCart,
   Upload,
   Hash,
-  Trash2
+  Trash2,
+  Edit
 } from 'lucide-react';
 import { ProjectStatus, STATUS_LABELS, ATTACHMENT_TYPE_LABELS, PORTARIA_VIRTUAL_LABELS, CFTV_ELEVADOR_LABELS, ENGINEERING_STATUS_LABELS, EngineeringStatus, SALE_STATUS_LABELS } from '@/types/project';
 import { format, parseISO } from 'date-fns';
@@ -107,7 +108,9 @@ export default function ProjectDetail() {
   }
 
   const isProjectCreator = user?.id === project.created_by_user_id;
-  const canEdit = (user?.role === 'vendedor' || user?.role === 'admin' || user?.role === 'gerente_comercial' || isProjectCreator) && ['RASCUNHO', 'PENDENTE_INFO'].includes(project.status);
+  const isVendedorLike = user?.role === 'vendedor' || user?.role === 'admin' || user?.role === 'gerente_comercial' || isProjectCreator;
+  const canEdit = isVendedorLike && ['RASCUNHO', 'PENDENTE_INFO'].includes(project.status);
+  const canRevise = isVendedorLike && !['RASCUNHO', 'PENDENTE_INFO'].includes(project.status);
   const canChangeStatus = user?.role === 'projetos' || user?.role === 'admin';
   const canMarkCompleted = canChangeStatus && project.engineering_status !== 'CONCLUIDO';
   const canStartSaleForm = ['vendedor', 'admin', 'gerente_comercial', 'administrativo', 'implantacao'].includes(user?.role || '') && project.engineering_status === 'CONCLUIDO' && (project.sale_status === 'NAO_INICIADO' || project.sale_status === 'EM_ANDAMENTO');
@@ -801,6 +804,15 @@ export default function ProjectDetail() {
             {canEdit && (
               <Button variant="outline" onClick={() => navigate(`/projetos/${project.id}/editar`)}>
                 Editar TAP
+              </Button>
+            )}
+            {canRevise && (
+              <Button
+                className="bg-status-approved hover:bg-status-approved/90 text-white"
+                onClick={() => navigate(`/projetos/${project.id}/editar?revisao=1`)}
+              >
+                <Edit className="w-4 h-4 mr-2" />
+                Revisar Projeto
               </Button>
             )}
             {canStartSaleForm && (

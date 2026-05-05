@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProjects } from '@/contexts/ProjectsContext';
 import { useFileUpload } from '@/hooks/useFileUpload';
@@ -21,7 +21,9 @@ import {
   Send,
   Check,
   Upload,
-  Loader2
+  Loader2,
+  Trash2,
+  FileText
 } from 'lucide-react';
 import {
   PortariaVirtualApp,
@@ -44,9 +46,11 @@ const ESTADOS_BR = [
 export default function EditProject() {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
-  const { getProject, updateProject, updateStatus, addAttachment, projects, isLoading: contextLoading } = useProjects();
+  const { getProject, updateProject, updateStatus, addAttachment, removeAttachment, projects, isLoading: contextLoading } = useProjects();
   const { uploadFile, isUploading } = useFileUpload();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const isRevisao = searchParams.get('revisao') === '1';
   const { toast } = useToast();
 
   const [isFormLoading, setIsFormLoading] = useState(true);
@@ -78,8 +82,10 @@ export default function EditProject() {
   const [infoAdicionais, setInfoAdicionais] = useState('');
 
   // Attachments
-  const [existingAttachments, setExistingAttachments] = useState<{ tipo: AttachmentType; nome: string }[]>([]);
+  const [existingAttachments, setExistingAttachments] = useState<{ id: string; tipo: AttachmentType; nome: string; url: string }[]>([]);
   const [newAttachments, setNewAttachments] = useState<{ tipo: AttachmentType; nome: string; file?: File }[]>([]);
+  const [removedAttachmentIds, setRemovedAttachmentIds] = useState<string[]>([]);
+  const [newAttachmentTipo, setNewAttachmentTipo] = useState<AttachmentType | ''>('');
 
   // Load project data
   useEffect(() => {
@@ -113,13 +119,13 @@ export default function EditProject() {
         setInfoAdicionais(tap.info_adicionais || '');
       }
 
-      setExistingAttachments(project.attachments.map(a => ({ tipo: a.tipo, nome: a.nome_arquivo })));
+      setExistingAttachments(project.attachments.map(a => ({ id: a.id, tipo: a.tipo, nome: a.nome_arquivo, url: a.arquivo_url })));
     }
     setIsFormLoading(false);
   }, [id, projects, getProject, contextLoading]);
 
   const project = getProject(id!);
-  const canSubmit = project?.status === 'PENDENTE_INFO' || project?.status === 'RASCUNHO';
+  const canSubmit = !isRevisao && (project?.status === 'PENDENTE_INFO' || project?.status === 'RASCUNHO');
 
   const hasCroquiAttachment = existingAttachments.some(a => a.tipo === 'CROQUI') || newAttachments.some(a => a.tipo === 'CROQUI');
 
@@ -195,6 +201,11 @@ ${infoAdicionais || 'Não informado'}`;
         info_cronograma: infoCronograma || undefined,
         info_adicionais: infoAdicionais || undefined,
       });
+
+      // Remove attachments marked for deletion
+      for (const attId of removedAttachmentIds) {
+        await removeAttachment(project.id, attId);
+      }
 
       // Add new attachments with real upload
       for (const att of newAttachments) {
@@ -289,10 +300,19 @@ ${infoAdicionais || 'Não informado'}`;
             <ArrowLeft className="w-5 h-5" />
           </Button>
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Editar Projeto</h1>
+            <h1 className="text-2xl font-bold text-foreground">{isRevisao ? 'Revisar Projeto' : 'Editar Projeto'}</h1>
             <p className="text-sm text-muted-foreground">{project.cliente_condominio_nome}</p>
           </div>
         </div>
+
+        {isRevisao && (
+          <Alert className="mb-6 bg-primary/5 border-primary/30">
+            <AlertTriangle className="h-4 w-4 text-primary" />
+            <AlertDescription className="text-foreground">
+              Modo revisão: edite as informações e adicione/remova anexos. As alterações serão salvas sem alterar o status do projeto.
+            </AlertDescription>
+          </Alert>
+        )}
 
         {project.status === 'PENDENTE_INFO' && (
           <Alert className="mb-6 bg-status-pending-bg border-status-pending/30">
@@ -639,6 +659,100 @@ ${infoAdicionais || 'Não informado'}`;
                   onChange={(e) => setInfoAdicionais(e.target.value)}
                   rows={3}
                 />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Anexos */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Anexos</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {existingAttachments.filter(a => !removedAttachmentIds.includes(a.id)).length === 0 && newAttachments.length === 0 && (
+                <p className="text-sm text-muted-foreground italic">Nenhum anexo no projeto.</p>
+              )}
+
+              {existingAttachments.filter(a => !removedAttachmentIds.includes(a.id)).map(att => (
+                <div key={att.id} className="flex items-center gap-3 p-3 rounded-lg border bg-secondary/30">
+                  <FileText className="w-5 h-5 text-primary shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <a href={att.url} target="_blank" rel="noopener noreferrer" className="text-sm font-medium hover:underline truncate block">
+                      {att.nome}
+                    </a>
+                    <p className="text-xs text-muted-foreground">{ATTACHMENT_TYPE_LABELS[att.tipo] || att.tipo}</p>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    type="button"
+                    onClick={() => setRemovedAttachmentIds(prev => [...prev, att.id])}
+                    className="text-muted-foreground hover:text-destructive"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
+              ))}
+
+              {newAttachments.map((att, idx) => (
+                <div key={`new-${idx}`} className="flex items-center gap-3 p-3 rounded-lg border bg-status-approved/5 border-status-approved/30">
+                  <Check className="w-5 h-5 text-status-approved shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{att.nome}</p>
+                    <p className="text-xs text-muted-foreground">{ATTACHMENT_TYPE_LABELS[att.tipo] || att.tipo} • novo</p>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    type="button"
+                    onClick={() => setNewAttachments(prev => prev.filter((_, i) => i !== idx))}
+                    className="text-muted-foreground hover:text-destructive"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
+              ))}
+
+              <div>
+                <Label className="mb-2 block">Adicionar novo anexo</Label>
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <Select value={newAttachmentTipo} onValueChange={(v) => setNewAttachmentTipo(v as AttachmentType)}>
+                    <SelectTrigger className="sm:w-64">
+                      <SelectValue placeholder="Tipo do anexo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {(Object.entries(ATTACHMENT_TYPE_LABELS) as [AttachmentType, string][]).map(([value, label]) => (
+                        <SelectItem key={value} value={value}>{label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <input
+                    id="new-attachment-upload"
+                    type="file"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file && newAttachmentTipo) {
+                        setNewAttachments(prev => [...prev, { tipo: newAttachmentTipo, nome: file.name, file }]);
+                      }
+                      e.target.value = '';
+                    }}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      if (!newAttachmentTipo) {
+                        toast({ title: 'Selecione o tipo do anexo antes de enviar.', variant: 'destructive' });
+                        return;
+                      }
+                      document.getElementById('new-attachment-upload')?.click();
+                    }}
+                  >
+                    <Upload className="w-4 h-4 mr-2" />
+                    Selecionar arquivo
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>

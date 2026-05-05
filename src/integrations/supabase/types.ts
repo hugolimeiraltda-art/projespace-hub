@@ -934,6 +934,8 @@ export type Database = {
           ppe_boas_vindas_at: string | null
           ppe_confirmar_internet: boolean
           ppe_confirmar_internet_at: string | null
+          ppe_confirmar_ponto_eletrico: boolean
+          ppe_confirmar_ponto_eletrico_at: string | null
           ppe_equipe_prestador_id: string | null
           ppe_execucao_base_data: string | null
           ppe_observacao_instalacao: string | null
@@ -1024,6 +1026,8 @@ export type Database = {
           ppe_boas_vindas_at?: string | null
           ppe_confirmar_internet?: boolean
           ppe_confirmar_internet_at?: string | null
+          ppe_confirmar_ponto_eletrico?: boolean
+          ppe_confirmar_ponto_eletrico_at?: string | null
           ppe_equipe_prestador_id?: string | null
           ppe_execucao_base_data?: string | null
           ppe_observacao_instalacao?: string | null
@@ -1114,6 +1118,8 @@ export type Database = {
           ppe_boas_vindas_at?: string | null
           ppe_confirmar_internet?: boolean
           ppe_confirmar_internet_at?: string | null
+          ppe_confirmar_ponto_eletrico?: boolean
+          ppe_confirmar_ponto_eletrico_at?: string | null
           ppe_equipe_prestador_id?: string | null
           ppe_execucao_base_data?: string | null
           ppe_observacao_instalacao?: string | null

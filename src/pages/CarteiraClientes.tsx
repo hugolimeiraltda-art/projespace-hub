@@ -716,43 +716,35 @@ export default function CarteiraClientes({ tipoCarteira = 'PCI' }: CarteiraClien
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 mb-4">
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium">Total de contratos por filial</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                    {filialContractEntries.map(([filial, count]) => (
-                      <div key={filial} className="rounded-md border bg-muted/30 p-3">
-                        <p className="text-xs text-muted-foreground">{filial}</p>
-                        <p className="text-xl font-bold">{count}</p>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
+              <div className="rounded-lg border bg-card px-3 py-2">
+                <p className="text-[11px] uppercase tracking-wide text-muted-foreground mb-1.5">Contratos por filial</p>
+                <div className="flex flex-wrap gap-x-4 gap-y-1">
+                  {filialContractEntries.map(([filial, count]) => (
+                    <div key={filial} className="flex items-baseline gap-1.5">
+                      <span className="text-xs text-muted-foreground">{filial}</span>
+                      <span className="text-sm font-semibold tabular-nums">{count}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
 
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium">Quantidade de contratos por tipo de produto</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-3 gap-2">
-                    <div className="rounded-md border bg-muted/30 p-3">
-                      <p className="text-xs text-muted-foreground">Mini</p>
-                      <p className="text-xl font-bold">{productContractCounts.mini}</p>
-                    </div>
-                    <div className="rounded-md border bg-muted/30 p-3">
-                      <p className="text-xs text-muted-foreground">Parede</p>
-                      <p className="text-xl font-bold">{productContractCounts.parede}</p>
-                    </div>
-                    <div className="rounded-md border bg-muted/30 p-3">
-                      <p className="text-xs text-muted-foreground">360</p>
-                      <p className="text-xl font-bold">{productContractCounts['360']}</p>
-                    </div>
+              <div className="rounded-lg border bg-card px-3 py-2">
+                <p className="text-[11px] uppercase tracking-wide text-muted-foreground mb-1.5">Contratos por tipo</p>
+                <div className="flex flex-wrap gap-x-4 gap-y-1">
+                  <div className="flex items-baseline gap-1.5">
+                    <span className="text-xs text-muted-foreground">Mini</span>
+                    <span className="text-sm font-semibold tabular-nums">{productContractCounts.mini}</span>
                   </div>
-                </CardContent>
-              </Card>
+                  <div className="flex items-baseline gap-1.5">
+                    <span className="text-xs text-muted-foreground">Parede</span>
+                    <span className="text-sm font-semibold tabular-nums">{productContractCounts.parede}</span>
+                  </div>
+                  <div className="flex items-baseline gap-1.5">
+                    <span className="text-xs text-muted-foreground">360</span>
+                    <span className="text-sm font-semibold tabular-nums">{productContractCounts['360']}</span>
+                  </div>
+                </div>
+              </div>
             </div>
           </>
         ) : (

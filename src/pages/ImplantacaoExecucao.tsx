@@ -1854,7 +1854,7 @@ export default function ImplantacaoExecucao() {
                       )}>
                         {isEtapaComplete(4) ? <Check className="w-4 h-4" /> : <ClipboardCheck className="w-4 h-4" />}
                       </div>
-                      <CardTitle className="text-base">4 - Visita de Implantação</CardTitle>
+                      <CardTitle className="text-base">{isPPE ? '4 - Instalação do Totem' : '4 - Visita de Implantação'}</CardTitle>
                     </div>
                     {expandedEtapas.includes(4) ? <ChevronDown className="w-5 h-5" /> : <ChevronRight className="w-5 h-5" />}
                   </div>

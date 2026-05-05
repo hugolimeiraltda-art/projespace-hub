@@ -201,6 +201,11 @@ ${infoAdicionais || 'Não informado'}`;
         info_adicionais: infoAdicionais || undefined,
       });
 
+      // Remove attachments marked for deletion
+      for (const attId of removedAttachmentIds) {
+        await removeAttachment(project.id, attId);
+      }
+
       // Add new attachments with real upload
       for (const att of newAttachments) {
         if (att.file) {

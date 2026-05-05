@@ -926,10 +926,14 @@ export type Database = {
           pesquisa_satisfacao_realizada_at: string | null
           pesquisa_satisfacao_recomendaria: boolean | null
           ppe_agendamento_base_data: string | null
+          ppe_boas_vindas: boolean
+          ppe_boas_vindas_at: string | null
           ppe_equipe_prestador_id: string | null
           ppe_execucao_base_data: string | null
           ppe_observacao_instalacao: string | null
           ppe_observacao_onboarding: string | null
+          ppe_validar_material: boolean
+          ppe_validar_material_at: string | null
           project_id: string
           sindico_app: boolean | null
           sindico_app_at: string | null
@@ -1003,10 +1007,14 @@ export type Database = {
           pesquisa_satisfacao_realizada_at?: string | null
           pesquisa_satisfacao_recomendaria?: boolean | null
           ppe_agendamento_base_data?: string | null
+          ppe_boas_vindas?: boolean
+          ppe_boas_vindas_at?: string | null
           ppe_equipe_prestador_id?: string | null
           ppe_execucao_base_data?: string | null
           ppe_observacao_instalacao?: string | null
           ppe_observacao_onboarding?: string | null
+          ppe_validar_material?: boolean
+          ppe_validar_material_at?: string | null
           project_id: string
           sindico_app?: boolean | null
           sindico_app_at?: string | null
@@ -1080,10 +1088,14 @@ export type Database = {
           pesquisa_satisfacao_realizada_at?: string | null
           pesquisa_satisfacao_recomendaria?: boolean | null
           ppe_agendamento_base_data?: string | null
+          ppe_boas_vindas?: boolean
+          ppe_boas_vindas_at?: string | null
           ppe_equipe_prestador_id?: string | null
           ppe_execucao_base_data?: string | null
           ppe_observacao_instalacao?: string | null
           ppe_observacao_onboarding?: string | null
+          ppe_validar_material?: boolean
+          ppe_validar_material_at?: string | null
           project_id?: string
           sindico_app?: boolean | null
           sindico_app_at?: string | null

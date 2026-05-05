@@ -1791,7 +1791,7 @@ export default function ImplantacaoExecucao() {
                         </Select>
                       </div>
 
-                      {/* 3.5 - Pagamento de Instalação */}
+                      {/* 3.6 - Pagamento de Instalação */}
                       <div className="px-4 py-3 space-y-3 border-t border-border">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-3">
@@ -1801,7 +1801,7 @@ export default function ImplantacaoExecucao() {
                               disabled={isSaving}
                             />
                             <span className={cn("text-sm font-medium", etapas.pagamento_instalacao_conferido && "text-muted-foreground line-through")}>
-                              3.5 - Pagamento de Instalação
+                              3.6 - Pagamento de Instalação
                             </span>
                             {etapas.pagamento_instalacao_conferido_at && (
                               <span className="text-xs text-muted-foreground">
@@ -1926,9 +1926,9 @@ export default function ImplantacaoExecucao() {
                         })()}
                       </div>
 
-                      {/* 3.6 - Observação */}
+                      {/* 3.7 - Observação */}
                       <div className="px-4 py-3 space-y-2 border-t border-border">
-                        <span className="text-sm font-medium">3.6 - Observações</span>
+                        <span className="text-sm font-medium">3.7 - Observações</span>
                         <Textarea
                           placeholder="Insira observações sobre o onboarding..."
                           value={localObsOnboardingPPE}

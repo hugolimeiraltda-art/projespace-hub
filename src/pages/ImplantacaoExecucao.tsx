@@ -202,6 +202,7 @@ export default function ImplantacaoExecucao() {
   const [pendenciaClienteEntregaTexto, setPendenciaClienteEntregaTexto] = useState('');
   const [prestadoresList, setPrestadoresList] = useState<Array<{ id: string; nome: string; empresa: string[] | null }>>([]);
   const [localObsOnboardingPPE, setLocalObsOnboardingPPE] = useState('');
+  const [localObsInstalacaoPPE, setLocalObsInstalacaoPPE] = useState('');
   const [criandoPendencia, setCriandoPendencia] = useState(false);
   const [enderecoInstalacao, setEnderecoInstalacao] = useState('');
   const [editingEndereco, setEditingEndereco] = useState(false);

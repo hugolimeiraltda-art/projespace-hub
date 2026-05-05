@@ -2876,7 +2876,8 @@ export default function ImplantacaoExecucao() {
             </Collapsible>
           </Card>
 
-          {/* Etapa 7: Entrega Técnica e Comercial */}
+          {/* Etapa 7: Entrega Técnica e Comercial (oculta para PPE) */}
+          {!isPPE && (
           <Card>
             <Collapsible open={expandedEtapas.includes(7)} onOpenChange={() => toggleEtapa(7)}>
               <CollapsibleTrigger asChild>

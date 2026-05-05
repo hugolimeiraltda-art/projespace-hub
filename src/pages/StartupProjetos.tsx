@@ -476,7 +476,10 @@ export default function StartupProjetos() {
       if (!inOpAssistida) return false;
     }
     
-    return matchesSearch && matchesStatus && matchesTipoObra && matchesPendencia;
+    const stage = getStage(project.id, project.tipo_implantacao === 'PPE');
+    const matchesStage = stageFilter === 'TODOS' || stage === stageFilter;
+
+    return matchesSearch && matchesStatus && matchesTipoObra && matchesPendencia && matchesStage;
   }).sort((a, b) => {
     let result: number;
     if (sortField === 'cliente_condominio_nome') {

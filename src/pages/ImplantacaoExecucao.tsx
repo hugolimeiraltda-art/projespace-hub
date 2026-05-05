@@ -1722,7 +1722,26 @@ export default function ImplantacaoExecucao() {
                         </div>
                       </div>
 
-                      {/* 3.2 - Confirmar internet do cliente */}
+                      {/* 3.2 - Confirmar endereço de instalação */}
+                      <div className="flex items-center justify-between py-2 px-4 hover:bg-muted/50 rounded-md gap-3 flex-wrap">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <Checkbox
+                            checked={etapas.ppe_confirmar_endereco}
+                            onCheckedChange={(value) => updateEtapa('ppe_confirmar_endereco', value, 'ppe_confirmar_endereco_at')}
+                            disabled={isSaving}
+                          />
+                          <span className={cn("text-sm", etapas.ppe_confirmar_endereco && "text-muted-foreground line-through")}>
+                            3.2 - Confirmar endereço de instalação
+                          </span>
+                          {etapas.ppe_confirmar_endereco_at && (
+                            <span className="text-xs text-muted-foreground">
+                              {format(parseISO(etapas.ppe_confirmar_endereco_at), "dd/MM/yyyy", { locale: ptBR })}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* 3.3 - Confirmar internet do cliente */}
                       <div className="flex items-center justify-between py-2 px-4 hover:bg-muted/50 rounded-md gap-3 flex-wrap">
                         <div className="flex items-center gap-3 min-w-0">
                           <Checkbox
@@ -1731,7 +1750,7 @@ export default function ImplantacaoExecucao() {
                             disabled={isSaving}
                           />
                           <span className={cn("text-sm", etapas.ppe_confirmar_internet && "text-muted-foreground line-through")}>
-                            3.2 - Confirmar internet do cliente
+                            3.3 - Confirmar internet do cliente
                           </span>
                           {etapas.ppe_confirmar_internet_at && (
                             <span className="text-xs text-muted-foreground">
@@ -1741,7 +1760,7 @@ export default function ImplantacaoExecucao() {
                         </div>
                       </div>
 
-                      {/* 3.3 - Confirmar ponto elétrico com o cliente */}
+                      {/* 3.4 - Confirmar ponto elétrico com o cliente */}
                       <div className="flex items-center justify-between py-2 px-4 hover:bg-muted/50 rounded-md gap-3 flex-wrap">
                         <div className="flex items-center gap-3 min-w-0">
                           <Checkbox
@@ -1750,7 +1769,7 @@ export default function ImplantacaoExecucao() {
                             disabled={isSaving}
                           />
                           <span className={cn("text-sm", etapas.ppe_confirmar_ponto_eletrico && "text-muted-foreground line-through")}>
-                            3.3 - Confirmar ponto elétrico com o cliente
+                            3.4 - Confirmar ponto elétrico com o cliente
                           </span>
                           {etapas.ppe_confirmar_ponto_eletrico_at && (
                             <span className="text-xs text-muted-foreground">
@@ -1760,7 +1779,7 @@ export default function ImplantacaoExecucao() {
                         </div>
                       </div>
 
-                      {/* 3.4 - Validar material liberado e conformidade de projeto */}
+                      {/* 3.5 - Validar material liberado e conformidade de projeto */}
                       <div className="flex items-center justify-between py-2 px-4 hover:bg-muted/50 rounded-md gap-3 flex-wrap">
                         <div className="flex items-center gap-3 min-w-0">
                           <Checkbox
@@ -1769,7 +1788,7 @@ export default function ImplantacaoExecucao() {
                             disabled={isSaving}
                           />
                           <span className={cn("text-sm", etapas.ppe_validar_material && "text-muted-foreground line-through")}>
-                            3.4 - Validar material liberado e conformidade de projeto
+                            3.5 - Validar material liberado e conformidade de projeto
                           </span>
                           {etapas.ppe_validar_material_at && (
                             <span className="text-xs text-muted-foreground">

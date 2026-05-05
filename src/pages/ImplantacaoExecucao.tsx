@@ -1895,9 +1895,14 @@ export default function ImplantacaoExecucao() {
                           </div>
                           <DollarSign className="w-4 h-4 text-muted-foreground" />
                         </div>
-                        <p className="text-xs text-muted-foreground ml-8">
-                          Valores referentes à pontuação liberada, infraestrutura, deslocamento, pedágio e diárias de viagem.
-                        </p>
+                        <details className="ml-8 group">
+                          <summary className="cursor-pointer text-xs font-medium text-primary hover:underline list-none flex items-center gap-1 select-none">
+                            <ChevronRight className="w-3 h-3 transition-transform group-open:rotate-90" />
+                            <span>Ver/ocultar detalhes do pagamento</span>
+                          </summary>
+                          <p className="text-xs text-muted-foreground mt-2">
+                            Valores referentes à pontuação liberada, infraestrutura, deslocamento, pedágio e diárias de viagem.
+                          </p>
                         {(() => {
                           const pagItems = [
                             { label: 'Pontuação (equipamentos)', field: 'pagamento_instalacao_pontuacao', fieldAuf: 'pagamento_instalacao_pontuacao_auferido' },

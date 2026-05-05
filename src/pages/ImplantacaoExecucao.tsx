@@ -115,6 +115,9 @@ interface ImplantacaoEtapas {
   ppe_boas_vindas_at: string | null;
   ppe_validar_material: boolean;
   ppe_validar_material_at: string | null;
+  ppe_totem_360_qtd: number;
+  ppe_totem_parede_qtd: number;
+  ppe_totem_mini_qtd: number;
   pagamento_instalacao_pontuacao: number | null;
   pagamento_instalacao_infra: number | null;
   pagamento_instalacao_deslocamento: number | null;
@@ -1729,6 +1732,41 @@ export default function ImplantacaoExecucao() {
                         </div>
                       </div>
 
+                      {/* Quantidade por tipo de totem */}
+                      <div className="px-4 py-3 space-y-2 border-t border-border">
+                        <span className="text-sm font-medium">Quantidade de totens por tipo</span>
+                        <p className="text-xs text-muted-foreground">Informe quantos totens de cada modelo serão instalados.</p>
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-2">
+                          {([
+                            { label: 'Totem 360', field: 'ppe_totem_360_qtd' as const },
+                            { label: 'Totem Parede', field: 'ppe_totem_parede_qtd' as const },
+                            { label: 'Totem Mini', field: 'ppe_totem_mini_qtd' as const },
+                          ]).map((t) => (
+                            <div key={t.field} className="space-y-1">
+                              <label className="text-xs text-muted-foreground">{t.label}</label>
+                              <Input
+                                type="number"
+                                min={0}
+                                value={(etapas as any)[t.field] ?? 0}
+                                onChange={(e) => {
+                                  const val = e.target.value === '' ? 0 : Math.max(0, Number(e.target.value));
+                                  setEtapas(prev => prev ? { ...prev, [t.field]: val } as ImplantacaoEtapas : null);
+                                }}
+                                onBlur={(e) => {
+                                  const val = e.target.value === '' ? 0 : Math.max(0, Number(e.target.value));
+                                  updateEtapa(t.field as any, val);
+                                }}
+                                className="h-9"
+                              />
+                            </div>
+                          ))}
+                        </div>
+                        <div className="text-xs text-muted-foreground pt-1">
+                          Total: <span className="font-semibold text-foreground">
+                            {(etapas.ppe_totem_360_qtd || 0) + (etapas.ppe_totem_parede_qtd || 0) + (etapas.ppe_totem_mini_qtd || 0)}
+                          </span> totens
+                        </div>
+                      </div>
                       {/* 3.3 - Agendamento da visita para instalação da base */}
                       <div className="flex items-center justify-between py-2 px-4 hover:bg-muted/50 rounded-md gap-3 flex-wrap">
                         <div className="flex items-center gap-3 min-w-0">

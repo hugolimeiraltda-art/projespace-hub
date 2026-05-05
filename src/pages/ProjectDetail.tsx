@@ -107,7 +107,9 @@ export default function ProjectDetail() {
   }
 
   const isProjectCreator = user?.id === project.created_by_user_id;
-  const canEdit = (user?.role === 'vendedor' || user?.role === 'admin' || user?.role === 'gerente_comercial' || isProjectCreator) && ['RASCUNHO', 'PENDENTE_INFO'].includes(project.status);
+  const isVendedorLike = user?.role === 'vendedor' || user?.role === 'admin' || user?.role === 'gerente_comercial' || isProjectCreator;
+  const canEdit = isVendedorLike && ['RASCUNHO', 'PENDENTE_INFO'].includes(project.status);
+  const canRevise = isVendedorLike && !['RASCUNHO', 'PENDENTE_INFO'].includes(project.status);
   const canChangeStatus = user?.role === 'projetos' || user?.role === 'admin';
   const canMarkCompleted = canChangeStatus && project.engineering_status !== 'CONCLUIDO';
   const canStartSaleForm = ['vendedor', 'admin', 'gerente_comercial', 'administrativo', 'implantacao'].includes(user?.role || '') && project.engineering_status === 'CONCLUIDO' && (project.sale_status === 'NAO_INICIADO' || project.sale_status === 'EM_ANDAMENTO');

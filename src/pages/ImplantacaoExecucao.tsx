@@ -2223,9 +2223,95 @@ export default function ImplantacaoExecucao() {
                         </div>
                       </div>
 
-                      {/* 4.3 - Observação */}
+                      {/* 4.3 - Abertura de chamado no NOC (PPE) */}
+                      <div className="py-3 px-4 rounded-md border mt-2">
+                        <div className="flex items-center gap-3 mb-3">
+                          <div className={cn(
+                            "w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold",
+                            nocChamado?.item_6_1_status === 'success'
+                              ? "bg-primary text-primary-foreground"
+                              : nocChamado?.item_6_1_status === 'error'
+                                ? "bg-destructive text-destructive-foreground"
+                                : "bg-muted text-muted-foreground"
+                          )}>
+                            {nocChamado?.item_6_1_status === 'success' ? <Check className="w-3 h-3" /> : '1'}
+                          </div>
+                          <span className={cn(
+                            "text-sm font-medium",
+                            nocChamado?.item_6_1_status === 'success' && "text-muted-foreground"
+                          )}>
+                            4.3 - Abertura de chamado no NOC
+                          </span>
+                        </div>
+
+                        {(!nocChamado || nocChamado.item_6_1_status === 'pending' || nocChamado.item_6_1_status === 'error') && (
+                          <div className="ml-9 space-y-3">
+                            {!(isEtapaComplete(1) && isEtapaComplete(2) && isEtapaComplete(3) && etapas.agendamento_visita_startup && etapas.laudo_visita_startup) && (
+                              <p className="text-sm text-muted-foreground italic">
+                                As etapas anteriores (1, 2, 3 e os itens 4.1 e 4.2) precisam estar concluídas para abrir o chamado.
+                              </p>
+                            )}
+                            <Button
+                              onClick={handleAbrirChamadoNoc}
+                              disabled={nocLoading || !(isEtapaComplete(1) && isEtapaComplete(2) && isEtapaComplete(3) && etapas.agendamento_visita_startup && etapas.laudo_visita_startup)}
+                              className="w-full"
+                            >
+                              {nocLoading ? (
+                                <>
+                                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-foreground mr-2" />
+                                  Processando abertura...
+                                </>
+                              ) : (
+                                <>
+                                  <ExternalLink className="w-4 h-4 mr-2" />
+                                  Abrir chamado no EIXONOC
+                                </>
+                              )}
+                            </Button>
+                            {nocChamado?.item_6_1_status === 'error' && (
+                              <Alert variant="destructive">
+                                <AlertTriangle className="h-4 w-4" />
+                                <AlertDescription>
+                                  {nocChamado.integration_message || 'Erro ao abrir chamado. Tente novamente.'}
+                                </AlertDescription>
+                              </Alert>
+                            )}
+                          </div>
+                        )}
+
+                        {nocChamado?.item_6_1_status === 'success' && (
+                          <div className="ml-9 p-3 bg-muted/50 rounded-md border space-y-2">
+                            <div className="flex items-center gap-2 text-sm">
+                              <CheckCircle2 className="w-4 h-4 text-primary" />
+                              <span className="font-medium">Chamado aberto com sucesso</span>
+                            </div>
+                            {nocChamado.chamado_numero && (
+                              <p className="text-sm"><span className="text-muted-foreground">Chamado:</span> <span className="font-medium">{nocChamado.chamado_numero}</span></p>
+                            )}
+                            {nocChamado.opened_by_name && (
+                              <p className="text-sm"><span className="text-muted-foreground">Aberto por:</span> {nocChamado.opened_by_name}</p>
+                            )}
+                            {nocChamado.opened_at && (
+                              <p className="text-sm"><span className="text-muted-foreground">Em:</span> {format(parseISO(nocChamado.opened_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}</p>
+                            )}
+                            {nocChamado.chamado_url && (
+                              <a
+                                href={nocChamado.chamado_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1 text-sm text-primary hover:underline"
+                              >
+                                <ExternalLink className="w-3 h-3" />
+                                Ver chamado
+                              </a>
+                            )}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* 4.4 - Observação */}
                       <div className="px-4 py-3 space-y-2 border-t border-border">
-                        <span className="text-sm font-medium">4.3 - Observações</span>
+                        <span className="text-sm font-medium">4.4 - Observações</span>
                         <Textarea
                           placeholder="Insira observações sobre a instalação do totem..."
                           value={localObsInstalacaoPPE}
@@ -2604,6 +2690,8 @@ export default function ImplantacaoExecucao() {
               </CollapsibleTrigger>
               <CollapsibleContent>
                 <CardContent className="pt-0 space-y-4">
+                  {!isPPE && (
+                  <>
                   {/* 6.1 - Abertura de chamado no NOC */}
                   <div className="py-3 px-4 rounded-md border">
                     <div className="flex items-center gap-3 mb-3">
@@ -2692,6 +2780,8 @@ export default function ImplantacaoExecucao() {
                       </div>
                     )}
                   </div>
+                  </>
+                  )}
 
                   {/* 6.2 - Check e laudo de programação */}
                   <div className={cn(

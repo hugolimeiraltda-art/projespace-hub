@@ -308,6 +308,15 @@ export default function ImplantacaoExecucao() {
       setEtapas(etapasObj);
       setLocalLaudoTexto(etapasObj.laudo_visita_comercial_texto || '');
       setLocalObsManutencao(etapasObj.observacoes_manutencao || '');
+      setLocalObsOnboardingPPE(etapasObj.ppe_observacao_onboarding || '');
+
+      // Load prestadores for PPE installation team selection
+      const { data: prestData } = await supabase
+        .from('prestadores')
+        .select('id, nome, empresa')
+        .eq('ativo', true)
+        .order('nome');
+      setPrestadoresList(prestData || []);
 
       // Fetch customer_portfolio data for contract info
       const { data: portfolioData } = await supabase

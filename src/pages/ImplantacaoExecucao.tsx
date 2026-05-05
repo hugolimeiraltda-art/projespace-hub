@@ -117,6 +117,8 @@ interface ImplantacaoEtapas {
   ppe_validar_material_at: string | null;
   ppe_confirmar_internet: boolean;
   ppe_confirmar_internet_at: string | null;
+  ppe_confirmar_ponto_eletrico: boolean;
+  ppe_confirmar_ponto_eletrico_at: string | null;
   ppe_totem_360_qtd: number;
   ppe_totem_parede_qtd: number;
   ppe_totem_mini_qtd: number;

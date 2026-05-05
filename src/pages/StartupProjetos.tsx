@@ -499,6 +499,16 @@ export default function StartupProjetos() {
     CONCLUIDO_IMPLANTACAO: projects.filter(p => p.implantacao_status === 'CONCLUIDO_IMPLANTACAO').length,
   };
 
+  // Stage counts for current tab projects (excluding op assistida)
+  const tabProjects = projects.filter(p => !isInOperacaoAssistida(p.id));
+  const stageCounts = {
+    TODOS: tabProjects.length,
+    ONBOARDING: tabProjects.filter(p => getStage(p.id, p.tipo_implantacao === 'PPE') === 'ONBOARDING').length,
+    OBRA: tabProjects.filter(p => getStage(p.id, p.tipo_implantacao === 'PPE') === 'OBRA').length,
+    PROGRAMACAO: tabProjects.filter(p => getStage(p.id, p.tipo_implantacao === 'PPE') === 'PROGRAMACAO').length,
+    FINANCEIRO: tabProjects.filter(p => getStage(p.id, p.tipo_implantacao === 'PPE') === 'FINANCEIRO').length,
+  };
+
   if (isLoading) {
     return (
       <Layout>

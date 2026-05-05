@@ -2876,7 +2876,8 @@ export default function ImplantacaoExecucao() {
             </Collapsible>
           </Card>
 
-          {/* Etapa 7: Entrega Técnica e Comercial */}
+          {/* Etapa 7: Entrega Técnica e Comercial (oculta para PPE) */}
+          {!isPPE && (
           <Card>
             <Collapsible open={expandedEtapas.includes(7)} onOpenChange={() => toggleEtapa(7)}>
               <CollapsibleTrigger asChild>
@@ -2999,6 +3000,7 @@ export default function ImplantacaoExecucao() {
               </CollapsibleContent>
             </Collapsible>
           </Card>
+          )}
 
           {!isPPE && (
             <>
@@ -3153,7 +3155,7 @@ export default function ImplantacaoExecucao() {
                         </AlertDescription>
                       </Alert>
                     )}
-                    {!secoesComAnexo.includes('implantacao_entrega_tecnica') && !etapas.concluido && (
+                    {!isPPE && !secoesComAnexo.includes('implantacao_entrega_tecnica') && !etapas.concluido && (
                       <Alert variant="destructive" className="mb-4">
                         <AlertTriangle className="h-4 w-4" />
                         <AlertDescription>
@@ -3189,7 +3191,7 @@ export default function ImplantacaoExecucao() {
                             toast({ title: 'Upload obrigatório pendente', description: 'O laudo/checklist do instalador (etapa 5.1) é obrigatório para concluir a implantação.', variant: 'destructive' });
                             return;
                           }
-                          if (!secoesComAnexo.includes('implantacao_entrega_tecnica')) {
+                          if (!isPPE && !secoesComAnexo.includes('implantacao_entrega_tecnica')) {
                             toast({ title: 'Upload obrigatório pendente', description: 'O checklist de entrega técnica (etapa 7.3) é obrigatório para concluir a implantação.', variant: 'destructive' });
                             return;
                           }
@@ -3223,7 +3225,7 @@ export default function ImplantacaoExecucao() {
                         }}
                         className="w-full"
                         variant="default"
-                        disabled={hasPendingItems || !checklistsExistentes.includes('check_projeto') || !secoesComAnexo.includes('implantacao_laudo_instalador') || !secoesComAnexo.includes('implantacao_entrega_tecnica')}
+                        disabled={hasPendingItems || !checklistsExistentes.includes('check_projeto') || !secoesComAnexo.includes('implantacao_laudo_instalador') || (!isPPE && !secoesComAnexo.includes('implantacao_entrega_tecnica'))}
                       >
                         Concluir Implantação (com avaliação)
                       </Button>

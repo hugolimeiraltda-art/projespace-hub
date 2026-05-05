@@ -43,6 +43,7 @@ import {
   AlertTriangle,
   LayoutGrid,
   Table as TableIcon,
+  Phone, HardHat, Settings, DollarSign,
 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';

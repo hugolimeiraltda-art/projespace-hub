@@ -311,6 +311,7 @@ export default function ImplantacaoExecucao() {
       setLocalLaudoTexto(etapasObj.laudo_visita_comercial_texto || '');
       setLocalObsManutencao(etapasObj.observacoes_manutencao || '');
       setLocalObsOnboardingPPE(etapasObj.ppe_observacao_onboarding || '');
+      setLocalObsInstalacaoPPE(etapasObj.ppe_observacao_instalacao || '');
 
       // Load prestadores for PPE installation team selection
       const { data: prestData } = await supabase

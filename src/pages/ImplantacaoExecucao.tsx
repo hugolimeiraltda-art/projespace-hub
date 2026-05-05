@@ -120,11 +120,15 @@ interface ImplantacaoEtapas {
   pagamento_instalacao_deslocamento: number | null;
   pagamento_instalacao_pedagio: number | null;
   pagamento_instalacao_diaria: number | null;
+  pagamento_instalacao_sapata: number | null;
+  pagamento_instalacao_totem: number | null;
   pagamento_instalacao_pontuacao_auferido: number | null;
   pagamento_instalacao_infra_auferido: number | null;
   pagamento_instalacao_deslocamento_auferido: number | null;
   pagamento_instalacao_pedagio_auferido: number | null;
   pagamento_instalacao_diaria_auferido: number | null;
+  pagamento_instalacao_sapata_auferido: number | null;
+  pagamento_instalacao_totem_auferido: number | null;
   pagamento_instalacao_divergencia_justificativa: string | null;
   pagamento_instalacao_conferido: boolean;
   pagamento_instalacao_conferido_at: string | null;

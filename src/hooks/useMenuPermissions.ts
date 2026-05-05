@@ -28,11 +28,17 @@ export const MENU_KEYS = [
   { key: 'implantacao/operacao-assistida', label: 'Operação Assistida', parent: 'implantacao' },
   { key: 'implantacao/pequenas-obras', label: 'Pequenas Obras', parent: 'implantacao' },
   { key: 'implantacao/historico', label: 'Histórico', parent: 'implantacao' },
+  { key: 'implantacao/pagamento-instaladores', label: 'Pgto. Instaladores', parent: 'implantacao' },
+  { key: 'implantacao/orcamento-setor', label: 'Orçamento do Setor', parent: 'implantacao' },
+  { key: 'implantacao/banco-prestadores', label: 'Prestadores', parent: 'implantacao' },
   { key: 'controle-estoque', label: 'Controle de Estoque', parent: null },
   { key: 'manutencao', label: 'Manutenção', parent: null },
   { key: 'manutencao/preventivas', label: 'Agendas Preventivas', parent: 'manutencao' },
   { key: 'manutencao/chamados', label: 'Chamados', parent: 'manutencao' },
   { key: 'manutencao/pendencias', label: 'Controle de Pendências', parent: 'manutencao' },
+  { key: 'manutencao/alertas-noc', label: 'Alertas NOC', parent: 'manutencao' },
+  { key: 'manutencao/tecnicos', label: 'Cadastro de Técnicos', parent: 'manutencao' },
+  { key: 'manutencao/relatorios', label: 'Relatórios', parent: 'manutencao' },
   { key: 'carteira-clientes', label: 'Carteira de Clientes', parent: null },
   { key: 'carteira-clientes-ppe', label: 'Carteira de Clientes PPE', parent: null },
   { key: 'sucesso-cliente', label: 'Sucesso do Cliente', parent: null },
@@ -71,6 +77,9 @@ export function useMenuPermissions() {
   }, [user]);
 
   const getAccess = useCallback((menuKey: string): AccessLevel => {
+    // Admin must always keep complete access to the whole platform.
+    if (user?.role === 'admin') return 'completo';
+
     // User override takes priority
     const override = userOverrides.find(o => o.menu_key === menuKey);
     if (override) return override.access_level;
@@ -79,8 +88,8 @@ export function useMenuPermissions() {
     const rolePerm = rolePerms.find(r => r.menu_key === menuKey);
     if (rolePerm) return rolePerm.access_level;
     
-    // Default: admin, supervisor_operacoes and administrativo get completo, others get nenhum
-    if (user?.role === 'admin' || user?.role === 'supervisor_operacoes' || user?.role === 'administrativo') return 'completo';
+    // Default: supervisor_operacoes and administrativo get completo, others get nenhum
+    if (user?.role === 'supervisor_operacoes' || user?.role === 'administrativo') return 'completo';
     return 'nenhum';
   }, [rolePerms, userOverrides, user]);
 

@@ -67,18 +67,27 @@ export function StartupProjectCardCompact({
   const isAExecutar = status === 'A_EXECUTAR' || !project.implantacao_status;
   const fmt = (d?: string | null) => d ? format(parseISO(d), 'dd/MM/yyyy', { locale: ptBR }) : '—';
 
-  const statusDotClass =
+  const statusBarClass =
     status === 'A_EXECUTAR' ? 'bg-amber-500' :
     status === 'EM_EXECUCAO' ? 'bg-blue-500' : 'bg-green-500';
 
+  const statusBadgeClass =
+    status === 'A_EXECUTAR' ? 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/30' :
+    status === 'EM_EXECUCAO' ? 'bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/30' :
+    'bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/30';
+
   return (
-    <Card className="hover:shadow-sm transition-shadow border-border/60">
-      <CardContent className="p-3 sm:p-4">
+    <Card className="hover:shadow-sm transition-shadow border-border/60 overflow-hidden relative">
+      {/* Vertical status accent bar */}
+      <div className={cn("absolute left-0 top-0 bottom-0 w-1", statusBarClass)} />
+      <CardContent className="p-3 sm:p-4 pl-4 sm:pl-5">
         <div className="flex items-center gap-4">
-          {/* Status dot + identity */}
+          {/* Identity */}
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 min-w-0">
-              <span className={cn("w-2 h-2 rounded-full shrink-0", statusDotClass)} title={STATUS_LABELS[status]} />
+            <div className="flex items-center gap-2 min-w-0 flex-wrap">
+              <Badge className={cn("border text-xs font-semibold px-2.5 py-0.5 shrink-0", statusBadgeClass)}>
+                {STATUS_LABELS[status]}
+              </Badge>
               <span className="text-xs text-muted-foreground font-mono shrink-0">#{project.numero_projeto}</span>
               <h3 className="text-sm font-semibold text-foreground truncate">
                 {project.cliente_condominio_nome}
@@ -90,7 +99,7 @@ export function StartupProjectCardCompact({
                 </Badge>
               )}
             </div>
-            <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-muted-foreground mt-1 pl-4">
+            <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-muted-foreground mt-1">
               <span className="truncate">{project.cliente_cidade}, {project.cliente_estado}</span>
               <span className="flex items-center gap-1 truncate">
                 <User className="w-3 h-3" />
@@ -99,12 +108,8 @@ export function StartupProjectCardCompact({
             </div>
           </div>
 
-          {/* Status + dates block */}
-          <div className="hidden md:grid grid-cols-3 gap-6 text-xs shrink-0">
-            <div>
-              <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Status</div>
-              <div className="font-medium text-foreground mt-0.5">{STATUS_LABELS[status]}</div>
-            </div>
+          {/* Dates block */}
+          <div className="hidden md:grid grid-cols-2 gap-6 text-xs shrink-0">
             <div>
               <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Início</div>
               <div className="font-medium text-foreground mt-0.5 tabular-nums">{fmt(project.implantacao_started_at)}</div>

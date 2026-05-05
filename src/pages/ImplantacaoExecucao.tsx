@@ -1862,6 +1862,92 @@ export default function ImplantacaoExecucao() {
               </CollapsibleTrigger>
               <CollapsibleContent>
                 <CardContent className="pt-0 space-y-1">
+                  {isPPE ? (
+                    <>
+                      {/* 4.1 - Agendar visita de instalação do totem */}
+                      <div className="flex items-center justify-between py-2 px-4 hover:bg-muted/50 rounded-md gap-3 flex-wrap">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <Checkbox
+                            checked={etapas.agendamento_visita_startup}
+                            onCheckedChange={(value) => updateEtapa('agendamento_visita_startup', value, 'agendamento_visita_startup_at')}
+                            disabled={isSaving}
+                          />
+                          <span className={cn("text-sm", etapas.agendamento_visita_startup && "text-muted-foreground line-through")}>
+                            4.1 - Agendar visita de instalação do totem
+                          </span>
+                        </div>
+                        <Input
+                          type="date"
+                          value={etapas.agendamento_visita_startup_data || ''}
+                          onChange={(e) => updateEtapa('agendamento_visita_startup_data', e.target.value)}
+                          className="w-44"
+                        />
+                      </div>
+
+                      {/* 4.2 - Check-list de instalação do totem */}
+                      <div className="flex items-center justify-between py-2 px-4 hover:bg-muted/50 rounded-md gap-3 flex-wrap">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <Checkbox
+                            checked={etapas.laudo_visita_startup}
+                            onCheckedChange={(value) => {
+                              if (value === true && !checklistsExistentes.includes('instalacao_totem')) {
+                                toast({
+                                  title: 'Checklist obrigatório',
+                                  description: 'Preencha o check-list de instalação do totem antes de marcar como concluído.',
+                                  variant: 'destructive',
+                                });
+                                return;
+                              }
+                              updateEtapa('laudo_visita_startup', value, 'laudo_visita_startup_at');
+                            }}
+                            disabled={isSaving}
+                          />
+                          <span className={cn("text-sm", etapas.laudo_visita_startup && "text-muted-foreground line-through")}>
+                            4.2 - Check-list de instalação do totem
+                            {!checklistsExistentes.includes('instalacao_totem') && !etapas.laudo_visita_startup && (
+                              <span className="text-destructive ml-2 text-xs font-medium">(Checklist pendente)</span>
+                            )}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {etapas.laudo_visita_startup_at && (
+                            <span className="text-xs text-muted-foreground">
+                              {format(parseISO(etapas.laudo_visita_startup_at), "dd/MM/yyyy", { locale: ptBR })}
+                            </span>
+                          )}
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => navigate(`/startup-projetos/${id}/checklist/instalacao_totem`)}
+                          >
+                            <ClipboardCheck className="w-4 h-4 mr-1" />
+                            Checklist
+                          </Button>
+                        </div>
+                      </div>
+
+                      {/* 4.3 - Observação */}
+                      <div className="px-4 py-3 space-y-2 border-t border-border">
+                        <span className="text-sm font-medium">4.3 - Observações</span>
+                        <Textarea
+                          placeholder="Insira observações sobre a instalação do totem..."
+                          value={localObsInstalacaoPPE}
+                          onChange={(e) => setLocalObsInstalacaoPPE(e.target.value)}
+                          onBlur={() => {
+                            if (localObsInstalacaoPPE !== (etapas.ppe_observacao_instalacao || '')) {
+                              updateEtapa('ppe_observacao_instalacao', localObsInstalacaoPPE);
+                            }
+                          }}
+                          className="min-h-[80px]"
+                        />
+                      </div>
+                    </>
+                  ) : (
+                    <></>
+                  )}
+                  {!isPPE && (<></>)}
+                  {!isPPE && (<>
+
                   <div className="flex items-center justify-between py-2 px-4 hover:bg-muted/50 rounded-md">
                     <div className="flex items-center gap-3">
                       <Checkbox 

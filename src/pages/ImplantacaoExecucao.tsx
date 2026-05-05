@@ -3000,6 +3000,7 @@ export default function ImplantacaoExecucao() {
               </CollapsibleContent>
             </Collapsible>
           </Card>
+          )}
 
           {!isPPE && (
             <>

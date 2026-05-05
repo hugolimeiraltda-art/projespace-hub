@@ -2780,6 +2780,8 @@ export default function ImplantacaoExecucao() {
                       </div>
                     )}
                   </div>
+                  </>
+                  )}
 
                   {/* 6.2 - Check e laudo de programação */}
                   <div className={cn(

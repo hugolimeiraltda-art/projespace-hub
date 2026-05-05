@@ -56,13 +56,35 @@ export function StartupProjectCardCompact({
   const status = project.implantacao_status || 'A_EXECUTAR';
   const isPPE = project.tipo_implantacao === 'PPE';
 
-  const STEP_KEYS: (keyof ImplantacaoEtapasData)[] = isPPE
-    ? ['contrato_assinado_at', 'ligacao_boas_vindas_at', 'laudo_visita_startup_at', 'check_programacao_at', 'confirmacao_ativacao_financeira_at']
-    : ['contrato_assinado_at', 'ligacao_boas_vindas_at', 'agendamento_visita_startup_at',
-       'laudo_visita_startup_at', 'check_programacao_at', 'confirmacao_ativacao_financeira_at',
-       'operacao_assistida_inicio'];
+  const STEPS_DEF: { key: keyof ImplantacaoEtapasData; label: string }[] = isPPE
+    ? [
+        { key: 'contrato_assinado_at', label: 'Contrato' },
+        { key: 'ligacao_boas_vindas_at', label: 'Boas Vindas' },
+        { key: 'laudo_visita_startup_at', label: 'Instalação do Totem' },
+        { key: 'check_programacao_at', label: 'Programação' },
+        { key: 'confirmacao_ativacao_financeira_at', label: 'Ativação Financeira' },
+      ]
+    : [
+        { key: 'contrato_assinado_at', label: 'Contrato' },
+        { key: 'ligacao_boas_vindas_at', label: 'Onboarding' },
+        { key: 'agendamento_visita_startup_at', label: 'Visita de Startup' },
+        { key: 'laudo_visita_startup_at', label: 'Obra' },
+        { key: 'check_programacao_at', label: 'Programação' },
+        { key: 'confirmacao_ativacao_financeira_at', label: 'Ativação Financeira' },
+        { key: 'operacao_assistida_inicio', label: 'Operação Assistida' },
+      ];
+  const STEP_KEYS = STEPS_DEF.map(s => s.key);
   const completedCount = etapas ? STEP_KEYS.filter(k => etapas[k]).length : 0;
   const progressPct = Math.round((completedCount / STEP_KEYS.length) * 100);
+
+  // Current stage = next pending step. If all done => Concluído. If none done & status A_EXECUTAR => A executar.
+  const isAllDone = etapas ? STEP_KEYS.every(k => etapas[k]) : false;
+  const nextPending = etapas ? STEPS_DEF.find(s => !etapas[s.key]) : undefined;
+  const currentStageLabel = isAllDone
+    ? 'Concluído'
+    : status === 'A_EXECUTAR' || !project.implantacao_status
+      ? 'A executar'
+      : nextPending?.label ?? STEPS_DEF[0].label;
 
   const isAExecutar = status === 'A_EXECUTAR' || !project.implantacao_status;
   const fmt = (d?: string | null) => d ? format(parseISO(d), 'dd/MM/yyyy', { locale: ptBR }) : '—';
@@ -85,8 +107,8 @@ export function StartupProjectCardCompact({
           {/* Identity */}
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 min-w-0 flex-wrap">
-              <Badge className={cn("border text-xs font-semibold px-2.5 py-0.5 shrink-0", statusBadgeClass)}>
-                {STATUS_LABELS[status]}
+              <Badge className={cn("border text-xs font-semibold px-2.5 py-0.5 shrink-0", statusBadgeClass)} title={`Status: ${STATUS_LABELS[status]}`}>
+                {currentStageLabel}
               </Badge>
               <span className="text-xs text-muted-foreground font-mono shrink-0">#{project.numero_projeto}</span>
               <h3 className="text-sm font-semibold text-foreground truncate">

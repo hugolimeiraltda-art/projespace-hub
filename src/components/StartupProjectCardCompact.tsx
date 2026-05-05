@@ -107,8 +107,8 @@ export function StartupProjectCardCompact({
           {/* Identity */}
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 min-w-0 flex-wrap">
-              <Badge className={cn("border text-xs font-semibold px-2.5 py-0.5 shrink-0", statusBadgeClass)}>
-                {STATUS_LABELS[status]}
+              <Badge className={cn("border text-xs font-semibold px-2.5 py-0.5 shrink-0", statusBadgeClass)} title={`Status: ${STATUS_LABELS[status]}`}>
+                {currentStageLabel}
               </Badge>
               <span className="text-xs text-muted-foreground font-mono shrink-0">#{project.numero_projeto}</span>
               <h3 className="text-sm font-semibold text-foreground truncate">

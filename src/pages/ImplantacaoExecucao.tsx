@@ -106,6 +106,10 @@ interface ImplantacaoEtapas {
   data_ativacao_realizada: string | null;
   etapa_atual: number;
   // Step 4.5: Pagamento de Instalação
+  ppe_agendamento_base_data: string | null;
+  ppe_execucao_base_data: string | null;
+  ppe_equipe_prestador_id: string | null;
+  ppe_observacao_onboarding: string | null;
   pagamento_instalacao_pontuacao: number | null;
   pagamento_instalacao_infra: number | null;
   pagamento_instalacao_deslocamento: number | null;

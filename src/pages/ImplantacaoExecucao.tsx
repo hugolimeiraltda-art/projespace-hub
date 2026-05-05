@@ -2744,9 +2744,8 @@ export default function ImplantacaoExecucao() {
                               {nocChamado.integration_message || 'Erro ao abrir chamado. Tente novamente.'}
                             </AlertDescription>
                           </Alert>
-                    )}
-                  </div>
-                  )}
+                        )}
+                      </div>
                     )}
 
                     {/* After success */}

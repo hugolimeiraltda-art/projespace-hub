@@ -118,7 +118,7 @@ export default function EditProject() {
         setInfoAdicionais(tap.info_adicionais || '');
       }
 
-      setExistingAttachments(project.attachments.map(a => ({ tipo: a.tipo, nome: a.nome_arquivo })));
+      setExistingAttachments(project.attachments.map(a => ({ id: a.id, tipo: a.tipo, nome: a.nome_arquivo, url: a.arquivo_url })));
     }
     setIsFormLoading(false);
   }, [id, projects, getProject, contextLoading]);

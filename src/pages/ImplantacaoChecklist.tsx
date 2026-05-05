@@ -127,6 +127,45 @@ const CHECKLIST_CONFIGS: Record<string, { title: string; items: string[] }> = {
       'Backup configurado',
     ],
   },
+  instalacao_totem: {
+    title: 'Check-list de Instalação do Totem',
+    items: [
+      // A — Estrutura Física do Totem
+      'A1 — Totem físico sem avarias visíveis (amassados, arranhões, pintura)',
+      'A2 — Estrutura de fixação e base em perfeito estado',
+      'A3 — Tampa de acesso traseira com fechadura funcional',
+      'A4 — Vidros/acrílicos de proteção sem trincas ou quebras',
+      'A5 — Parafusos e fixações conferidos e apertados',
+      // B — Câmeras
+      'B1 — Câmera 1 — presente, limpa e sem danos físicos',
+      'B2 — Câmera 2 — presente, limpa e sem danos físicos',
+      'B3 — Câmera 3 — presente, limpa e sem danos físicos (se aplicável)',
+      'B4 — Câmera 4 — presente, limpa e sem danos físicos (se aplicável)',
+      'B5 — Lentes das câmeras sem arranhões ou sujeira',
+      'B6 — Suportes e articulações das câmeras ajustados',
+      // C — Servidor / NVR
+      'C1 — HD/SSD instalado conforme especificação do contrato',
+      'C2 — Acesso à plataforma em nuvem testado e funcional',
+      // D — Cabeamento e Acessórios
+      'D1 — Cabos organizados e identificados',
+      'D2 — Cabos de rede (Cat5e/Cat6) testados — sem rompimentos',
+      'D3 — Cabos de alimentação elétrica com aterramento adequado',
+      // E — Aplicativos e Software
+      'E1 — Aplicativo de monitoramento configurado e operante',
+      'E2 — Integração com Secretaria Municipal de Segurança testada',
+      'E3 — Detecção de aglomeração e perambulação funcionando',
+      'E4 — Armazenamento em nuvem configurado e sincronizando',
+      'E5 — Credenciais de acesso do cliente geradas e registradas',
+      'E6 — Software de monitoramento (Studio Emive) instalado e atualizado',
+      'E7 — Backup de configurações realizado antes da entrega',
+      // F — Pendências do Cliente
+      'F1 — Ponto de energia elétrica adequado no local',
+      'F2 — Ponto de rede (internet) disponível no local',
+      'F3 — Responsável do cliente confirmado para receber a entrega',
+      'F4 — Documentação assinada pelo cliente anteriormente (contrato)',
+      'F5 — Pendências anteriores tratadas e registradas',
+    ],
+  },
 };
 
 export default function ImplantacaoChecklist() {

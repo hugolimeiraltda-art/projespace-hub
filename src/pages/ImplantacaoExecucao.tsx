@@ -2015,6 +2015,7 @@ export default function ImplantacaoExecucao() {
                             </div>
                           );
                         })()}
+                        </details>
                       </div>
 
                       {/* 3.9 - Observação */}

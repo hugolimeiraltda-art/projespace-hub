@@ -662,6 +662,100 @@ ${infoAdicionais || 'Não informado'}`;
             </CardContent>
           </Card>
 
+          {/* Anexos */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Anexos</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {existingAttachments.filter(a => !removedAttachmentIds.includes(a.id)).length === 0 && newAttachments.length === 0 && (
+                <p className="text-sm text-muted-foreground italic">Nenhum anexo no projeto.</p>
+              )}
+
+              {existingAttachments.filter(a => !removedAttachmentIds.includes(a.id)).map(att => (
+                <div key={att.id} className="flex items-center gap-3 p-3 rounded-lg border bg-secondary/30">
+                  <FileText className="w-5 h-5 text-primary shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <a href={att.url} target="_blank" rel="noopener noreferrer" className="text-sm font-medium hover:underline truncate block">
+                      {att.nome}
+                    </a>
+                    <p className="text-xs text-muted-foreground">{ATTACHMENT_TYPE_LABELS[att.tipo] || att.tipo}</p>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    type="button"
+                    onClick={() => setRemovedAttachmentIds(prev => [...prev, att.id])}
+                    className="text-muted-foreground hover:text-destructive"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
+              ))}
+
+              {newAttachments.map((att, idx) => (
+                <div key={`new-${idx}`} className="flex items-center gap-3 p-3 rounded-lg border bg-status-approved/5 border-status-approved/30">
+                  <Check className="w-5 h-5 text-status-approved shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{att.nome}</p>
+                    <p className="text-xs text-muted-foreground">{ATTACHMENT_TYPE_LABELS[att.tipo] || att.tipo} • novo</p>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    type="button"
+                    onClick={() => setNewAttachments(prev => prev.filter((_, i) => i !== idx))}
+                    className="text-muted-foreground hover:text-destructive"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
+              ))}
+
+              <div>
+                <Label className="mb-2 block">Adicionar novo anexo</Label>
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <Select value={newAttachmentTipo} onValueChange={(v) => setNewAttachmentTipo(v as AttachmentType)}>
+                    <SelectTrigger className="sm:w-64">
+                      <SelectValue placeholder="Tipo do anexo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {(Object.entries(ATTACHMENT_TYPE_LABELS) as [AttachmentType, string][]).map(([value, label]) => (
+                        <SelectItem key={value} value={value}>{label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <input
+                    id="new-attachment-upload"
+                    type="file"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file && newAttachmentTipo) {
+                        setNewAttachments(prev => [...prev, { tipo: newAttachmentTipo, nome: file.name, file }]);
+                      }
+                      e.target.value = '';
+                    }}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      if (!newAttachmentTipo) {
+                        toast({ title: 'Selecione o tipo do anexo antes de enviar.', variant: 'destructive' });
+                        return;
+                      }
+                      document.getElementById('new-attachment-upload')?.click();
+                    }}
+                  >
+                    <Upload className="w-4 h-4 mr-2" />
+                    Selecionar arquivo
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Actions */}
           <div className="flex justify-end gap-3">
             <Button variant="outline" onClick={() => navigate(-1)} disabled={isSubmitting}>

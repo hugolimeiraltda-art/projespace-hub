@@ -932,6 +932,8 @@ export type Database = {
           ppe_agendamento_base_data: string | null
           ppe_boas_vindas: boolean
           ppe_boas_vindas_at: string | null
+          ppe_confirmar_endereco: boolean
+          ppe_confirmar_endereco_at: string | null
           ppe_confirmar_internet: boolean
           ppe_confirmar_internet_at: string | null
           ppe_confirmar_ponto_eletrico: boolean
@@ -1027,6 +1029,8 @@ export type Database = {
           ppe_agendamento_base_data?: string | null
           ppe_boas_vindas?: boolean
           ppe_boas_vindas_at?: string | null
+          ppe_confirmar_endereco?: boolean
+          ppe_confirmar_endereco_at?: string | null
           ppe_confirmar_internet?: boolean
           ppe_confirmar_internet_at?: string | null
           ppe_confirmar_ponto_eletrico?: boolean
@@ -1122,6 +1126,8 @@ export type Database = {
           ppe_agendamento_base_data?: string | null
           ppe_boas_vindas?: boolean
           ppe_boas_vindas_at?: string | null
+          ppe_confirmar_endereco?: boolean
+          ppe_confirmar_endereco_at?: string | null
           ppe_confirmar_internet?: boolean
           ppe_confirmar_internet_at?: string | null
           ppe_confirmar_ponto_eletrico?: boolean

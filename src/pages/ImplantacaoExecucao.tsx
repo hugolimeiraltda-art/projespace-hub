@@ -122,6 +122,9 @@ interface ImplantacaoEtapas {
   ppe_totem_360_qtd: number;
   ppe_totem_parede_qtd: number;
   ppe_totem_mini_qtd: number;
+  ppe_totem_360_cameras: number;
+  ppe_totem_parede_cameras: number;
+  ppe_totem_mini_cameras: number;
   pagamento_instalacao_pontuacao: number | null;
   pagamento_instalacao_infra: number | null;
   pagamento_instalacao_deslocamento: number | null;

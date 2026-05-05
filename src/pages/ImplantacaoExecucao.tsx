@@ -1749,9 +1749,144 @@ export default function ImplantacaoExecucao() {
                         </Select>
                       </div>
 
-                      {/* 3.4 - Observação */}
+                      {/* 3.5 - Pagamento de Instalação */}
+                      <div className="px-4 py-3 space-y-3 border-t border-border">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <Checkbox
+                              checked={etapas.pagamento_instalacao_conferido}
+                              onCheckedChange={(value) => updateEtapa('pagamento_instalacao_conferido', value, 'pagamento_instalacao_conferido_at')}
+                              disabled={isSaving}
+                            />
+                            <span className={cn("text-sm font-medium", etapas.pagamento_instalacao_conferido && "text-muted-foreground line-through")}>
+                              3.5 - Pagamento de Instalação
+                            </span>
+                            {etapas.pagamento_instalacao_conferido_at && (
+                              <span className="text-xs text-muted-foreground">
+                                {format(parseISO(etapas.pagamento_instalacao_conferido_at), "dd/MM/yyyy", { locale: ptBR })}
+                              </span>
+                            )}
+                          </div>
+                          <DollarSign className="w-4 h-4 text-muted-foreground" />
+                        </div>
+                        <p className="text-xs text-muted-foreground ml-8">
+                          Valores referentes à pontuação liberada, infraestrutura, deslocamento, pedágio e diárias de viagem.
+                        </p>
+                        {(() => {
+                          const pagItems = [
+                            { label: 'Pontuação (equipamentos)', field: 'pagamento_instalacao_pontuacao', fieldAuf: 'pagamento_instalacao_pontuacao_auferido' },
+                            { label: 'Qtd. Infra', field: 'pagamento_instalacao_infra', fieldAuf: 'pagamento_instalacao_infra_auferido' },
+                            { label: 'Qtd. Deslocamento', field: 'pagamento_instalacao_deslocamento', fieldAuf: 'pagamento_instalacao_deslocamento_auferido' },
+                            { label: 'Qtd. Pedágio', field: 'pagamento_instalacao_pedagio', fieldAuf: 'pagamento_instalacao_pedagio_auferido' },
+                            { label: 'Diária de Viagem', field: 'pagamento_instalacao_diaria', fieldAuf: 'pagamento_instalacao_diaria_auferido' },
+                          ];
+                          const hasDivergencia = pagItems.some(item => {
+                            const lib = (etapas as any)[item.field];
+                            const auf = (etapas as any)[item.fieldAuf];
+                            return lib != null && auf != null && lib !== auf;
+                          });
+                          return (
+                            <div className="ml-8 space-y-3">
+                              <div className="overflow-x-auto">
+                                <table className="w-full text-sm border border-border rounded-md">
+                                  <thead>
+                                    <tr className="bg-muted/50">
+                                      <th className="text-left text-xs font-medium p-2 border-b border-border">Item</th>
+                                      <th className="text-center text-xs font-medium p-2 border-b border-border">Liberado</th>
+                                      <th className="text-center text-xs font-medium p-2 border-b border-border">Auferido (Vistoria)</th>
+                                      <th className="text-center text-xs font-medium p-2 border-b border-border w-20">Status</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {pagItems.map((item) => {
+                                      const lib = (etapas as any)[item.field];
+                                      const auf = (etapas as any)[item.fieldAuf];
+                                      const isDivergent = lib != null && auf != null && lib !== auf;
+                                      return (
+                                        <tr key={item.field} className={cn("border-b border-border last:border-b-0", isDivergent && "bg-destructive/10")}>
+                                          <td className="p-2 text-xs font-medium text-muted-foreground">{item.label}</td>
+                                          <td className="p-2">
+                                            <Input
+                                              type="number"
+                                              step="0.01"
+                                              placeholder="0,00"
+                                              className="h-8 text-xs text-center"
+                                              value={lib ?? ''}
+                                              onChange={(e) => {
+                                                const val = e.target.value === '' ? null : Number(e.target.value);
+                                                setEtapas(prev => prev ? { ...prev, [item.field]: val } as ImplantacaoEtapas : null);
+                                              }}
+                                              onBlur={(e) => {
+                                                const val = e.target.value === '' ? null : Number(e.target.value);
+                                                updateEtapa(item.field as any, val);
+                                              }}
+                                            />
+                                          </td>
+                                          <td className="p-2">
+                                            <Input
+                                              type="number"
+                                              step="0.01"
+                                              placeholder="0,00"
+                                              className={cn("h-8 text-xs text-center", isDivergent && "border-destructive")}
+                                              value={auf ?? ''}
+                                              onChange={(e) => {
+                                                const val = e.target.value === '' ? null : Number(e.target.value);
+                                                setEtapas(prev => prev ? { ...prev, [item.fieldAuf]: val } as ImplantacaoEtapas : null);
+                                              }}
+                                              onBlur={(e) => {
+                                                const val = e.target.value === '' ? null : Number(e.target.value);
+                                                updateEtapa(item.fieldAuf as any, val);
+                                              }}
+                                            />
+                                          </td>
+                                          <td className="p-2 text-center">
+                                            {lib != null && auf != null ? (
+                                              isDivergent ? (
+                                                <span className="text-xs font-semibold text-destructive flex items-center justify-center gap-1">
+                                                  <AlertTriangle className="w-3 h-3" /> Divergente
+                                                </span>
+                                              ) : (
+                                                <span className="text-xs font-semibold text-green-600 flex items-center justify-center gap-1">
+                                                  <Check className="w-3 h-3" /> OK
+                                                </span>
+                                              )
+                                            ) : (
+                                              <span className="text-xs text-muted-foreground">—</span>
+                                            )}
+                                          </td>
+                                        </tr>
+                                      );
+                                    })}
+                                  </tbody>
+                                </table>
+                              </div>
+                              {hasDivergencia && (
+                                <div className="p-3 border border-destructive/30 bg-destructive/5 rounded-md space-y-2">
+                                  <div className="flex items-center gap-2">
+                                    <AlertTriangle className="w-4 h-4 text-destructive" />
+                                    <span className="text-xs font-semibold text-destructive">Divergência detectada — justificativa obrigatória</span>
+                                  </div>
+                                  <Textarea
+                                    placeholder="Descreva o motivo da divergência entre o valor liberado e o auferido na vistoria..."
+                                    className="text-xs min-h-[60px]"
+                                    value={etapas.pagamento_instalacao_divergencia_justificativa ?? ''}
+                                    onChange={(e) => {
+                                      setEtapas(prev => prev ? { ...prev, pagamento_instalacao_divergencia_justificativa: e.target.value } as ImplantacaoEtapas : null);
+                                    }}
+                                    onBlur={(e) => {
+                                      updateEtapa('pagamento_instalacao_divergencia_justificativa' as any, e.target.value || null);
+                                    }}
+                                  />
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })()}
+                      </div>
+
+                      {/* 3.6 - Observação */}
                       <div className="px-4 py-3 space-y-2 border-t border-border">
-                        <span className="text-sm font-medium">3.4 - Observações</span>
+                        <span className="text-sm font-medium">3.6 - Observações</span>
                         <Textarea
                           placeholder="Insira observações sobre o onboarding..."
                           value={localObsOnboardingPPE}

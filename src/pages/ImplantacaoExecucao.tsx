@@ -2403,7 +2403,8 @@ export default function ImplantacaoExecucao() {
             </Collapsible>
           </Card>
 
-          {/* Etapa 5: Execução da Obra */}
+          {/* Etapa 5: Execução da Obra (oculta para PPE) */}
+          {!isPPE && (
           <Card>
             <Collapsible open={expandedEtapas.includes(5)} onOpenChange={() => toggleEtapa(5)}>
               <CollapsibleTrigger asChild>
@@ -2459,7 +2460,7 @@ export default function ImplantacaoExecucao() {
               </CollapsibleContent>
             </Collapsible>
           </Card>
-
+          )}
           {/* Etapa 6: Programação e Ativação */}
           <Card>
             <Collapsible open={expandedEtapas.includes(6)} onOpenChange={() => toggleEtapa(6)}>

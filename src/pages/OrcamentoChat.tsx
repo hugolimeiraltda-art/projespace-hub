@@ -853,8 +853,56 @@ export default function OrcamentoChat() {
           <ChatLiveSpreadsheet messages={messages} isStreaming={isLoading} />
         </aside>
       </div>
+    </div>
+  );
+
+  return (
+    <>
+      {user ? <Layout><div className="h-[calc(100vh-0px)] flex flex-col">{chatContent}</div></Layout> : chatContent}
+
+      {/* Project Creation Dialog */}
+      <Dialog open={projetoOpen} onOpenChange={(open) => { if (!open) setProjetoOpen(false); }}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FolderPlus className="w-5 h-5 text-primary" />
+              Criar Projeto a partir da Proposta IA
+            </DialogTitle>
+            <DialogDescription>
+              O projeto será enviado diretamente para o projetista com todos os dados da proposta.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-5 py-2">
+            <div className="space-y-3">
+              <h3 className="text-sm font-semibold text-foreground">Identificação</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Nome do Condomínio *</Label>
+                  <Input value={projNome} onChange={e => setProjNome(e.target.value)} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Endereço</Label>
+                  <Input value={projEndereco} onChange={e => setProjEndereco(e.target.value)} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Cidade *</Label>
+                  <Input value={projCidade} onChange={e => setProjCidade(e.target.value)} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Estado *</Label>
+                  <Select value={projEstado} onValueChange={setProjEstado}>
+                    <SelectTrigger><SelectValue placeholder="UF" /></SelectTrigger>
+                    <SelectContent>
+                      {ESTADOS_BR.map(uf => <SelectItem key={uf} value={uf}>{uf}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </div>
 
             <Separator />
+
 
             <div className="space-y-3">
               <h3 className="text-sm font-semibold text-foreground">Projeto da IA</h3>

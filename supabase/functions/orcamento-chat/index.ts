@@ -308,7 +308,10 @@ Poste exclusivo com até 4 câmeras com vídeo analítico conectadas à Central 
 - **REGRA DE ECLUSA EM PORTAS DE PEDESTRE**: Para eclusas em portas de pedestres, **NÃO é necessário adicionar módulo de intertravamento**, pois os leitores faciais já possuem esse recurso embutido. Avise o vendedor disso.
 - **REGRA DE ECLUSA EM PORTÕES/CANCELAS**: Para eclusas em portões de garagem ou cancelas, **É OBRIGATÓRIO incluir o item "Módulo de Intertravamento"** na proposta. Avise o vendedor que foi incluído automaticamente.
 - Quantas portas de pedestre nos blocos iremos controlar?
-- Para portas dos blocos, também pergunte se terá saída autenticada ou não (mesma lógica de kits acima)
+- **PORTAS DE BLOCO usam SEMPRE o kit dedicado "KIT PORTA PEDESTRE FACIAL P/ BLOCOS"** — NUNCA reutilize os kits de porta de rua (C/ Botoeira ou Saída Autenticada) para portas de bloco.
+- **Composição/escopo do KIT PORTA PEDESTRE FACIAL P/ BLOCOS**: contempla até **30 metros de distância** entre a porta do bloco e o rack central. **NÃO inclui 80m de cabo nem 10m de infraestrutura tubular** — não invente esses valores.
+- Se a distância informada pelo vendedor for **maior que 30 metros**, avise que será necessário incluir cabeamento e/ou infraestrutura tubular adicionais como itens avulsos.
+- Para portas dos blocos, também pergunte se terá saída autenticada ou não (apenas para registro do cenário; o kit é o mesmo "P/ BLOCOS").
 - **FOTOS (PEÇA UMA POR VEZ, por ambiente)**:
   - Para CADA porta de pedestre (ex: "Envie a foto da porta de pedestre 1 por DENTRO"), depois peça "Agora a foto da porta 1 por FORA"
   - Depois passe para a porta 2, e assim por diante

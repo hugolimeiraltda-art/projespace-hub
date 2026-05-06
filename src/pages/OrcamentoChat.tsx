@@ -18,6 +18,7 @@ import { Layout } from '@/components/Layout';
 import PropostaView, { type PropostaData } from '@/components/orcamento/PropostaView';
 import EquipamentosPrecos from '@/components/orcamento/EquipamentosPrecos';
 import PrePropostaModal, { type PrePropostaData } from '@/components/orcamento/PrePropostaModal';
+import ChatLiveSpreadsheet from '@/components/orcamento/ChatLiveSpreadsheet';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -751,95 +752,106 @@ export default function OrcamentoChat() {
         </div>
       </header>
 
-      {/* Messages */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-4 max-w-3xl mx-auto w-full">
-        {messages.map((msg, i) => (
-          <div key={i} className={`flex gap-3 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-            {msg.role === 'assistant' && (
-              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                <Bot className="h-4 w-4 text-primary" />
-              </div>
-            )}
-            <div className={`max-w-[80%] rounded-2xl px-4 py-3 ${
-              msg.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted text-foreground'
-            }`}>
-              {msg.role === 'assistant' ? (
-                <div className="prose prose-sm max-w-none dark:prose-invert [&_p]:my-1 [&_ul]:my-1 [&_ol]:my-1 [&_li]:my-0.5 [&_br]:content-[''] [&_br]:block [&_br]:my-1">
-                  <ReactMarkdown>{msg.content}</ReactMarkdown>
+      {/* Two-column layout: chat (left) + live spreadsheet (right) */}
+      <div className="flex-1 flex flex-col lg:flex-row min-h-0 overflow-hidden">
+        {/* LEFT: Chat column */}
+        <div className="flex-1 flex flex-col min-h-0 lg:max-w-2xl lg:border-r">
+          {/* Messages */}
+          <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-4 w-full">
+            {messages.map((msg, i) => (
+              <div key={i} className={`flex gap-3 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                {msg.role === 'assistant' && (
+                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                    <Bot className="h-4 w-4 text-primary" />
+                  </div>
+                )}
+                <div className={`max-w-[85%] rounded-2xl px-4 py-3 ${
+                  msg.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted text-foreground'
+                }`}>
+                  {msg.role === 'assistant' ? (
+                    <div className="prose prose-sm max-w-none dark:prose-invert [&_p]:my-1 [&_ul]:my-1 [&_ol]:my-1 [&_li]:my-0.5 [&_br]:content-[''] [&_br]:block [&_br]:my-1">
+                      <ReactMarkdown>{msg.content}</ReactMarkdown>
+                    </div>
+                  ) : (
+                    <p className="text-sm">{msg.content}</p>
+                  )}
                 </div>
-              ) : (
-                <p className="text-sm">{msg.content}</p>
-              )}
-            </div>
-            {msg.role === 'user' && (
-              <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center shrink-0">
-                <User className="h-4 w-4 text-secondary-foreground" />
+                {msg.role === 'user' && (
+                  <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center shrink-0">
+                    <User className="h-4 w-4 text-secondary-foreground" />
+                  </div>
+                )}
+              </div>
+            ))}
+            {isLoading && messages[messages.length - 1]?.role !== 'assistant' && (
+              <div className="flex gap-3">
+                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                  <Bot className="h-4 w-4 text-primary" />
+                </div>
+                <div className="bg-muted rounded-2xl px-4 py-3">
+                  <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                </div>
               </div>
             )}
           </div>
-        ))}
-        {isLoading && messages[messages.length - 1]?.role !== 'assistant' && (
-          <div className="flex gap-3">
-            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-              <Bot className="h-4 w-4 text-primary" />
-            </div>
-            <div className="bg-muted rounded-2xl px-4 py-3">
-              <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-            </div>
-          </div>
-        )}
-      </div>
 
-      {/* Equipment List */}
-      {propostaJaGerada && sessaoId && (
-        <EquipamentosPrecos sessaoId={sessaoId} />
-      )}
-
-      {/* Input */}
-      <div className="border-t bg-card p-4 shrink-0">
-      <form
-          className="max-w-3xl mx-auto flex gap-2"
-          action="#"
-          onSubmit={e => { e.preventDefault(); e.stopPropagation(); sendMessage(input); return false; }}
-        >
-          {/* File upload */}
-          {sessaoId && (
-            <>
-              <input
-                ref={fileInputRef}
-                type="file"
-                multiple
-                accept="image/*,video/*,audio/*"
-                className="hidden"
-                onChange={handleFileUpload}
-              />
-              <Button
-                type="button"
-                variant="outline"
-                size="icon"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={isLoading || uploading}
-                title="Enviar foto, vídeo ou áudio"
-              >
-                {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Paperclip className="h-4 w-4" />}
-              </Button>
-            </>
+          {/* Equipment List (after proposal generated) */}
+          {propostaJaGerada && sessaoId && (
+            <EquipamentosPrecos sessaoId={sessaoId} />
           )}
-          <Button type="button" variant={isRecording ? "destructive" : "outline"} size="icon" onClick={toggleRecording} disabled={isLoading}>
-            {isRecording ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
-          </Button>
-          <Input
-            ref={inputRef}
-            value={input}
-            onChange={e => setInput(e.target.value)}
-            placeholder={isRecording ? "Ouvindo..." : "Digite sua mensagem..."}
-            disabled={isLoading}
-            className="flex-1"
-          />
-          <Button type="submit" disabled={isLoading || !input.trim()}>
-            <Send className="h-4 w-4" />
-          </Button>
-        </form>
+
+          {/* Input */}
+          <div className="border-t bg-card p-4 shrink-0">
+            <form
+              className="flex gap-2"
+              action="#"
+              onSubmit={e => { e.preventDefault(); e.stopPropagation(); sendMessage(input); return false; }}
+            >
+              {/* File upload */}
+              {sessaoId && (
+                <>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    multiple
+                    accept="image/*,video/*,audio/*"
+                    className="hidden"
+                    onChange={handleFileUpload}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isLoading || uploading}
+                    title="Enviar foto, vídeo ou áudio"
+                  >
+                    {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Paperclip className="h-4 w-4" />}
+                  </Button>
+                </>
+              )}
+              <Button type="button" variant={isRecording ? "destructive" : "outline"} size="icon" onClick={toggleRecording} disabled={isLoading}>
+                {isRecording ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+              </Button>
+              <Input
+                ref={inputRef}
+                value={input}
+                onChange={e => setInput(e.target.value)}
+                placeholder={isRecording ? "Ouvindo..." : "Digite sua mensagem..."}
+                disabled={isLoading}
+                className="flex-1"
+              />
+              <Button type="submit" disabled={isLoading || !input.trim()}>
+                <Send className="h-4 w-4" />
+              </Button>
+            </form>
+          </div>
+        </div>
+
+        {/* RIGHT: Live spreadsheet (desktop only) */}
+        <aside className="hidden lg:flex flex-1 flex-col min-h-0 bg-muted/30 p-4 overflow-hidden">
+          <ChatLiveSpreadsheet messages={messages} isStreaming={isLoading} />
+        </aside>
       </div>
     </div>
   );
@@ -890,6 +902,7 @@ export default function OrcamentoChat() {
             </div>
 
             <Separator />
+
 
             <div className="space-y-3">
               <h3 className="text-sm font-semibold text-foreground">Projeto da IA</h3>

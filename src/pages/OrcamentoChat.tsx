@@ -18,6 +18,7 @@ import { Layout } from '@/components/Layout';
 import PropostaView, { type PropostaData } from '@/components/orcamento/PropostaView';
 import EquipamentosPrecos from '@/components/orcamento/EquipamentosPrecos';
 import PrePropostaModal, { type PrePropostaData } from '@/components/orcamento/PrePropostaModal';
+import ChatLiveSpreadsheet from '@/components/orcamento/ChatLiveSpreadsheet';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 

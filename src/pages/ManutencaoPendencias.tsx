@@ -832,75 +832,61 @@ export default function ManutencaoPendencias() {
         </div>
 
         {/* Dashboard Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        <div className="grid grid-cols-3 md:grid-cols-6 gap-2">
           <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                <Clock className="h-4 w-4 text-yellow-500" />
-                Abertas
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-yellow-600">{abertas}</div>
+            <CardContent className="p-3 flex items-center gap-2">
+              <Clock className="h-4 w-4 text-yellow-500 shrink-0" />
+              <div className="min-w-0">
+                <div className="text-[11px] text-muted-foreground leading-tight">Abertas</div>
+                <div className="text-lg font-bold text-yellow-600 leading-tight">{abertas}</div>
+              </div>
             </CardContent>
           </Card>
           <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                <Wrench className="h-4 w-4 text-blue-500" />
-                Em Andamento
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-blue-600">{emAndamento}</div>
+            <CardContent className="p-3 flex items-center gap-2">
+              <Wrench className="h-4 w-4 text-blue-500 shrink-0" />
+              <div className="min-w-0">
+                <div className="text-[11px] text-muted-foreground leading-tight">Em Andamento</div>
+                <div className="text-lg font-bold text-blue-600 leading-tight">{emAndamento}</div>
+              </div>
             </CardContent>
           </Card>
           <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                <CheckCircle className="h-4 w-4 text-green-500" />
-                Concluídas
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-green-600">{concluidas}</div>
+            <CardContent className="p-3 flex items-center gap-2">
+              <CheckCircle className="h-4 w-4 text-green-500 shrink-0" />
+              <div className="min-w-0">
+                <div className="text-[11px] text-muted-foreground leading-tight">Concluídas</div>
+                <div className="text-lg font-bold text-green-600 leading-tight">{concluidas}</div>
+              </div>
             </CardContent>
           </Card>
           <Card className={atrasadas > 0 ? 'border-red-300 bg-red-50 dark:bg-red-950/20' : ''}>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                <AlertTriangle className="h-4 w-4 text-red-500" />
-                Atrasadas
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-red-600">{atrasadas}</div>
+            <CardContent className="p-3 flex items-center gap-2">
+              <AlertTriangle className="h-4 w-4 text-red-500 shrink-0" />
+              <div className="min-w-0">
+                <div className="text-[11px] text-muted-foreground leading-tight">Atrasadas</div>
+                <div className="text-lg font-bold text-red-600 leading-tight">{atrasadas}</div>
+              </div>
             </CardContent>
           </Card>
           <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                <Timer className="h-4 w-4 text-purple-500" />
-                Tempo Médio
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-purple-600">
-                {tempoMedioConclusao !== null ? `${tempoMedioConclusao}d` : '-'}
+            <CardContent className="p-3 flex items-center gap-2">
+              <Timer className="h-4 w-4 text-purple-500 shrink-0" />
+              <div className="min-w-0">
+                <div className="text-[11px] text-muted-foreground leading-tight">Tempo Médio</div>
+                <div className="text-lg font-bold text-purple-600 leading-tight">
+                  {tempoMedioConclusao !== null ? `${tempoMedioConclusao}d` : '-'}
+                </div>
               </div>
-              <p className="text-xs text-muted-foreground">dias para conclusão</p>
             </CardContent>
           </Card>
           <Card className={pendenciasCriticas > 0 ? 'border-orange-300 bg-orange-50 dark:bg-orange-950/20' : ''}>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                <CalendarClock className="h-4 w-4 text-orange-500" />
-                Críticas (24h)
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-orange-600">{pendenciasCriticas}</div>
-              <p className="text-xs text-muted-foreground">vencidas ou a vencer</p>
+            <CardContent className="p-3 flex items-center gap-2">
+              <CalendarClock className="h-4 w-4 text-orange-500 shrink-0" />
+              <div className="min-w-0">
+                <div className="text-[11px] text-muted-foreground leading-tight">Críticas 24h</div>
+                <div className="text-lg font-bold text-orange-600 leading-tight">{pendenciasCriticas}</div>
+              </div>
             </CardContent>
           </Card>
         </div>

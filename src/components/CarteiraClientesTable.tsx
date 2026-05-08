@@ -204,6 +204,15 @@ export function CarteiraClientesTable({ customers, onDelete, basePath = '/cartei
   const filteredAndSortedCustomers = useMemo(() => {
     let result = [...customers];
 
+    // Global search across key fields
+    if (globalSearch.trim()) {
+      const q = globalSearch.toLowerCase();
+      result = result.filter((c) =>
+        [c.contrato, c.alarme_codigo, c.razao_social, c.filial, c.tipo]
+          .some((v) => (v || '').toString().toLowerCase().includes(q))
+      );
+    }
+
     // Apply filters
     columnFilters.forEach((filter) => {
       result = result.filter((c) => {

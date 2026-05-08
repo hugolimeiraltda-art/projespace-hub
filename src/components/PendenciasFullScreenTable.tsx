@@ -451,16 +451,17 @@ export function PendenciasFullScreenTable({
         <Table>
           <TableHeader className="sticky top-0 bg-muted/50 backdrop-blur-sm">
             <TableRow>
-              <TableHead className="min-w-[100px]">{renderColumnHeader('numero_os', 'Nº OS')}</TableHead>
-              <TableHead className="min-w-[100px]">{renderColumnHeader('numero_ticket', 'Ticket')}</TableHead>
-              <TableHead className="min-w-[200px]">{renderColumnHeader('razao_social', 'Cliente')}</TableHead>
-              <TableHead className="min-w-[100px]">{renderColumnHeader('contrato', 'Contrato')}</TableHead>
-              <TableHead className="min-w-[150px]">{renderColumnHeader('tipo', 'Tipo')}</TableHead>
-              <TableHead className="min-w-[120px]">{renderColumnHeader('setor', 'Setor')}</TableHead>
-              <TableHead className="min-w-[120px]">{renderColumnHeader('status', 'Status')}</TableHead>
-              <TableHead className="min-w-[150px]">{renderColumnHeader('data_prazo', 'Prazo', false)}</TableHead>
-              <TableHead className="min-w-[100px]">{renderColumnHeader('data_abertura', 'Abertura', false)}</TableHead>
-              <TableHead className="min-w-[200px]">Ações</TableHead>
+              {isVisible('numero_os') && <TableHead className="min-w-[100px]">{renderColumnHeader('numero_os', 'Nº OS')}</TableHead>}
+              {isVisible('numero_ticket') && <TableHead className="min-w-[100px]">{renderColumnHeader('numero_ticket', 'Ticket')}</TableHead>}
+              {isVisible('razao_social') && <TableHead className="min-w-[200px]">{renderColumnHeader('razao_social', 'Cliente')}</TableHead>}
+              {isVisible('contrato') && <TableHead className="min-w-[100px]">{renderColumnHeader('contrato', 'Contrato')}</TableHead>}
+              {isVisible('tipo') && <TableHead className="min-w-[150px]">{renderColumnHeader('tipo', 'Tipo')}</TableHead>}
+              {isVisible('setor') && <TableHead className="min-w-[120px]">{renderColumnHeader('setor', 'Setor')}</TableHead>}
+              {isVisible('status') && <TableHead className="min-w-[120px]">{renderColumnHeader('status', 'Status')}</TableHead>}
+              {isVisible('data_prazo') && <TableHead className="min-w-[150px]">{renderColumnHeader('data_prazo', 'Prazo', false)}</TableHead>}
+              {isVisible('data_abertura') && <TableHead className="min-w-[100px]">{renderColumnHeader('data_abertura', 'Abertura', false)}</TableHead>}
+              {isVisible('aberto_por') && <TableHead className="min-w-[140px]">Aberto por</TableHead>}
+              {isVisible('acoes') && <TableHead className="min-w-[200px]">Ações</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>

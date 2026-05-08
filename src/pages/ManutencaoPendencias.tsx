@@ -953,7 +953,32 @@ export default function ManutencaoPendencias() {
         {/* Table */}
         <Card>
           <CardHeader>
-            <CardTitle>Pendências ({filteredPendencias.length})</CardTitle>
+            <div className="flex items-center justify-between gap-2 flex-wrap">
+              <CardTitle>Pendências ({filteredPendencias.length})</CardTitle>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    <Columns3 className="h-4 w-4 mr-1" />
+                    Colunas
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  {ALL_COLUMNS.map((c) => (
+                    <DropdownMenuItem
+                      key={c.key}
+                      onSelect={(e) => {
+                        e.preventDefault();
+                        setVisibleCols((prev) => ({ ...prev, [c.key]: !prev[c.key] }));
+                      }}
+                      className="flex items-center gap-2 cursor-pointer"
+                    >
+                      <Checkbox checked={visibleCols[c.key]} />
+                      <span>{c.label}</span>
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </CardHeader>
           <CardContent>
             {loading ? (

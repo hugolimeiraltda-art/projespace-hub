@@ -234,12 +234,22 @@ export default function CarteiraClientes({ tipoCarteira = 'PCI' }: CarteiraClien
         faciais_outros: parseInt(form.faciais_outros) || 0,
       };
 
+      console.log('[CarteiraClientes] Salvando cliente', {
+        tipoCarteira,
+        dataTable,
+        contrato: form.contrato,
+        razao_social: form.razao_social,
+      });
+
       const { error } = await supabase
         .from(dataTable as any)
         .insert(payload as any);
 
       if (error) throw error;
-      toast({ title: 'Cliente cadastrado!', description: 'O novo cliente foi adicionado à carteira.' });
+      toast({
+        title: `Cliente cadastrado em ${tipoCarteira}!`,
+        description: `Gravado na tabela ${dataTable}.`,
+      });
 
       setDialogOpen(false);
       fetchCustomers();
@@ -364,7 +374,18 @@ export default function CarteiraClientes({ tipoCarteira = 'PCI' }: CarteiraClien
       <div className="p-6">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">{pageTitle}</h1>
+            <div className="flex items-center gap-3">
+              <h1 className="text-2xl font-bold text-foreground">{pageTitle}</h1>
+              <span
+                className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${
+                  tipoCarteira === 'PPE'
+                    ? 'bg-blue-100 text-blue-800 border border-blue-300'
+                    : 'bg-orange-100 text-orange-800 border border-orange-300'
+                }`}
+              >
+                Carteira {tipoCarteira} · {dataTable}
+              </span>
+            </div>
             <p className="text-muted-foreground">Gerencie a carteira de clientes ativos {tipoCarteira}</p>
           </div>
           {canCreate && (

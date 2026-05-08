@@ -14,7 +14,8 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { useManutencaoExport } from '@/hooks/useManutencaoExport';
-import { Plus, AlertTriangle, Clock, CheckCircle, Wrench, Search, Eye, FileText, Download, Timer, CalendarClock, FileSpreadsheet, MessageSquare, Send, Trash2, Pencil, List } from 'lucide-react';
+import { Plus, AlertTriangle, Clock, CheckCircle, Wrench, Search, Eye, FileText, Download, Timer, CalendarClock, FileSpreadsheet, MessageSquare, Send, Trash2, Pencil, List, Columns3 } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { format, differenceInDays, addDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -115,6 +116,26 @@ export default function ManutencaoPendencias() {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
   const [pendenciaToEdit, setPendenciaToEdit] = useState<Pendencia | null>(null);
+  const ALL_COLUMNS = [
+    { key: 'numero_os', label: 'Nº OS' },
+    { key: 'numero_ticket', label: 'Ticket' },
+    { key: 'razao_social', label: 'Cliente' },
+    { key: 'contrato', label: 'Contrato' },
+    { key: 'tipo', label: 'Tipo' },
+    { key: 'setor', label: 'Setor' },
+    { key: 'status', label: 'Status' },
+    { key: 'prazo', label: 'Prazo' },
+    { key: 'abertura', label: 'Abertura' },
+    { key: 'aberto_por', label: 'Aberto por' },
+    { key: 'acoes', label: 'Ações' },
+  ] as const;
+  type ColKey = typeof ALL_COLUMNS[number]['key'];
+  const [visibleCols, setVisibleCols] = useState<Record<ColKey, boolean>>({
+    numero_os: true, numero_ticket: true, razao_social: true, contrato: true,
+    tipo: true, setor: true, status: true, prazo: true, abertura: true,
+    aberto_por: true, acoes: true,
+  });
+  const isVisible = (k: ColKey) => visibleCols[k];
   const [editFormData, setEditFormData] = useState({
     numero_os: '',
     numero_ticket: '',
@@ -932,7 +953,32 @@ export default function ManutencaoPendencias() {
         {/* Table */}
         <Card>
           <CardHeader>
-            <CardTitle>Pendências ({filteredPendencias.length})</CardTitle>
+            <div className="flex items-center justify-between gap-2 flex-wrap">
+              <CardTitle>Pendências ({filteredPendencias.length})</CardTitle>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    <Columns3 className="h-4 w-4 mr-1" />
+                    Colunas
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  {ALL_COLUMNS.map((c) => (
+                    <DropdownMenuItem
+                      key={c.key}
+                      onSelect={(e) => {
+                        e.preventDefault();
+                        setVisibleCols((prev) => ({ ...prev, [c.key]: !prev[c.key] }));
+                      }}
+                      className="flex items-center gap-2 cursor-pointer"
+                    >
+                      <Checkbox checked={visibleCols[c.key]} />
+                      <span>{c.label}</span>
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </CardHeader>
           <CardContent>
             {loading ? (
@@ -948,117 +994,133 @@ export default function ManutencaoPendencias() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Nº OS</TableHead>
-                      <TableHead>Ticket</TableHead>
-                      <TableHead>Cliente</TableHead>
-                      <TableHead>Contrato</TableHead>
-                      <TableHead>Tipo</TableHead>
-                      <TableHead>Setor</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Prazo</TableHead>
-                      <TableHead>Abertura</TableHead>
-                      <TableHead>Ações</TableHead>
+                      {isVisible('numero_os') && <TableHead>Nº OS</TableHead>}
+                      {isVisible('numero_ticket') && <TableHead>Ticket</TableHead>}
+                      {isVisible('razao_social') && <TableHead>Cliente</TableHead>}
+                      {isVisible('contrato') && <TableHead>Contrato</TableHead>}
+                      {isVisible('tipo') && <TableHead>Tipo</TableHead>}
+                      {isVisible('setor') && <TableHead>Setor</TableHead>}
+                      {isVisible('status') && <TableHead>Status</TableHead>}
+                      {isVisible('prazo') && <TableHead>Prazo</TableHead>}
+                      {isVisible('abertura') && <TableHead>Abertura</TableHead>}
+                      {isVisible('aberto_por') && <TableHead>Aberto por</TableHead>}
+                      {isVisible('acoes') && <TableHead>Ações</TableHead>}
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {filteredPendencias.map((pendencia) => (
                       <TableRow key={pendencia.id}>
-                        <TableCell className="font-medium">{pendencia.numero_os}</TableCell>
-                        <TableCell>{pendencia.numero_ticket || '-'}</TableCell>
-                        <TableCell className="max-w-[200px] truncate" title={pendencia.razao_social}>
-                          {pendencia.razao_social}
-                        </TableCell>
-                        <TableCell>{pendencia.contrato}</TableCell>
-                        <TableCell>{getTipoLabel(pendencia.tipo)}</TableCell>
-                        <TableCell>
-                          {pendencia.status !== 'CONCLUIDO' && pendencia.status !== 'CANCELADO' ? (
-                            <Select
-                              value={pendencia.setor}
-                              onValueChange={(value) => handleSetorChange(pendencia.id, value)}
-                            >
-                              <SelectTrigger className="w-[140px] h-8">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {SETOR_OPTIONS.map((setor) => (
-                                  <SelectItem key={setor} value={setor}>
-                                    {setor}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          ) : (
-                            pendencia.setor
-                          )}
-                        </TableCell>
-                        <TableCell>{getStatusBadge(pendencia.status)}</TableCell>
-                        <TableCell>
-                          <div className="flex flex-col gap-1">
-                            <span className="text-xs text-muted-foreground">
-                              {format(new Date(pendencia.data_prazo), 'dd/MM/yyyy', { locale: ptBR })}
-                            </span>
-                            {getPrazoBadge(pendencia)}
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-xs text-muted-foreground">
-                          {format(new Date(pendencia.data_abertura), 'dd/MM/yyyy', { locale: ptBR })}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-1 flex-wrap">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => openDetailsDialog(pendencia)}
-                              title="Ver Detalhes"
-                            >
-                              <Eye className="h-3 w-3" />
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => openEditDialog(pendencia)}
-                              title="Editar"
-                            >
-                              <Pencil className="h-3 w-3" />
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => openComentarios(pendencia)}
-                              title="Comentários"
-                            >
-                              <MessageSquare className="h-3 w-3" />
-                            </Button>
-                            {pendencia.status !== 'CONCLUIDO' && pendencia.status !== 'CANCELADO' && (
+                        {isVisible('numero_os') && <TableCell className="font-medium">{pendencia.numero_os}</TableCell>}
+                        {isVisible('numero_ticket') && <TableCell>{pendencia.numero_ticket || '-'}</TableCell>}
+                        {isVisible('razao_social') && (
+                          <TableCell className="max-w-[200px] truncate" title={pendencia.razao_social}>
+                            {pendencia.razao_social}
+                          </TableCell>
+                        )}
+                        {isVisible('contrato') && <TableCell>{pendencia.contrato}</TableCell>}
+                        {isVisible('tipo') && <TableCell>{getTipoLabel(pendencia.tipo)}</TableCell>}
+                        {isVisible('setor') && (
+                          <TableCell>
+                            {pendencia.status !== 'CONCLUIDO' && pendencia.status !== 'CANCELADO' ? (
                               <Select
-                                value={pendencia.status}
-                                onValueChange={(value) => handleStatusChange(pendencia.id, value)}
+                                value={pendencia.setor}
+                                onValueChange={(value) => handleSetorChange(pendencia.id, value)}
                               >
-                                <SelectTrigger className="w-[120px] h-8">
+                                <SelectTrigger className="w-[140px] h-8">
                                   <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
-                                  {STATUS_OPTIONS.map((status) => (
-                                    <SelectItem key={status.value} value={status.value}>
-                                      {status.label}
+                                  {SETOR_OPTIONS.map((setor) => (
+                                    <SelectItem key={setor} value={setor}>
+                                      {setor}
                                     </SelectItem>
                                   ))}
                                 </SelectContent>
                               </Select>
+                            ) : (
+                              pendencia.setor
                             )}
-                            {user?.role === 'admin' && (
+                          </TableCell>
+                        )}
+                        {isVisible('status') && <TableCell>{getStatusBadge(pendencia.status)}</TableCell>}
+                        {isVisible('prazo') && (
+                          <TableCell>
+                            <div className="flex flex-col gap-1">
+                              <span className="text-xs text-muted-foreground">
+                                {format(new Date(pendencia.data_prazo), 'dd/MM/yyyy', { locale: ptBR })}
+                              </span>
+                              {getPrazoBadge(pendencia)}
+                            </div>
+                          </TableCell>
+                        )}
+                        {isVisible('abertura') && (
+                          <TableCell className="text-xs text-muted-foreground">
+                            {format(new Date(pendencia.data_abertura), 'dd/MM/yyyy', { locale: ptBR })}
+                          </TableCell>
+                        )}
+                        {isVisible('aberto_por') && (
+                          <TableCell className="text-xs">
+                            {pendencia.created_by_name || '-'}
+                          </TableCell>
+                        )}
+                        {isVisible('acoes') && (
+                          <TableCell>
+                            <div className="flex items-center gap-1 flex-wrap">
                               <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={() => openDeleteDialog(pendencia)}
-                                className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                                title="Excluir"
+                                onClick={() => openDetailsDialog(pendencia)}
+                                title="Ver Detalhes"
                               >
-                                <Trash2 className="h-3 w-3" />
+                                <Eye className="h-3 w-3" />
                               </Button>
-                            )}
-                          </div>
-                        </TableCell>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => openEditDialog(pendencia)}
+                                title="Editar"
+                              >
+                                <Pencil className="h-3 w-3" />
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => openComentarios(pendencia)}
+                                title="Comentários"
+                              >
+                                <MessageSquare className="h-3 w-3" />
+                              </Button>
+                              {pendencia.status !== 'CONCLUIDO' && pendencia.status !== 'CANCELADO' && (
+                                <Select
+                                  value={pendencia.status}
+                                  onValueChange={(value) => handleStatusChange(pendencia.id, value)}
+                                >
+                                  <SelectTrigger className="w-[120px] h-8">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {STATUS_OPTIONS.map((status) => (
+                                      <SelectItem key={status.value} value={status.value}>
+                                        {status.label}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              )}
+                              {user?.role === 'admin' && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => openDeleteDialog(pendencia)}
+                                  className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                                  title="Excluir"
+                                >
+                                  <Trash2 className="h-3 w-3" />
+                                </Button>
+                              )}
+                            </div>
+                          </TableCell>
+                        )}
                       </TableRow>
                     ))}
                   </TableBody>

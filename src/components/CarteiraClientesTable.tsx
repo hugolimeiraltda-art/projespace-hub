@@ -306,7 +306,7 @@ export function CarteiraClientesTable({ customers, onDelete, basePath = '/cartei
     }
 
     return result;
-  }, [customers, columnFilters, sortConfig]);
+  }, [customers, columnFilters, sortConfig, globalSearch]);
 
   const renderColumnHeader = (column: string, label: string, align: 'left' | 'right' = 'left') => {
     const hasActiveFilter = hasFilter(column);

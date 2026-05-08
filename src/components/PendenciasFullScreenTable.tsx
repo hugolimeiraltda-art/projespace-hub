@@ -577,6 +577,7 @@ export function PendenciasFullScreenTable({
                       )}
                     </div>
                   </TableCell>
+                  )}
                 </TableRow>
               ))
             )}

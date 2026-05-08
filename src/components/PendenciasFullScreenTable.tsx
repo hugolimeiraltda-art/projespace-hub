@@ -526,6 +526,7 @@ export function PendenciasFullScreenTable({
                     <TableCell className="text-xs">{pendencia.created_by_name || '-'}</TableCell>
                   )}
                   {isVisible('acoes') && (
+                    <TableCell>
                     <div className="flex items-center gap-1 flex-wrap">
                       {onViewDetails && (
                         <Button

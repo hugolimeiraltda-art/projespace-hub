@@ -895,7 +895,7 @@ export default function ManutencaoPendencias() {
         <Card>
           <CardContent className="pt-6">
             <div className="flex flex-wrap gap-4">
-
+              <Select value={filterStatus} onValueChange={setFilterStatus}>
                 <SelectTrigger className="w-[180px]">
                   <SelectValue placeholder="Filtrar por status" />
                 </SelectTrigger>
@@ -924,6 +924,20 @@ export default function ManutencaoPendencias() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Table */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-end gap-2 flex-wrap">
+              <div className="relative flex-1 min-w-[240px] max-w-md">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Buscar por OS, cliente, contrato ou ticket..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 h-9"
+                />
+              </div>
 
         {/* Table */}
         <Card>

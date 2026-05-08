@@ -474,47 +474,58 @@ export function PendenciasFullScreenTable({
             ) : (
               filteredAndSortedPendencias.map((pendencia) => (
                 <TableRow key={pendencia.id}>
-                  <TableCell className="font-medium">{pendencia.numero_os}</TableCell>
-                  <TableCell>{pendencia.numero_ticket || '-'}</TableCell>
-                  <TableCell className="max-w-[200px] truncate" title={pendencia.razao_social}>
-                    {pendencia.razao_social}
-                  </TableCell>
-                  <TableCell>{pendencia.contrato}</TableCell>
-                  <TableCell>{getTipoLabel(pendencia.tipo)}</TableCell>
-                  <TableCell>
-                    {pendencia.status !== 'CONCLUIDO' && pendencia.status !== 'CANCELADO' && onSetorChange ? (
-                      <Select
-                        value={pendencia.setor}
-                        onValueChange={(value) => onSetorChange(pendencia.id, value)}
-                      >
-                        <SelectTrigger className="w-[140px] h-8">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {setorOptions.map((setor) => (
-                            <SelectItem key={setor} value={setor}>
-                              {setor}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    ) : (
-                      pendencia.setor
-                    )}
-                  </TableCell>
-                  <TableCell>{getStatusBadge(pendencia.status)}</TableCell>
-                  <TableCell>
-                    <div className="flex flex-col gap-1">
-                      <span className="text-xs text-muted-foreground">
-                        {format(new Date(pendencia.data_prazo), 'dd/MM/yyyy', { locale: ptBR })}
-                      </span>
-                      {getPrazoBadge(pendencia)}
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-xs text-muted-foreground">
-                    {format(new Date(pendencia.data_abertura), 'dd/MM/yyyy', { locale: ptBR })}
-                  </TableCell>
-                  <TableCell>
+                  {isVisible('numero_os') && <TableCell className="font-medium">{pendencia.numero_os}</TableCell>}
+                  {isVisible('numero_ticket') && <TableCell>{pendencia.numero_ticket || '-'}</TableCell>}
+                  {isVisible('razao_social') && (
+                    <TableCell className="max-w-[200px] truncate" title={pendencia.razao_social}>
+                      {pendencia.razao_social}
+                    </TableCell>
+                  )}
+                  {isVisible('contrato') && <TableCell>{pendencia.contrato}</TableCell>}
+                  {isVisible('tipo') && <TableCell>{getTipoLabel(pendencia.tipo)}</TableCell>}
+                  {isVisible('setor') && (
+                    <TableCell>
+                      {pendencia.status !== 'CONCLUIDO' && pendencia.status !== 'CANCELADO' && onSetorChange ? (
+                        <Select
+                          value={pendencia.setor}
+                          onValueChange={(value) => onSetorChange(pendencia.id, value)}
+                        >
+                          <SelectTrigger className="w-[140px] h-8">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {setorOptions.map((setor) => (
+                              <SelectItem key={setor} value={setor}>
+                                {setor}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        pendencia.setor
+                      )}
+                    </TableCell>
+                  )}
+                  {isVisible('status') && <TableCell>{getStatusBadge(pendencia.status)}</TableCell>}
+                  {isVisible('data_prazo') && (
+                    <TableCell>
+                      <div className="flex flex-col gap-1">
+                        <span className="text-xs text-muted-foreground">
+                          {format(new Date(pendencia.data_prazo), 'dd/MM/yyyy', { locale: ptBR })}
+                        </span>
+                        {getPrazoBadge(pendencia)}
+                      </div>
+                    </TableCell>
+                  )}
+                  {isVisible('data_abertura') && (
+                    <TableCell className="text-xs text-muted-foreground">
+                      {format(new Date(pendencia.data_abertura), 'dd/MM/yyyy', { locale: ptBR })}
+                    </TableCell>
+                  )}
+                  {isVisible('aberto_por') && (
+                    <TableCell className="text-xs">{pendencia.created_by_name || '-'}</TableCell>
+                  )}
+                  {isVisible('acoes') && (
                     <div className="flex items-center gap-1 flex-wrap">
                       {onViewDetails && (
                         <Button

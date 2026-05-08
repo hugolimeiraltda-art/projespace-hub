@@ -90,6 +90,28 @@ export function PendenciasFullScreenTable({
   const [sortConfig, setSortConfig] = useState<SortConfig>({ column: '', direction: null });
   const [activeFilterColumn, setActiveFilterColumn] = useState<string | null>(null);
 
+  const ALL_COLUMNS = [
+    { key: 'numero_os', label: 'Nº OS' },
+    { key: 'numero_ticket', label: 'Ticket' },
+    { key: 'razao_social', label: 'Cliente' },
+    { key: 'contrato', label: 'Contrato' },
+    { key: 'tipo', label: 'Tipo' },
+    { key: 'setor', label: 'Setor' },
+    { key: 'status', label: 'Status' },
+    { key: 'data_prazo', label: 'Prazo' },
+    { key: 'data_abertura', label: 'Abertura' },
+    { key: 'aberto_por', label: 'Aberto por' },
+    { key: 'acoes', label: 'Ações' },
+  ] as const;
+  type ColKey = typeof ALL_COLUMNS[number]['key'];
+  const [visibleCols, setVisibleCols] = useState<Record<ColKey, boolean>>({
+    numero_os: true, numero_ticket: true, razao_social: true, contrato: true,
+    tipo: true, setor: true, status: true, data_prazo: true, data_abertura: true,
+    aberto_por: true, acoes: true,
+  });
+  const isVisible = (k: ColKey) => visibleCols[k];
+  const toggleCol = (k: ColKey) => setVisibleCols((p) => ({ ...p, [k]: !p[k] }));
+
   // Get unique values for each column
   const getUniqueValues = (column: string) => {
     const values = pendencias.map((p) => {

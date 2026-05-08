@@ -123,6 +123,9 @@ export function PendenciasFullScreenTable({
         case 'tipo': return getTipoLabel(p.tipo);
         case 'setor': return p.setor;
         case 'status': return p.status;
+        case 'data_prazo': return p.data_prazo ? format(new Date(p.data_prazo), 'dd/MM/yyyy') : '';
+        case 'data_abertura': return p.data_abertura ? format(new Date(p.data_abertura), 'dd/MM/yyyy') : '';
+        case 'aberto_por': return p.created_by_name || '-';
         default: return '';
       }
     });
@@ -196,6 +199,9 @@ export function PendenciasFullScreenTable({
           case 'tipo': return getTipoLabel(p.tipo).toLowerCase().includes(filter.value.toLowerCase());
           case 'setor': return p.setor === filter.value;
           case 'status': return p.status === filter.value;
+          case 'data_prazo': return p.data_prazo ? format(new Date(p.data_prazo), 'dd/MM/yyyy').includes(filter.value) : false;
+          case 'data_abertura': return p.data_abertura ? format(new Date(p.data_abertura), 'dd/MM/yyyy').includes(filter.value) : false;
+          case 'aberto_por': return (p.created_by_name || '-').toLowerCase().includes(filter.value.toLowerCase());
           default: return true;
         }
       });
@@ -243,6 +249,10 @@ export function PendenciasFullScreenTable({
           case 'data_abertura':
             aValue = new Date(a.data_abertura).getTime();
             bValue = new Date(b.data_abertura).getTime();
+            break;
+          case 'aberto_por':
+            aValue = a.created_by_name || '';
+            bValue = b.created_by_name || '';
             break;
         }
 
@@ -458,9 +468,9 @@ export function PendenciasFullScreenTable({
               {isVisible('tipo') && <TableHead className="min-w-[150px]">{renderColumnHeader('tipo', 'Tipo')}</TableHead>}
               {isVisible('setor') && <TableHead className="min-w-[120px]">{renderColumnHeader('setor', 'Setor')}</TableHead>}
               {isVisible('status') && <TableHead className="min-w-[120px]">{renderColumnHeader('status', 'Status')}</TableHead>}
-              {isVisible('data_prazo') && <TableHead className="min-w-[150px]">{renderColumnHeader('data_prazo', 'Prazo', false)}</TableHead>}
-              {isVisible('data_abertura') && <TableHead className="min-w-[100px]">{renderColumnHeader('data_abertura', 'Abertura', false)}</TableHead>}
-              {isVisible('aberto_por') && <TableHead className="min-w-[140px]">Aberto por</TableHead>}
+              {isVisible('data_prazo') && <TableHead className="min-w-[150px]">{renderColumnHeader('data_prazo', 'Prazo')}</TableHead>}
+              {isVisible('data_abertura') && <TableHead className="min-w-[100px]">{renderColumnHeader('data_abertura', 'Abertura')}</TableHead>}
+              {isVisible('aberto_por') && <TableHead className="min-w-[140px]">{renderColumnHeader('aberto_por', 'Aberto por')}</TableHead>}
               {isVisible('acoes') && <TableHead className="min-w-[200px]">Ações</TableHead>}
             </TableRow>
           </TableHeader>

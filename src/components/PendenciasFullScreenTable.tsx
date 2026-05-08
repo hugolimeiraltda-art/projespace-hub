@@ -399,6 +399,28 @@ export function PendenciasFullScreenTable({
                 Limpar tudo
               </Button>
             )}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <Columns3 className="h-4 w-4 mr-1" />
+                  Colunas
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel>Exibir colunas</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {ALL_COLUMNS.map((c) => (
+                  <div
+                    key={c.key}
+                    className="flex items-center gap-2 px-2 py-1.5 cursor-pointer hover:bg-accent rounded-sm"
+                    onClick={() => toggleCol(c.key)}
+                  >
+                    <Checkbox checked={visibleCols[c.key]} />
+                    <span className="text-sm">{c.label}</span>
+                  </div>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
             <Button variant="outline" onClick={onClose}>
               <X className="h-4 w-4 mr-1" />
               Fechar

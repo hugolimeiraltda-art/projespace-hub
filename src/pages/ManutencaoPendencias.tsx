@@ -994,16 +994,17 @@ export default function ManutencaoPendencias() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Nº OS</TableHead>
-                      <TableHead>Ticket</TableHead>
-                      <TableHead>Cliente</TableHead>
-                      <TableHead>Contrato</TableHead>
-                      <TableHead>Tipo</TableHead>
-                      <TableHead>Setor</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Prazo</TableHead>
-                      <TableHead>Abertura</TableHead>
-                      <TableHead>Ações</TableHead>
+                      {isVisible('numero_os') && <TableHead>Nº OS</TableHead>}
+                      {isVisible('numero_ticket') && <TableHead>Ticket</TableHead>}
+                      {isVisible('razao_social') && <TableHead>Cliente</TableHead>}
+                      {isVisible('contrato') && <TableHead>Contrato</TableHead>}
+                      {isVisible('tipo') && <TableHead>Tipo</TableHead>}
+                      {isVisible('setor') && <TableHead>Setor</TableHead>}
+                      {isVisible('status') && <TableHead>Status</TableHead>}
+                      {isVisible('prazo') && <TableHead>Prazo</TableHead>}
+                      {isVisible('abertura') && <TableHead>Abertura</TableHead>}
+                      {isVisible('aberto_por') && <TableHead>Aberto por</TableHead>}
+                      {isVisible('acoes') && <TableHead>Ações</TableHead>}
                     </TableRow>
                   </TableHeader>
                   <TableBody>

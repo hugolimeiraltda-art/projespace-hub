@@ -938,12 +938,6 @@ export default function ManutencaoPendencias() {
                   className="pl-10 h-9"
                 />
               </div>
-
-        {/* Table */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between gap-2 flex-wrap">
-              <CardTitle>Pendências ({filteredPendencias.length})</CardTitle>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" size="sm">

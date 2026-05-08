@@ -404,7 +404,13 @@ export function CarteiraClientesTable({ customers, onDelete, basePath = '/cartei
 
   return (
     <div className="space-y-2">
-      <div className="flex justify-end">
+      <div className="flex justify-end items-center gap-2">
+        <Input
+          placeholder="Pesquisar cliente (contrato, código, razão social, filial, tipo)..."
+          value={globalSearch}
+          onChange={(e) => setGlobalSearch(e.target.value)}
+          className="h-9 w-full max-w-sm"
+        />
         <Popover>
           <PopoverTrigger asChild>
             <Button variant="outline" size="sm" className="gap-2">

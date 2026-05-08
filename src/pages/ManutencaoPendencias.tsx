@@ -1010,102 +1010,117 @@ export default function ManutencaoPendencias() {
                   <TableBody>
                     {filteredPendencias.map((pendencia) => (
                       <TableRow key={pendencia.id}>
-                        <TableCell className="font-medium">{pendencia.numero_os}</TableCell>
-                        <TableCell>{pendencia.numero_ticket || '-'}</TableCell>
-                        <TableCell className="max-w-[200px] truncate" title={pendencia.razao_social}>
-                          {pendencia.razao_social}
-                        </TableCell>
-                        <TableCell>{pendencia.contrato}</TableCell>
-                        <TableCell>{getTipoLabel(pendencia.tipo)}</TableCell>
-                        <TableCell>
-                          {pendencia.status !== 'CONCLUIDO' && pendencia.status !== 'CANCELADO' ? (
-                            <Select
-                              value={pendencia.setor}
-                              onValueChange={(value) => handleSetorChange(pendencia.id, value)}
-                            >
-                              <SelectTrigger className="w-[140px] h-8">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {SETOR_OPTIONS.map((setor) => (
-                                  <SelectItem key={setor} value={setor}>
-                                    {setor}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          ) : (
-                            pendencia.setor
-                          )}
-                        </TableCell>
-                        <TableCell>{getStatusBadge(pendencia.status)}</TableCell>
-                        <TableCell>
-                          <div className="flex flex-col gap-1">
-                            <span className="text-xs text-muted-foreground">
-                              {format(new Date(pendencia.data_prazo), 'dd/MM/yyyy', { locale: ptBR })}
-                            </span>
-                            {getPrazoBadge(pendencia)}
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-xs text-muted-foreground">
-                          {format(new Date(pendencia.data_abertura), 'dd/MM/yyyy', { locale: ptBR })}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-1 flex-wrap">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => openDetailsDialog(pendencia)}
-                              title="Ver Detalhes"
-                            >
-                              <Eye className="h-3 w-3" />
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => openEditDialog(pendencia)}
-                              title="Editar"
-                            >
-                              <Pencil className="h-3 w-3" />
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => openComentarios(pendencia)}
-                              title="Comentários"
-                            >
-                              <MessageSquare className="h-3 w-3" />
-                            </Button>
-                            {pendencia.status !== 'CONCLUIDO' && pendencia.status !== 'CANCELADO' && (
+                        {isVisible('numero_os') && <TableCell className="font-medium">{pendencia.numero_os}</TableCell>}
+                        {isVisible('numero_ticket') && <TableCell>{pendencia.numero_ticket || '-'}</TableCell>}
+                        {isVisible('razao_social') && (
+                          <TableCell className="max-w-[200px] truncate" title={pendencia.razao_social}>
+                            {pendencia.razao_social}
+                          </TableCell>
+                        )}
+                        {isVisible('contrato') && <TableCell>{pendencia.contrato}</TableCell>}
+                        {isVisible('tipo') && <TableCell>{getTipoLabel(pendencia.tipo)}</TableCell>}
+                        {isVisible('setor') && (
+                          <TableCell>
+                            {pendencia.status !== 'CONCLUIDO' && pendencia.status !== 'CANCELADO' ? (
                               <Select
-                                value={pendencia.status}
-                                onValueChange={(value) => handleStatusChange(pendencia.id, value)}
+                                value={pendencia.setor}
+                                onValueChange={(value) => handleSetorChange(pendencia.id, value)}
                               >
-                                <SelectTrigger className="w-[120px] h-8">
+                                <SelectTrigger className="w-[140px] h-8">
                                   <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
-                                  {STATUS_OPTIONS.map((status) => (
-                                    <SelectItem key={status.value} value={status.value}>
-                                      {status.label}
+                                  {SETOR_OPTIONS.map((setor) => (
+                                    <SelectItem key={setor} value={setor}>
+                                      {setor}
                                     </SelectItem>
                                   ))}
                                 </SelectContent>
                               </Select>
+                            ) : (
+                              pendencia.setor
                             )}
-                            {user?.role === 'admin' && (
+                          </TableCell>
+                        )}
+                        {isVisible('status') && <TableCell>{getStatusBadge(pendencia.status)}</TableCell>}
+                        {isVisible('prazo') && (
+                          <TableCell>
+                            <div className="flex flex-col gap-1">
+                              <span className="text-xs text-muted-foreground">
+                                {format(new Date(pendencia.data_prazo), 'dd/MM/yyyy', { locale: ptBR })}
+                              </span>
+                              {getPrazoBadge(pendencia)}
+                            </div>
+                          </TableCell>
+                        )}
+                        {isVisible('abertura') && (
+                          <TableCell className="text-xs text-muted-foreground">
+                            {format(new Date(pendencia.data_abertura), 'dd/MM/yyyy', { locale: ptBR })}
+                          </TableCell>
+                        )}
+                        {isVisible('aberto_por') && (
+                          <TableCell className="text-xs">
+                            {pendencia.created_by_name || '-'}
+                          </TableCell>
+                        )}
+                        {isVisible('acoes') && (
+                          <TableCell>
+                            <div className="flex items-center gap-1 flex-wrap">
                               <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={() => openDeleteDialog(pendencia)}
-                                className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                                title="Excluir"
+                                onClick={() => openDetailsDialog(pendencia)}
+                                title="Ver Detalhes"
                               >
-                                <Trash2 className="h-3 w-3" />
+                                <Eye className="h-3 w-3" />
                               </Button>
-                            )}
-                          </div>
-                        </TableCell>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => openEditDialog(pendencia)}
+                                title="Editar"
+                              >
+                                <Pencil className="h-3 w-3" />
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => openComentarios(pendencia)}
+                                title="Comentários"
+                              >
+                                <MessageSquare className="h-3 w-3" />
+                              </Button>
+                              {pendencia.status !== 'CONCLUIDO' && pendencia.status !== 'CANCELADO' && (
+                                <Select
+                                  value={pendencia.status}
+                                  onValueChange={(value) => handleStatusChange(pendencia.id, value)}
+                                >
+                                  <SelectTrigger className="w-[120px] h-8">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {STATUS_OPTIONS.map((status) => (
+                                      <SelectItem key={status.value} value={status.value}>
+                                        {status.label}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              )}
+                              {user?.role === 'admin' && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => openDeleteDialog(pendencia)}
+                                  className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                                  title="Excluir"
+                                >
+                                  <Trash2 className="h-3 w-3" />
+                                </Button>
+                              )}
+                            </div>
+                          </TableCell>
+                        )}
                       </TableRow>
                     ))}
                   </TableBody>

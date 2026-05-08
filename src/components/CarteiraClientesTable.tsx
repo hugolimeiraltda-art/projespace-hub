@@ -83,6 +83,7 @@ export function CarteiraClientesTable({ customers, onDelete, basePath = '/cartei
   const [sortConfig, setSortConfig] = useState<SortConfig>({ column: '', direction: null });
   const [activeFilterColumn, setActiveFilterColumn] = useState<string | null>(null);
   const [visibleColumns, setVisibleColumns] = useState<ColumnKey[]>(DEFAULT_VISIBLE_COLUMNS);
+  const [globalSearch, setGlobalSearch] = useState('');
 
   const isColumnVisible = (column: ColumnKey) => visibleColumns.includes(column);
   const visibleColumnCount = visibleColumns.length + 1;
@@ -203,6 +204,15 @@ export function CarteiraClientesTable({ customers, onDelete, basePath = '/cartei
   const filteredAndSortedCustomers = useMemo(() => {
     let result = [...customers];
 
+    // Global search across key fields
+    if (globalSearch.trim()) {
+      const q = globalSearch.toLowerCase();
+      result = result.filter((c) =>
+        [c.contrato, c.alarme_codigo, c.razao_social, c.filial, c.tipo]
+          .some((v) => (v || '').toString().toLowerCase().includes(q))
+      );
+    }
+
     // Apply filters
     columnFilters.forEach((filter) => {
       result = result.filter((c) => {
@@ -296,7 +306,7 @@ export function CarteiraClientesTable({ customers, onDelete, basePath = '/cartei
     }
 
     return result;
-  }, [customers, columnFilters, sortConfig]);
+  }, [customers, columnFilters, sortConfig, globalSearch]);
 
   const renderColumnHeader = (column: string, label: string, align: 'left' | 'right' = 'left') => {
     const hasActiveFilter = hasFilter(column);
@@ -394,7 +404,13 @@ export function CarteiraClientesTable({ customers, onDelete, basePath = '/cartei
 
   return (
     <div className="space-y-2">
-      <div className="flex justify-end">
+      <div className="flex justify-end items-center gap-2">
+        <Input
+          placeholder="Pesquisar cliente (contrato, código, razão social, filial, tipo)..."
+          value={globalSearch}
+          onChange={(e) => setGlobalSearch(e.target.value)}
+          className="h-9 w-full max-w-sm"
+        />
         <Popover>
           <PopoverTrigger asChild>
             <Button variant="outline" size="sm" className="gap-2">

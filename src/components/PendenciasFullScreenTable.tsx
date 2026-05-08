@@ -5,7 +5,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { X, ArrowUp, ArrowDown, ArrowUpDown, Filter, Eye, List, Trash2, Pencil } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger, DropdownMenuLabel, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
+import { Checkbox } from '@/components/ui/checkbox';
+import { X, ArrowUp, ArrowDown, ArrowUpDown, Filter, Eye, List, Trash2, Pencil, Columns3 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { differenceInDays } from 'date-fns';
@@ -87,6 +89,28 @@ export function PendenciasFullScreenTable({
   const [columnFilters, setColumnFilters] = useState<ColumnFilter[]>([]);
   const [sortConfig, setSortConfig] = useState<SortConfig>({ column: '', direction: null });
   const [activeFilterColumn, setActiveFilterColumn] = useState<string | null>(null);
+
+  const ALL_COLUMNS = [
+    { key: 'numero_os', label: 'Nº OS' },
+    { key: 'numero_ticket', label: 'Ticket' },
+    { key: 'razao_social', label: 'Cliente' },
+    { key: 'contrato', label: 'Contrato' },
+    { key: 'tipo', label: 'Tipo' },
+    { key: 'setor', label: 'Setor' },
+    { key: 'status', label: 'Status' },
+    { key: 'data_prazo', label: 'Prazo' },
+    { key: 'data_abertura', label: 'Abertura' },
+    { key: 'aberto_por', label: 'Aberto por' },
+    { key: 'acoes', label: 'Ações' },
+  ] as const;
+  type ColKey = typeof ALL_COLUMNS[number]['key'];
+  const [visibleCols, setVisibleCols] = useState<Record<ColKey, boolean>>({
+    numero_os: true, numero_ticket: true, razao_social: true, contrato: true,
+    tipo: true, setor: true, status: true, data_prazo: true, data_abertura: true,
+    aberto_por: true, acoes: true,
+  });
+  const isVisible = (k: ColKey) => visibleCols[k];
+  const toggleCol = (k: ColKey) => setVisibleCols((p) => ({ ...p, [k]: !p[k] }));
 
   // Get unique values for each column
   const getUniqueValues = (column: string) => {
@@ -375,6 +399,28 @@ export function PendenciasFullScreenTable({
                 Limpar tudo
               </Button>
             )}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <Columns3 className="h-4 w-4 mr-1" />
+                  Colunas
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel>Exibir colunas</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {ALL_COLUMNS.map((c) => (
+                  <div
+                    key={c.key}
+                    className="flex items-center gap-2 px-2 py-1.5 cursor-pointer hover:bg-accent rounded-sm"
+                    onClick={() => toggleCol(c.key)}
+                  >
+                    <Checkbox checked={visibleCols[c.key]} />
+                    <span className="text-sm">{c.label}</span>
+                  </div>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
             <Button variant="outline" onClick={onClose}>
               <X className="h-4 w-4 mr-1" />
               Fechar
@@ -405,16 +451,17 @@ export function PendenciasFullScreenTable({
         <Table>
           <TableHeader className="sticky top-0 bg-muted/50 backdrop-blur-sm">
             <TableRow>
-              <TableHead className="min-w-[100px]">{renderColumnHeader('numero_os', 'Nº OS')}</TableHead>
-              <TableHead className="min-w-[100px]">{renderColumnHeader('numero_ticket', 'Ticket')}</TableHead>
-              <TableHead className="min-w-[200px]">{renderColumnHeader('razao_social', 'Cliente')}</TableHead>
-              <TableHead className="min-w-[100px]">{renderColumnHeader('contrato', 'Contrato')}</TableHead>
-              <TableHead className="min-w-[150px]">{renderColumnHeader('tipo', 'Tipo')}</TableHead>
-              <TableHead className="min-w-[120px]">{renderColumnHeader('setor', 'Setor')}</TableHead>
-              <TableHead className="min-w-[120px]">{renderColumnHeader('status', 'Status')}</TableHead>
-              <TableHead className="min-w-[150px]">{renderColumnHeader('data_prazo', 'Prazo', false)}</TableHead>
-              <TableHead className="min-w-[100px]">{renderColumnHeader('data_abertura', 'Abertura', false)}</TableHead>
-              <TableHead className="min-w-[200px]">Ações</TableHead>
+              {isVisible('numero_os') && <TableHead className="min-w-[100px]">{renderColumnHeader('numero_os', 'Nº OS')}</TableHead>}
+              {isVisible('numero_ticket') && <TableHead className="min-w-[100px]">{renderColumnHeader('numero_ticket', 'Ticket')}</TableHead>}
+              {isVisible('razao_social') && <TableHead className="min-w-[200px]">{renderColumnHeader('razao_social', 'Cliente')}</TableHead>}
+              {isVisible('contrato') && <TableHead className="min-w-[100px]">{renderColumnHeader('contrato', 'Contrato')}</TableHead>}
+              {isVisible('tipo') && <TableHead className="min-w-[150px]">{renderColumnHeader('tipo', 'Tipo')}</TableHead>}
+              {isVisible('setor') && <TableHead className="min-w-[120px]">{renderColumnHeader('setor', 'Setor')}</TableHead>}
+              {isVisible('status') && <TableHead className="min-w-[120px]">{renderColumnHeader('status', 'Status')}</TableHead>}
+              {isVisible('data_prazo') && <TableHead className="min-w-[150px]">{renderColumnHeader('data_prazo', 'Prazo', false)}</TableHead>}
+              {isVisible('data_abertura') && <TableHead className="min-w-[100px]">{renderColumnHeader('data_abertura', 'Abertura', false)}</TableHead>}
+              {isVisible('aberto_por') && <TableHead className="min-w-[140px]">Aberto por</TableHead>}
+              {isVisible('acoes') && <TableHead className="min-w-[200px]">Ações</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -427,47 +474,59 @@ export function PendenciasFullScreenTable({
             ) : (
               filteredAndSortedPendencias.map((pendencia) => (
                 <TableRow key={pendencia.id}>
-                  <TableCell className="font-medium">{pendencia.numero_os}</TableCell>
-                  <TableCell>{pendencia.numero_ticket || '-'}</TableCell>
-                  <TableCell className="max-w-[200px] truncate" title={pendencia.razao_social}>
-                    {pendencia.razao_social}
-                  </TableCell>
-                  <TableCell>{pendencia.contrato}</TableCell>
-                  <TableCell>{getTipoLabel(pendencia.tipo)}</TableCell>
-                  <TableCell>
-                    {pendencia.status !== 'CONCLUIDO' && pendencia.status !== 'CANCELADO' && onSetorChange ? (
-                      <Select
-                        value={pendencia.setor}
-                        onValueChange={(value) => onSetorChange(pendencia.id, value)}
-                      >
-                        <SelectTrigger className="w-[140px] h-8">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {setorOptions.map((setor) => (
-                            <SelectItem key={setor} value={setor}>
-                              {setor}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    ) : (
-                      pendencia.setor
-                    )}
-                  </TableCell>
-                  <TableCell>{getStatusBadge(pendencia.status)}</TableCell>
-                  <TableCell>
-                    <div className="flex flex-col gap-1">
-                      <span className="text-xs text-muted-foreground">
-                        {format(new Date(pendencia.data_prazo), 'dd/MM/yyyy', { locale: ptBR })}
-                      </span>
-                      {getPrazoBadge(pendencia)}
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-xs text-muted-foreground">
-                    {format(new Date(pendencia.data_abertura), 'dd/MM/yyyy', { locale: ptBR })}
-                  </TableCell>
-                  <TableCell>
+                  {isVisible('numero_os') && <TableCell className="font-medium">{pendencia.numero_os}</TableCell>}
+                  {isVisible('numero_ticket') && <TableCell>{pendencia.numero_ticket || '-'}</TableCell>}
+                  {isVisible('razao_social') && (
+                    <TableCell className="max-w-[200px] truncate" title={pendencia.razao_social}>
+                      {pendencia.razao_social}
+                    </TableCell>
+                  )}
+                  {isVisible('contrato') && <TableCell>{pendencia.contrato}</TableCell>}
+                  {isVisible('tipo') && <TableCell>{getTipoLabel(pendencia.tipo)}</TableCell>}
+                  {isVisible('setor') && (
+                    <TableCell>
+                      {pendencia.status !== 'CONCLUIDO' && pendencia.status !== 'CANCELADO' && onSetorChange ? (
+                        <Select
+                          value={pendencia.setor}
+                          onValueChange={(value) => onSetorChange(pendencia.id, value)}
+                        >
+                          <SelectTrigger className="w-[140px] h-8">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {setorOptions.map((setor) => (
+                              <SelectItem key={setor} value={setor}>
+                                {setor}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        pendencia.setor
+                      )}
+                    </TableCell>
+                  )}
+                  {isVisible('status') && <TableCell>{getStatusBadge(pendencia.status)}</TableCell>}
+                  {isVisible('data_prazo') && (
+                    <TableCell>
+                      <div className="flex flex-col gap-1">
+                        <span className="text-xs text-muted-foreground">
+                          {format(new Date(pendencia.data_prazo), 'dd/MM/yyyy', { locale: ptBR })}
+                        </span>
+                        {getPrazoBadge(pendencia)}
+                      </div>
+                    </TableCell>
+                  )}
+                  {isVisible('data_abertura') && (
+                    <TableCell className="text-xs text-muted-foreground">
+                      {format(new Date(pendencia.data_abertura), 'dd/MM/yyyy', { locale: ptBR })}
+                    </TableCell>
+                  )}
+                  {isVisible('aberto_por') && (
+                    <TableCell className="text-xs">{pendencia.created_by_name || '-'}</TableCell>
+                  )}
+                  {isVisible('acoes') && (
+                    <TableCell>
                     <div className="flex items-center gap-1 flex-wrap">
                       {onViewDetails && (
                         <Button
@@ -519,6 +578,7 @@ export function PendenciasFullScreenTable({
                       )}
                     </div>
                   </TableCell>
+                  )}
                 </TableRow>
               ))
             )}

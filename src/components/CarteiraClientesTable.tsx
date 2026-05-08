@@ -83,6 +83,7 @@ export function CarteiraClientesTable({ customers, onDelete, basePath = '/cartei
   const [sortConfig, setSortConfig] = useState<SortConfig>({ column: '', direction: null });
   const [activeFilterColumn, setActiveFilterColumn] = useState<string | null>(null);
   const [visibleColumns, setVisibleColumns] = useState<ColumnKey[]>(DEFAULT_VISIBLE_COLUMNS);
+  const [globalSearch, setGlobalSearch] = useState('');
 
   const isColumnVisible = (column: ColumnKey) => visibleColumns.includes(column);
   const visibleColumnCount = visibleColumns.length + 1;

@@ -234,12 +234,22 @@ export default function CarteiraClientes({ tipoCarteira = 'PCI' }: CarteiraClien
         faciais_outros: parseInt(form.faciais_outros) || 0,
       };
 
+      console.log('[CarteiraClientes] Salvando cliente', {
+        tipoCarteira,
+        dataTable,
+        contrato: form.contrato,
+        razao_social: form.razao_social,
+      });
+
       const { error } = await supabase
         .from(dataTable as any)
         .insert(payload as any);
 
       if (error) throw error;
-      toast({ title: 'Cliente cadastrado!', description: 'O novo cliente foi adicionado à carteira.' });
+      toast({
+        title: `Cliente cadastrado em ${tipoCarteira}!`,
+        description: `Gravado na tabela ${dataTable}.`,
+      });
 
       setDialogOpen(false);
       fetchCustomers();

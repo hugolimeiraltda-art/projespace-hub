@@ -15,7 +15,8 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { Plus, Pencil, Trash2, Package, Boxes, Search, Filter, ArrowUpDown, ArrowUp, ArrowDown, X, SlidersHorizontal } from 'lucide-react';
+import { Plus, Pencil, Trash2, Package, Boxes, Search, Filter, ArrowUpDown, ArrowUp, ArrowDown, X, SlidersHorizontal, FileSpreadsheet } from 'lucide-react';
+import * as XLSX from 'xlsx';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,

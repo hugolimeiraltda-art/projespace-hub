@@ -249,7 +249,7 @@ export default function OrcamentoManual() {
                 {!loading && produtosFiltrados.slice(0, 80).map(p => (
                   <div key={p.id} className="flex items-center justify-between p-2 hover:bg-muted/50">
                     <div className="text-sm"><span className="font-mono text-xs text-muted-foreground mr-2">{p.codigo || '-'}</span>{p.nome} <Badge variant="outline" className="ml-2 text-[10px]">{p.categoria}</Badge></div>
-                    <Button size="sm" variant="ghost" onClick={() => addProd(p.id)} disabled={!!linhasProds.find(l => l.produto_id === p.id)}><Plus className="h-4 w-4" /></Button>
+                    <Button size="sm" variant="ghost" onClick={() => addProd(p.id)}><Plus className="h-4 w-4" /></Button>
                   </div>
                 ))}
               </div>

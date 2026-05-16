@@ -56,6 +56,7 @@ import ManutencaoRelatorios from "./pages/ManutencaoRelatorios";
 import Orcamentos from "./pages/Orcamentos";
 import OrcamentoChat from "./pages/OrcamentoChat";
 import OrcamentoProdutos from "./pages/OrcamentoProdutos";
+import OrcamentoManual from "./pages/OrcamentoManual";
 import OrcamentoRegras from "./pages/OrcamentoRegras";
 import OrcamentoKitRegras from "./pages/OrcamentoKitRegras";
 import OrcamentoPropostas from "./pages/OrcamentoPropostas";

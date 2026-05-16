@@ -231,7 +231,7 @@ export default function OrcamentoManual() {
                 {!loading && kitsFiltrados.slice(0, 50).map(k => (
                   <div key={k.id} className="flex items-center justify-between p-2 hover:bg-muted/50">
                     <div className="text-sm"><span className="font-mono text-xs text-muted-foreground mr-2">{k.codigo || '-'}</span>{k.nome} <Badge variant="outline" className="ml-2 text-[10px]">{k.categoria}</Badge></div>
-                    <Button size="sm" variant="ghost" onClick={() => addKit(k.id)} disabled={!!linhasKits.find(l => l.kit_id === k.id)}><Plus className="h-4 w-4" /></Button>
+                    <Button size="sm" variant="ghost" onClick={() => addKit(k.id)}><Plus className="h-4 w-4" /></Button>
                   </div>
                 ))}
               </div>

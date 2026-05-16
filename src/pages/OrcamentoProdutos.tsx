@@ -15,7 +15,8 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { Plus, Pencil, Trash2, Package, Boxes, Search, Filter, ArrowUpDown, ArrowUp, ArrowDown, X, SlidersHorizontal } from 'lucide-react';
+import { Plus, Pencil, Trash2, Package, Boxes, Search, Filter, ArrowUpDown, ArrowUp, ArrowDown, X, SlidersHorizontal, FileSpreadsheet } from 'lucide-react';
+import * as XLSX from 'xlsx';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -1147,6 +1148,37 @@ export default function OrcamentoProdutos() {
                     <Badge variant="outline" className="text-xs">{catLabel(viewKit.categoria)}</Badge>
                     <div className="ml-auto flex items-center gap-2">
                       <Switch checked={viewKit.ativo} onCheckedChange={v => { toggleAtivo('kit', viewKit.id, v); setViewKit({ ...viewKit, ativo: v }); }} />
+                      <Button size="icon" variant="ghost" title="Exportar para Excel" onClick={() => {
+                        const rows = (viewKit.itens || []).map(i => ({
+                          'Código': i.produto?.codigo || '',
+                          'Produto': i.produto?.nome || 'Produto removido',
+                          'Qtd': i.quantidade,
+                          'Val. Atual Unit.': i.produto?.preco_unitario || 0,
+                          'Val. Atual Total': (i.produto?.preco_unitario || 0) * i.quantidade,
+                          'Val. Mínimo Unit.': i.produto?.valor_minimo || 0,
+                          'Val. Mínimo Total': (i.produto?.valor_minimo || 0) * i.quantidade,
+                          'Val. Locação Unit.': i.produto?.valor_locacao || 0,
+                          'Val. Locação Total': (i.produto?.valor_locacao || 0) * i.quantidade,
+                          'Mín. Locação Unit.': i.produto?.valor_minimo_locacao || 0,
+                          'Mín. Locação Total': (i.produto?.valor_minimo_locacao || 0) * i.quantidade,
+                          'Instalação Unit.': i.produto?.valor_instalacao || 0,
+                          'Instalação Total': (i.produto?.valor_instalacao || 0) * i.quantidade,
+                        }));
+                        rows.push({
+                          'Código': '', 'Produto': 'TOTAL DO KIT', 'Qtd': '' as any,
+                          'Val. Atual Unit.': '' as any, 'Val. Atual Total': totals.atual,
+                          'Val. Mínimo Unit.': '' as any, 'Val. Mínimo Total': totals.minimo,
+                          'Val. Locação Unit.': '' as any, 'Val. Locação Total': totals.locacao,
+                          'Mín. Locação Unit.': '' as any, 'Mín. Locação Total': totals.minLocacao,
+                          'Instalação Unit.': '' as any, 'Instalação Total': totals.instalacao,
+                        });
+                        const ws = XLSX.utils.json_to_sheet(rows);
+                        ws['!cols'] = [{ wch: 12 }, { wch: 40 }, { wch: 6 }, ...Array(10).fill({ wch: 16 })];
+                        const wb = XLSX.utils.book_new();
+                        XLSX.utils.book_append_sheet(wb, ws, 'Composição');
+                        const safe = (viewKit.nome || 'kit').replace(/[^a-z0-9]+/gi, '-').toLowerCase();
+                        XLSX.writeFile(wb, `kit-${safe}.xlsx`);
+                      }}><FileSpreadsheet className="h-4 w-4" /></Button>
                       <Button size="icon" variant="ghost" onClick={() => { openKitEdit(viewKit); setViewKit(null); }}><Pencil className="h-4 w-4" /></Button>
                       <Button size="icon" variant="ghost" className="text-destructive" onClick={() => { setDeleteTarget({ type: 'kit', id: viewKit.id }); setViewKit(null); }}><Trash2 className="h-4 w-4" /></Button>
                     </div>

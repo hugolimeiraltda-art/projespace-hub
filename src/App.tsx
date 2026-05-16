@@ -56,6 +56,7 @@ import ManutencaoRelatorios from "./pages/ManutencaoRelatorios";
 import Orcamentos from "./pages/Orcamentos";
 import OrcamentoChat from "./pages/OrcamentoChat";
 import OrcamentoProdutos from "./pages/OrcamentoProdutos";
+import OrcamentoManual from "./pages/OrcamentoManual";
 import OrcamentoRegras from "./pages/OrcamentoRegras";
 import OrcamentoKitRegras from "./pages/OrcamentoKitRegras";
 import OrcamentoPropostas from "./pages/OrcamentoPropostas";
@@ -350,6 +351,10 @@ function AppRoutes() {
       <Route 
         path="/orcamentos/produtos" 
         element={<ProtectedRoute><OrcamentoProdutos /></ProtectedRoute>} 
+      />
+      <Route 
+        path="/orcamentos/manual" 
+        element={<ProtectedRoute><OrcamentoManual /></ProtectedRoute>} 
       />
       <Route 
         path="/orcamentos/regras" 

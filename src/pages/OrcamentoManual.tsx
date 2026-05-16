@@ -70,8 +70,16 @@ export default function OrcamentoManual() {
   const kitsFiltrados = useMemo(() => kits.filter(k => !filtroKit || k.nome.toLowerCase().includes(filtroKit.toLowerCase()) || (k.codigo || '').toLowerCase().includes(filtroKit.toLowerCase())), [kits, filtroKit]);
   const produtosFiltrados = useMemo(() => produtos.filter(p => !filtroProd || p.nome.toLowerCase().includes(filtroProd.toLowerCase()) || (p.codigo || '').toLowerCase().includes(filtroProd.toLowerCase())), [produtos, filtroProd]);
 
-  const addKit = (kit_id: string) => { if (!linhasKits.find(l => l.kit_id === kit_id)) setLinhasKits(p => [...p, { kit_id, qtd: 1 }]); };
-  const addProd = (produto_id: string) => { if (!linhasProds.find(l => l.produto_id === produto_id)) setLinhasProds(p => [...p, { produto_id, qtd: 1 }]); };
+  const addKit = (kit_id: string) => setLinhasKits(p => {
+    const existing = p.find(l => l.kit_id === kit_id);
+    if (existing) return p.map(l => l === existing ? { ...l, qtd: l.qtd + 1 } : l);
+    return [...p, { kit_id, qtd: 1 }];
+  });
+  const addProd = (produto_id: string) => setLinhasProds(p => {
+    const existing = p.find(l => l.produto_id === produto_id);
+    if (existing) return p.map(l => l === existing ? { ...l, qtd: l.qtd + 1 } : l);
+    return [...p, { produto_id, qtd: 1 }];
+  });
   const addServ = () => setLinhasServ(p => [...p, { descricao: '', qtd: 1, valor_unit: 0 }]);
 
   // Build composed rows

@@ -353,6 +353,10 @@ function AppRoutes() {
         element={<ProtectedRoute><OrcamentoProdutos /></ProtectedRoute>} 
       />
       <Route 
+        path="/orcamentos/manual" 
+        element={<ProtectedRoute><OrcamentoManual /></ProtectedRoute>} 
+      />
+      <Route 
         path="/orcamentos/regras" 
         element={<ProtectedRoute><OrcamentoRegras /></ProtectedRoute>} 
       />

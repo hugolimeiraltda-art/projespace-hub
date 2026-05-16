@@ -126,6 +126,7 @@ const ALL_NAV_ITEMS: NavItem[] = [
     menuKey: 'orcamentos',
     subItems: [
       { path: '/orcamentos', label: 'Sessões', icon: Bot, menuKey: 'orcamentos/sessoes' },
+      { path: '/orcamentos/manual', label: 'Orçamento Manual', icon: Calculator, menuKey: 'orcamentos/manual' },
       { path: '/orcamentos/propostas', label: 'Propostas Geradas', icon: FileText, menuKey: 'orcamentos/propostas' },
       { path: '/orcamentos/produtos', label: 'Produtos e Kits', icon: Boxes, menuKey: 'orcamentos/produtos' },
       { path: '/orcamentos/regras', label: 'Regras de Preço', icon: Percent, menuKey: 'orcamentos/regras' },

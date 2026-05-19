@@ -237,6 +237,7 @@ export function CarteiraClientesTable({ customers, onDelete, basePath = '/cartei
           case 'mensalidade':
             if (!c.mensalidade) return filter.value === '-' || filter.value === '';
             return c.mensalidade.toString().includes(filter.value);
+          case 'endereco': return (c.endereco || '-').toLowerCase().includes(filterLower);
           default: return true;
         }
       });

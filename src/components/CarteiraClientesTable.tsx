@@ -407,7 +407,33 @@ export function CarteiraClientesTable({ customers, onDelete, basePath = '/cartei
         return <TableCell className="text-right">{customer.cameras}</TableCell>;
       case 'mensalidade':
         return <TableCell className="text-right">{customer.mensalidade ? `R$ ${customer.mensalidade.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '-'}</TableCell>;
+      case 'endereco':
+        return <TableCell className="max-w-[280px] truncate" title={customer.endereco || ''}>{customer.endereco || '-'}</TableCell>;
     }
+  };
+
+  const handleExportExcel = () => {
+    const rows = filteredAndSortedCustomers.map((c) => ({
+      Contrato: c.contrato,
+      'Código Alarme': c.alarme_codigo || '',
+      'Razão Social': c.razao_social,
+      Filial: c.filial || '',
+      'Tipo de Produto': c.tipo || '',
+      'Início': formatDate(c.data_ativacao),
+      'Término': calculateTermino(c),
+      'Taxa Ativação': c.taxa_ativacao || 0,
+      'Portões': c.portoes,
+      'Zonas': c.zonas_perimetro,
+      'Câmeras': c.cameras,
+      'Mensalidade': c.mensalidade || 0,
+      'Endereço': c.endereco || '',
+    }));
+    const ws = XLSX.utils.json_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Clientes');
+    const date = format(new Date(), 'yyyy-MM-dd');
+    XLSX.writeFile(wb, `carteira-clientes-${date}.xlsx`);
+    toast({ title: 'Exportado!', description: `${rows.length} cliente(s) exportado(s) para Excel.` });
   };
 
   return (

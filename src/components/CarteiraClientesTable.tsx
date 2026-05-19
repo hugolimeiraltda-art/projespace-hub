@@ -28,6 +28,7 @@ interface Customer {
   zonas_perimetro: number;
   cameras: number;
   mensalidade: number | null;
+  endereco?: string | null;
 }
 
 interface ColumnFilter {
@@ -36,7 +37,7 @@ interface ColumnFilter {
 }
 
 type SortDirection = 'asc' | 'desc' | null;
-type ColumnKey = 'contrato' | 'alarme_codigo' | 'razao_social' | 'filial' | 'tipo' | 'data_ativacao' | 'data_termino' | 'taxa_ativacao' | 'portoes' | 'zonas_perimetro' | 'cameras' | 'mensalidade';
+type ColumnKey = 'contrato' | 'alarme_codigo' | 'razao_social' | 'filial' | 'tipo' | 'data_ativacao' | 'data_termino' | 'taxa_ativacao' | 'portoes' | 'zonas_perimetro' | 'cameras' | 'mensalidade' | 'endereco';
 
 interface SortConfig {
   column: string;

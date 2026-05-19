@@ -298,6 +298,10 @@ export function CarteiraClientesTable({ customers, onDelete, basePath = '/cartei
             aValue = a.mensalidade || 0;
             bValue = b.mensalidade || 0;
             break;
+          case 'endereco':
+            aValue = a.endereco || '';
+            bValue = b.endereco || '';
+            break;
         }
 
         if (typeof aValue === 'string') {

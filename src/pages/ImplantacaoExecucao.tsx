@@ -2671,23 +2671,12 @@ export default function ImplantacaoExecucao() {
                       <Checkbox 
                         checked={etapas.laudo_instalador} 
                         onCheckedChange={(value) => {
-                          if (value === true && !secoesComAnexo.includes('implantacao_laudo_instalador')) {
-                            toast({
-                              title: 'Upload obrigatório',
-                              description: 'Anexe o checklist de execução da obra antes de marcar como concluído.',
-                              variant: 'destructive',
-                            });
-                            return;
-                          }
                           updateEtapa('laudo_instalador', value, 'laudo_instalador_at');
                         }} 
                         disabled={isSaving} 
                       />
                       <span className={cn("text-sm font-medium", etapas.laudo_instalador && "text-muted-foreground line-through")}>
                         5.1 - Checklist de Execução da Obra
-                        {!secoesComAnexo.includes('implantacao_laudo_instalador') && !etapas.laudo_instalador && (
-                          <span className="text-destructive ml-2 text-xs font-medium">(Upload obrigatório)</span>
-                        )}
                       </span>
                       {etapas.laudo_instalador_at && <span className="text-xs text-muted-foreground">{format(parseISO(etapas.laudo_instalador_at), "dd/MM/yyyy", { locale: ptBR })}</span>}
                     </div>
@@ -3147,14 +3136,8 @@ export default function ImplantacaoExecucao() {
                         </AlertDescription>
                       </Alert>
                     )}
-                    {!secoesComAnexo.includes('implantacao_laudo_instalador') && !etapas.concluido && (
-                      <Alert variant="destructive" className="mb-4">
-                        <AlertTriangle className="h-4 w-4" />
-                        <AlertDescription>
-                          O laudo/checklist do instalador (etapa 5.1) é obrigatório. Anexe o documento antes de concluir.
-                        </AlertDescription>
-                      </Alert>
-                    )}
+
+
                     {!isPPE && !secoesComAnexo.includes('implantacao_entrega_tecnica') && !etapas.concluido && (
                       <Alert variant="destructive" className="mb-4">
                         <AlertTriangle className="h-4 w-4" />
@@ -3185,10 +3168,6 @@ export default function ImplantacaoExecucao() {
                           // Validate checklists
                           if (!checklistsExistentes.includes('check_projeto')) {
                             toast({ title: 'Checklist obrigatório pendente', description: 'O checklist de projeto (etapa 4.1) é obrigatório para concluir a implantação.', variant: 'destructive' });
-                            return;
-                          }
-                          if (!secoesComAnexo.includes('implantacao_laudo_instalador')) {
-                            toast({ title: 'Upload obrigatório pendente', description: 'O laudo/checklist do instalador (etapa 5.1) é obrigatório para concluir a implantação.', variant: 'destructive' });
                             return;
                           }
                           if (!isPPE && !secoesComAnexo.includes('implantacao_entrega_tecnica')) {
@@ -3225,7 +3204,7 @@ export default function ImplantacaoExecucao() {
                         }}
                         className="w-full"
                         variant="default"
-                        disabled={hasPendingItems || !checklistsExistentes.includes('check_projeto') || !secoesComAnexo.includes('implantacao_laudo_instalador') || (!isPPE && !secoesComAnexo.includes('implantacao_entrega_tecnica'))}
+                        disabled={hasPendingItems || !checklistsExistentes.includes('check_projeto') || (!isPPE && !secoesComAnexo.includes('implantacao_entrega_tecnica'))}
                       >
                         Concluir Implantação (com avaliação)
                       </Button>

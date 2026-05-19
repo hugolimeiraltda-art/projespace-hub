@@ -3204,7 +3204,7 @@ export default function ImplantacaoExecucao() {
                         }}
                         className="w-full"
                         variant="default"
-                        disabled={hasPendingItems || !checklistsExistentes.includes('check_projeto') || !secoesComAnexo.includes('implantacao_laudo_instalador') || (!isPPE && !secoesComAnexo.includes('implantacao_entrega_tecnica'))}
+                        disabled={hasPendingItems || !checklistsExistentes.includes('check_projeto') || (!isPPE && !secoesComAnexo.includes('implantacao_entrega_tecnica'))}
                       >
                         Concluir Implantação (com avaliação)
                       </Button>

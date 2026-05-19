@@ -7,7 +7,8 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { ArrowUp, ArrowDown, ArrowUpDown, Filter, X, Trash2, Columns3 } from 'lucide-react';
+import { ArrowUp, ArrowDown, ArrowUpDown, Filter, X, Trash2, Columns3, FileDown } from 'lucide-react';
+import * as XLSX from 'xlsx';
 import { format, addMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { supabase } from '@/integrations/supabase/client';
@@ -27,6 +28,7 @@ interface Customer {
   zonas_perimetro: number;
   cameras: number;
   mensalidade: number | null;
+  endereco?: string | null;
 }
 
 interface ColumnFilter {
@@ -35,7 +37,7 @@ interface ColumnFilter {
 }
 
 type SortDirection = 'asc' | 'desc' | null;
-type ColumnKey = 'contrato' | 'alarme_codigo' | 'razao_social' | 'filial' | 'tipo' | 'data_ativacao' | 'data_termino' | 'taxa_ativacao' | 'portoes' | 'zonas_perimetro' | 'cameras' | 'mensalidade';
+type ColumnKey = 'contrato' | 'alarme_codigo' | 'razao_social' | 'filial' | 'tipo' | 'data_ativacao' | 'data_termino' | 'taxa_ativacao' | 'portoes' | 'zonas_perimetro' | 'cameras' | 'mensalidade' | 'endereco';
 
 interface SortConfig {
   column: string;
@@ -62,6 +64,7 @@ const TABLE_COLUMNS: { key: ColumnKey; label: string; className: string; align?:
   { key: 'zonas_perimetro', label: 'Zonas', className: 'min-w-[80px] text-right', align: 'right' },
   { key: 'cameras', label: 'Câmeras', className: 'min-w-[80px] text-right', align: 'right' },
   { key: 'mensalidade', label: 'Mensalidade', className: 'min-w-[120px] text-right', align: 'right' },
+  { key: 'endereco', label: 'Endereço', className: 'min-w-[240px]' },
 ];
 
 const DEFAULT_VISIBLE_COLUMNS: ColumnKey[] = [
@@ -208,7 +211,7 @@ export function CarteiraClientesTable({ customers, onDelete, basePath = '/cartei
     if (globalSearch.trim()) {
       const q = globalSearch.toLowerCase();
       result = result.filter((c) =>
-        [c.contrato, c.alarme_codigo, c.razao_social, c.filial, c.tipo]
+        [c.contrato, c.alarme_codigo, c.razao_social, c.filial, c.tipo, c.endereco]
           .some((v) => (v || '').toString().toLowerCase().includes(q))
       );
     }
@@ -234,6 +237,7 @@ export function CarteiraClientesTable({ customers, onDelete, basePath = '/cartei
           case 'mensalidade':
             if (!c.mensalidade) return filter.value === '-' || filter.value === '';
             return c.mensalidade.toString().includes(filter.value);
+          case 'endereco': return (c.endereco || '-').toLowerCase().includes(filterLower);
           default: return true;
         }
       });
@@ -293,6 +297,10 @@ export function CarteiraClientesTable({ customers, onDelete, basePath = '/cartei
           case 'mensalidade':
             aValue = a.mensalidade || 0;
             bValue = b.mensalidade || 0;
+            break;
+          case 'endereco':
+            aValue = a.endereco || '';
+            bValue = b.endereco || '';
             break;
         }
 
@@ -399,7 +407,33 @@ export function CarteiraClientesTable({ customers, onDelete, basePath = '/cartei
         return <TableCell className="text-right">{customer.cameras}</TableCell>;
       case 'mensalidade':
         return <TableCell className="text-right">{customer.mensalidade ? `R$ ${customer.mensalidade.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '-'}</TableCell>;
+      case 'endereco':
+        return <TableCell className="max-w-[280px] truncate" title={customer.endereco || ''}>{customer.endereco || '-'}</TableCell>;
     }
+  };
+
+  const handleExportExcel = () => {
+    const rows = filteredAndSortedCustomers.map((c) => ({
+      Contrato: c.contrato,
+      'Código Alarme': c.alarme_codigo || '',
+      'Razão Social': c.razao_social,
+      Filial: c.filial || '',
+      'Tipo de Produto': c.tipo || '',
+      'Início': formatDate(c.data_ativacao),
+      'Término': calculateTermino(c),
+      'Taxa Ativação': c.taxa_ativacao || 0,
+      'Portões': c.portoes,
+      'Zonas': c.zonas_perimetro,
+      'Câmeras': c.cameras,
+      'Mensalidade': c.mensalidade || 0,
+      'Endereço': c.endereco || '',
+    }));
+    const ws = XLSX.utils.json_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Clientes');
+    const date = format(new Date(), 'yyyy-MM-dd');
+    XLSX.writeFile(wb, `carteira-clientes-${date}.xlsx`);
+    toast({ title: 'Exportado!', description: `${rows.length} cliente(s) exportado(s) para Excel.` });
   };
 
   return (
@@ -411,6 +445,10 @@ export function CarteiraClientesTable({ customers, onDelete, basePath = '/cartei
           onChange={(e) => setGlobalSearch(e.target.value)}
           className="h-9 w-full max-w-sm"
         />
+        <Button variant="outline" size="sm" className="gap-2" onClick={handleExportExcel}>
+          <FileDown className="h-4 w-4" />
+          Exportar Excel
+        </Button>
         <Popover>
           <PopoverTrigger asChild>
             <Button variant="outline" size="sm" className="gap-2">

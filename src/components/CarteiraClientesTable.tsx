@@ -7,7 +7,8 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { ArrowUp, ArrowDown, ArrowUpDown, Filter, X, Trash2, Columns3 } from 'lucide-react';
+import { ArrowUp, ArrowDown, ArrowUpDown, Filter, X, Trash2, Columns3, FileDown } from 'lucide-react';
+import * as XLSX from 'xlsx';
 import { format, addMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { supabase } from '@/integrations/supabase/client';

@@ -211,7 +211,7 @@ export function CarteiraClientesTable({ customers, onDelete, basePath = '/cartei
     if (globalSearch.trim()) {
       const q = globalSearch.toLowerCase();
       result = result.filter((c) =>
-        [c.contrato, c.alarme_codigo, c.razao_social, c.filial, c.tipo]
+        [c.contrato, c.alarme_codigo, c.razao_social, c.filial, c.tipo, c.endereco]
           .some((v) => (v || '').toString().toLowerCase().includes(q))
       );
     }

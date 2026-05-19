@@ -3136,14 +3136,8 @@ export default function ImplantacaoExecucao() {
                         </AlertDescription>
                       </Alert>
                     )}
-                    {!secoesComAnexo.includes('implantacao_laudo_instalador') && !etapas.concluido && (
-                      <Alert variant="destructive" className="mb-4">
-                        <AlertTriangle className="h-4 w-4" />
-                        <AlertDescription>
-                          O laudo/checklist do instalador (etapa 5.1) é obrigatório. Anexe o documento antes de concluir.
-                        </AlertDescription>
-                      </Alert>
-                    )}
+
+
                     {!isPPE && !secoesComAnexo.includes('implantacao_entrega_tecnica') && !etapas.concluido && (
                       <Alert variant="destructive" className="mb-4">
                         <AlertTriangle className="h-4 w-4" />

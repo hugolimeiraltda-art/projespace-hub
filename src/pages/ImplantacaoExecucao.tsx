@@ -2671,23 +2671,12 @@ export default function ImplantacaoExecucao() {
                       <Checkbox 
                         checked={etapas.laudo_instalador} 
                         onCheckedChange={(value) => {
-                          if (value === true && !secoesComAnexo.includes('implantacao_laudo_instalador')) {
-                            toast({
-                              title: 'Upload obrigatório',
-                              description: 'Anexe o checklist de execução da obra antes de marcar como concluído.',
-                              variant: 'destructive',
-                            });
-                            return;
-                          }
                           updateEtapa('laudo_instalador', value, 'laudo_instalador_at');
                         }} 
                         disabled={isSaving} 
                       />
                       <span className={cn("text-sm font-medium", etapas.laudo_instalador && "text-muted-foreground line-through")}>
                         5.1 - Checklist de Execução da Obra
-                        {!secoesComAnexo.includes('implantacao_laudo_instalador') && !etapas.laudo_instalador && (
-                          <span className="text-destructive ml-2 text-xs font-medium">(Upload obrigatório)</span>
-                        )}
                       </span>
                       {etapas.laudo_instalador_at && <span className="text-xs text-muted-foreground">{format(parseISO(etapas.laudo_instalador_at), "dd/MM/yyyy", { locale: ptBR })}</span>}
                     </div>

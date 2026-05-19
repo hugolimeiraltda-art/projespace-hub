@@ -445,6 +445,10 @@ export function CarteiraClientesTable({ customers, onDelete, basePath = '/cartei
           onChange={(e) => setGlobalSearch(e.target.value)}
           className="h-9 w-full max-w-sm"
         />
+        <Button variant="outline" size="sm" className="gap-2" onClick={handleExportExcel}>
+          <FileDown className="h-4 w-4" />
+          Exportar Excel
+        </Button>
         <Popover>
           <PopoverTrigger asChild>
             <Button variant="outline" size="sm" className="gap-2">

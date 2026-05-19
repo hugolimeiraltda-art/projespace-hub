@@ -64,6 +64,7 @@ const TABLE_COLUMNS: { key: ColumnKey; label: string; className: string; align?:
   { key: 'zonas_perimetro', label: 'Zonas', className: 'min-w-[80px] text-right', align: 'right' },
   { key: 'cameras', label: 'Câmeras', className: 'min-w-[80px] text-right', align: 'right' },
   { key: 'mensalidade', label: 'Mensalidade', className: 'min-w-[120px] text-right', align: 'right' },
+  { key: 'endereco', label: 'Endereço', className: 'min-w-[240px]' },
 ];
 
 const DEFAULT_VISIBLE_COLUMNS: ColumnKey[] = [

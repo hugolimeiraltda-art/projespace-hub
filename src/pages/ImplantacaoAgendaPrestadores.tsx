@@ -49,6 +49,7 @@ export default function ImplantacaoAgendaPrestadores() {
   const [dataFim, setDataFim] = useState(in30);
   const [prestadorFiltro, setPrestadorFiltro] = useState<string>("todos");
   const [pracaFiltro, setPracaFiltro] = useState<string>("todas");
+  const [viewMode, setViewMode] = useState<"lista" | "gantt">("gantt");
 
   useEffect(() => {
     load();

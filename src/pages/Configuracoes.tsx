@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Layout } from '@/components/Layout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Settings, Users, FileText, Bell, ChevronRight, Shield } from 'lucide-react';
+import { Settings, Users, FileText, Bell, ChevronRight, Shield, Database } from 'lucide-react';
 
 export default function Configuracoes() {
   return (
@@ -80,6 +80,30 @@ export default function Configuracoes() {
               <CardContent>
                 <p className="text-sm text-muted-foreground">
                   Configure o provedor de e-mail (Resend), personalize templates e teste envios.
+                </p>
+              </CardContent>
+            </Card>
+          </Link>
+
+          <Link to="/configuracoes/consumo-dados">
+            <Card className="shadow-card hover:shadow-lg transition-shadow cursor-pointer group">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-secondary rounded-lg">
+                      <Database className="w-5 h-5 text-secondary-foreground" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-lg">Consumo de Dados</CardTitle>
+                      <CardDescription>Backup e limpeza por período</CardDescription>
+                    </div>
+                  </div>
+                  <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-foreground transition-colors" />
+                </div>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground">
+                  Veja o que cada módulo consome no banco e no storage, baixe backups e exclua dados antigos.
                 </p>
               </CardContent>
             </Card>

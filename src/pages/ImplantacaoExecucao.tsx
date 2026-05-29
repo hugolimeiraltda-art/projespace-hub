@@ -2420,6 +2420,32 @@ export default function ImplantacaoExecucao() {
                       />
                     </div>
                   </div>
+                  {/* Equipe de instalação (Banco de Prestadores) */}
+                  <div className="flex items-center justify-between py-2 px-4 hover:bg-muted/50 rounded-md gap-3 flex-wrap">
+                    <span className="text-sm font-medium">Equipe de instalação</span>
+                    <Select
+                      value={etapas.ppe_equipe_prestador_id || ''}
+                      onValueChange={(value) => updateEtapa('ppe_equipe_prestador_id', value)}
+                    >
+                      <SelectTrigger className="w-72">
+                        <SelectValue placeholder="Selecione a equipe..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {prestadoresList.length === 0 ? (
+                          <div className="px-3 py-2 text-xs text-muted-foreground">
+                            Nenhum prestador cadastrado
+                          </div>
+                        ) : (
+                          prestadoresList.map((p) => (
+                            <SelectItem key={p.id} value={p.id}>
+                              {p.nome}{p.empresa && p.empresa.length > 0 ? ` — ${p.empresa.join(', ')}` : ''}
+                            </SelectItem>
+                          ))
+                        )}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
                   {/* 4.3 - Upload obrigatório de PDF/fotos com validação de terceirizados */}
                   <div className="py-2 px-4">
                     <div className="flex items-center gap-3 mb-2">

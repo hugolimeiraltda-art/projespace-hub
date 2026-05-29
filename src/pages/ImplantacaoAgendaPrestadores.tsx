@@ -222,17 +222,32 @@ export default function ImplantacaoAgendaPrestadores() {
           </Card>
         )}
 
-        {/* Agenda por dia */}
+        {/* Toggle de visualização */}
+        <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as "lista" | "gantt")}>
+          <TabsList>
+            <TabsTrigger value="lista"><List className="w-4 h-4 mr-1" /> Lista</TabsTrigger>
+            <TabsTrigger value="gantt"><BarChart3 className="w-4 h-4 mr-1" /> Gantt</TabsTrigger>
+          </TabsList>
+        </Tabs>
+
+        {/* Conteúdo */}
         {loading ? (
           <div className="space-y-3">
             {[1, 2, 3].map((i) => <Skeleton key={i} className="h-24" />)}
           </div>
-        ) : porDia.length === 0 ? (
+        ) : filtrados.length === 0 ? (
           <Card>
             <CardContent className="py-10 text-center text-muted-foreground">
               Nenhum agendamento encontrado no período / filtros selecionados.
             </CardContent>
           </Card>
+        ) : viewMode === "gantt" ? (
+          <GanttView
+            items={filtrados}
+            dataIni={dataIni}
+            dataFim={dataFim}
+            onSelect={(pid) => navigate(`/startup-projetos/${pid}/execucao`)}
+          />
         ) : (
           porDia.map(([dia, lista]) => {
             const date = parseISO(dia);
@@ -293,6 +308,200 @@ export default function ImplantacaoAgendaPrestadores() {
             );
           })
         )}
+      </div>
+    </div>
+  );
+}
+
+// ============ Gantt View ============
+const TIPO_COLOR: Record<string, string> = {
+  "Visita Startup (PCI)": "bg-primary",
+  "Onboarding PPE": "bg-blue-500",
+  "Instalação PPE": "bg-emerald-500",
+};
+
+function GanttView({
+  items,
+  dataIni,
+  dataFim,
+  onSelect,
+}: {
+  items: AgendaItem[];
+  dataIni: string;
+  dataFim: string;
+  onSelect: (projectId: string) => void;
+}) {
+  const days = useMemo(
+    () => eachDayOfInterval({ start: parseISO(dataIni), end: parseISO(dataFim) }),
+    [dataIni, dataFim]
+  );
+  const COL = 36; // px por dia
+  const LABEL_W = 280;
+
+  // Agrupa por projeto+prestador -> uma linha (barra) por instalação
+  const rows = useMemo(() => {
+    const map = new Map<string, { key: string; project: AgendaItem; events: AgendaItem[] }>();
+    for (const it of items) {
+      const k = `${it.projectId}__${it.prestadorId}`;
+      if (!map.has(k)) map.set(k, { key: k, project: it, events: [] });
+      map.get(k)!.events.push(it);
+    }
+    return Array.from(map.values()).sort((a, b) => {
+      const da = a.events.map((e) => e.data).sort()[0];
+      const db = b.events.map((e) => e.data).sort()[0];
+      return da.localeCompare(db);
+    });
+  }, [items]);
+
+  const today = startOfDay(new Date());
+  const todayIdx = days.findIndex((d) => isSameDay(d, today));
+  const width = days.length * COL;
+
+  return (
+    <TooltipProvider delayDuration={150}>
+      <Card>
+        <CardContent className="p-0 overflow-x-auto">
+          <div style={{ minWidth: LABEL_W + width }}>
+            {/* Cabeçalho com datas */}
+            <div className="flex sticky top-0 z-10 bg-card border-b">
+              <div
+                className="shrink-0 p-2 text-xs font-semibold text-muted-foreground border-r"
+                style={{ width: LABEL_W }}
+              >
+                Instalação / Prestador
+              </div>
+              <div className="relative flex" style={{ width }}>
+                {days.map((d, idx) => {
+                  const isHoje = todayIdx === idx;
+                  const wknd = isWeekend(d);
+                  const firstOfMonth = d.getDate() === 1 || idx === 0;
+                  return (
+                    <div
+                      key={idx}
+                      className={cn(
+                        "shrink-0 text-center text-[10px] py-1 border-r",
+                        wknd && "bg-muted/40",
+                        isHoje && "bg-primary/10"
+                      )}
+                      style={{ width: COL }}
+                    >
+                      {firstOfMonth && (
+                        <div className="text-[9px] font-semibold text-primary uppercase">
+                          {format(d, "MMM", { locale: ptBR })}
+                        </div>
+                      )}
+                      <div className={cn("font-medium", isHoje && "text-primary")}>
+                        {format(d, "dd")}
+                      </div>
+                      <div className="text-muted-foreground">
+                        {format(d, "EEEEE", { locale: ptBR })}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Linhas */}
+            {rows.map((row) => {
+              const eventDates = row.events.map((e) => parseISO(e.data)).sort((a, b) => +a - +b);
+              const startIdx = differenceInCalendarDays(eventDates[0], parseISO(dataIni));
+              const endIdx = differenceInCalendarDays(eventDates[eventDates.length - 1], parseISO(dataIni));
+              const barLeft = Math.max(0, startIdx) * COL;
+              const barWidth = Math.max(COL, (endIdx - Math.max(0, startIdx) + 1) * COL);
+
+              return (
+                <div key={row.key} className="flex border-b hover:bg-accent/30 transition-colors">
+                  <button
+                    onClick={() => onSelect(row.project.projectId)}
+                    className="shrink-0 p-2 text-left border-r hover:bg-accent/60"
+                    style={{ width: LABEL_W }}
+                  >
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                        #{row.project.numero}
+                      </Badge>
+                      <span className="text-sm font-medium truncate">{row.project.cliente}</span>
+                    </div>
+                    <div className="text-[11px] text-muted-foreground truncate mt-0.5 flex items-center gap-1">
+                      <HardHat className="w-3 h-3" />
+                      {row.project.prestadorNome}
+                      {(row.project.cidade || row.project.estado) && (
+                        <span className="ml-1">
+                          • {[row.project.cidade, row.project.estado].filter(Boolean).join(", ")}
+                        </span>
+                      )}
+                    </div>
+                  </button>
+
+                  <div className="relative" style={{ width, height: 56 }}>
+                    {/* Grid de fundo */}
+                    {days.map((d, idx) => (
+                      <div
+                        key={idx}
+                        className={cn(
+                          "absolute top-0 bottom-0 border-r",
+                          isWeekend(d) && "bg-muted/30",
+                          todayIdx === idx && "bg-primary/10"
+                        )}
+                        style={{ left: idx * COL, width: COL }}
+                      />
+                    ))}
+
+                    {/* Barra do período */}
+                    {endIdx >= 0 && startIdx < days.length && (
+                      <div
+                        className="absolute top-1/2 -translate-y-1/2 h-2 rounded bg-muted-foreground/20"
+                        style={{ left: barLeft, width: barWidth }}
+                      />
+                    )}
+
+                    {/* Marcadores dos eventos */}
+                    {row.events.map((ev, i) => {
+                      const idx = differenceInCalendarDays(parseISO(ev.data), parseISO(dataIni));
+                      if (idx < 0 || idx >= days.length) return null;
+                      return (
+                        <Tooltip key={i}>
+                          <TooltipTrigger asChild>
+                            <button
+                              onClick={() => onSelect(ev.projectId)}
+                              className={cn(
+                                "absolute top-1/2 -translate-y-1/2 rounded-md shadow-sm hover:scale-110 transition-transform",
+                                TIPO_COLOR[ev.tipo] || "bg-primary"
+                              )}
+                              style={{
+                                left: idx * COL + 4,
+                                width: COL - 8,
+                                height: 24,
+                              }}
+                            />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <div className="text-xs space-y-0.5">
+                              <p className="font-semibold">#{ev.numero} — {ev.cliente}</p>
+                              <p>{ev.tipo}</p>
+                              <p className="text-muted-foreground">
+                                {format(parseISO(ev.data), "EEEE, dd/MM/yyyy", { locale: ptBR })}
+                              </p>
+                              <p className="text-muted-foreground">
+                                {ev.prestadorNome}
+                                {ev.prestadorEmpresa && ` — ${ev.prestadorEmpresa}`}
+                              </p>
+                            </div>
+                          </TooltipContent>
+                        </Tooltip>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </CardContent>
+      </Card>
+    </TooltipProvider>
+  );
+}
       </div>
     </div>
   );

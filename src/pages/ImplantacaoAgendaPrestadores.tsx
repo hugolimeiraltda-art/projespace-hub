@@ -502,7 +502,3 @@ function GanttView({
     </TooltipProvider>
   );
 }
-      </div>
-    </div>
-  );
-}

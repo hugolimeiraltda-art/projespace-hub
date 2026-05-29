@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Calendar as CalendarIcon, HardHat, MapPin, Building } from "lucide-react";
-import { format, parseISO, startOfDay, addDays, isSameDay } from "date-fns";
+import { ArrowLeft, Calendar as CalendarIcon, HardHat, MapPin, Building, List, BarChart3 } from "lucide-react";
+import { format, parseISO, startOfDay, addDays, isSameDay, differenceInCalendarDays, eachDayOfInterval, isWeekend } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
 import { supabase } from "@/integrations/supabase/client";
@@ -12,6 +12,9 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
 
 interface Prestador {
   id: string;

@@ -32,6 +32,7 @@ import ImplantacaoRelatorios from "./pages/ImplantacaoRelatorios";
 import ImplantacaoPagamentoInstaladores from "./pages/ImplantacaoPagamentoInstaladores";
 import ImplantacaoOrcamentoSetor from "./pages/ImplantacaoOrcamentoSetor";
 import ImplantacaoBancoPrestadores from "./pages/ImplantacaoBancoPrestadores";
+import ImplantacaoAgendaPrestadores from "./pages/ImplantacaoAgendaPrestadores";
 import CarteiraClientes from "./pages/CarteiraClientes";
 import CustomerDetail from "./pages/CustomerDetail";
 import ControleEstoque from "./pages/ControleEstoque";
@@ -215,6 +216,10 @@ function AppRoutes() {
       <Route 
         path="/implantacao-banco-prestadores" 
         element={<ProtectedRoute><ImplantacaoBancoPrestadores /></ProtectedRoute>} 
+      />
+      <Route 
+        path="/implantacao-agenda-prestadores" 
+        element={<ProtectedRoute><ImplantacaoAgendaPrestadores /></ProtectedRoute>} 
       />
       <Route 
         path="/startup-projetos" 

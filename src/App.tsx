@@ -69,6 +69,7 @@ import PermissoesAcesso from "./pages/PermissoesAcesso";
 import ConfiguracoesEmail from "./pages/ConfiguracoesEmail";
 import NotFound from "./pages/NotFound";
 import ComparacaoPlanilhas from "./pages/ComparacaoPlanilhas";
+import ConsumoDados from "./pages/ConsumoDados";
 
 const queryClient = new QueryClient();
 
@@ -266,6 +267,10 @@ function AppRoutes() {
       <Route 
         path="/configuracoes/email" 
         element={<ProtectedRoute><ConfiguracoesEmail /></ProtectedRoute>} 
+      />
+      <Route 
+        path="/configuracoes/consumo-dados" 
+        element={<ProtectedRoute><ConsumoDados /></ProtectedRoute>} 
       />
       <Route 
         path="/controle-estoque" 

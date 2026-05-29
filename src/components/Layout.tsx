@@ -65,6 +65,7 @@ const ALL_NAV_ITEMS: NavItem[] = [
       { path: '/implantacao-pagamento-instaladores', label: 'Pgto. Instaladores', icon: DollarSign, menuKey: 'implantacao/pagamento-instaladores', section: 'Financeiro' },
       { path: '/implantacao-orcamento-setor', label: 'Orçamento do Setor', icon: BarChart3, menuKey: 'implantacao/orcamento-setor', section: 'Financeiro' },
       { path: '/implantacao-banco-prestadores', label: 'Prestadores', icon: HardHat, menuKey: 'implantacao/banco-prestadores', section: 'Banco de Prestadores' },
+      { path: '/implantacao-agenda-prestadores', label: 'Agenda de Prestadores', icon: Calendar, menuKey: 'implantacao/agenda-prestadores', section: 'Banco de Prestadores' },
     ],
   },
   {

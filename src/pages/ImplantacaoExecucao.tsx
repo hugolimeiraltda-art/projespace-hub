@@ -1256,6 +1256,30 @@ export default function ImplantacaoExecucao() {
                 />
               ))}
             </div>
+            <div className="flex items-center justify-between gap-3 flex-wrap mt-4 pt-4 border-t">
+              <span className="text-sm font-medium">Equipe de instalação</span>
+              <Select
+                value={etapas.ppe_equipe_prestador_id || ''}
+                onValueChange={(value) => updateEtapa('ppe_equipe_prestador_id', value)}
+              >
+                <SelectTrigger className="w-72">
+                  <SelectValue placeholder="Selecione a equipe..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {prestadoresList.length === 0 ? (
+                    <div className="px-3 py-2 text-xs text-muted-foreground">
+                      Nenhum prestador cadastrado no Banco de Prestadores
+                    </div>
+                  ) : (
+                    prestadoresList.map((p) => (
+                      <SelectItem key={p.id} value={p.id}>
+                        {p.nome}{p.empresa && p.empresa.length > 0 ? ` — ${p.empresa.join(', ')}` : ''}
+                      </SelectItem>
+                    ))
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
           </CardContent>
         </Card>
 

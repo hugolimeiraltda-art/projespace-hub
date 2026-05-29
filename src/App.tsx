@@ -32,6 +32,7 @@ import ImplantacaoRelatorios from "./pages/ImplantacaoRelatorios";
 import ImplantacaoPagamentoInstaladores from "./pages/ImplantacaoPagamentoInstaladores";
 import ImplantacaoOrcamentoSetor from "./pages/ImplantacaoOrcamentoSetor";
 import ImplantacaoBancoPrestadores from "./pages/ImplantacaoBancoPrestadores";
+import ImplantacaoAgendaPrestadores from "./pages/ImplantacaoAgendaPrestadores";
 import CarteiraClientes from "./pages/CarteiraClientes";
 import CustomerDetail from "./pages/CustomerDetail";
 import ControleEstoque from "./pages/ControleEstoque";

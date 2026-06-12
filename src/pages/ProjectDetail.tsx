@@ -840,7 +840,15 @@ export default function ProjectDetail() {
                 Projeto Vendido
               </Button>
             )}
-            {user?.role === 'admin' && (
+            {pendingValidationId && (user?.role === 'projetos' || user?.role === 'admin') && (
+              <Button
+                className="bg-amber-500 hover:bg-amber-500/90 text-white"
+                onClick={() => navigate(`/validacao-venda-engenharia/${project.id}`)}
+              >
+                <CheckCircle2 className="w-4 h-4 mr-2" />
+                Validar Venda
+              </Button>
+            )}
               <Button 
                 variant="destructive"
                 onClick={() => setShowDeleteDialog(true)}

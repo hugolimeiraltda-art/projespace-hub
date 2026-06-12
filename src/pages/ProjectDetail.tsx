@@ -71,6 +71,7 @@ export default function ProjectDetail() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isSubmittingSale, setIsSubmittingSale] = useState(false);
   const [showAIFeedbackDialog, setShowAIFeedbackDialog] = useState(false);
+  const [pendingValidationId, setPendingValidationId] = useState<string | null>(null);
 
   // Watch for project changes in the context
   useEffect(() => {
@@ -78,6 +79,21 @@ export default function ProjectDetail() {
     setProject(foundProject);
     setIsLoading(false);
   }, [id, projects, getProject]);
+
+  useEffect(() => {
+    if (!id) return;
+    (async () => {
+      const { data } = await supabase
+        .from('sale_validations')
+        .select('id')
+        .eq('project_id', id)
+        .eq('validation_status', 'PENDENTE')
+        .order('submitted_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      setPendingValidationId(data?.id ?? null);
+    })();
+  }, [id]);
 
   // Get changed fields for highlighting - MUST be before any early returns
   const changedFields = useMemo(() => project ? getChangedFields(project) : new Set<string>(), [project]);

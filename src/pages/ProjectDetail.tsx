@@ -849,6 +849,7 @@ export default function ProjectDetail() {
                 Validar Venda
               </Button>
             )}
+            {user?.role === 'admin' && (
               <Button 
                 variant="destructive"
                 onClick={() => setShowDeleteDialog(true)}

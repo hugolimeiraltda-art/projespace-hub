@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { SignedLink } from '@/components/SignedFile';
 import { Layout } from '@/components/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -239,11 +240,10 @@ export default function ImplantacaoBancoPrestadores() {
       const path = `${selectedPrestador.id}/${Date.now()}_${file.name}`;
       const { error: upErr } = await supabase.storage.from('prestador-documentos').upload(path, file);
       if (upErr) throw upErr;
-      const { data: urlData } = supabase.storage.from('prestador-documentos').getPublicUrl(path);
       const { error } = await supabase.from('prestador_documentos').insert({
         prestador_id: selectedPrestador.id,
         nome_arquivo: file.name,
-        arquivo_url: urlData.publicUrl,
+        arquivo_url: path,
         tipo_documento: file.name.split('.').pop()?.toUpperCase() || null,
         tamanho: file.size,
         created_by: user?.id,
@@ -627,7 +627,7 @@ export default function ImplantacaoBancoPrestadores() {
                             </div>
                             <div className="flex gap-1">
                               <Button variant="ghost" size="sm" asChild>
-                                <a href={doc.arquivo_url} target="_blank" rel="noopener noreferrer"><Eye className="w-4 h-4" /></a>
+                                <SignedLink bucket="prestador-documentos" value={doc.arquivo_url}><Eye className="w-4 h-4" /></SignedLink>
                               </Button>
                               <Button variant="ghost" size="sm" onClick={() => handleDeleteDoc(doc)}>
                                 <Trash2 className="w-4 h-4 text-destructive" />

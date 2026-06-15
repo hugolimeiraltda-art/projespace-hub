@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { SignedLink } from '@/components/SignedFile';
 import { Layout } from '@/components/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -235,11 +236,10 @@ const ManutencaoTecnicos = () => {
     const filePath = `${tecnicoId}/${Date.now()}_${file.name}`;
     const { error: upErr } = await supabase.storage.from('prestador-documentos').upload(filePath, file);
     if (upErr) { toast.error('Erro ao enviar arquivo'); setUploading(false); setUploadingCategory(null); return; }
-    const { data: urlData } = supabase.storage.from('prestador-documentos').getPublicUrl(filePath);
     await supabase.from('manutencao_tecnico_documentos').insert({
       tecnico_id: tecnicoId,
       nome_arquivo: file.name,
-      arquivo_url: urlData.publicUrl,
+      arquivo_url: filePath,
       tipo_documento: categoria || file.type,
       tamanho: file.size,
     });
@@ -467,9 +467,9 @@ const ManutencaoTecnicos = () => {
                               <div className="min-w-0">
                                 <p className="text-sm font-medium truncate">{tipo.label}</p>
                                 {docExistente ? (
-                                  <a href={docExistente.arquivo_url} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline truncate block">
+                                  <SignedLink bucket="prestador-documentos" value={docExistente.arquivo_url} className="text-xs text-primary hover:underline truncate block">
                                     {docExistente.nome_arquivo}
-                                  </a>
+                                  </SignedLink>
                                 ) : (
                                   <p className="text-xs text-muted-foreground">Não enviado</p>
                                 )}
@@ -641,9 +641,9 @@ const ManutencaoTecnicos = () => {
                             <div className="min-w-0">
                               <p className="text-sm font-medium truncate">{tipo.label}</p>
                               {docExistente ? (
-                                <a href={docExistente.arquivo_url} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline truncate block">
+                                <SignedLink bucket="prestador-documentos" value={docExistente.arquivo_url} className="text-xs text-primary hover:underline truncate block">
                                   {docExistente.nome_arquivo}
-                                </a>
+                                </SignedLink>
                               ) : (
                                 <p className="text-xs text-muted-foreground">Não enviado</p>
                               )}

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { SignedImage } from '@/components/SignedFile';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -324,7 +325,7 @@ export function ManutencaoChamados({ customers }: ManutencaoChamadosProps) {
     setExecDialogOpen(true);
   };
 
-  // Upload laudo photo
+  // Upload laudo photo (private bucket - store path, render via signed URL)
   const handleUploadLaudoFoto = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !execChamado) return;
@@ -332,8 +333,7 @@ export function ManutencaoChamados({ customers }: ManutencaoChamadosProps) {
     const filePath = `${execChamado.id}/${Date.now()}_${file.name}`;
     const { error: upErr } = await supabase.storage.from('manutencao-laudos').upload(filePath, file);
     if (upErr) { toast({ title: 'Erro', description: 'Erro ao enviar imagem', variant: 'destructive' }); setUploading(false); return; }
-    const { data: urlData } = supabase.storage.from('manutencao-laudos').getPublicUrl(filePath);
-    setExecFotos(prev => [...prev, urlData.publicUrl]);
+    setExecFotos(prev => [...prev, filePath]);
     setUploading(false);
     e.target.value = '';
   };
@@ -1056,9 +1056,9 @@ export function ManutencaoChamados({ customers }: ManutencaoChamadosProps) {
                 </div>
                 {execFotos.length > 0 && (
                   <div className="grid grid-cols-3 gap-2 mt-2">
-                    {execFotos.map((url, i) => (
+                    {execFotos.map((value, i) => (
                       <div key={i} className="relative group">
-                        <img src={url} alt={`Laudo ${i + 1}`} className="w-full h-24 object-cover rounded border" />
+                        <SignedImage bucket="manutencao-laudos" value={value} alt={`Laudo ${i + 1}`} className="w-full h-24 object-cover rounded border" />
                         <Button size="sm" variant="destructive" className="absolute top-1 right-1 h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => removeFoto(i)}>
                           <XCircle className="h-4 w-4" />
                         </Button>

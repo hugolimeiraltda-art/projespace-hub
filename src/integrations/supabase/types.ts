@@ -3640,6 +3640,7 @@ export type Database = {
         Args: { sf_filial: string; sf_project_id: string }
         Returns: boolean
       }
+      can_view_project: { Args: { _project_id: string }; Returns: boolean }
       get_user_filiais: { Args: { _user_id: string }; Returns: string[] }
       get_user_filial: { Args: { _user_id: string }; Returns: string }
       get_user_role: {

@@ -843,7 +843,7 @@ export default function ProjectDetail() {
             {pendingValidationId && (user?.role === 'projetos' || user?.role === 'admin') && (
               <Button
                 className="bg-amber-500 hover:bg-amber-500/90 text-white"
-                onClick={() => navigate(`/validacao-venda-engenharia/${project.id}`)}
+                onClick={() => navigate(`/projetos/${project.id}/validar-venda`)}
               >
                 <CheckCircle2 className="w-4 h-4 mr-2" />
                 Validar Venda

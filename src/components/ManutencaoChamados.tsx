@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { SignedImage } from '@/components/SignedFile';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';

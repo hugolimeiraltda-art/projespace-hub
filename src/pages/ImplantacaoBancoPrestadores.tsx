@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { SignedLink } from '@/components/SignedFile';
 import { Layout } from '@/components/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';

@@ -235,11 +235,10 @@ const ManutencaoTecnicos = () => {
     const filePath = `${tecnicoId}/${Date.now()}_${file.name}`;
     const { error: upErr } = await supabase.storage.from('prestador-documentos').upload(filePath, file);
     if (upErr) { toast.error('Erro ao enviar arquivo'); setUploading(false); setUploadingCategory(null); return; }
-    const { data: urlData } = supabase.storage.from('prestador-documentos').getPublicUrl(filePath);
     await supabase.from('manutencao_tecnico_documentos').insert({
       tecnico_id: tecnicoId,
       nome_arquivo: file.name,
-      arquivo_url: urlData.publicUrl,
+      arquivo_url: filePath,
       tipo_documento: categoria || file.type,
       tamanho: file.size,
     });

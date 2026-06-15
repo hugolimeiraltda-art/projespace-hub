@@ -285,11 +285,8 @@ export default function ManutencaoChamados() {
           continue;
         }
 
-        const { data: urlData } = supabase.storage
-          .from('manutencao-laudos')
-          .getPublicUrl(data.path);
-
-        setExecFotos(prev => [...prev, urlData.publicUrl]);
+        // Store path only — bucket is private, signed URLs created on demand
+        setExecFotos(prev => [...prev, data.path]);
       }
     } catch (err) {
       console.error('Error uploading fotos:', err);
@@ -992,9 +989,9 @@ export default function ManutencaoChamados() {
               <div className="space-y-2">
                 <Label>Fotos do Laudo</Label>
                 <div className="flex flex-wrap gap-3">
-                  {execFotos.map((url, idx) => (
+                  {execFotos.map((value, idx) => (
                     <div key={idx} className="relative group w-24 h-24 rounded-md overflow-hidden border">
-                      <img src={url} alt={`Foto ${idx + 1}`} className="w-full h-full object-cover" />
+                      <SignedImage bucket="manutencao-laudos" value={value} alt={`Foto ${idx + 1}`} className="w-full h-full object-cover" />
                       <button
                         type="button"
                         onClick={() => setExecFotos(prev => prev.filter((_, i) => i !== idx))}

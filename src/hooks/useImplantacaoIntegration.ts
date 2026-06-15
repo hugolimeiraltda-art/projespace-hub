@@ -282,10 +282,84 @@ export function useImplantacaoIntegration() {
     }
   };
 
+  // Activate PPE customer in the PPE portfolio when implantation finishes
+  const activatePPECustomerOnComplete = async (params: {
+    projectId: string;
+    razao_social: string;
+    contrato: string;
+    alarme_codigo?: string | null;
+    mensalidade?: number | null;
+    taxa_instalacao?: number | null;
+    filial?: string | null;
+    endereco?: string | null;
+    contato_nome?: string | null;
+    contato_telefone?: string | null;
+  }) => {
+    try {
+      if (!params.contrato || params.contrato.startsWith('TEMP-')) {
+        toast({
+          title: 'Contrato pendente',
+          description: 'Informe o número de contrato PPE antes de concluir a ativação.',
+          variant: 'destructive',
+        });
+        return false;
+      }
+
+      const { data: existing } = await supabase
+        .from('ppe_customers')
+        .select('id')
+        .eq('contrato', params.contrato)
+        .maybeSingle();
+
+      const payload = {
+        contrato: params.contrato,
+        razao_social: params.razao_social,
+        alarme_codigo: params.alarme_codigo || null,
+        mensalidade: params.mensalidade ?? null,
+        taxa_ativacao: params.taxa_instalacao ?? null,
+        filial: params.filial || null,
+        endereco: params.endereco || null,
+        contato_nome: params.contato_nome || null,
+        contato_telefone: params.contato_telefone || null,
+        data_ativacao: new Date().toISOString().split('T')[0],
+        sistema: 'ATIVO',
+      };
+
+      if (existing) {
+        await supabase.from('ppe_customers').update(payload).eq('id', existing.id);
+      } else {
+        await supabase.from('ppe_customers').insert(payload);
+      }
+
+      await supabase
+        .from('projects')
+        .update({
+          implantacao_status: 'CONCLUIDO_IMPLANTACAO',
+          implantacao_completed_at: new Date().toISOString(),
+        })
+        .eq('id', params.projectId);
+
+      toast({
+        title: 'Cliente PPE Ativado',
+        description: `${params.razao_social} foi movido para a carteira PPE como ativo.`,
+      });
+      return true;
+    } catch (error) {
+      console.error('Error activating PPE customer:', error);
+      toast({
+        title: 'Aviso',
+        description: 'Não foi possível ativar o cliente na carteira PPE automaticamente.',
+        variant: 'destructive',
+      });
+      return false;
+    }
+  };
+
   return {
     createCustomerOnStart,
     updateCustomerOnComplete,
     createAuditChamadoOnAssistedOperation,
     createPreventivaOnActivation,
+    activatePPECustomerOnComplete,
   };
 }

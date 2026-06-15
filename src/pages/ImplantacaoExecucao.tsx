@@ -190,7 +190,7 @@ export default function ImplantacaoExecucao() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { createPreventivaOnActivation } = useImplantacaoIntegration();
+  const { createPreventivaOnActivation, activatePPECustomerOnComplete } = useImplantacaoIntegration();
 
   const [project, setProject] = useState<Project | null>(null);
   const [etapas, setEtapas] = useState<ImplantacaoEtapas | null>(null);
@@ -549,15 +549,18 @@ export default function ImplantacaoExecucao() {
       // Auto-create preventive agenda when Etapa 6 is fully completed
       if (field === 'confirmacao_ativacao_financeira' && value === true && project) {
         const updatedEtapas = { ...etapas, ...updateData } as ImplantacaoEtapas;
-        const etapa6Complete = nocChamado?.item_6_1_status === 'success' 
-          && updatedEtapas.check_programacao 
-          && updatedEtapas.confirmacao_ativacao_financeira;
-        
+        const isPPEProject = project.tipo_implantacao === 'PPE';
+        const etapa6Complete = isPPEProject
+          ? updatedEtapas.check_programacao && updatedEtapas.confirmacao_ativacao_financeira
+          : nocChamado?.item_6_1_status === 'success'
+            && updatedEtapas.check_programacao
+            && updatedEtapas.confirmacao_ativacao_financeira;
+
         if (etapa6Complete) {
           const unidades = (saleForm as any)?.qtd_apartamentos || 0;
           const contrato = contratoInfo?.contrato || `TEMP-${project.numero_projeto}`;
           const praca = contratoInfo?.filial || null;
-          
+
           createPreventivaOnActivation(
             id!,
             project.cliente_condominio_nome,
@@ -565,6 +568,25 @@ export default function ImplantacaoExecucao() {
             unidades,
             praca || undefined,
           );
+
+          // For PPE projects: activate customer in PPE portfolio and conclude implantation
+          if (isPPEProject) {
+            const parseBRL = (v: string) => {
+              if (!v) return null;
+              const n = parseFloat(String(v).replace(/\./g, '').replace(',', '.'));
+              return isNaN(n) ? null : n;
+            };
+            activatePPECustomerOnComplete({
+              projectId: id!,
+              razao_social: project.cliente_condominio_nome,
+              contrato,
+              alarme_codigo: contratoInfo?.alarme_codigo || null,
+              mensalidade: parseBRL(contratoInfo?.mensalidade),
+              taxa_instalacao: parseBRL(contratoInfo?.taxa_instalacao),
+              filial: praca,
+              endereco: project.endereco_condominio || (project.cliente_cidade && project.cliente_estado ? `${project.cliente_cidade}, ${project.cliente_estado}` : null),
+            });
+          }
         }
       }
 

@@ -334,7 +334,7 @@ export function useImplantacaoIntegration() {
       await supabase
         .from('projects')
         .update({
-          implantacao_status: 'CONCLUIDO',
+          implantacao_status: 'CONCLUIDO_IMPLANTACAO',
           implantacao_completed_at: new Date().toISOString(),
         })
         .eq('id', params.projectId);

@@ -52,7 +52,33 @@ serve(async (req) => {
   }
 
   try {
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+    const authClient = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_ANON_KEY")!, { global: { headers: { Authorization: authHeader } } });
+    const { data: claimsData, error: claimsErr } = await authClient.auth.getClaims(authHeader.replace("Bearer ", ""));
+    if (claimsErr || !claimsData?.claims) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
     const { saleFormData, projectInfo, tapFormData, comments, attachments, attachmentSignedUrls } = await req.json();
+
+    // SSRF guard: only allow Supabase storage URLs in attachmentSignedUrls
+    if (Array.isArray(attachmentSignedUrls)) {
+      const allowedHost = new URL(Deno.env.get("SUPABASE_URL")!).hostname;
+      for (const att of attachmentSignedUrls) {
+        try {
+          const h = new URL(att.url).hostname;
+          if (h !== allowedHost) {
+            return new Response(JSON.stringify({ error: "Invalid attachment URL host" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+          }
+        } catch {
+          return new Response(JSON.stringify({ error: "Invalid attachment URL" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        }
+      }
+    }
+
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 

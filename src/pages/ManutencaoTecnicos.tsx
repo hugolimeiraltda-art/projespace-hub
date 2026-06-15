@@ -466,9 +466,9 @@ const ManutencaoTecnicos = () => {
                               <div className="min-w-0">
                                 <p className="text-sm font-medium truncate">{tipo.label}</p>
                                 {docExistente ? (
-                                  <a href={docExistente.arquivo_url} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline truncate block">
+                                  <SignedLink bucket="prestador-documentos" value={docExistente.arquivo_url} className="text-xs text-primary hover:underline truncate block">
                                     {docExistente.nome_arquivo}
-                                  </a>
+                                  </SignedLink>
                                 ) : (
                                   <p className="text-xs text-muted-foreground">Não enviado</p>
                                 )}
@@ -640,9 +640,9 @@ const ManutencaoTecnicos = () => {
                             <div className="min-w-0">
                               <p className="text-sm font-medium truncate">{tipo.label}</p>
                               {docExistente ? (
-                                <a href={docExistente.arquivo_url} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline truncate block">
+                                <SignedLink bucket="prestador-documentos" value={docExistente.arquivo_url} className="text-xs text-primary hover:underline truncate block">
                                   {docExistente.nome_arquivo}
-                                </a>
+                                </SignedLink>
                               ) : (
                                 <p className="text-xs text-muted-foreground">Não enviado</p>
                               )}

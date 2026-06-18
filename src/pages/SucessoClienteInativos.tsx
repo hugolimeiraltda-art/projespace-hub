@@ -65,12 +65,15 @@ export default function SucessoClienteInativos() {
 
   // Form state
   const [contrato, setContrato] = useState('');
+  const [codSp, setCodSp] = useState('');
   const [razaoSocial, setRazaoSocial] = useState('');
   const [endereco, setEndereco] = useState('');
   const [cidade, setCidade] = useState('');
   const [filial, setFilial] = useState('');
   const [dataEntrada, setDataEntrada] = useState('');
   const [dataCancelamento, setDataCancelamento] = useState('');
+  const [dataTermino, setDataTermino] = useState('');
+  const [mensalidade, setMensalidade] = useState('');
   const [motivo, setMotivo] = useState('');
   const [observacoes, setObservacoes] = useState('');
 

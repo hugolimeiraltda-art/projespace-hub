@@ -166,7 +166,10 @@ export default function SucessoClienteAtivos() {
         .from('customer_portfolio')
         .select('id, contrato, razao_social, filial, praca, unidades, mensalidade, data_ativacao, data_termino, endereco')
         .order('razao_social');
-      setCustomersPci((data || []) as Customer[]);
+      const pciData = (data || []).filter((c: any) =>
+        /^SP|^PR|^PD|^PCI/i.test(c.contrato)
+      ) as Customer[];
+      setCustomersPci(pciData);
       setLoadingPci(false);
     })();
     (async () => {

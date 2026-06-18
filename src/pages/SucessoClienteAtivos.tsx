@@ -13,6 +13,7 @@ import { Search, Building2, MoreHorizontal, RefreshCw, UserCheck, MessageSquareW
 import { useNavigate } from 'react-router-dom';
 import { differenceInDays, parseISO, addMonths } from 'date-fns';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 interface Customer {
   id: string;
@@ -146,25 +147,55 @@ function ColumnHeader({
 
 export default function SucessoClienteAtivos() {
   const navigate = useNavigate();
-  const [customers, setCustomers] = useState<Customer[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [carteira, setCarteira] = useState<'pci' | 'ppe'>('pci');
+  const [customersPci, setCustomersPci] = useState<Customer[]>([]);
+  const [customersPpe, setCustomersPpe] = useState<Customer[]>([]);
+  const [loadingPci, setLoadingPci] = useState(true);
+  const [loadingPpe, setLoadingPpe] = useState(true);
   const [search, setSearch] = useState('');
   const [sortKey, setSortKey] = useState<SortKey | null>(null);
   const [sortDir, setSortDir] = useState<SortDir>(null);
   const [columnFilters, setColumnFilters] = useState<Record<string, string[]>>({});
 
+  const customers = carteira === 'pci' ? customersPci : customersPpe;
+  const loading = carteira === 'pci' ? loadingPci : loadingPpe;
+
   useEffect(() => {
-    const load = async () => {
+    (async () => {
       const { data } = await supabase
         .from('customer_portfolio')
         .select('id, contrato, razao_social, filial, praca, unidades, mensalidade, data_ativacao, data_termino, endereco')
         .order('razao_social');
-
-      setCustomers((data || []) as Customer[]);
-      setLoading(false);
-    };
-    load();
+      setCustomersPci((data || []) as Customer[]);
+      setLoadingPci(false);
+    })();
+    (async () => {
+      const { data } = await supabase
+        .from('ppe_customers')
+        .select('id, contrato, razao_social, filial, mensalidade, data_ativacao, data_termino, endereco, cameras')
+        .order('razao_social');
+      const mapped: Customer[] = (data || []).map((r: any) => ({
+        id: r.id,
+        contrato: r.contrato,
+        razao_social: r.razao_social,
+        filial: r.filial,
+        praca: null,
+        unidades: r.cameras ?? null,
+        mensalidade: r.mensalidade,
+        data_ativacao: r.data_ativacao,
+        data_termino: r.data_termino,
+        endereco: r.endereco,
+      }));
+      setCustomersPpe(mapped);
+      setLoadingPpe(false);
+    })();
   }, []);
+
+  // Reset filters when switching tabs
+  useEffect(() => {
+    setColumnFilters({});
+    setSearch('');
+  }, [carteira]);
 
   const handleSort = (key: SortKey) => {
     if (sortKey === key) {
@@ -301,7 +332,7 @@ export default function SucessoClienteAtivos() {
           <Card>
             <CardContent className="pt-6">
               <div className="text-2xl font-bold">{totalUnidades}</div>
-              <p className="text-sm text-muted-foreground">Total de Unidades</p>
+              <p className="text-sm text-muted-foreground">{carteira === 'ppe' ? 'Total de Câmeras' : 'Total de Unidades'}</p>
             </CardContent>
           </Card>
           <Card>
@@ -319,6 +350,13 @@ export default function SucessoClienteAtivos() {
             </CardContent>
           </Card>
         </div>
+
+        <Tabs value={carteira} onValueChange={(v) => setCarteira(v as 'pci' | 'ppe')}>
+          <TabsList>
+            <TabsTrigger value="pci">Clientes PCI ({customersPci.length})</TabsTrigger>
+            <TabsTrigger value="ppe">Clientes PPE ({customersPpe.length})</TabsTrigger>
+          </TabsList>
+        </Tabs>
 
         {/* Table */}
         <Card>
@@ -363,7 +401,7 @@ export default function SucessoClienteAtivos() {
                       <ColumnHeader label="Contrato" sortKey="contrato" currentSort={sortKey} currentDir={sortDir} onSort={handleSort} filterValues={filterOptions.contrato} selectedFilters={columnFilters.contrato || []} onFilterChange={handleFilterChange} />
                       <ColumnHeader label="Razão Social" sortKey="razao_social" currentSort={sortKey} currentDir={sortDir} onSort={handleSort} filterValues={filterOptions.razao_social} selectedFilters={columnFilters.razao_social || []} onFilterChange={handleFilterChange} />
                       <ColumnHeader label="Filial" sortKey="filial" currentSort={sortKey} currentDir={sortDir} onSort={handleSort} filterValues={filterOptions.filial} selectedFilters={columnFilters.filial || []} onFilterChange={handleFilterChange} />
-                      <ColumnHeader label="Unid." sortKey="unidades" currentSort={sortKey} currentDir={sortDir} onSort={handleSort} filterValues={filterOptions.unidades} selectedFilters={columnFilters.unidades || []} onFilterChange={handleFilterChange} className="text-center" />
+                      <ColumnHeader label={carteira === 'ppe' ? 'Câmeras' : 'Unid.'} sortKey="unidades" currentSort={sortKey} currentDir={sortDir} onSort={handleSort} filterValues={filterOptions.unidades} selectedFilters={columnFilters.unidades || []} onFilterChange={handleFilterChange} className="text-center" />
                       <ColumnHeader label="Mensalidade" sortKey="mensalidade" currentSort={sortKey} currentDir={sortDir} onSort={handleSort} filterValues={filterOptions.mensalidade} selectedFilters={columnFilters.mensalidade || []} onFilterChange={handleFilterChange} />
                       <ColumnHeader label="Ativação" sortKey="data_ativacao" currentSort={sortKey} currentDir={sortDir} onSort={handleSort} filterValues={filterOptions.data_ativacao} selectedFilters={columnFilters.data_ativacao || []} onFilterChange={handleFilterChange} />
                       <ColumnHeader label="Contrato" sortKey="contrato_status" currentSort={sortKey} currentDir={sortDir} onSort={handleSort} filterValues={filterOptions.contrato_status} selectedFilters={columnFilters.contrato_status || []} onFilterChange={handleFilterChange} />

@@ -17,15 +17,18 @@ export type Database = {
       clientes_inativos: {
         Row: {
           cidade: string | null
+          cod_sp: string | null
           contrato: string
           created_at: string
           created_by: string | null
           created_by_name: string | null
           data_cancelamento: string
           data_entrada: string | null
+          data_termino: string | null
           endereco: string | null
           filial: string | null
           id: string
+          mensalidade: number | null
           motivo: string
           observacoes: string | null
           razao_social: string
@@ -33,15 +36,18 @@ export type Database = {
         }
         Insert: {
           cidade?: string | null
+          cod_sp?: string | null
           contrato: string
           created_at?: string
           created_by?: string | null
           created_by_name?: string | null
           data_cancelamento: string
           data_entrada?: string | null
+          data_termino?: string | null
           endereco?: string | null
           filial?: string | null
           id?: string
+          mensalidade?: number | null
           motivo: string
           observacoes?: string | null
           razao_social: string
@@ -49,15 +55,18 @@ export type Database = {
         }
         Update: {
           cidade?: string | null
+          cod_sp?: string | null
           contrato?: string
           created_at?: string
           created_by?: string | null
           created_by_name?: string | null
           data_cancelamento?: string
           data_entrada?: string | null
+          data_termino?: string | null
           endereco?: string | null
           filial?: string | null
           id?: string
+          mensalidade?: number | null
           motivo?: string
           observacoes?: string | null
           razao_social?: string

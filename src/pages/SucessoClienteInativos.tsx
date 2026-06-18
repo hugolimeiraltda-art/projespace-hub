@@ -96,12 +96,15 @@ export default function SucessoClienteInativos() {
 
   const resetForm = () => {
     setContrato('');
+    setCodSp('');
     setRazaoSocial('');
     setEndereco('');
     setCidade('');
     setFilial('');
     setDataEntrada('');
     setDataCancelamento('');
+    setDataTermino('');
+    setMensalidade('');
     setMotivo('');
     setObservacoes('');
   };
@@ -118,12 +121,15 @@ export default function SucessoClienteInativos() {
         .from('clientes_inativos' as any)
         .insert({
           contrato,
+          cod_sp: codSp || null,
           razao_social: razaoSocial,
           endereco: endereco || null,
           cidade: cidade || null,
           filial: filial || null,
           data_entrada: dataEntrada || null,
           data_cancelamento: dataCancelamento,
+          data_termino: dataTermino || null,
+          mensalidade: mensalidade ? Number(mensalidade.replace(',', '.')) : null,
           motivo,
           observacoes: observacoes || null,
           created_by: user?.id,

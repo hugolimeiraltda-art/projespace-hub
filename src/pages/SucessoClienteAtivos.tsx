@@ -9,7 +9,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Checkbox } from '@/components/ui/checkbox';
 import { supabase } from '@/integrations/supabase/client';
-import { Search, Building2, MoreHorizontal, RefreshCw, UserCheck, MessageSquareWarning, ThumbsUp, Eye, ArrowUp, ArrowDown, ArrowUpDown, Filter, X } from 'lucide-react';
+import { Search, Building2, MoreHorizontal, RefreshCw, UserCheck, MessageSquareWarning, ThumbsUp, Eye, ArrowUp, ArrowDown, ArrowUpDown, Filter, X, Hammer, ExternalLink } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { differenceInDays, parseISO, addMonths } from 'date-fns';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -26,7 +26,10 @@ interface Customer {
   data_ativacao: string | null;
   data_termino: string | null;
   endereco: string | null;
+  project_id?: string | null;
+  status_implantacao?: string | null;
 }
+
 
 type SortDir = 'asc' | 'desc' | null;
 type SortKey = 'contrato' | 'razao_social' | 'filial' | 'unidades' | 'mensalidade' | 'data_ativacao' | 'contrato_status';

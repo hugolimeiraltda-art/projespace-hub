@@ -250,19 +250,26 @@ export default function SucessoClienteInativos() {
                   <TableHeader>
                     <TableRow>
                       <TableHead>Contrato</TableHead>
+                      <TableHead>Cód SP</TableHead>
                       <TableHead>Razão Social</TableHead>
                       <TableHead>Cidade</TableHead>
                       <TableHead>Filial</TableHead>
-                      <TableHead>Data Entrada</TableHead>
+                      <TableHead>Data Início</TableHead>
+                      <TableHead>Data Término</TableHead>
                       <TableHead>Data Cancelamento</TableHead>
+                      <TableHead className="text-right">Mensalidade</TableHead>
+                      <TableHead className="text-right">Valor Total Pago</TableHead>
                       <TableHead>Motivo</TableHead>
                       <TableHead className="w-10"></TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filtered.map(c => (
+                    {filtered.map(c => {
+                      const totalPago = calcValorTotalPago(c.mensalidade, c.data_entrada, c.data_cancelamento);
+                      return (
                       <TableRow key={c.id}>
                         <TableCell className="font-medium">{c.contrato}</TableCell>
+                        <TableCell>{c.cod_sp || '-'}</TableCell>
                         <TableCell>{c.razao_social}</TableCell>
                         <TableCell>{c.cidade || '-'}</TableCell>
                         <TableCell>
@@ -272,8 +279,13 @@ export default function SucessoClienteInativos() {
                           {c.data_entrada ? format(parseISO(c.data_entrada), 'dd/MM/yyyy') : '-'}
                         </TableCell>
                         <TableCell>
+                          {c.data_termino ? format(parseISO(c.data_termino), 'dd/MM/yyyy') : '-'}
+                        </TableCell>
+                        <TableCell>
                           {format(parseISO(c.data_cancelamento), 'dd/MM/yyyy')}
                         </TableCell>
+                        <TableCell className="text-right">{formatBRL(c.mensalidade)}</TableCell>
+                        <TableCell className="text-right font-medium">{formatBRL(totalPago)}</TableCell>
                         <TableCell>{getMotivoBadge(c.motivo)}</TableCell>
                         <TableCell>
                           <Button variant="ghost" size="icon" onClick={() => handleExcluir(c.id)}>
@@ -281,7 +293,8 @@ export default function SucessoClienteInativos() {
                           </Button>
                         </TableCell>
                       </TableRow>
-                    ))}
+                      );
+                    })}
                   </TableBody>
                 </Table>
               </div>

@@ -332,7 +332,7 @@ export default function SucessoClienteAtivos() {
           <Card>
             <CardContent className="pt-6">
               <div className="text-2xl font-bold">{totalUnidades}</div>
-              <p className="text-sm text-muted-foreground">Total de Unidades</p>
+              <p className="text-sm text-muted-foreground">{carteira === 'ppe' ? 'Total de Câmeras' : 'Total de Unidades'}</p>
             </CardContent>
           </Card>
           <Card>

@@ -162,12 +162,16 @@ export default function SucessoClienteAtivos() {
 
   useEffect(() => {
     (async () => {
-      const { data } = await supabase
-        .from('customer_portfolio')
-        .select('id, contrato, razao_social, filial, praca, unidades, mensalidade, data_ativacao, data_termino, endereco')
-        .order('razao_social');
+      const [{ data }, { data: cancelled }] = await Promise.all([
+        supabase
+          .from('customer_portfolio')
+          .select('id, contrato, razao_social, filial, praca, unidades, mensalidade, data_ativacao, data_termino, endereco')
+          .order('razao_social'),
+        supabase.from('customer_cancelamentos').select('customer_id'),
+      ]);
+      const cancelledIds = new Set((cancelled || []).map((r: any) => r.customer_id));
       const pciData = (data || []).filter((c: any) =>
-        /^SP|^PR|^PD|^PCI/i.test(c.contrato)
+        /^SP|^PR|^PD|^PCI/i.test(c.contrato) && !cancelledIds.has(c.id)
       ) as Customer[];
       setCustomersPci(pciData);
       setLoadingPci(false);

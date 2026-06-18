@@ -28,17 +28,31 @@ const FILIAIS = ['BHZ', 'VIX', 'RJ', 'SPO'];
 interface ClienteInativo {
   id: string;
   contrato: string;
+  cod_sp: string | null;
   razao_social: string;
   endereco: string | null;
   cidade: string | null;
   filial: string | null;
   data_entrada: string | null;
   data_cancelamento: string;
+  data_termino: string | null;
+  mensalidade: number | null;
   motivo: string;
   observacoes: string | null;
   created_by_name: string | null;
   created_at: string;
 }
+
+const formatBRL = (v: number | null) =>
+  v == null ? '-' : v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+const calcValorTotalPago = (mensalidade: number | null, entrada: string | null, cancelamento: string) => {
+  if (!mensalidade || !entrada) return null;
+  const d1 = parseISO(entrada);
+  const d2 = parseISO(cancelamento);
+  const meses = Math.max(0, (d2.getFullYear() - d1.getFullYear()) * 12 + (d2.getMonth() - d1.getMonth()));
+  return mensalidade * meses;
+};
 
 export default function SucessoClienteInativos() {
   const { toast } = useToast();
@@ -51,12 +65,15 @@ export default function SucessoClienteInativos() {
 
   // Form state
   const [contrato, setContrato] = useState('');
+  const [codSp, setCodSp] = useState('');
   const [razaoSocial, setRazaoSocial] = useState('');
   const [endereco, setEndereco] = useState('');
   const [cidade, setCidade] = useState('');
   const [filial, setFilial] = useState('');
   const [dataEntrada, setDataEntrada] = useState('');
   const [dataCancelamento, setDataCancelamento] = useState('');
+  const [dataTermino, setDataTermino] = useState('');
+  const [mensalidade, setMensalidade] = useState('');
   const [motivo, setMotivo] = useState('');
   const [observacoes, setObservacoes] = useState('');
 
@@ -79,12 +96,15 @@ export default function SucessoClienteInativos() {
 
   const resetForm = () => {
     setContrato('');
+    setCodSp('');
     setRazaoSocial('');
     setEndereco('');
     setCidade('');
     setFilial('');
     setDataEntrada('');
     setDataCancelamento('');
+    setDataTermino('');
+    setMensalidade('');
     setMotivo('');
     setObservacoes('');
   };
@@ -101,12 +121,15 @@ export default function SucessoClienteInativos() {
         .from('clientes_inativos' as any)
         .insert({
           contrato,
+          cod_sp: codSp || null,
           razao_social: razaoSocial,
           endereco: endereco || null,
           cidade: cidade || null,
           filial: filial || null,
           data_entrada: dataEntrada || null,
           data_cancelamento: dataCancelamento,
+          data_termino: dataTermino || null,
+          mensalidade: mensalidade ? Number(mensalidade.replace(',', '.')) : null,
           motivo,
           observacoes: observacoes || null,
           created_by: user?.id,
@@ -227,19 +250,26 @@ export default function SucessoClienteInativos() {
                   <TableHeader>
                     <TableRow>
                       <TableHead>Contrato</TableHead>
+                      <TableHead>Cód SP</TableHead>
                       <TableHead>Razão Social</TableHead>
                       <TableHead>Cidade</TableHead>
                       <TableHead>Filial</TableHead>
-                      <TableHead>Data Entrada</TableHead>
+                      <TableHead>Data Início</TableHead>
+                      <TableHead>Data Término</TableHead>
                       <TableHead>Data Cancelamento</TableHead>
+                      <TableHead className="text-right">Mensalidade</TableHead>
+                      <TableHead className="text-right">Valor Total Pago</TableHead>
                       <TableHead>Motivo</TableHead>
                       <TableHead className="w-10"></TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filtered.map(c => (
+                    {filtered.map(c => {
+                      const totalPago = calcValorTotalPago(c.mensalidade, c.data_entrada, c.data_cancelamento);
+                      return (
                       <TableRow key={c.id}>
                         <TableCell className="font-medium">{c.contrato}</TableCell>
+                        <TableCell>{c.cod_sp || '-'}</TableCell>
                         <TableCell>{c.razao_social}</TableCell>
                         <TableCell>{c.cidade || '-'}</TableCell>
                         <TableCell>
@@ -249,8 +279,13 @@ export default function SucessoClienteInativos() {
                           {c.data_entrada ? format(parseISO(c.data_entrada), 'dd/MM/yyyy') : '-'}
                         </TableCell>
                         <TableCell>
+                          {c.data_termino ? format(parseISO(c.data_termino), 'dd/MM/yyyy') : '-'}
+                        </TableCell>
+                        <TableCell>
                           {format(parseISO(c.data_cancelamento), 'dd/MM/yyyy')}
                         </TableCell>
+                        <TableCell className="text-right">{formatBRL(c.mensalidade)}</TableCell>
+                        <TableCell className="text-right font-medium">{formatBRL(totalPago)}</TableCell>
                         <TableCell>{getMotivoBadge(c.motivo)}</TableCell>
                         <TableCell>
                           <Button variant="ghost" size="icon" onClick={() => handleExcluir(c.id)}>
@@ -258,7 +293,8 @@ export default function SucessoClienteInativos() {
                           </Button>
                         </TableCell>
                       </TableRow>
-                    ))}
+                      );
+                    })}
                   </TableBody>
                 </Table>
               </div>
@@ -283,9 +319,13 @@ export default function SucessoClienteInativos() {
                 <Input value={contrato} onChange={e => setContrato(e.target.value)} placeholder="Nº do contrato" />
               </div>
               <div>
-                <Label>Razão Social *</Label>
-                <Input value={razaoSocial} onChange={e => setRazaoSocial(e.target.value)} placeholder="Nome do condomínio" />
+                <Label>Cód SP</Label>
+                <Input value={codSp} onChange={e => setCodSp(e.target.value)} placeholder="Ex.: SP91" />
               </div>
+            </div>
+            <div>
+              <Label>Razão Social *</Label>
+              <Input value={razaoSocial} onChange={e => setRazaoSocial(e.target.value)} placeholder="Nome do condomínio" />
             </div>
             <div>
               <Label>Endereço</Label>
@@ -310,15 +350,28 @@ export default function SucessoClienteInativos() {
                 </Select>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-3 gap-4">
               <div>
-                <Label>Data de Entrada</Label>
+                <Label>Data de Início</Label>
                 <Input type="date" value={dataEntrada} onChange={e => setDataEntrada(e.target.value)} />
+              </div>
+              <div>
+                <Label>Data de Término</Label>
+                <Input type="date" value={dataTermino} onChange={e => setDataTermino(e.target.value)} />
               </div>
               <div>
                 <Label>Data de Cancelamento *</Label>
                 <Input type="date" value={dataCancelamento} onChange={e => setDataCancelamento(e.target.value)} />
               </div>
+            </div>
+            <div>
+              <Label>Mensalidade (R$)</Label>
+              <Input
+                inputMode="decimal"
+                value={mensalidade}
+                onChange={e => setMensalidade(e.target.value)}
+                placeholder="Ex.: 1500,00"
+              />
             </div>
             <div>
               <Label>Motivo do Cancelamento *</Label>

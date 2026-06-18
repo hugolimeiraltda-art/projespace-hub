@@ -28,17 +28,31 @@ const FILIAIS = ['BHZ', 'VIX', 'RJ', 'SPO'];
 interface ClienteInativo {
   id: string;
   contrato: string;
+  cod_sp: string | null;
   razao_social: string;
   endereco: string | null;
   cidade: string | null;
   filial: string | null;
   data_entrada: string | null;
   data_cancelamento: string;
+  data_termino: string | null;
+  mensalidade: number | null;
   motivo: string;
   observacoes: string | null;
   created_by_name: string | null;
   created_at: string;
 }
+
+const formatBRL = (v: number | null) =>
+  v == null ? '-' : v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+const calcValorTotalPago = (mensalidade: number | null, entrada: string | null, cancelamento: string) => {
+  if (!mensalidade || !entrada) return null;
+  const d1 = parseISO(entrada);
+  const d2 = parseISO(cancelamento);
+  const meses = Math.max(0, (d2.getFullYear() - d1.getFullYear()) * 12 + (d2.getMonth() - d1.getMonth()));
+  return mensalidade * meses;
+};
 
 export default function SucessoClienteInativos() {
   const { toast } = useToast();

@@ -427,7 +427,17 @@ export default function SucessoClienteAtivos() {
                       const showBadge = status && (status.label === 'Vencido' || status.dias <= 180);
                       return (
                         <TableRow key={c.id} className="group">
-                          <TableCell className="font-medium">{c.contrato}</TableCell>
+                          <TableCell className="font-medium">
+                            <div className="flex items-center gap-2">
+                              <span>{c.contrato}</span>
+                              {c.contrato?.startsWith('TEMP-') && (
+                                <Badge variant="outline" className="gap-1 text-[10px] border-amber-500/50 text-amber-700 dark:text-amber-400">
+                                  <Hammer className="h-3 w-3" />
+                                  {c.status_implantacao === 'CONCLUIDO_IMPLANTACAO' ? 'Implantado' : 'Em Obra'}
+                                </Badge>
+                              )}
+                            </div>
+                          </TableCell>
                           <TableCell>
                             <button
                               className="text-left hover:text-primary hover:underline transition-colors font-medium"
@@ -439,6 +449,7 @@ export default function SucessoClienteAtivos() {
                           <TableCell>
                             {c.filial ? <Badge variant="outline">{c.filial}</Badge> : '-'}
                           </TableCell>
+
                           <TableCell className="text-center">{c.unidades || '-'}</TableCell>
                           <TableCell>
                             {c.mensalidade

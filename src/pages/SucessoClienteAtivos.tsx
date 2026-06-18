@@ -9,7 +9,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Checkbox } from '@/components/ui/checkbox';
 import { supabase } from '@/integrations/supabase/client';
-import { Search, Building2, MoreHorizontal, RefreshCw, UserCheck, MessageSquareWarning, ThumbsUp, Eye, ArrowUp, ArrowDown, ArrowUpDown, Filter, X } from 'lucide-react';
+import { Search, Building2, MoreHorizontal, RefreshCw, UserCheck, MessageSquareWarning, ThumbsUp, Eye, ArrowUp, ArrowDown, ArrowUpDown, Filter, X, Hammer, ExternalLink } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { differenceInDays, parseISO, addMonths } from 'date-fns';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -26,7 +26,10 @@ interface Customer {
   data_ativacao: string | null;
   data_termino: string | null;
   endereco: string | null;
+  project_id?: string | null;
+  status_implantacao?: string | null;
 }
+
 
 type SortDir = 'asc' | 'desc' | null;
 type SortKey = 'contrato' | 'razao_social' | 'filial' | 'unidades' | 'mensalidade' | 'data_ativacao' | 'contrato_status';
@@ -165,13 +168,13 @@ export default function SucessoClienteAtivos() {
       const [{ data }, { data: cancelled }] = await Promise.all([
         supabase
           .from('customer_portfolio')
-          .select('id, contrato, razao_social, filial, praca, unidades, mensalidade, data_ativacao, data_termino, endereco')
+          .select('id, contrato, razao_social, filial, praca, unidades, mensalidade, data_ativacao, data_termino, endereco, project_id, status_implantacao')
           .order('razao_social'),
         supabase.from('customer_cancelamentos').select('customer_id'),
       ]);
       const cancelledIds = new Set((cancelled || []).map((r: any) => r.customer_id));
       const pciData = (data || []).filter((c: any) =>
-        /^SP|^PR|^PD|^PCI/i.test(c.contrato) && !cancelledIds.has(c.id)
+        /^(TEMP-|SP|PR|PD|PCI)/i.test(c.contrato) && !cancelledIds.has(c.id)
       ) as Customer[];
       setCustomersPci(pciData);
       setLoadingPci(false);
@@ -192,11 +195,14 @@ export default function SucessoClienteAtivos() {
         data_ativacao: r.data_ativacao,
         data_termino: r.data_termino,
         endereco: r.endereco,
+        project_id: null,
+        status_implantacao: null,
       }));
       setCustomersPpe(mapped);
       setLoadingPpe(false);
     })();
   }, []);
+
 
   // Reset filters when switching tabs
   useEffect(() => {
@@ -421,7 +427,17 @@ export default function SucessoClienteAtivos() {
                       const showBadge = status && (status.label === 'Vencido' || status.dias <= 180);
                       return (
                         <TableRow key={c.id} className="group">
-                          <TableCell className="font-medium">{c.contrato}</TableCell>
+                          <TableCell className="font-medium">
+                            <div className="flex items-center gap-2">
+                              <span>{c.contrato}</span>
+                              {c.contrato?.startsWith('TEMP-') && (
+                                <Badge variant="outline" className="gap-1 text-[10px] border-amber-500/50 text-amber-700 dark:text-amber-400">
+                                  <Hammer className="h-3 w-3" />
+                                  {c.status_implantacao === 'CONCLUIDO_IMPLANTACAO' ? 'Implantado' : 'Em Obra'}
+                                </Badge>
+                              )}
+                            </div>
+                          </TableCell>
                           <TableCell>
                             <button
                               className="text-left hover:text-primary hover:underline transition-colors font-medium"
@@ -433,6 +449,7 @@ export default function SucessoClienteAtivos() {
                           <TableCell>
                             {c.filial ? <Badge variant="outline">{c.filial}</Badge> : '-'}
                           </TableCell>
+
                           <TableCell className="text-center">{c.unidades || '-'}</TableCell>
                           <TableCell>
                             {c.mensalidade
@@ -463,6 +480,13 @@ export default function SucessoClienteAtivos() {
                                   <Eye className="h-4 w-4 mr-2" />
                                   Ver Detalhes
                                 </DropdownMenuItem>
+                                {c.project_id && (
+                                  <DropdownMenuItem onClick={() => navigate(`/projetos/${c.project_id}`)}>
+                                    <ExternalLink className="h-4 w-4 mr-2" />
+                                    Ver Projeto Vinculado
+                                  </DropdownMenuItem>
+                                )}
+
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem onClick={() => navigate(`/sucesso-cliente/cliente/${c.id}#renovacao`)}>
                                   <RefreshCw className="h-4 w-4 mr-2" />

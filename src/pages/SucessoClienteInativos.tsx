@@ -350,15 +350,28 @@ export default function SucessoClienteInativos() {
                 </Select>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-3 gap-4">
               <div>
-                <Label>Data de Entrada</Label>
+                <Label>Data de Início</Label>
                 <Input type="date" value={dataEntrada} onChange={e => setDataEntrada(e.target.value)} />
+              </div>
+              <div>
+                <Label>Data de Término</Label>
+                <Input type="date" value={dataTermino} onChange={e => setDataTermino(e.target.value)} />
               </div>
               <div>
                 <Label>Data de Cancelamento *</Label>
                 <Input type="date" value={dataCancelamento} onChange={e => setDataCancelamento(e.target.value)} />
               </div>
+            </div>
+            <div>
+              <Label>Mensalidade (R$)</Label>
+              <Input
+                inputMode="decimal"
+                value={mensalidade}
+                onChange={e => setMensalidade(e.target.value)}
+                placeholder="Ex.: 1500,00"
+              />
             </div>
             <div>
               <Label>Motivo do Cancelamento *</Label>

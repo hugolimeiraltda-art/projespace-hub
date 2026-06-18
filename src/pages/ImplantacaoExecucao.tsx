@@ -569,6 +569,16 @@ export default function ImplantacaoExecucao() {
             praca || undefined,
           );
 
+          // Propagate activation date to customer portfolio (PCI carteira)
+          if (!isPPEProject) {
+            const ativacao = updatedEtapas.data_ativacao_realizada
+              || new Date().toISOString().split('T')[0];
+            await supabase
+              .from('customer_portfolio')
+              .update({ data_ativacao: ativacao })
+              .eq('project_id', id!);
+          }
+
           // For PPE projects: activate customer in PPE portfolio and conclude implantation
           if (isPPEProject) {
             const parseBRL = (v: string) => {
@@ -588,6 +598,7 @@ export default function ImplantacaoExecucao() {
             });
           }
         }
+
       }
 
       toast({

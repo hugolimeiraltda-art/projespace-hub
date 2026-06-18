@@ -147,25 +147,55 @@ function ColumnHeader({
 
 export default function SucessoClienteAtivos() {
   const navigate = useNavigate();
-  const [customers, setCustomers] = useState<Customer[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [carteira, setCarteira] = useState<'pci' | 'ppe'>('pci');
+  const [customersPci, setCustomersPci] = useState<Customer[]>([]);
+  const [customersPpe, setCustomersPpe] = useState<Customer[]>([]);
+  const [loadingPci, setLoadingPci] = useState(true);
+  const [loadingPpe, setLoadingPpe] = useState(true);
   const [search, setSearch] = useState('');
   const [sortKey, setSortKey] = useState<SortKey | null>(null);
   const [sortDir, setSortDir] = useState<SortDir>(null);
   const [columnFilters, setColumnFilters] = useState<Record<string, string[]>>({});
 
+  const customers = carteira === 'pci' ? customersPci : customersPpe;
+  const loading = carteira === 'pci' ? loadingPci : loadingPpe;
+
   useEffect(() => {
-    const load = async () => {
+    (async () => {
       const { data } = await supabase
         .from('customer_portfolio')
         .select('id, contrato, razao_social, filial, praca, unidades, mensalidade, data_ativacao, data_termino, endereco')
         .order('razao_social');
-
-      setCustomers((data || []) as Customer[]);
-      setLoading(false);
-    };
-    load();
+      setCustomersPci((data || []) as Customer[]);
+      setLoadingPci(false);
+    })();
+    (async () => {
+      const { data } = await supabase
+        .from('ppe_customers')
+        .select('id, contrato, razao_social, filial, mensalidade, data_ativacao, data_termino, endereco, cameras')
+        .order('razao_social');
+      const mapped: Customer[] = (data || []).map((r: any) => ({
+        id: r.id,
+        contrato: r.contrato,
+        razao_social: r.razao_social,
+        filial: r.filial,
+        praca: null,
+        unidades: r.cameras ?? null,
+        mensalidade: r.mensalidade,
+        data_ativacao: r.data_ativacao,
+        data_termino: r.data_termino,
+        endereco: r.endereco,
+      }));
+      setCustomersPpe(mapped);
+      setLoadingPpe(false);
+    })();
   }, []);
+
+  // Reset filters when switching tabs
+  useEffect(() => {
+    setColumnFilters({});
+    setSearch('');
+  }, [carteira]);
 
   const handleSort = (key: SortKey) => {
     if (sortKey === key) {

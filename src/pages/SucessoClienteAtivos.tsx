@@ -168,13 +168,13 @@ export default function SucessoClienteAtivos() {
       const [{ data }, { data: cancelled }] = await Promise.all([
         supabase
           .from('customer_portfolio')
-          .select('id, contrato, razao_social, filial, praca, unidades, mensalidade, data_ativacao, data_termino, endereco')
+          .select('id, contrato, razao_social, filial, praca, unidades, mensalidade, data_ativacao, data_termino, endereco, project_id, status_implantacao')
           .order('razao_social'),
         supabase.from('customer_cancelamentos').select('customer_id'),
       ]);
       const cancelledIds = new Set((cancelled || []).map((r: any) => r.customer_id));
       const pciData = (data || []).filter((c: any) =>
-        /^SP|^PR|^PD|^PCI/i.test(c.contrato) && !cancelledIds.has(c.id)
+        /^(TEMP-|SP|PR|PD|PCI)/i.test(c.contrato) && !cancelledIds.has(c.id)
       ) as Customer[];
       setCustomersPci(pciData);
       setLoadingPci(false);
@@ -195,11 +195,14 @@ export default function SucessoClienteAtivos() {
         data_ativacao: r.data_ativacao,
         data_termino: r.data_termino,
         endereco: r.endereco,
+        project_id: null,
+        status_implantacao: null,
       }));
       setCustomersPpe(mapped);
       setLoadingPpe(false);
     })();
   }, []);
+
 
   // Reset filters when switching tabs
   useEffect(() => {

@@ -135,6 +135,8 @@ export default function CarteiraClientes({ tipoCarteira = 'PCI' }: CarteiraClien
 
       if (tipoCarteira !== 'PPE') {
         query = query.eq('tipo_carteira', tipoCarteira);
+        // Hide TEMP- draft contracts — they belong to projects in implantation, not the customer portfolio
+        query = query.not('contrato', 'like', 'TEMP-%');
       }
 
       const { data, error } = await query;

@@ -15,8 +15,9 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { UserX, Plus, Search, Trash2, ArrowUp, ArrowDown, ArrowUpDown, Filter, X } from 'lucide-react';
+import { UserX, Plus, Search, Trash2, ArrowUp, ArrowDown, ArrowUpDown, Filter, X, Download } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
+import * as XLSX from 'xlsx';
 
 const MOTIVOS = [
   'Concorrência',

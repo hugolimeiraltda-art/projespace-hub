@@ -351,6 +351,13 @@ export default function SucessoClienteAtivos() {
           </Card>
         </div>
 
+        <Tabs value={carteira} onValueChange={(v) => setCarteira(v as 'pci' | 'ppe')}>
+          <TabsList>
+            <TabsTrigger value="pci">Clientes PCI ({customersPci.length})</TabsTrigger>
+            <TabsTrigger value="ppe">Clientes PPE ({customersPpe.length})</TabsTrigger>
+          </TabsList>
+        </Tabs>
+
         {/* Table */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">

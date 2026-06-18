@@ -480,6 +480,13 @@ export default function SucessoClienteAtivos() {
                                   <Eye className="h-4 w-4 mr-2" />
                                   Ver Detalhes
                                 </DropdownMenuItem>
+                                {c.project_id && (
+                                  <DropdownMenuItem onClick={() => navigate(`/projetos/${c.project_id}`)}>
+                                    <ExternalLink className="h-4 w-4 mr-2" />
+                                    Ver Projeto Vinculado
+                                  </DropdownMenuItem>
+                                )}
+
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem onClick={() => navigate(`/sucesso-cliente/cliente/${c.id}#renovacao`)}>
                                   <RefreshCw className="h-4 w-4 mr-2" />

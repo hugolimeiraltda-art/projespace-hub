@@ -518,11 +518,11 @@ export default function SucessoClienteInativos() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label>Contrato *</Label>
-                <Input value={contrato} onChange={e => setContrato(e.target.value)} placeholder="Nº do contrato" />
+                <Input value={contrato} onChange={e => setContrato(e.target.value)} onBlur={buscarPortfolio} placeholder="Nº do contrato" />
               </div>
               <div>
                 <Label>Cód SP</Label>
-                <Input value={codSp} onChange={e => setCodSp(e.target.value)} placeholder="Ex.: SP91" />
+                <Input value={codSp} onChange={e => setCodSp(e.target.value)} onBlur={buscarPortfolio} placeholder="Ex.: SP91" />
               </div>
             </div>
             <div>

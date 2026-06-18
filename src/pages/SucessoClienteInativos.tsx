@@ -319,9 +319,13 @@ export default function SucessoClienteInativos() {
                 <Input value={contrato} onChange={e => setContrato(e.target.value)} placeholder="Nº do contrato" />
               </div>
               <div>
-                <Label>Razão Social *</Label>
-                <Input value={razaoSocial} onChange={e => setRazaoSocial(e.target.value)} placeholder="Nome do condomínio" />
+                <Label>Cód SP</Label>
+                <Input value={codSp} onChange={e => setCodSp(e.target.value)} placeholder="Ex.: SP91" />
               </div>
+            </div>
+            <div>
+              <Label>Razão Social *</Label>
+              <Input value={razaoSocial} onChange={e => setRazaoSocial(e.target.value)} placeholder="Nome do condomínio" />
             </div>
             <div>
               <Label>Endereço</Label>

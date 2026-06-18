@@ -229,6 +229,52 @@ export default function SucessoClienteInativos() {
     }
   };
 
+  const buscarPortfolio = async () => {
+    const ctr = contrato.trim();
+    const sp = codSp.trim();
+    if (!ctr && !sp) return;
+    let query = supabase.from('customer_portfolio').select('contrato, alarme_codigo, razao_social, mensalidade, endereco, filial, data_ativacao, data_termino').limit(1);
+    if (ctr) query = query.eq('contrato', ctr);
+    else query = query.eq('alarme_codigo', sp);
+    const { data, error } = await query.maybeSingle();
+    if (error || !data) {
+      toast({ title: 'Não encontrado', description: 'Nenhum contrato encontrado na carteira.', variant: 'destructive' });
+      return;
+    }
+    if (!contrato && data.contrato) setContrato(data.contrato);
+    if (!codSp && data.alarme_codigo) setCodSp(data.alarme_codigo);
+    if (!razaoSocial && data.razao_social) setRazaoSocial(data.razao_social);
+    if (!endereco && data.endereco) setEndereco(data.endereco);
+    if (!filial && data.filial) setFilial(data.filial);
+    if (!dataEntrada && data.data_ativacao) setDataEntrada(data.data_ativacao);
+    if (!dataTermino && data.data_termino) setDataTermino(data.data_termino);
+    if (!mensalidade && data.mensalidade != null) setMensalidade(String(data.mensalidade).replace('.', ','));
+    toast({ title: 'Dados carregados', description: 'Mensalidade e dados preenchidos da carteira.' });
+  };
+
+  const handleExportXLSX = () => {
+    const rows = processed.map(c => ({
+      'Contrato': c.contrato,
+      'Cód SP': c.cod_sp || '',
+      'Razão Social': c.razao_social,
+      'Endereço': c.endereco || '',
+      'Cidade': c.cidade || '',
+      'Filial': c.filial || '',
+      'Data Início': c.data_entrada ? format(parseISO(c.data_entrada), 'dd/MM/yyyy') : '',
+      'Data Término': c.data_termino ? format(parseISO(c.data_termino), 'dd/MM/yyyy') : '',
+      'Data Cancelamento': format(parseISO(c.data_cancelamento), 'dd/MM/yyyy'),
+      'Mensalidade (R$)': c.mensalidade ?? '',
+      'Valor Total Pago (R$)': calcValorTotalPago(c.mensalidade, c.data_entrada, c.data_cancelamento) ?? '',
+      'Motivo': c.motivo,
+      'Observações': c.observacoes || '',
+      'Cadastrado por': c.created_by_name || '',
+    }));
+    const ws = XLSX.utils.json_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Clientes Inativos');
+    XLSX.writeFile(wb, `clientes_inativos_${format(new Date(), 'yyyy-MM-dd')}.xlsx`);
+  };
+
   const getMotivoBadge = (m: string) => {
     const colors: Record<string, string> = {
       'Concorrência': 'bg-orange-500',

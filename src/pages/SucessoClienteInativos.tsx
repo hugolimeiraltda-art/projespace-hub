@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Layout } from '@/components/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,12 +9,14 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Checkbox } from '@/components/ui/checkbox';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { UserX, Plus, Search, Trash2 } from 'lucide-react';
+import { UserX, Plus, Search, Trash2, ArrowUp, ArrowDown, ArrowUpDown, Filter, X } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
 
 const MOTIVOS = [
   'Concorrência',
@@ -43,6 +45,12 @@ interface ClienteInativo {
   created_at: string;
 }
 
+type SortKey =
+  | 'contrato' | 'cod_sp' | 'razao_social' | 'cidade' | 'filial'
+  | 'data_entrada' | 'data_termino' | 'data_cancelamento'
+  | 'mensalidade' | 'valor_total' | 'motivo';
+type SortDir = 'asc' | 'desc' | null;
+
 const formatBRL = (v: number | null) =>
   v == null ? '-' : v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
@@ -54,6 +62,86 @@ const calcValorTotalPago = (mensalidade: number | null, entrada: string | null, 
   return mensalidade * meses;
 };
 
+function ColumnHeader({
+  label, sortKey, currentSort, currentDir, onSort,
+  filterValues, selectedFilters, onFilterChange, className,
+}: {
+  label: string;
+  sortKey: SortKey;
+  currentSort: SortKey | null;
+  currentDir: SortDir;
+  onSort: (key: SortKey) => void;
+  filterValues: string[];
+  selectedFilters: string[];
+  onFilterChange: (key: SortKey, values: string[]) => void;
+  className?: string;
+}) {
+  const [filterSearch, setFilterSearch] = useState('');
+  const isActive = currentSort === sortKey;
+  const hasFilter = selectedFilters.length > 0;
+  const filteredValues = filterValues.filter(v => v.toLowerCase().includes(filterSearch.toLowerCase()));
+  const toggleValue = (val: string) => {
+    const next = selectedFilters.includes(val)
+      ? selectedFilters.filter(v => v !== val)
+      : [...selectedFilters, val];
+    onFilterChange(sortKey, next);
+  };
+  return (
+    <TableHead className={className}>
+      <div className="flex items-center gap-1">
+        <button
+          onClick={() => onSort(sortKey)}
+          className="flex items-center gap-1 hover:text-foreground transition-colors text-xs font-medium"
+        >
+          {label}
+          {isActive && currentDir === 'asc' && <ArrowUp className="h-3 w-3" />}
+          {isActive && currentDir === 'desc' && <ArrowDown className="h-3 w-3" />}
+          {!isActive && <ArrowUpDown className="h-3 w-3 opacity-30" />}
+        </button>
+        <Popover>
+          <PopoverTrigger asChild>
+            <button className={`p-0.5 rounded hover:bg-accent transition-colors ${hasFilter ? 'text-primary' : 'text-muted-foreground opacity-50 hover:opacity-100'}`}>
+              <Filter className="h-3 w-3" />
+            </button>
+          </PopoverTrigger>
+          <PopoverContent className="w-56 p-2" align="start">
+            <div className="space-y-2">
+              <Input
+                placeholder="Buscar..."
+                value={filterSearch}
+                onChange={e => setFilterSearch(e.target.value)}
+                className="h-7 text-xs"
+              />
+              {hasFilter && (
+                <Button variant="ghost" size="sm" className="h-6 text-xs w-full" onClick={() => onFilterChange(sortKey, [])}>
+                  <X className="h-3 w-3 mr-1" /> Limpar
+                </Button>
+              )}
+              <ScrollArea className="max-h-48">
+                <div className="space-y-1">
+                  {filteredValues.map(val => (
+                    <label key={val} className="flex items-center gap-2 text-xs py-0.5 px-1 hover:bg-accent rounded cursor-pointer">
+                      <Checkbox
+                        checked={selectedFilters.includes(val)}
+                        onCheckedChange={() => toggleValue(val)}
+                        className="h-3.5 w-3.5"
+                      />
+                      <span className="truncate">{val}</span>
+                    </label>
+                  ))}
+                  {filteredValues.length === 0 && (
+                    <p className="text-xs text-muted-foreground py-2 text-center">Nenhum valor</p>
+                  )}
+                </div>
+              </ScrollArea>
+            </div>
+          </PopoverContent>
+        </Popover>
+      </div>
+    </TableHead>
+  );
+}
+
 export default function SucessoClienteInativos() {
   const { toast } = useToast();
   const { user } = useAuth();
@@ -62,6 +150,9 @@ export default function SucessoClienteInativos() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [search, setSearch] = useState('');
+  const [sortKey, setSortKey] = useState<SortKey | null>(null);
+  const [sortDir, setSortDir] = useState<SortDir>(null);
+  const [columnFilters, setColumnFilters] = useState<Record<string, string[]>>({});
 
   // Form state
   const [contrato, setContrato] = useState('');
@@ -83,30 +174,16 @@ export default function SucessoClienteInativos() {
       .from('clientes_inativos' as any)
       .select('*')
       .order('data_cancelamento', { ascending: false });
-
-    if (!error && data) {
-      setClientes(data as any as ClienteInativo[]);
-    }
+    if (!error && data) setClientes(data as any as ClienteInativo[]);
     setLoading(false);
   };
 
-  useEffect(() => {
-    fetchClientes();
-  }, []);
+  useEffect(() => { fetchClientes(); }, []);
 
   const resetForm = () => {
-    setContrato('');
-    setCodSp('');
-    setRazaoSocial('');
-    setEndereco('');
-    setCidade('');
-    setFilial('');
-    setDataEntrada('');
-    setDataCancelamento('');
-    setDataTermino('');
-    setMensalidade('');
-    setMotivo('');
-    setObservacoes('');
+    setContrato(''); setCodSp(''); setRazaoSocial(''); setEndereco(''); setCidade('');
+    setFilial(''); setDataEntrada(''); setDataCancelamento(''); setDataTermino('');
+    setMensalidade(''); setMotivo(''); setObservacoes('');
   };
 
   const handleSalvar = async () => {
@@ -114,30 +191,20 @@ export default function SucessoClienteInativos() {
       toast({ title: 'Erro', description: 'Preencha os campos obrigatórios: Contrato, Razão Social, Data de Cancelamento e Motivo.', variant: 'destructive' });
       return;
     }
-
     setSaving(true);
     try {
       const { error } = await supabase
         .from('clientes_inativos' as any)
         .insert({
-          contrato,
-          cod_sp: codSp || null,
-          razao_social: razaoSocial,
-          endereco: endereco || null,
-          cidade: cidade || null,
-          filial: filial || null,
-          data_entrada: dataEntrada || null,
-          data_cancelamento: dataCancelamento,
+          contrato, cod_sp: codSp || null, razao_social: razaoSocial,
+          endereco: endereco || null, cidade: cidade || null, filial: filial || null,
+          data_entrada: dataEntrada || null, data_cancelamento: dataCancelamento,
           data_termino: dataTermino || null,
           mensalidade: mensalidade ? Number(mensalidade.replace(',', '.')) : null,
-          motivo,
-          observacoes: observacoes || null,
-          created_by: user?.id,
-          created_by_name: user?.nome,
+          motivo, observacoes: observacoes || null,
+          created_by: user?.id, created_by_name: user?.nome,
         } as any);
-
       if (error) throw error;
-
       toast({ title: 'Sucesso', description: 'Cliente inativo cadastrado com sucesso.' });
       setDialogOpen(false);
       resetForm();
@@ -152,12 +219,7 @@ export default function SucessoClienteInativos() {
 
   const handleExcluir = async (id: string) => {
     if (!confirm('Tem certeza que deseja excluir este registro?')) return;
-
-    const { error } = await supabase
-      .from('clientes_inativos' as any)
-      .delete()
-      .eq('id', id);
-
+    const { error } = await supabase.from('clientes_inativos' as any).delete().eq('id', id);
     if (!error) {
       toast({ title: 'Excluído', description: 'Registro removido com sucesso.' });
       fetchClientes();
@@ -176,16 +238,104 @@ export default function SucessoClienteInativos() {
     return <Badge className={`${colors[m] || 'bg-muted'} text-white`}>{m}</Badge>;
   };
 
-  const filtered = clientes.filter(c => {
-    if (!search) return true;
-    const s = search.toLowerCase();
-    return (
-      c.razao_social.toLowerCase().includes(s) ||
-      c.contrato.toLowerCase().includes(s) ||
-      (c.cidade || '').toLowerCase().includes(s) ||
-      (c.filial || '').toLowerCase().includes(s)
-    );
-  });
+  const handleSort = (key: SortKey) => {
+    if (sortKey === key) {
+      if (sortDir === 'asc') setSortDir('desc');
+      else if (sortDir === 'desc') { setSortKey(null); setSortDir(null); }
+    } else {
+      setSortKey(key);
+      setSortDir('asc');
+    }
+  };
+
+  const handleFilterChange = (key: SortKey, values: string[]) => {
+    setColumnFilters(prev => {
+      const next = { ...prev };
+      if (values.length === 0) delete next[key];
+      else next[key] = values;
+      return next;
+    });
+  };
+
+  const fmtDate = (d: string | null) => (d ? format(parseISO(d), 'dd/MM/yyyy') : '');
+
+  const getDisplayValue = (c: ClienteInativo, key: SortKey): string => {
+    switch (key) {
+      case 'contrato': return c.contrato;
+      case 'cod_sp': return c.cod_sp || '';
+      case 'razao_social': return c.razao_social;
+      case 'cidade': return c.cidade || '';
+      case 'filial': return c.filial || '';
+      case 'data_entrada': return fmtDate(c.data_entrada);
+      case 'data_termino': return fmtDate(c.data_termino);
+      case 'data_cancelamento': return fmtDate(c.data_cancelamento);
+      case 'mensalidade': return c.mensalidade != null ? formatBRL(c.mensalidade) : '';
+      case 'valor_total': {
+        const v = calcValorTotalPago(c.mensalidade, c.data_entrada, c.data_cancelamento);
+        return v != null ? formatBRL(v) : '';
+      }
+      case 'motivo': return c.motivo;
+      default: return '';
+    }
+  };
+
+  const getSortValue = (c: ClienteInativo, key: SortKey): string | number => {
+    switch (key) {
+      case 'contrato': return c.contrato.toLowerCase();
+      case 'cod_sp': return (c.cod_sp || '').toLowerCase();
+      case 'razao_social': return c.razao_social.toLowerCase();
+      case 'cidade': return (c.cidade || '').toLowerCase();
+      case 'filial': return (c.filial || '').toLowerCase();
+      case 'data_entrada': return c.data_entrada || '';
+      case 'data_termino': return c.data_termino || '';
+      case 'data_cancelamento': return c.data_cancelamento || '';
+      case 'mensalidade': return c.mensalidade ?? -1;
+      case 'valor_total': return calcValorTotalPago(c.mensalidade, c.data_entrada, c.data_cancelamento) ?? -1;
+      case 'motivo': return c.motivo.toLowerCase();
+      default: return '';
+    }
+  };
+
+  const filterOptions = useMemo(() => {
+    const unique = (arr: string[]) => [...new Set(arr.filter(Boolean))].sort();
+    const keys: SortKey[] = ['contrato','cod_sp','razao_social','cidade','filial','data_entrada','data_termino','data_cancelamento','mensalidade','valor_total','motivo'];
+    const out: Record<string, string[]> = {};
+    for (const k of keys) out[k] = unique(clientes.map(c => getDisplayValue(c, k)));
+    return out;
+  }, [clientes]);
+
+  const processed = useMemo(() => {
+    let result = clientes.filter(c => {
+      if (search) {
+        const s = search.toLowerCase();
+        if (!(
+          c.razao_social.toLowerCase().includes(s) ||
+          c.contrato.toLowerCase().includes(s) ||
+          (c.cidade || '').toLowerCase().includes(s) ||
+          (c.filial || '').toLowerCase().includes(s) ||
+          (c.cod_sp || '').toLowerCase().includes(s)
+        )) return false;
+      }
+      for (const [key, values] of Object.entries(columnFilters)) {
+        if (values.length === 0) continue;
+        if (!values.includes(getDisplayValue(c, key as SortKey))) return false;
+      }
+      return true;
+    });
+    if (sortKey && sortDir) {
+      result = [...result].sort((a, b) => {
+        const va = getSortValue(a, sortKey);
+        const vb = getSortValue(b, sortKey);
+        const cmp = typeof va === 'number' && typeof vb === 'number'
+          ? va - vb
+          : String(va).localeCompare(String(vb), 'pt-BR');
+        return sortDir === 'asc' ? cmp : -cmp;
+      });
+    }
+    return result;
+  }, [clientes, search, sortKey, sortDir, columnFilters]);
+
+  const activeFilterCount = Object.values(columnFilters).filter(v => v.length > 0).length;
 
   return (
     <Layout>
@@ -201,7 +351,6 @@ export default function SucessoClienteInativos() {
           </Button>
         </div>
 
-        {/* Summary cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Card>
             <CardContent className="pt-6">
@@ -222,77 +371,78 @@ export default function SucessoClienteInativos() {
           })}
         </div>
 
-        {/* Search and table */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="flex items-center gap-2">
               <UserX className="h-5 w-5 text-destructive" />
               Contratos Cancelados
             </CardTitle>
-            <div className="relative w-64">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Buscar..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="pl-9"
-              />
+            <div className="flex items-center gap-3">
+              {activeFilterCount > 0 && (
+                <Button variant="ghost" size="sm" className="text-xs h-7" onClick={() => setColumnFilters({})}>
+                  <X className="h-3 w-3 mr-1" />
+                  Limpar {activeFilterCount} filtro(s)
+                </Button>
+              )}
+              <div className="relative w-64">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Buscar..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="pl-9"
+                />
+              </div>
             </div>
           </CardHeader>
           <CardContent>
             {loading ? (
               <p className="text-muted-foreground text-center py-8">Carregando...</p>
-            ) : filtered.length === 0 ? (
+            ) : processed.length === 0 ? (
               <p className="text-muted-foreground text-center py-8">Nenhum cliente inativo registrado.</p>
             ) : (
               <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Contrato</TableHead>
-                      <TableHead>Cód SP</TableHead>
-                      <TableHead>Razão Social</TableHead>
-                      <TableHead>Cidade</TableHead>
-                      <TableHead>Filial</TableHead>
-                      <TableHead>Data Início</TableHead>
-                      <TableHead>Data Término</TableHead>
-                      <TableHead>Data Cancelamento</TableHead>
-                      <TableHead className="text-right">Mensalidade</TableHead>
-                      <TableHead className="text-right">Valor Total Pago</TableHead>
-                      <TableHead>Motivo</TableHead>
+                      <ColumnHeader label="Contrato" sortKey="contrato" currentSort={sortKey} currentDir={sortDir} onSort={handleSort} filterValues={filterOptions.contrato} selectedFilters={columnFilters.contrato || []} onFilterChange={handleFilterChange} />
+                      <ColumnHeader label="Cód SP" sortKey="cod_sp" currentSort={sortKey} currentDir={sortDir} onSort={handleSort} filterValues={filterOptions.cod_sp} selectedFilters={columnFilters.cod_sp || []} onFilterChange={handleFilterChange} />
+                      <ColumnHeader label="Razão Social" sortKey="razao_social" currentSort={sortKey} currentDir={sortDir} onSort={handleSort} filterValues={filterOptions.razao_social} selectedFilters={columnFilters.razao_social || []} onFilterChange={handleFilterChange} />
+                      <ColumnHeader label="Cidade" sortKey="cidade" currentSort={sortKey} currentDir={sortDir} onSort={handleSort} filterValues={filterOptions.cidade} selectedFilters={columnFilters.cidade || []} onFilterChange={handleFilterChange} />
+                      <ColumnHeader label="Filial" sortKey="filial" currentSort={sortKey} currentDir={sortDir} onSort={handleSort} filterValues={filterOptions.filial} selectedFilters={columnFilters.filial || []} onFilterChange={handleFilterChange} />
+                      <ColumnHeader label="Data Início" sortKey="data_entrada" currentSort={sortKey} currentDir={sortDir} onSort={handleSort} filterValues={filterOptions.data_entrada} selectedFilters={columnFilters.data_entrada || []} onFilterChange={handleFilterChange} />
+                      <ColumnHeader label="Data Término" sortKey="data_termino" currentSort={sortKey} currentDir={sortDir} onSort={handleSort} filterValues={filterOptions.data_termino} selectedFilters={columnFilters.data_termino || []} onFilterChange={handleFilterChange} />
+                      <ColumnHeader label="Data Cancelamento" sortKey="data_cancelamento" currentSort={sortKey} currentDir={sortDir} onSort={handleSort} filterValues={filterOptions.data_cancelamento} selectedFilters={columnFilters.data_cancelamento || []} onFilterChange={handleFilterChange} />
+                      <ColumnHeader label="Mensalidade" sortKey="mensalidade" currentSort={sortKey} currentDir={sortDir} onSort={handleSort} filterValues={filterOptions.mensalidade} selectedFilters={columnFilters.mensalidade || []} onFilterChange={handleFilterChange} className="text-right" />
+                      <ColumnHeader label="Valor Total Pago" sortKey="valor_total" currentSort={sortKey} currentDir={sortDir} onSort={handleSort} filterValues={filterOptions.valor_total} selectedFilters={columnFilters.valor_total || []} onFilterChange={handleFilterChange} className="text-right" />
+                      <ColumnHeader label="Motivo" sortKey="motivo" currentSort={sortKey} currentDir={sortDir} onSort={handleSort} filterValues={filterOptions.motivo} selectedFilters={columnFilters.motivo || []} onFilterChange={handleFilterChange} />
                       <TableHead className="w-10"></TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filtered.map(c => {
+                    {processed.map(c => {
                       const totalPago = calcValorTotalPago(c.mensalidade, c.data_entrada, c.data_cancelamento);
                       return (
-                      <TableRow key={c.id}>
-                        <TableCell className="font-medium">{c.contrato}</TableCell>
-                        <TableCell>{c.cod_sp || '-'}</TableCell>
-                        <TableCell>{c.razao_social}</TableCell>
-                        <TableCell>{c.cidade || '-'}</TableCell>
-                        <TableCell>
-                          {c.filial ? <Badge variant="outline">{c.filial}</Badge> : '-'}
-                        </TableCell>
-                        <TableCell>
-                          {c.data_entrada ? format(parseISO(c.data_entrada), 'dd/MM/yyyy') : '-'}
-                        </TableCell>
-                        <TableCell>
-                          {c.data_termino ? format(parseISO(c.data_termino), 'dd/MM/yyyy') : '-'}
-                        </TableCell>
-                        <TableCell>
-                          {format(parseISO(c.data_cancelamento), 'dd/MM/yyyy')}
-                        </TableCell>
-                        <TableCell className="text-right">{formatBRL(c.mensalidade)}</TableCell>
-                        <TableCell className="text-right font-medium">{formatBRL(totalPago)}</TableCell>
-                        <TableCell>{getMotivoBadge(c.motivo)}</TableCell>
-                        <TableCell>
-                          <Button variant="ghost" size="icon" onClick={() => handleExcluir(c.id)}>
-                            <Trash2 className="h-4 w-4 text-destructive" />
-                          </Button>
-                        </TableCell>
-                      </TableRow>
+                        <TableRow key={c.id}>
+                          <TableCell className="font-medium">{c.contrato}</TableCell>
+                          <TableCell>{c.cod_sp || '-'}</TableCell>
+                          <TableCell>{c.razao_social}</TableCell>
+                          <TableCell>{c.cidade || '-'}</TableCell>
+                          <TableCell>
+                            {c.filial ? <Badge variant="outline">{c.filial}</Badge> : '-'}
+                          </TableCell>
+                          <TableCell>{c.data_entrada ? format(parseISO(c.data_entrada), 'dd/MM/yyyy') : '-'}</TableCell>
+                          <TableCell>{c.data_termino ? format(parseISO(c.data_termino), 'dd/MM/yyyy') : '-'}</TableCell>
+                          <TableCell>{format(parseISO(c.data_cancelamento), 'dd/MM/yyyy')}</TableCell>
+                          <TableCell className="text-right">{formatBRL(c.mensalidade)}</TableCell>
+                          <TableCell className="text-right font-medium">{formatBRL(totalPago)}</TableCell>
+                          <TableCell>{getMotivoBadge(c.motivo)}</TableCell>
+                          <TableCell>
+                            <Button variant="ghost" size="icon" onClick={() => handleExcluir(c.id)}>
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
                       );
                     })}
                   </TableBody>
@@ -303,7 +453,6 @@ export default function SucessoClienteInativos() {
         </Card>
       </div>
 
-      {/* Dialog cadastro */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-lg">
           <DialogHeader>

@@ -392,10 +392,16 @@ export default function SucessoClienteInativos() {
             <h1 className="text-2xl font-bold text-foreground">Clientes Inativos</h1>
             <p className="text-muted-foreground">Gestão de contratos cancelados e churn</p>
           </div>
-          <Button onClick={() => setDialogOpen(true)}>
-            <Plus className="h-4 w-4 mr-2" />
-            Cadastrar
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={handleExportXLSX}>
+              <Download className="h-4 w-4 mr-2" />
+              Exportar Excel
+            </Button>
+            <Button onClick={() => setDialogOpen(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              Cadastrar
+            </Button>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">

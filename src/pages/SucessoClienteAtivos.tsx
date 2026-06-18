@@ -13,6 +13,7 @@ import { Search, Building2, MoreHorizontal, RefreshCw, UserCheck, MessageSquareW
 import { useNavigate } from 'react-router-dom';
 import { differenceInDays, parseISO, addMonths } from 'date-fns';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 interface Customer {
   id: string;

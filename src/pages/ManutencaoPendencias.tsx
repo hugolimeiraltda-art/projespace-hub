@@ -696,6 +696,113 @@ export default function ManutencaoPendencias() {
 
   const setores = [...new Set(pendencias.map(p => p.setor))];
 
+  // Cell value extractor for filters & sorting
+  const getCellValue = (p: Pendencia, col: string): string => {
+    switch (col) {
+      case 'numero_os': return p.numero_os || '';
+      case 'numero_ticket': return p.numero_ticket || '';
+      case 'razao_social': return p.razao_social || '';
+      case 'contrato': return p.contrato || '';
+      case 'tipo': return getTipoLabel(p.tipo);
+      case 'setor': return p.setor || '';
+      case 'status': return STATUS_OPTIONS.find(s => s.value === p.status)?.label || p.status;
+      case 'prazo': return p.data_prazo ? format(new Date(p.data_prazo), 'dd/MM/yyyy') : '';
+      case 'abertura': return p.data_abertura ? format(new Date(p.data_abertura), 'dd/MM/yyyy') : '';
+      case 'aberto_por': return p.created_by_name || '';
+      default: return '';
+    }
+  };
+
+  const displayedPendencias = (() => {
+    let result = filteredPendencias.filter(p =>
+      Object.entries(columnFilters).every(([col, val]) => {
+        const cell = getCellValue(p, col).toLowerCase();
+        return cell.includes(val.toLowerCase());
+      })
+    );
+    if (sortConfig.column && sortConfig.direction) {
+      const dir = sortConfig.direction === 'asc' ? 1 : -1;
+      result = [...result].sort((a, b) => {
+        const av = getCellValue(a, sortConfig.column);
+        const bv = getCellValue(b, sortConfig.column);
+        if (sortConfig.column === 'prazo' || sortConfig.column === 'abertura') {
+          const ad = sortConfig.column === 'prazo' ? +new Date(a.data_prazo) : +new Date(a.data_abertura);
+          const bd = sortConfig.column === 'prazo' ? +new Date(b.data_prazo) : +new Date(b.data_abertura);
+          return (ad - bd) * dir;
+        }
+        return av.localeCompare(bv, 'pt-BR', { numeric: true }) * dir;
+      });
+    }
+    return result;
+  })();
+
+  const uniqueColValues = (col: string) =>
+    [...new Set(filteredPendencias.map(p => getCellValue(p, col)).filter(Boolean))].sort();
+
+  const toggleRow = (id: string) => {
+    setSelectedRows(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+  const toggleAllRows = () => {
+    if (selectedRows.size === displayedPendencias.length && displayedPendencias.length > 0) {
+      setSelectedRows(new Set());
+    } else {
+      setSelectedRows(new Set(displayedPendencias.map(p => p.id)));
+    }
+  };
+
+  const renderColHeader = (col: string, label: string, useSelect: boolean = false) => {
+    const hasFilter = !!columnFilters[col];
+    return (
+      <div className="flex items-center gap-1">
+        <button onClick={() => handleColSort(col)} className="flex items-center gap-1 hover:text-foreground transition-colors">
+          {label}
+          {getSortIcon(col)}
+        </button>
+        <Popover open={activeFilterColumn === col} onOpenChange={(o) => setActiveFilterColumn(o ? col : null)}>
+          <PopoverTrigger asChild>
+            <button className={`p-1 rounded hover:bg-accent transition-colors ${hasFilter ? 'text-primary' : 'text-muted-foreground'}`}>
+              <Filter className={`h-3 w-3 ${hasFilter ? 'fill-current' : ''}`} />
+            </button>
+          </PopoverTrigger>
+          <PopoverContent className="w-64 p-3" align="start">
+            <div className="space-y-3">
+              <div className="font-medium text-sm">Filtrar {label}</div>
+              {useSelect ? (
+                <Select value={columnFilters[col] || 'all'} onValueChange={(v) => { setColFilter(col, v); setActiveFilterColumn(null); }}>
+                  <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos</SelectItem>
+                    {uniqueColValues(col).map(v => (
+                      <SelectItem key={v} value={v}>{v}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <Input
+                  placeholder={`Buscar ${label.toLowerCase()}...`}
+                  value={columnFilters[col] || ''}
+                  onChange={(e) => setColFilter(col, e.target.value)}
+                />
+              )}
+              {hasFilter && (
+                <Button variant="ghost" size="sm" className="w-full" onClick={() => { setColFilter(col, ''); setActiveFilterColumn(null); }}>
+                  Limpar filtro
+                </Button>
+              )}
+            </div>
+          </PopoverContent>
+        </Popover>
+      </div>
+    );
+  };
+
+  const allDisplayedSelected = displayedPendencias.length > 0 && displayedPendencias.every(p => selectedRows.has(p.id));
+
+
   return (
     <Layout>
       <div className="p-6 space-y-6">

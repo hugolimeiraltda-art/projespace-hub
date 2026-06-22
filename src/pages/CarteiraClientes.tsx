@@ -142,7 +142,18 @@ export default function CarteiraClientes({ tipoCarteira = 'PCI' }: CarteiraClien
       const { data, error } = await query;
 
       if (error) throw error;
-      setCustomers((data || []).map((customer: any) => ({
+
+      // Exclude customers that were cancelled by Customer Success
+      let filteredData = data || [];
+      if (tipoCarteira !== 'PPE' && filteredData.length > 0) {
+        const { data: cancelados } = await supabase
+          .from('customer_cancelamentos')
+          .select('customer_id');
+        const canceladosIds = new Set((cancelados || []).map((c: any) => c.customer_id));
+        filteredData = filteredData.filter((c: any) => !canceladosIds.has(c.id));
+      }
+
+      setCustomers((filteredData).map((customer: any) => ({
         ...customer,
         tipo_carteira: tipoCarteira,
         unidades: customer.unidades || 0,

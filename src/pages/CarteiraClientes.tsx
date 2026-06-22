@@ -31,7 +31,7 @@ import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { Plus, Users, Building2, Camera, DoorOpen, Loader2, CalendarClock, AlertTriangle } from 'lucide-react';
+import { Plus, Users, Building2, Camera, DoorOpen, Loader2, CalendarClock, AlertTriangle, DollarSign } from 'lucide-react';
 import { format, addMonths, isBefore, isAfter, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { CarteiraClientesTable } from '@/components/CarteiraClientesTable';

@@ -286,8 +286,9 @@ export default function CarteiraClientes({ tipoCarteira = 'PCI' }: CarteiraClien
   const totalFaciais = totals.faciais_hik + totals.faciais_avicam + totals.faciais_outros;
 
   const ticketMedioStats = useMemo(() => {
-    const ativados = customers.filter(c => !!c.data_ativacao);
-    const naoAtivados = customers.filter(c => !c.data_ativacao);
+    const isAtivado = (c: Customer) => !!c.data_ativacao && new Date(c.data_ativacao).getFullYear() >= 2020;
+    const ativados = customers.filter(isAtivado);
+    const naoAtivados = customers.filter(c => !isAtivado(c));
 
     const sum = (list: Customer[]) => list.reduce((s, c) => s + (c.mensalidade || 0), 0);
     const withValue = (list: Customer[]) => list.filter(c => c.mensalidade && c.mensalidade > 0);
@@ -353,7 +354,7 @@ export default function CarteiraClientes({ tipoCarteira = 'PCI' }: CarteiraClien
 
   // Active clients by praça (data_ativacao preenchida)
   const activeByPraca = customers.reduce((acc, c) => {
-    if (c.data_ativacao) {
+    if (c.data_ativacao && new Date(c.data_ativacao).getFullYear() >= 2020) {
       const praca = c.filial || 'Sem Praça';
       acc[praca] = (acc[praca] || 0) + 1;
       acc._total = (acc._total || 0) + 1;

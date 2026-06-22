@@ -285,6 +285,24 @@ export default function CarteiraClientes({ tipoCarteira = 'PCI' }: CarteiraClien
 
   const totalFaciais = totals.faciais_hik + totals.faciais_avicam + totals.faciais_outros;
 
+  const ticketMedioStats = useMemo(() => {
+    const ativados = customers.filter(c => !!c.data_ativacao);
+    const naoAtivados = customers.filter(c => !c.data_ativacao);
+
+    const sum = (list: Customer[]) => list.reduce((s, c) => s + (c.mensalidade || 0), 0);
+    const withValue = (list: Customer[]) => list.filter(c => c.mensalidade && c.mensalidade > 0);
+    const avg = (list: Customer[]) => {
+      const wv = withValue(list);
+      return wv.length > 0 ? sum(list) / wv.length : 0;
+    };
+
+    return {
+      ativados: { count: ativados.length, withValue: withValue(ativados).length, avg: avg(ativados), sum: sum(ativados) },
+      naoAtivados: { count: naoAtivados.length, withValue: withValue(naoAtivados).length, avg: avg(naoAtivados), sum: sum(naoAtivados) },
+      total: { count: customers.length, withValue: withValue(customers).length, avg: avg(customers), sum: sum(customers) },
+    };
+  }, [customers]);
+
   const filialContracts = customers.reduce((acc, c) => {
     const filial = (c.filial || 'Sem filial').trim().toUpperCase() || 'Sem filial';
     acc[filial] = (acc[filial] || 0) + 1;

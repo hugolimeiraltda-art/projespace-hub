@@ -862,6 +862,66 @@ export default function CarteiraClientes({ tipoCarteira = 'PCI' }: CarteiraClien
         )}
 
 
+        {/* Ticket Médio Summary */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+          <Card className="border-l-4 border-l-green-500">
+            <CardContent className="pt-3 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 bg-green-100 rounded-lg">
+                  <DollarSign className="w-4 h-4 text-green-600" />
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Ticket Médio Ativados</p>
+                  <p className="text-xl font-bold text-green-600">
+                    R$ {ticketMedioStats.ativados.avg.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {ticketMedioStats.ativados.withValue} de {ticketMedioStats.ativados.count} clientes
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-l-4 border-l-amber-500">
+            <CardContent className="pt-3 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 bg-amber-100 rounded-lg">
+                  <DollarSign className="w-4 h-4 text-amber-600" />
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Ticket Médio Não Ativados</p>
+                  <p className="text-xl font-bold text-amber-600">
+                    R$ {ticketMedioStats.naoAtivados.avg.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {ticketMedioStats.naoAtivados.withValue} de {ticketMedioStats.naoAtivados.count} clientes
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-l-4 border-l-primary">
+            <CardContent className="pt-3 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 bg-primary/10 rounded-lg">
+                  <DollarSign className="w-4 h-4 text-primary" />
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Ticket Médio Total</p>
+                  <p className="text-xl font-bold text-primary">
+                    R$ {ticketMedioStats.total.avg.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {ticketMedioStats.total.withValue} de {ticketMedioStats.total.count} clientes
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
         {/* Active Clients by Praça */}
         {tipoCarteira !== 'PPE' && <div className="grid grid-cols-5 gap-3 mb-4">
           <Card className="border-l-4 border-l-green-500">

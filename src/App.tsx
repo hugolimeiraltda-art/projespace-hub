@@ -146,6 +146,8 @@ function AppRoutes() {
 
   return (
     <Routes>
+      <Route path="/trust" element={<Trust />} />
+      <Route path="/seguranca" element={<Trust />} />
       <Route 
         path="/login" 
         element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <Login />} 

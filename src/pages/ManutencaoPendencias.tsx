@@ -1112,25 +1112,59 @@ export default function ManutencaoPendencias() {
               </div>
             ) : (
               <div className="overflow-x-auto">
+                {(Object.keys(columnFilters).length > 0 || sortConfig.column || selectedRows.size > 0) && (
+                  <div className="flex items-center justify-between gap-2 mb-2 px-2 py-1.5 bg-muted/40 rounded text-sm">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {selectedRows.size > 0 && (
+                        <Badge variant="secondary">{selectedRows.size} selecionada(s)</Badge>
+                      )}
+                      {Object.entries(columnFilters).map(([col, val]) => (
+                        <Badge key={col} variant="outline" className="flex items-center gap-1">
+                          {col}: {val}
+                          <button onClick={() => setColFilter(col, '')} className="ml-1 hover:text-destructive">
+                            <X className="h-3 w-3" />
+                          </button>
+                        </Badge>
+                      ))}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {selectedRows.size > 0 && (
+                        <Button variant="ghost" size="sm" onClick={() => setSelectedRows(new Set())}>Limpar seleção</Button>
+                      )}
+                      {(Object.keys(columnFilters).length > 0 || sortConfig.column) && (
+                        <Button variant="ghost" size="sm" onClick={clearAllColFilters}>
+                          <X className="h-3 w-3 mr-1" /> Limpar filtros
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                )}
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      {isVisible('numero_os') && <TableHead>Nº OS</TableHead>}
-                      {isVisible('numero_ticket') && <TableHead>Ticket</TableHead>}
-                      {isVisible('razao_social') && <TableHead>Cliente</TableHead>}
-                      {isVisible('contrato') && <TableHead>Contrato</TableHead>}
-                      {isVisible('tipo') && <TableHead>Tipo</TableHead>}
-                      {isVisible('setor') && <TableHead>Setor</TableHead>}
-                      {isVisible('status') && <TableHead>Status</TableHead>}
-                      {isVisible('prazo') && <TableHead>Prazo</TableHead>}
-                      {isVisible('abertura') && <TableHead>Abertura</TableHead>}
-                      {isVisible('aberto_por') && <TableHead>Aberto por</TableHead>}
+                      <TableHead className="w-[40px]">
+                        <Checkbox checked={allDisplayedSelected} onCheckedChange={toggleAllRows} />
+                      </TableHead>
+                      {isVisible('numero_os') && <TableHead>{renderColHeader('numero_os', 'Nº OS')}</TableHead>}
+                      {isVisible('numero_ticket') && <TableHead>{renderColHeader('numero_ticket', 'Ticket')}</TableHead>}
+                      {isVisible('razao_social') && <TableHead>{renderColHeader('razao_social', 'Cliente')}</TableHead>}
+                      {isVisible('contrato') && <TableHead>{renderColHeader('contrato', 'Contrato')}</TableHead>}
+                      {isVisible('tipo') && <TableHead>{renderColHeader('tipo', 'Tipo', true)}</TableHead>}
+                      {isVisible('setor') && <TableHead>{renderColHeader('setor', 'Setor', true)}</TableHead>}
+                      {isVisible('status') && <TableHead>{renderColHeader('status', 'Status', true)}</TableHead>}
+                      {isVisible('prazo') && <TableHead>{renderColHeader('prazo', 'Prazo')}</TableHead>}
+                      {isVisible('abertura') && <TableHead>{renderColHeader('abertura', 'Abertura')}</TableHead>}
+                      {isVisible('aberto_por') && <TableHead>{renderColHeader('aberto_por', 'Aberto por')}</TableHead>}
                       {isVisible('acoes') && <TableHead>Ações</TableHead>}
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredPendencias.map((pendencia) => (
-                      <TableRow key={pendencia.id}>
+                    {displayedPendencias.map((pendencia) => (
+                      <TableRow key={pendencia.id} data-state={selectedRows.has(pendencia.id) ? 'selected' : undefined}>
+                        <TableCell className="w-[40px]">
+                          <Checkbox checked={selectedRows.has(pendencia.id)} onCheckedChange={() => toggleRow(pendencia.id)} />
+                        </TableCell>
+
                         {isVisible('numero_os') && <TableCell className="font-medium">{pendencia.numero_os}</TableCell>}
                         {isVisible('numero_ticket') && <TableCell>{pendencia.numero_ticket || '-'}</TableCell>}
                         {isVisible('razao_social') && (

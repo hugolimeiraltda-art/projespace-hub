@@ -541,8 +541,9 @@ export function CarteiraClientesTable({ customers, onDelete, basePath = '/cartei
             )}
           </TableBody>
           {filteredAndSortedCustomers.length > 0 && (() => {
-            const ativados = filteredAndSortedCustomers.filter(c => !!c.data_ativacao);
-            const naoAtivados = filteredAndSortedCustomers.filter(c => !c.data_ativacao);
+            const isAtivado = (c: Customer) => !!c.data_ativacao && new Date(c.data_ativacao).getFullYear() >= 2020;
+            const ativados = filteredAndSortedCustomers.filter(isAtivado);
+            const naoAtivados = filteredAndSortedCustomers.filter(c => !isAtivado(c));
 
             const sum = (list: typeof ativados) => list.reduce((s, c) => s + (c.mensalidade || 0), 0);
             const withValue = (list: typeof ativados) => list.filter(c => c.mensalidade && c.mensalidade > 0);

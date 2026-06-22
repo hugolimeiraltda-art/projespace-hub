@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Layout } from '@/components/Layout';
 import { Button } from '@/components/ui/button';
@@ -31,7 +31,7 @@ import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { Plus, Users, Building2, Camera, DoorOpen, Loader2, CalendarClock, AlertTriangle } from 'lucide-react';
+import { Plus, Users, Building2, Camera, DoorOpen, Loader2, CalendarClock, AlertTriangle, DollarSign } from 'lucide-react';
 import { format, addMonths, isBefore, isAfter, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { CarteiraClientesTable } from '@/components/CarteiraClientesTable';
@@ -284,6 +284,24 @@ export default function CarteiraClientes({ tipoCarteira = 'PCI' }: CarteiraClien
   }), { unidades: 0, cameras: 0, portas: 0, mensalidade: 0, faciais_hik: 0, faciais_avicam: 0, faciais_outros: 0 });
 
   const totalFaciais = totals.faciais_hik + totals.faciais_avicam + totals.faciais_outros;
+
+  const ticketMedioStats = useMemo(() => {
+    const ativados = customers.filter(c => !!c.data_ativacao);
+    const naoAtivados = customers.filter(c => !c.data_ativacao);
+
+    const sum = (list: Customer[]) => list.reduce((s, c) => s + (c.mensalidade || 0), 0);
+    const withValue = (list: Customer[]) => list.filter(c => c.mensalidade && c.mensalidade > 0);
+    const avg = (list: Customer[]) => {
+      const wv = withValue(list);
+      return wv.length > 0 ? sum(list) / wv.length : 0;
+    };
+
+    return {
+      ativados: { count: ativados.length, withValue: withValue(ativados).length, avg: avg(ativados), sum: sum(ativados) },
+      naoAtivados: { count: naoAtivados.length, withValue: withValue(naoAtivados).length, avg: avg(naoAtivados), sum: sum(naoAtivados) },
+      total: { count: customers.length, withValue: withValue(customers).length, avg: avg(customers), sum: sum(customers) },
+    };
+  }, [customers]);
 
   const filialContracts = customers.reduce((acc, c) => {
     const filial = (c.filial || 'Sem filial').trim().toUpperCase() || 'Sem filial';
@@ -843,6 +861,66 @@ export default function CarteiraClientes({ tipoCarteira = 'PCI' }: CarteiraClien
         </div>
         )}
 
+
+        {/* Ticket Médio Summary */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+          <Card className="border-l-4 border-l-green-500">
+            <CardContent className="pt-3 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 bg-green-100 rounded-lg">
+                  <DollarSign className="w-4 h-4 text-green-600" />
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Ticket Médio Ativados</p>
+                  <p className="text-xl font-bold text-green-600">
+                    R$ {ticketMedioStats.ativados.avg.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {ticketMedioStats.ativados.withValue} de {ticketMedioStats.ativados.count} clientes
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-l-4 border-l-amber-500">
+            <CardContent className="pt-3 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 bg-amber-100 rounded-lg">
+                  <DollarSign className="w-4 h-4 text-amber-600" />
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Ticket Médio Não Ativados</p>
+                  <p className="text-xl font-bold text-amber-600">
+                    R$ {ticketMedioStats.naoAtivados.avg.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {ticketMedioStats.naoAtivados.withValue} de {ticketMedioStats.naoAtivados.count} clientes
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-l-4 border-l-primary">
+            <CardContent className="pt-3 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 bg-primary/10 rounded-lg">
+                  <DollarSign className="w-4 h-4 text-primary" />
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Ticket Médio Total</p>
+                  <p className="text-xl font-bold text-primary">
+                    R$ {ticketMedioStats.total.avg.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {ticketMedioStats.total.withValue} de {ticketMedioStats.total.count} clientes
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
 
         {/* Active Clients by Praça */}
         {tipoCarteira !== 'PPE' && <div className="grid grid-cols-5 gap-3 mb-4">

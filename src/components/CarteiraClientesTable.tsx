@@ -541,22 +541,45 @@ export function CarteiraClientesTable({ customers, onDelete, basePath = '/cartei
             )}
           </TableBody>
           {filteredAndSortedCustomers.length > 0 && (() => {
-            const total = filteredAndSortedCustomers.reduce((sum, c) => sum + (c.mensalidade || 0), 0);
-            const comMensalidade = filteredAndSortedCustomers.filter(c => c.mensalidade && c.mensalidade > 0);
-            const ticketMedio = comMensalidade.length > 0 ? total / comMensalidade.length : 0;
+            const ativados = filteredAndSortedCustomers.filter(c => !!c.data_ativacao);
+            const naoAtivados = filteredAndSortedCustomers.filter(c => !c.data_ativacao);
+
+            const sum = (list: typeof ativados) => list.reduce((s, c) => s + (c.mensalidade || 0), 0);
+            const withValue = (list: typeof ativados) => list.filter(c => c.mensalidade && c.mensalidade > 0);
+            const avg = (list: typeof ativados) => {
+              const wv = withValue(list);
+              return wv.length > 0 ? sum(list) / wv.length : 0;
+            };
+
+            const totalSum = sum(filteredAndSortedCustomers);
+            const totalWithValue = withValue(filteredAndSortedCustomers).length;
+            const totalAvg = totalWithValue > 0 ? totalSum / totalWithValue : 0;
+
             return (
               <tfoot>
                 <TableRow className="bg-muted/50 font-semibold border-t-2">
                   <TableCell colSpan={footerLabelColSpan} className="text-right">
                     Total Mensalidades
                   </TableCell>
-                  {isColumnVisible('mensalidade') && <TableCell className="text-right">R$ {total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</TableCell>}
+                  {isColumnVisible('mensalidade') && <TableCell className="text-right">R$ {totalSum.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</TableCell>}
                 </TableRow>
                 <TableRow className="bg-muted/30 font-semibold">
                   <TableCell colSpan={footerLabelColSpan} className="text-right">
-                    Ticket Médio ({comMensalidade.length} clientes)
+                    Ticket Médio Ativados ({withValue(ativados).length} de {ativados.length})
                   </TableCell>
-                  {isColumnVisible('mensalidade') && <TableCell className="text-right">R$ {ticketMedio.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</TableCell>}
+                  {isColumnVisible('mensalidade') && <TableCell className="text-right">R$ {avg(ativados).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</TableCell>}
+                </TableRow>
+                <TableRow className="bg-muted/30 font-semibold">
+                  <TableCell colSpan={footerLabelColSpan} className="text-right">
+                    Ticket Médio Não Ativados ({withValue(naoAtivados).length} de {naoAtivados.length})
+                  </TableCell>
+                  {isColumnVisible('mensalidade') && <TableCell className="text-right">R$ {avg(naoAtivados).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</TableCell>}
+                </TableRow>
+                <TableRow className="bg-muted/50 font-semibold">
+                  <TableCell colSpan={footerLabelColSpan} className="text-right">
+                    Ticket Médio Total ({totalWithValue} de {filteredAndSortedCustomers.length})
+                  </TableCell>
+                  {isColumnVisible('mensalidade') && <TableCell className="text-right">R$ {totalAvg.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</TableCell>}
                 </TableRow>
               </tfoot>
             );

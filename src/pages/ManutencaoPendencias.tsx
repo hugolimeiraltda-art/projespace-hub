@@ -14,7 +14,8 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { useManutencaoExport } from '@/hooks/useManutencaoExport';
-import { Plus, AlertTriangle, Clock, CheckCircle, Wrench, Search, Eye, FileText, Download, Timer, CalendarClock, FileSpreadsheet, MessageSquare, Send, Trash2, Pencil, List, Columns3 } from 'lucide-react';
+import { Plus, AlertTriangle, Clock, CheckCircle, Wrench, Search, Eye, FileText, Download, Timer, CalendarClock, FileSpreadsheet, MessageSquare, Send, Trash2, Pencil, List, Columns3, Filter, ArrowUp, ArrowDown, ArrowUpDown, X } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Checkbox } from '@/components/ui/checkbox';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { format, differenceInDays, addDays } from 'date-fns';
@@ -136,6 +137,36 @@ export default function ManutencaoPendencias() {
     aberto_por: true, acoes: true,
   });
   const isVisible = (k: ColKey) => visibleCols[k];
+
+  // Excel-like per-column filter, sort and selection
+  type SortDir = 'asc' | 'desc' | null;
+  const [columnFilters, setColumnFilters] = useState<Record<string, string>>({});
+  const [sortConfig, setSortConfig] = useState<{ column: string; direction: SortDir }>({ column: '', direction: null });
+  const [activeFilterColumn, setActiveFilterColumn] = useState<string | null>(null);
+  const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
+
+  const setColFilter = (col: string, value: string) => {
+    setColumnFilters((prev) => {
+      const next = { ...prev };
+      if (!value || value === 'all') delete next[col]; else next[col] = value;
+      return next;
+    });
+  };
+  const handleColSort = (col: string) => {
+    setSortConfig((prev) => {
+      if (prev.column !== col) return { column: col, direction: 'asc' };
+      if (prev.direction === 'asc') return { column: col, direction: 'desc' };
+      return { column: '', direction: null };
+    });
+  };
+  const getSortIcon = (col: string) => {
+    if (sortConfig.column !== col) return <ArrowUpDown className="h-3 w-3 text-muted-foreground" />;
+    return sortConfig.direction === 'asc'
+      ? <ArrowUp className="h-3 w-3 text-primary" />
+      : <ArrowDown className="h-3 w-3 text-primary" />;
+  };
+  const clearAllColFilters = () => { setColumnFilters({}); setSortConfig({ column: '', direction: null }); };
+
   const [editFormData, setEditFormData] = useState({
     numero_os: '',
     numero_ticket: '',
@@ -665,6 +696,113 @@ export default function ManutencaoPendencias() {
 
   const setores = [...new Set(pendencias.map(p => p.setor))];
 
+  // Cell value extractor for filters & sorting
+  const getCellValue = (p: Pendencia, col: string): string => {
+    switch (col) {
+      case 'numero_os': return p.numero_os || '';
+      case 'numero_ticket': return p.numero_ticket || '';
+      case 'razao_social': return p.razao_social || '';
+      case 'contrato': return p.contrato || '';
+      case 'tipo': return getTipoLabel(p.tipo);
+      case 'setor': return p.setor || '';
+      case 'status': return STATUS_OPTIONS.find(s => s.value === p.status)?.label || p.status;
+      case 'prazo': return p.data_prazo ? format(new Date(p.data_prazo), 'dd/MM/yyyy') : '';
+      case 'abertura': return p.data_abertura ? format(new Date(p.data_abertura), 'dd/MM/yyyy') : '';
+      case 'aberto_por': return p.created_by_name || '';
+      default: return '';
+    }
+  };
+
+  const displayedPendencias = (() => {
+    let result = filteredPendencias.filter(p =>
+      Object.entries(columnFilters).every(([col, val]) => {
+        const cell = getCellValue(p, col).toLowerCase();
+        return cell.includes(val.toLowerCase());
+      })
+    );
+    if (sortConfig.column && sortConfig.direction) {
+      const dir = sortConfig.direction === 'asc' ? 1 : -1;
+      result = [...result].sort((a, b) => {
+        const av = getCellValue(a, sortConfig.column);
+        const bv = getCellValue(b, sortConfig.column);
+        if (sortConfig.column === 'prazo' || sortConfig.column === 'abertura') {
+          const ad = sortConfig.column === 'prazo' ? +new Date(a.data_prazo) : +new Date(a.data_abertura);
+          const bd = sortConfig.column === 'prazo' ? +new Date(b.data_prazo) : +new Date(b.data_abertura);
+          return (ad - bd) * dir;
+        }
+        return av.localeCompare(bv, 'pt-BR', { numeric: true }) * dir;
+      });
+    }
+    return result;
+  })();
+
+  const uniqueColValues = (col: string) =>
+    [...new Set(filteredPendencias.map(p => getCellValue(p, col)).filter(Boolean))].sort();
+
+  const toggleRow = (id: string) => {
+    setSelectedRows(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+  const toggleAllRows = () => {
+    if (selectedRows.size === displayedPendencias.length && displayedPendencias.length > 0) {
+      setSelectedRows(new Set());
+    } else {
+      setSelectedRows(new Set(displayedPendencias.map(p => p.id)));
+    }
+  };
+
+  const renderColHeader = (col: string, label: string, useSelect: boolean = false) => {
+    const hasFilter = !!columnFilters[col];
+    return (
+      <div className="flex items-center gap-1">
+        <button onClick={() => handleColSort(col)} className="flex items-center gap-1 hover:text-foreground transition-colors">
+          {label}
+          {getSortIcon(col)}
+        </button>
+        <Popover open={activeFilterColumn === col} onOpenChange={(o) => setActiveFilterColumn(o ? col : null)}>
+          <PopoverTrigger asChild>
+            <button className={`p-1 rounded hover:bg-accent transition-colors ${hasFilter ? 'text-primary' : 'text-muted-foreground'}`}>
+              <Filter className={`h-3 w-3 ${hasFilter ? 'fill-current' : ''}`} />
+            </button>
+          </PopoverTrigger>
+          <PopoverContent className="w-64 p-3" align="start">
+            <div className="space-y-3">
+              <div className="font-medium text-sm">Filtrar {label}</div>
+              {useSelect ? (
+                <Select value={columnFilters[col] || 'all'} onValueChange={(v) => { setColFilter(col, v); setActiveFilterColumn(null); }}>
+                  <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos</SelectItem>
+                    {uniqueColValues(col).map(v => (
+                      <SelectItem key={v} value={v}>{v}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <Input
+                  placeholder={`Buscar ${label.toLowerCase()}...`}
+                  value={columnFilters[col] || ''}
+                  onChange={(e) => setColFilter(col, e.target.value)}
+                />
+              )}
+              {hasFilter && (
+                <Button variant="ghost" size="sm" className="w-full" onClick={() => { setColFilter(col, ''); setActiveFilterColumn(null); }}>
+                  Limpar filtro
+                </Button>
+              )}
+            </div>
+          </PopoverContent>
+        </Popover>
+      </div>
+    );
+  };
+
+  const allDisplayedSelected = displayedPendencias.length > 0 && displayedPendencias.every(p => selectedRows.has(p.id));
+
+
   return (
     <Layout>
       <div className="p-6 space-y-6">
@@ -974,25 +1112,59 @@ export default function ManutencaoPendencias() {
               </div>
             ) : (
               <div className="overflow-x-auto">
+                {(Object.keys(columnFilters).length > 0 || sortConfig.column || selectedRows.size > 0) && (
+                  <div className="flex items-center justify-between gap-2 mb-2 px-2 py-1.5 bg-muted/40 rounded text-sm">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {selectedRows.size > 0 && (
+                        <Badge variant="secondary">{selectedRows.size} selecionada(s)</Badge>
+                      )}
+                      {Object.entries(columnFilters).map(([col, val]) => (
+                        <Badge key={col} variant="outline" className="flex items-center gap-1">
+                          {col}: {val}
+                          <button onClick={() => setColFilter(col, '')} className="ml-1 hover:text-destructive">
+                            <X className="h-3 w-3" />
+                          </button>
+                        </Badge>
+                      ))}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {selectedRows.size > 0 && (
+                        <Button variant="ghost" size="sm" onClick={() => setSelectedRows(new Set())}>Limpar seleção</Button>
+                      )}
+                      {(Object.keys(columnFilters).length > 0 || sortConfig.column) && (
+                        <Button variant="ghost" size="sm" onClick={clearAllColFilters}>
+                          <X className="h-3 w-3 mr-1" /> Limpar filtros
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                )}
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      {isVisible('numero_os') && <TableHead>Nº OS</TableHead>}
-                      {isVisible('numero_ticket') && <TableHead>Ticket</TableHead>}
-                      {isVisible('razao_social') && <TableHead>Cliente</TableHead>}
-                      {isVisible('contrato') && <TableHead>Contrato</TableHead>}
-                      {isVisible('tipo') && <TableHead>Tipo</TableHead>}
-                      {isVisible('setor') && <TableHead>Setor</TableHead>}
-                      {isVisible('status') && <TableHead>Status</TableHead>}
-                      {isVisible('prazo') && <TableHead>Prazo</TableHead>}
-                      {isVisible('abertura') && <TableHead>Abertura</TableHead>}
-                      {isVisible('aberto_por') && <TableHead>Aberto por</TableHead>}
+                      <TableHead className="w-[40px]">
+                        <Checkbox checked={allDisplayedSelected} onCheckedChange={toggleAllRows} />
+                      </TableHead>
+                      {isVisible('numero_os') && <TableHead>{renderColHeader('numero_os', 'Nº OS')}</TableHead>}
+                      {isVisible('numero_ticket') && <TableHead>{renderColHeader('numero_ticket', 'Ticket')}</TableHead>}
+                      {isVisible('razao_social') && <TableHead>{renderColHeader('razao_social', 'Cliente')}</TableHead>}
+                      {isVisible('contrato') && <TableHead>{renderColHeader('contrato', 'Contrato')}</TableHead>}
+                      {isVisible('tipo') && <TableHead>{renderColHeader('tipo', 'Tipo', true)}</TableHead>}
+                      {isVisible('setor') && <TableHead>{renderColHeader('setor', 'Setor', true)}</TableHead>}
+                      {isVisible('status') && <TableHead>{renderColHeader('status', 'Status', true)}</TableHead>}
+                      {isVisible('prazo') && <TableHead>{renderColHeader('prazo', 'Prazo')}</TableHead>}
+                      {isVisible('abertura') && <TableHead>{renderColHeader('abertura', 'Abertura')}</TableHead>}
+                      {isVisible('aberto_por') && <TableHead>{renderColHeader('aberto_por', 'Aberto por')}</TableHead>}
                       {isVisible('acoes') && <TableHead>Ações</TableHead>}
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredPendencias.map((pendencia) => (
-                      <TableRow key={pendencia.id}>
+                    {displayedPendencias.map((pendencia) => (
+                      <TableRow key={pendencia.id} data-state={selectedRows.has(pendencia.id) ? 'selected' : undefined}>
+                        <TableCell className="w-[40px]">
+                          <Checkbox checked={selectedRows.has(pendencia.id)} onCheckedChange={() => toggleRow(pendencia.id)} />
+                        </TableCell>
+
                         {isVisible('numero_os') && <TableCell className="font-medium">{pendencia.numero_os}</TableCell>}
                         {isVisible('numero_ticket') && <TableCell>{pendencia.numero_ticket || '-'}</TableCell>}
                         {isVisible('razao_social') && (

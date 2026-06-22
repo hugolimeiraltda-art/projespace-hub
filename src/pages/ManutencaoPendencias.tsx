@@ -137,6 +137,36 @@ export default function ManutencaoPendencias() {
     aberto_por: true, acoes: true,
   });
   const isVisible = (k: ColKey) => visibleCols[k];
+
+  // Excel-like per-column filter, sort and selection
+  type SortDir = 'asc' | 'desc' | null;
+  const [columnFilters, setColumnFilters] = useState<Record<string, string>>({});
+  const [sortConfig, setSortConfig] = useState<{ column: string; direction: SortDir }>({ column: '', direction: null });
+  const [activeFilterColumn, setActiveFilterColumn] = useState<string | null>(null);
+  const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
+
+  const setColFilter = (col: string, value: string) => {
+    setColumnFilters((prev) => {
+      const next = { ...prev };
+      if (!value || value === 'all') delete next[col]; else next[col] = value;
+      return next;
+    });
+  };
+  const handleColSort = (col: string) => {
+    setSortConfig((prev) => {
+      if (prev.column !== col) return { column: col, direction: 'asc' };
+      if (prev.direction === 'asc') return { column: col, direction: 'desc' };
+      return { column: '', direction: null };
+    });
+  };
+  const getSortIcon = (col: string) => {
+    if (sortConfig.column !== col) return <ArrowUpDown className="h-3 w-3 text-muted-foreground" />;
+    return sortConfig.direction === 'asc'
+      ? <ArrowUp className="h-3 w-3 text-primary" />
+      : <ArrowDown className="h-3 w-3 text-primary" />;
+  };
+  const clearAllColFilters = () => { setColumnFilters({}); setSortConfig({ column: '', direction: null }); };
+
   const [editFormData, setEditFormData] = useState({
     numero_os: '',
     numero_ticket: '',

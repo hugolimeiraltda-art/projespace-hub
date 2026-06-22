@@ -8,6 +8,7 @@ import { ProjectsProvider } from "@/contexts/ProjectsContext";
 import { useMenuPermissions } from "@/hooks/useMenuPermissions";
 
 import Login from "./pages/Login";
+import Trust from "./pages/Trust";
 import ChangePassword from "./pages/ChangePassword";
 import Dashboard from "./pages/Dashboard";
 import ProjectsList from "./pages/ProjectsList";

@@ -8,6 +8,7 @@ import { ProjectsProvider } from "@/contexts/ProjectsContext";
 import { useMenuPermissions } from "@/hooks/useMenuPermissions";
 
 import Login from "./pages/Login";
+import Trust from "./pages/Trust";
 import ChangePassword from "./pages/ChangePassword";
 import Dashboard from "./pages/Dashboard";
 import ProjectsList from "./pages/ProjectsList";
@@ -145,6 +146,8 @@ function AppRoutes() {
 
   return (
     <Routes>
+      <Route path="/trust" element={<Trust />} />
+      <Route path="/seguranca" element={<Trust />} />
       <Route 
         path="/login" 
         element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <Login />} 

@@ -56,6 +56,7 @@ import { Progress } from '@/components/ui/progress';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import jsPDF from 'jspdf';
 import { EquipmentListDialog } from '@/components/EquipmentListDialog';
+import { TotensImplantacao } from '@/components/TotensImplantacao';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 interface ImplantacaoEtapas {
@@ -213,6 +214,8 @@ export default function ImplantacaoExecucao() {
   const [showEquipmentList, setShowEquipmentList] = useState(false);
   const [hasPendingItems, setHasPendingItems] = useState(false);
   const [checklistsExistentes, setChecklistsExistentes] = useState<string[]>([]);
+  const [totensCount, setTotensCount] = useState(0);
+  const [totensCameras, setTotensCameras] = useState(0);
   const [secoesComAnexo, setSecoesComAnexo] = useState<string[]>([]);
   const [editingOpAssistidaDates, setEditingOpAssistidaDates] = useState(false);
   const [tempOpAssistidaStart, setTempOpAssistidaStart] = useState('');
@@ -1813,13 +1816,9 @@ export default function ImplantacaoExecucao() {
             </Collapsible>
           </Card>
 
-          {/* Etapa 2.1: Quantidade de Totens por Tipo */}
+          {/* Etapa 2.1: Totens da Implantação */}
           {(() => {
-            const totalTotens = (etapas.ppe_totem_360_qtd || 0) + (etapas.ppe_totem_parede_qtd || 0) + (etapas.ppe_totem_mini_qtd || 0);
-            const totalCameras = ((etapas.ppe_totem_360_qtd || 0) * (etapas.ppe_totem_360_cameras || 0))
-              + ((etapas.ppe_totem_parede_qtd || 0) * (etapas.ppe_totem_parede_cameras || 0))
-              + ((etapas.ppe_totem_mini_qtd || 0) * (etapas.ppe_totem_mini_cameras || 0));
-            const complete = totalTotens > 0;
+            const complete = totensCount > 0;
             return (
               <Card>
                 <Collapsible open={expandedEtapas.includes(21)} onOpenChange={() => toggleEtapa(21)}>
@@ -1833,9 +1832,9 @@ export default function ImplantacaoExecucao() {
                           )}>
                             {complete ? <Check className="w-4 h-4" /> : <FileText className="w-4 h-4" />}
                           </div>
-                          <CardTitle className="text-base">2.1 - Quantidade de Totens por Tipo</CardTitle>
+                          <CardTitle className="text-base">2.1 - Totens da Implantação</CardTitle>
                           <span className="text-xs text-muted-foreground font-normal">
-                            ({totalTotens} totens · {totalCameras} câmeras)
+                            ({totensCount} totens · {totensCameras} câmeras)
                           </span>
                         </div>
                         {expandedEtapas.includes(21) ? <ChevronDown className="w-5 h-5" /> : <ChevronRight className="w-5 h-5" />}
@@ -1843,63 +1842,23 @@ export default function ImplantacaoExecucao() {
                     </CardHeader>
                   </CollapsibleTrigger>
                   <CollapsibleContent>
-                    <CardContent className="pt-0 space-y-3">
-                      <p className="text-xs text-muted-foreground">Informe quantos totens de cada modelo serão instalados.</p>
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                        {([
-                          { label: 'Totem 360', field: 'ppe_totem_360_qtd' as const, camField: 'ppe_totem_360_cameras' as const },
-                          { label: 'Totem Parede', field: 'ppe_totem_parede_qtd' as const, camField: 'ppe_totem_parede_cameras' as const },
-                          { label: 'Totem Mini', field: 'ppe_totem_mini_qtd' as const, camField: 'ppe_totem_mini_cameras' as const },
-                        ]).map((t) => (
-                          <div key={t.field} className="space-y-2 border border-border rounded-md p-3">
-                            <label className="text-xs font-medium">{t.label}</label>
-                            <div className="space-y-1">
-                              <label className="text-[11px] text-muted-foreground">Quantidade</label>
-                              <Input
-                                type="number"
-                                min={0}
-                                value={(etapas as any)[t.field] ?? 0}
-                                onChange={(e) => {
-                                  const val = e.target.value === '' ? 0 : Math.max(0, Number(e.target.value));
-                                  setEtapas(prev => prev ? { ...prev, [t.field]: val } as ImplantacaoEtapas : null);
-                                }}
-                                onBlur={(e) => {
-                                  const val = e.target.value === '' ? 0 : Math.max(0, Number(e.target.value));
-                                  updateEtapa(t.field as any, val);
-                                }}
-                                className="h-9"
-                              />
-                            </div>
-                            <div className="space-y-1">
-                              <label className="text-[11px] text-muted-foreground">Câmeras por totem</label>
-                              <Input
-                                type="number"
-                                min={0}
-                                value={(etapas as any)[t.camField] ?? 0}
-                                onChange={(e) => {
-                                  const val = e.target.value === '' ? 0 : Math.max(0, Number(e.target.value));
-                                  setEtapas(prev => prev ? { ...prev, [t.camField]: val } as ImplantacaoEtapas : null);
-                                }}
-                                onBlur={(e) => {
-                                  const val = e.target.value === '' ? 0 : Math.max(0, Number(e.target.value));
-                                  updateEtapa(t.camField as any, val);
-                                }}
-                                className="h-9"
-                              />
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                      <div className="text-xs text-muted-foreground flex flex-wrap gap-x-4 pt-1">
-                        <span>Total totens: <span className="font-semibold text-foreground">{totalTotens}</span></span>
-                        <span>Total câmeras: <span className="font-semibold text-foreground">{totalCameras}</span></span>
-                      </div>
+                    <CardContent className="pt-0">
+                      {id && (
+                        <TotensImplantacao
+                          projectId={id}
+                          onTotalsChange={(t, c) => {
+                            setTotensCount(t);
+                            setTotensCameras(c);
+                          }}
+                        />
+                      )}
                     </CardContent>
                   </CollapsibleContent>
                 </Collapsible>
               </Card>
             );
           })()}
+
 
           {/* Etapa 3: Boas Vindas */}
           <Card>

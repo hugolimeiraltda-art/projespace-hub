@@ -1361,6 +1361,44 @@ export type Database = {
         }
         Relationships: []
       }
+      implantacao_totens: {
+        Row: {
+          cameras: number
+          codigo_alarme: string | null
+          created_at: string
+          id: string
+          modelo: string
+          project_id: string
+          updated_at: string
+        }
+        Insert: {
+          cameras?: number
+          codigo_alarme?: string | null
+          created_at?: string
+          id?: string
+          modelo: string
+          project_id: string
+          updated_at?: string
+        }
+        Update: {
+          cameras?: number
+          codigo_alarme?: string | null
+          created_at?: string
+          id?: string
+          modelo?: string
+          project_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "implantacao_totens_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       locais_estoque: {
         Row: {
           cidade: string

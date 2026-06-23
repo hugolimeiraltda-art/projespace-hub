@@ -9,6 +9,7 @@ import { useMenuPermissions } from "@/hooks/useMenuPermissions";
 
 import Login from "./pages/Login";
 import Trust from "./pages/Trust";
+import ChecklistExterno from "./pages/ChecklistExterno";
 import ChangePassword from "./pages/ChangePassword";
 import Dashboard from "./pages/Dashboard";
 import ProjectsList from "./pages/ProjectsList";
@@ -148,6 +149,7 @@ function AppRoutes() {
     <Routes>
       <Route path="/trust" element={<Trust />} />
       <Route path="/seguranca" element={<Trust />} />
+      <Route path="/checklist-externo/:token" element={<ChecklistExterno />} />
       <Route 
         path="/login" 
         element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <Login />} 

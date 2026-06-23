@@ -48,6 +48,7 @@ import {
   Package,
   Upload,
   AlertTriangle,
+  Link2,
 } from 'lucide-react';
 import { format, parseISO, addDays, differenceInDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -276,6 +277,69 @@ export default function ImplantacaoExecucao() {
     }
   };
 
+  // CHECKLIST_CONFIGS items mirror src/pages/ImplantacaoChecklist.tsx for initial seeding
+  const CHECKLIST_SEED: Record<string, string[]> = {
+    instalacao_totem: [
+      'A1 — Totem físico sem avarias visíveis (amassados, arranhões, pintura)',
+      'A2 — Estrutura de fixação e base em perfeito estado',
+      'A3 — Tampa de acesso traseira com fechadura funcional',
+      'A4 — Vidros/acrílicos de proteção sem trincas ou quebras',
+      'A5 — Parafusos e fixações conferidos e apertados',
+      'B1 — Câmera 1 — presente, limpa e sem danos físicos',
+      'B2 — Câmera 2 — presente, limpa e sem danos físicos',
+      'B3 — Câmera 3 — presente, limpa e sem danos físicos (se aplicável)',
+      'B4 — Câmera 4 — presente, limpa e sem danos físicos (se aplicável)',
+      'B5 — Lentes das câmeras sem arranhões ou sujeira',
+      'B6 — Suportes e articulações das câmeras ajustados',
+      'C1 — HD/SSD instalado conforme especificação do contrato',
+      'D1 — Cabos organizados e identificados',
+      'F3 — Responsável do cliente confirmado para receber a entrega',
+    ],
+  };
+
+  const gerarLinkExterno = async (checklistType: string) => {
+    if (!id) return;
+    try {
+      let { data: row } = await supabase
+        .from('implantacao_checklists')
+        .select('public_token, dados')
+        .eq('project_id', id)
+        .eq('tipo', checklistType)
+        .maybeSingle();
+
+      if (!row) {
+        const seed = CHECKLIST_SEED[checklistType] || [];
+        const items = seed.map((label, i) => ({ id: `item-${i}`, label, checked: false, observacao: '' }));
+        const { data: inserted, error } = await supabase
+          .from('implantacao_checklists')
+          .insert([{
+            project_id: id,
+            tipo: checklistType,
+            dados: { items } as any,
+            observacoes: '',
+            created_by: user?.id,
+            created_by_name: user?.nome,
+          }])
+          .select('public_token')
+          .single();
+        if (error) throw error;
+        row = inserted as any;
+      }
+
+      const url = `${window.location.origin}/checklist-externo/${row!.public_token}`;
+      try {
+        await navigator.clipboard.writeText(url);
+        toast({ title: 'Link copiado!', description: 'Envie este link ao técnico de campo.' });
+      } catch {
+        // Fallback: show in a prompt if clipboard fails
+        window.prompt('Copie o link e envie ao técnico:', url);
+      }
+    } catch (e: any) {
+      console.error(e);
+      toast({ title: 'Erro', description: 'Não foi possível gerar o link.', variant: 'destructive' });
+    }
+  };
+
   useEffect(() => {
     if (id) {
       fetchData();
@@ -435,14 +499,22 @@ export default function ImplantacaoExecucao() {
         setHasPendingItems((pendingCount || 0) > 0);
       }
 
-      // Fetch existing checklists for this project
+      // Fetch existing checklists for this project. A checklist counts as "existing" only when
+      // it actually has answers (avoids being marked done just because we generated an external link).
       const { data: checklistsData } = await supabase
         .from('implantacao_checklists')
-        .select('tipo')
+        .select('tipo, dados, external_submitted_at')
         .eq('project_id', id!);
-      
+
       if (checklistsData) {
-        setChecklistsExistentes(checklistsData.map(c => c.tipo));
+        const preenchidos = checklistsData
+          .filter((c: any) => {
+            if (c.external_submitted_at) return true;
+            const items = (c.dados as any)?.items || [];
+            return items.some((it: any) => it.resposta || it.checked);
+          })
+          .map((c: any) => c.tipo);
+        setChecklistsExistentes(preenchidos);
       }
 
       // Fetch sections that have attachments (for mandatory upload validation)
@@ -2303,10 +2375,19 @@ export default function ImplantacaoExecucao() {
                           <Button
                             variant="outline"
                             size="sm"
+                            onClick={() => gerarLinkExterno('instalacao_totem')}
+                            title="Gerar link para técnico de campo preencher externamente"
+                          >
+                            <Link2 className="w-4 h-4 mr-1" />
+                            Link p/ técnico
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
                             onClick={() => navigate(`/startup-projetos/${id}/checklist/instalacao_totem`)}
                           >
                             <ClipboardCheck className="w-4 h-4 mr-1" />
-                            Checklist
+                            {checklistsExistentes.includes('instalacao_totem') ? 'Ver checklist' : 'Checklist'}
                           </Button>
                         </div>
                       </div>

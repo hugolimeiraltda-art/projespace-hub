@@ -116,16 +116,16 @@ const CHECKLIST_CONFIGS: Record<string, { title: string; items: string[] }> = {
   check_programacao: {
     title: 'Check e Laudo de Programação',
     items: [
-      'Sistema configurado no servidor',
-      'Usuários cadastrados',
-      'Permissões configuradas',
-      'Câmeras integradas ao sistema',
-      'Controle de acesso programado',
-      'Tags/cartões cadastrados',
-      'Alarme integrado',
-      'Aplicativo configurado',
-      'Testes de funcionamento realizados',
-      'Backup configurado',
+      'C2 — Acesso à plataforma em nuvem testado e funcional',
+      'E1 — Aplicativo de monitoramento configurado e operante',
+      'E2 — Integração com Secretaria Municipal de Segurança testada',
+      'E3 — Detecção de aglomeração e perambulação funcionando',
+      'E4 — Armazenamento em nuvem configurado e sincronizando',
+      'E5 — Credenciais de acesso do cliente geradas e registradas',
+      'E6 — Software de monitoramento (Studio Emive) instalado e atualizado',
+      'E7 — Backup de configurações realizado antes da entrega',
+      'F1 — Ponto de energia elétrica adequado no local',
+      'F2 — Ponto de rede (internet) disponível no local',
     ],
   },
   instalacao_totem: {
@@ -146,20 +146,9 @@ const CHECKLIST_CONFIGS: Record<string, { title: string; items: string[] }> = {
       'B6 — Suportes e articulações das câmeras ajustados',
       // C — Servidor / NVR
       'C1 — HD/SSD instalado conforme especificação do contrato',
-      'C2 — Acesso à plataforma em nuvem testado e funcional',
       // D — Cabeamento e Acessórios
       'D1 — Cabos organizados e identificados',
-      // E — Aplicativos e Software
-      'E1 — Aplicativo de monitoramento configurado e operante',
-      'E2 — Integração com Secretaria Municipal de Segurança testada',
-      'E3 — Detecção de aglomeração e perambulação funcionando',
-      'E4 — Armazenamento em nuvem configurado e sincronizando',
-      'E5 — Credenciais de acesso do cliente geradas e registradas',
-      'E6 — Software de monitoramento (Studio Emive) instalado e atualizado',
-      'E7 — Backup de configurações realizado antes da entrega',
       // F — Pendências do Cliente
-      'F1 — Ponto de energia elétrica adequado no local',
-      'F2 — Ponto de rede (internet) disponível no local',
       'F3 — Responsável do cliente confirmado para receber a entrega',
     ],
   },

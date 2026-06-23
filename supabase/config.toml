@@ -47,3 +47,6 @@ verify_jwt = false
 
 [functions.noc-alertas-reincidencia]
 verify_jwt = false
+
+[functions.checklist-externo]
+verify_jwt = false

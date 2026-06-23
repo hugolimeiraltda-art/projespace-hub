@@ -9,6 +9,7 @@ import { useMenuPermissions } from "@/hooks/useMenuPermissions";
 
 import Login from "./pages/Login";
 import Trust from "./pages/Trust";
+import ChecklistExterno from "./pages/ChecklistExterno";
 import ChangePassword from "./pages/ChangePassword";
 import Dashboard from "./pages/Dashboard";
 import ProjectsList from "./pages/ProjectsList";

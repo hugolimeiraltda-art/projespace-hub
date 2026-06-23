@@ -48,6 +48,7 @@ import {
   Package,
   Upload,
   AlertTriangle,
+  Link2,
 } from 'lucide-react';
 import { format, parseISO, addDays, differenceInDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';

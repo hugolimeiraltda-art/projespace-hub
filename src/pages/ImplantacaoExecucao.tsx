@@ -326,7 +326,9 @@ export default function ImplantacaoExecucao() {
         row = inserted as any;
       }
 
-      const url = `${window.location.origin}/checklist-externo/${row!.public_token}`;
+      // Always use the public published domain so external technicians don't hit Lovable workspace auth.
+      const PUBLIC_BASE = 'https://eixopci.graberalarmes.com.br';
+      const url = `${PUBLIC_BASE}/checklist-externo/${row!.public_token}`;
       try {
         await navigator.clipboard.writeText(url);
         toast({ title: 'Link copiado!', description: 'Envie este link ao técnico de campo.' });

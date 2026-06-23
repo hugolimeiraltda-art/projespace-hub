@@ -187,10 +187,20 @@ serve(async (req) => {
       });
     }
 
+    // Derive tipo_carteira from project (required NOT NULL on customer_portfolio)
+    const { data: projectData } = await supabaseAdmin
+      .from("projects")
+      .select("tipo_implantacao")
+      .eq("id", body.projectId)
+      .maybeSingle();
+
+    const tipoCarteira = projectData?.tipo_implantacao === "PPE" ? "PPE" : "PCI";
+
     const insertPayload = {
       ...normalizedPayload,
       razao_social: normalizedPayload.razao_social ?? "",
       endereco: normalizedPayload.endereco ?? null,
+      tipo_carteira: tipoCarteira,
     };
 
     const { data: inserted, error: insertError } = await supabaseAdmin

@@ -91,6 +91,15 @@ serve(async (req) => {
     }
 
     const body = parsedBody.data;
+
+    // Derive tipo_carteira from project so updates align with PPE/PCI prefix rules
+    const { data: projectData } = await supabaseAdmin
+      .from("projects")
+      .select("tipo_implantacao")
+      .eq("id", body.projectId)
+      .maybeSingle();
+    const tipoCarteira = projectData?.tipo_implantacao === "PPE" ? "PPE" : "PCI";
+
     const normalizedPayload = {
       contrato: body.contrato,
       alarme_codigo: body.alarme_codigo?.trim() ? body.alarme_codigo.trim() : null,
@@ -99,6 +108,7 @@ serve(async (req) => {
       data_termino: body.data_termino,
       filial: body.filial?.trim() ? body.filial.trim() : null,
       project_id: body.projectId,
+      tipo_carteira: tipoCarteira,
       status_implantacao: body.status_implantacao?.trim() ? body.status_implantacao.trim() : "EM_IMPLANTACAO",
       razao_social: body.razao_social?.trim() ? body.razao_social.trim() : undefined,
       endereco: body.endereco?.trim() ? body.endereco.trim() : undefined,

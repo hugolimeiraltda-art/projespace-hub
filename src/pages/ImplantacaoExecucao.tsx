@@ -213,6 +213,8 @@ export default function ImplantacaoExecucao() {
   const [showEquipmentList, setShowEquipmentList] = useState(false);
   const [hasPendingItems, setHasPendingItems] = useState(false);
   const [checklistsExistentes, setChecklistsExistentes] = useState<string[]>([]);
+  const [totensCount, setTotensCount] = useState(0);
+  const [totensCameras, setTotensCameras] = useState(0);
   const [secoesComAnexo, setSecoesComAnexo] = useState<string[]>([]);
   const [editingOpAssistidaDates, setEditingOpAssistidaDates] = useState(false);
   const [tempOpAssistidaStart, setTempOpAssistidaStart] = useState('');

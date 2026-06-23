@@ -2367,10 +2367,19 @@ export default function ImplantacaoExecucao() {
                           <Button
                             variant="outline"
                             size="sm"
+                            onClick={() => gerarLinkExterno('instalacao_totem')}
+                            title="Gerar link para técnico de campo preencher externamente"
+                          >
+                            <Link2 className="w-4 h-4 mr-1" />
+                            Link p/ técnico
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
                             onClick={() => navigate(`/startup-projetos/${id}/checklist/instalacao_totem`)}
                           >
                             <ClipboardCheck className="w-4 h-4 mr-1" />
-                            Checklist
+                            {checklistsExistentes.includes('instalacao_totem') ? 'Ver checklist' : 'Checklist'}
                           </Button>
                         </div>
                       </div>

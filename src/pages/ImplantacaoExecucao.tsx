@@ -499,14 +499,22 @@ export default function ImplantacaoExecucao() {
         setHasPendingItems((pendingCount || 0) > 0);
       }
 
-      // Fetch existing checklists for this project
+      // Fetch existing checklists for this project. A checklist counts as "existing" only when
+      // it actually has answers (avoids being marked done just because we generated an external link).
       const { data: checklistsData } = await supabase
         .from('implantacao_checklists')
-        .select('tipo')
+        .select('tipo, dados, external_submitted_at')
         .eq('project_id', id!);
-      
+
       if (checklistsData) {
-        setChecklistsExistentes(checklistsData.map(c => c.tipo));
+        const preenchidos = checklistsData
+          .filter((c: any) => {
+            if (c.external_submitted_at) return true;
+            const items = (c.dados as any)?.items || [];
+            return items.some((it: any) => it.resposta || it.checked);
+          })
+          .map((c: any) => c.tipo);
+        setChecklistsExistentes(preenchidos);
       }
 
       // Fetch sections that have attachments (for mandatory upload validation)

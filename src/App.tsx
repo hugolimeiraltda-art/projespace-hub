@@ -150,6 +150,7 @@ function AppRoutes() {
       <Route path="/trust" element={<Trust />} />
       <Route path="/seguranca" element={<Trust />} />
       <Route path="/checklist-externo/:token" element={<ChecklistExterno />} />
+      <Route 
         path="/login" 
         element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <Login />} 
       />

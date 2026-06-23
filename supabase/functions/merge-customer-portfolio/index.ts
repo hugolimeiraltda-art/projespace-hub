@@ -218,7 +218,14 @@ serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Não foi possível salvar o contrato.";
+    console.error("merge-customer-portfolio error:", JSON.stringify(error), error);
+    let message = "Não foi possível salvar o contrato.";
+    if (error instanceof Error) {
+      message = error.message;
+    } else if (error && typeof error === "object") {
+      const e = error as { message?: string; details?: string; hint?: string; code?: string };
+      message = e.message || e.details || e.hint || `Erro ${e.code || "desconhecido"}`;
+    }
     return new Response(JSON.stringify({ error: message }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },

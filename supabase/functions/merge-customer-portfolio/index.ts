@@ -218,6 +218,7 @@ serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error) {
+    console.error("merge-customer-portfolio error:", error);
     const message = error instanceof Error ? error.message : "Não foi possível salvar o contrato.";
     return new Response(JSON.stringify({ error: message }), {
       status: 500,

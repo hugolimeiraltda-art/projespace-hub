@@ -277,6 +277,69 @@ export default function ImplantacaoExecucao() {
     }
   };
 
+  // CHECKLIST_CONFIGS items mirror src/pages/ImplantacaoChecklist.tsx for initial seeding
+  const CHECKLIST_SEED: Record<string, string[]> = {
+    instalacao_totem: [
+      'A1 — Totem físico sem avarias visíveis (amassados, arranhões, pintura)',
+      'A2 — Estrutura de fixação e base em perfeito estado',
+      'A3 — Tampa de acesso traseira com fechadura funcional',
+      'A4 — Vidros/acrílicos de proteção sem trincas ou quebras',
+      'A5 — Parafusos e fixações conferidos e apertados',
+      'B1 — Câmera 1 — presente, limpa e sem danos físicos',
+      'B2 — Câmera 2 — presente, limpa e sem danos físicos',
+      'B3 — Câmera 3 — presente, limpa e sem danos físicos (se aplicável)',
+      'B4 — Câmera 4 — presente, limpa e sem danos físicos (se aplicável)',
+      'B5 — Lentes das câmeras sem arranhões ou sujeira',
+      'B6 — Suportes e articulações das câmeras ajustados',
+      'C1 — HD/SSD instalado conforme especificação do contrato',
+      'D1 — Cabos organizados e identificados',
+      'F3 — Responsável do cliente confirmado para receber a entrega',
+    ],
+  };
+
+  const gerarLinkExterno = async (checklistType: string) => {
+    if (!id) return;
+    try {
+      let { data: row } = await supabase
+        .from('implantacao_checklists')
+        .select('public_token, dados')
+        .eq('project_id', id)
+        .eq('tipo', checklistType)
+        .maybeSingle();
+
+      if (!row) {
+        const seed = CHECKLIST_SEED[checklistType] || [];
+        const items = seed.map((label, i) => ({ id: `item-${i}`, label, checked: false, observacao: '' }));
+        const { data: inserted, error } = await supabase
+          .from('implantacao_checklists')
+          .insert([{
+            project_id: id,
+            tipo: checklistType,
+            dados: { items } as any,
+            observacoes: '',
+            created_by: user?.id,
+            created_by_name: user?.nome,
+          }])
+          .select('public_token')
+          .single();
+        if (error) throw error;
+        row = inserted as any;
+      }
+
+      const url = `${window.location.origin}/checklist-externo/${row!.public_token}`;
+      try {
+        await navigator.clipboard.writeText(url);
+        toast({ title: 'Link copiado!', description: 'Envie este link ao técnico de campo.' });
+      } catch {
+        // Fallback: show in a prompt if clipboard fails
+        window.prompt('Copie o link e envie ao técnico:', url);
+      }
+    } catch (e: any) {
+      console.error(e);
+      toast({ title: 'Erro', description: 'Não foi possível gerar o link.', variant: 'destructive' });
+    }
+  };
+
   useEffect(() => {
     if (id) {
       fetchData();

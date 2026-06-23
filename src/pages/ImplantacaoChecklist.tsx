@@ -149,8 +149,6 @@ const CHECKLIST_CONFIGS: Record<string, { title: string; items: string[] }> = {
       'C2 — Acesso à plataforma em nuvem testado e funcional',
       // D — Cabeamento e Acessórios
       'D1 — Cabos organizados e identificados',
-      'D2 — Cabos de rede (Cat5e/Cat6) testados — sem rompimentos',
-      'D3 — Cabos de alimentação elétrica com aterramento adequado',
       // E — Aplicativos e Software
       'E1 — Aplicativo de monitoramento configurado e operante',
       'E2 — Integração com Secretaria Municipal de Segurança testada',
@@ -163,8 +161,6 @@ const CHECKLIST_CONFIGS: Record<string, { title: string; items: string[] }> = {
       'F1 — Ponto de energia elétrica adequado no local',
       'F2 — Ponto de rede (internet) disponível no local',
       'F3 — Responsável do cliente confirmado para receber a entrega',
-      'F4 — Documentação assinada pelo cliente anteriormente (contrato)',
-      'F5 — Pendências anteriores tratadas e registradas',
     ],
   },
 };

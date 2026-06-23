@@ -825,10 +825,14 @@ export type Database = {
           created_by: string | null
           created_by_name: string | null
           dados: Json | null
+          external_submitted_at: string | null
+          external_submitted_by_name: string | null
+          external_submitted_by_phone: string | null
           fotos: string[] | null
           id: string
           observacoes: string | null
           project_id: string
+          public_token: string | null
           tipo: string
           updated_at: string
         }
@@ -837,10 +841,14 @@ export type Database = {
           created_by?: string | null
           created_by_name?: string | null
           dados?: Json | null
+          external_submitted_at?: string | null
+          external_submitted_by_name?: string | null
+          external_submitted_by_phone?: string | null
           fotos?: string[] | null
           id?: string
           observacoes?: string | null
           project_id: string
+          public_token?: string | null
           tipo: string
           updated_at?: string
         }
@@ -849,10 +857,14 @@ export type Database = {
           created_by?: string | null
           created_by_name?: string | null
           dados?: Json | null
+          external_submitted_at?: string | null
+          external_submitted_by_name?: string | null
+          external_submitted_by_phone?: string | null
           fotos?: string[] | null
           id?: string
           observacoes?: string | null
           project_id?: string
+          public_token?: string | null
           tipo?: string
           updated_at?: string
         }

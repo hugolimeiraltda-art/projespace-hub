@@ -56,6 +56,7 @@ import { Progress } from '@/components/ui/progress';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import jsPDF from 'jspdf';
 import { EquipmentListDialog } from '@/components/EquipmentListDialog';
+import { TotensImplantacao } from '@/components/TotensImplantacao';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 interface ImplantacaoEtapas {

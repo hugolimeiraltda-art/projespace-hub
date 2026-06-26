@@ -564,6 +564,12 @@ export function CarteiraClientesTable({ customers, onDelete, basePath = '/cartei
                   </TableCell>
                   {isColumnVisible('mensalidade') && <TableCell className="text-right">R$ {totalSum.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</TableCell>}
                 </TableRow>
+                <TableRow className="bg-muted/50 font-semibold">
+                  <TableCell colSpan={footerLabelColSpan} className="text-right">
+                    Faturamento Mensalidade Carteira Ativada ({ativados.length})
+                  </TableCell>
+                  {isColumnVisible('mensalidade') && <TableCell className="text-right">R$ {sum(ativados).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</TableCell>}
+                </TableRow>
                 <TableRow className="bg-muted/30 font-semibold">
                   <TableCell colSpan={footerLabelColSpan} className="text-right">
                     Ticket Médio Ativados ({withValue(ativados).length} de {ativados.length})

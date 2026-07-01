@@ -531,20 +531,22 @@ export default function CarteiraClientes({ tipoCarteira = 'PCI' }: CarteiraClien
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-3 gap-4">
-                    <div>
-                      <Label htmlFor="tipo">Tipo de Produto</Label>
-                      <Select value={form.tipo} onValueChange={(v) => setForm({ ...form, tipo: v })}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="360">360</SelectItem>
-                          <SelectItem value="MINI">MINI</SelectItem>
-                          <SelectItem value="GRABER VISION">GRABER VISION</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
+                  <div className={`grid gap-4 ${tipoCarteira === 'PPE' ? 'grid-cols-2' : 'grid-cols-3'}`}>
+                    {tipoCarteira !== 'PPE' && (
+                      <div>
+                        <Label htmlFor="tipo">Tipo de Produto</Label>
+                        <Select value={form.tipo} onValueChange={(v) => setForm({ ...form, tipo: v })}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="360">360</SelectItem>
+                            <SelectItem value="MINI">MINI</SelectItem>
+                            <SelectItem value="GRABER VISION">GRABER VISION</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
                     <div>
                       <Label htmlFor="sistema">Sistema</Label>
                       <Select value={form.sistema} onValueChange={(v) => setForm({ ...form, sistema: v })}>

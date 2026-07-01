@@ -170,6 +170,19 @@ export default function CustomerDetail() {
         faciais_outros: data.faciais_outros || 0,
       };
       setCustomer(normalizedData);
+      const pid = (data as any).project_id || null;
+      setProjectId(pid);
+      if (pid) {
+        const { data: tt } = await supabase
+          .from('implantacao_totens')
+          .select('id, modelo, cameras, codigo_alarme')
+          .eq('project_id', pid)
+          .order('created_at', { ascending: true });
+        setTotens((tt as any) || []);
+      } else {
+        setTotens([]);
+      }
+
       setForm({
         contrato: normalizedData.contrato,
         alarme_codigo: normalizedData.alarme_codigo || '',

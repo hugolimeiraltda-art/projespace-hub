@@ -912,7 +912,7 @@ export default function CarteiraClientes({ tipoCarteira = 'PCI' }: CarteiraClien
 
 
         {/* Ticket Médio Summary */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+        {tipoCarteira !== 'PPE' && <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
           <Card className="border-l-4 border-l-green-500">
             <CardContent className="pt-3 pb-3">
               <div className="flex items-center gap-2">

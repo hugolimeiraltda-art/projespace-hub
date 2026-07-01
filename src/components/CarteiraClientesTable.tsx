@@ -306,8 +306,8 @@ export function CarteiraClientesTable({ customers, onDelete, basePath = '/cartei
 
         if (typeof aValue === 'string') {
           return sortConfig.direction === 'asc'
-            ? aValue.localeCompare(bValue as string)
-            : (bValue as string).localeCompare(aValue);
+            ? aValue.localeCompare(bValue as string, undefined, { numeric: true, sensitivity: 'base' })
+            : (bValue as string).localeCompare(aValue, undefined, { numeric: true, sensitivity: 'base' });
         }
         return sortConfig.direction === 'asc' ? (aValue as number) - (bValue as number) : (bValue as number) - (aValue as number);
       });

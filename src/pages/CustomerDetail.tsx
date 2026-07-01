@@ -87,7 +87,10 @@ export default function CustomerDetail() {
 
   const [customer, setCustomer] = useState<Customer | null>(null);
   const [documents, setDocuments] = useState<CustomerDocument[]>([]);
+  const [projectId, setProjectId] = useState<string | null>(null);
+  const [totens, setTotens] = useState<Array<{ id: string; modelo: string; cameras: number; codigo_alarme: string | null }>>([]);
   const [loading, setLoading] = useState(true);
+
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [form, setForm] = useState({

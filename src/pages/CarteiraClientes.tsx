@@ -819,6 +819,25 @@ export default function CarteiraClientes({ tipoCarteira = 'PCI' }: CarteiraClien
                 </div>
               </div>
             </div>
+
+            <div className="rounded-lg border bg-card px-3 py-2 mb-4">
+              <p className="text-[11px] uppercase tracking-wide text-muted-foreground mb-1.5">Totens por modelo (implantação)</p>
+              {Object.keys(totensByModel).length === 0 ? (
+                <p className="text-xs text-muted-foreground italic">Nenhum totem cadastrado ainda.</p>
+              ) : (
+                <div className="flex flex-wrap gap-x-6 gap-y-1">
+                  {Object.entries(totensByModel)
+                    .sort(([a], [b]) => a.localeCompare(b))
+                    .map(([modelo, { totens, cameras }]) => (
+                      <div key={modelo} className="flex items-baseline gap-1.5">
+                        <span className="text-xs text-muted-foreground">{modelo}</span>
+                        <span className="text-sm font-semibold tabular-nums">{totens}</span>
+                        <span className="text-[10px] text-muted-foreground">({cameras} câm.)</span>
+                      </div>
+                    ))}
+                </div>
+              )}
+            </div>
           </>
         ) : (
         <div className="grid grid-cols-4 gap-3 mb-4">

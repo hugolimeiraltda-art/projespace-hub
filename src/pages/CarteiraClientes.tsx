@@ -744,7 +744,7 @@ export default function CarteiraClientes({ tipoCarteira = 'PCI' }: CarteiraClien
               return (
                 <div className="mb-4 grid grid-cols-12 gap-3">
                   {/* KPIs */}
-                  <Card className="col-span-12 md:col-span-3">
+                  <Card className="col-span-12 md:col-span-4">
                     <CardContent className="pt-3 pb-3 flex items-center gap-3">
                       <div className="p-2 bg-primary/10 rounded-lg"><Users className="w-4 h-4 text-primary" /></div>
                       <div>
@@ -753,32 +753,21 @@ export default function CarteiraClientes({ tipoCarteira = 'PCI' }: CarteiraClien
                       </div>
                     </CardContent>
                   </Card>
-                  <Card className="col-span-6 md:col-span-3">
-                    <CardContent className="pt-3 pb-3 flex items-center gap-3">
-                      <div className="p-2 bg-primary/10 rounded-lg"><Camera className="w-4 h-4 text-primary" /></div>
-                      <div>
-                        <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Câmeras</p>
-                        <p className="text-2xl font-bold leading-tight">{totals.cameras.toLocaleString('pt-BR')}</p>
-                      </div>
-                    </CardContent>
-                  </Card>
-                  <Card className="col-span-6 md:col-span-3">
+                  <Card className="col-span-6 md:col-span-4">
                     <CardContent className="pt-3 pb-3 flex items-center gap-3">
                       <div className="p-2 bg-primary/10 rounded-lg"><DoorOpen className="w-4 h-4 text-primary" /></div>
                       <div>
                         <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Totens</p>
                         <p className="text-2xl font-bold leading-tight">{totalTotens}</p>
-                        <p className="text-[10px] text-muted-foreground">{totalTotemCameras} câm. vinculadas</p>
                       </div>
                     </CardContent>
                   </Card>
-                  <Card className="col-span-12 md:col-span-3 border-l-4 border-l-primary">
+                  <Card className="col-span-6 md:col-span-4">
                     <CardContent className="pt-3 pb-3 flex items-center gap-3">
-                      <div className="p-2 bg-primary/10 rounded-lg"><DollarSign className="w-4 h-4 text-primary" /></div>
+                      <div className="p-2 bg-primary/10 rounded-lg"><Camera className="w-4 h-4 text-primary" /></div>
                       <div>
-                        <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Ticket Médio Total</p>
-                        <p className="text-2xl font-bold leading-tight text-primary">{fmtBRL(ticketMedioStats.total.avg)}</p>
-                        <p className="text-[10px] text-muted-foreground">{ticketMedioStats.total.withValue} de {ticketMedioStats.total.count}</p>
+                        <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Câmeras</p>
+                        <p className="text-2xl font-bold leading-tight">{totals.cameras.toLocaleString('pt-BR')}</p>
                       </div>
                     </CardContent>
                   </Card>

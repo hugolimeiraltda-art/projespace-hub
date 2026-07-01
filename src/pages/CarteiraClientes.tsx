@@ -547,6 +547,7 @@ export default function CarteiraClientes({ tipoCarteira = 'PCI' }: CarteiraClien
                         </Select>
                       </div>
                     )}
+                    {tipoCarteira !== 'PPE' && (
                     <div>
                       <Label htmlFor="sistema">Sistema</Label>
                       <Select value={form.sistema} onValueChange={(v) => setForm({ ...form, sistema: v })}>
@@ -559,6 +560,7 @@ export default function CarteiraClientes({ tipoCarteira = 'PCI' }: CarteiraClien
                         </SelectContent>
                       </Select>
                     </div>
+                    )}
                     <div>
                       <Label htmlFor="leitores">Leitores</Label>
                       <Input

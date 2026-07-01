@@ -730,114 +730,112 @@ export default function CarteiraClientes({ tipoCarteira = 'PCI' }: CarteiraClien
         {/* Stats Cards */}
         {tipoCarteira === 'PPE' ? (
           <>
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3 mb-4">
-              <Card>
-                <CardContent className="pt-3 pb-3">
-                  <div className="flex items-center gap-2">
-                    <div className="p-1.5 bg-primary/10 rounded-lg">
-                      <Users className="w-4 h-4 text-primary" />
-                    </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground">Total Clientes</p>
-                      <p className="text-xl font-bold">{customers.length}</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardContent className="pt-3 pb-3">
-                  <div className="flex items-center gap-2">
-                    <div className="p-1.5 bg-primary/10 rounded-lg">
-                      <Camera className="w-4 h-4 text-primary" />
-                    </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground">Total Câmeras</p>
-                      <p className="text-xl font-bold">{totals.cameras.toLocaleString('pt-BR')}</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardContent className="pt-3 pb-3">
-                  <div className="flex items-center gap-2">
-                    <div className="p-1.5 bg-primary/10 rounded-lg">
-                      <Building2 className="w-4 h-4 text-primary" />
-                    </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground">Contratos por Filial</p>
-                      <p className="text-xl font-bold">{customers.length}</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardContent className="pt-3 pb-3">
-                  <div className="flex items-center gap-2">
-                    <div className="p-1.5 bg-primary/10 rounded-lg">
-                      <DoorOpen className="w-4 h-4 text-primary" />
-                    </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground">Contratos por Produto</p>
-                      <p className="text-xl font-bold">{customers.length}</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 mb-4">
-              <div className="rounded-lg border bg-card px-3 py-2">
-                <p className="text-[11px] uppercase tracking-wide text-muted-foreground mb-1.5">Contratos por filial</p>
-                <div className="flex flex-wrap gap-x-4 gap-y-1">
-                  {filialContractEntries.map(([filial, count]) => (
-                    <div key={filial} className="flex items-baseline gap-1.5">
-                      <span className="text-xs text-muted-foreground">{filial}</span>
-                      <span className="text-sm font-semibold tabular-nums">{count}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="rounded-lg border bg-card px-3 py-2">
-                <p className="text-[11px] uppercase tracking-wide text-muted-foreground mb-1.5">Contratos por tipo</p>
-                <div className="flex flex-wrap gap-x-4 gap-y-1">
-                  <div className="flex items-baseline gap-1.5">
-                    <span className="text-xs text-muted-foreground">Mini</span>
-                    <span className="text-sm font-semibold tabular-nums">{productContractCounts.mini}</span>
-                  </div>
-                  <div className="flex items-baseline gap-1.5">
-                    <span className="text-xs text-muted-foreground">Parede</span>
-                    <span className="text-sm font-semibold tabular-nums">{productContractCounts.parede}</span>
-                  </div>
-                  <div className="flex items-baseline gap-1.5">
-                    <span className="text-xs text-muted-foreground">360</span>
-                    <span className="text-sm font-semibold tabular-nums">{productContractCounts['360']}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="rounded-lg border bg-card px-3 py-2 mb-4">
-              <p className="text-[11px] uppercase tracking-wide text-muted-foreground mb-1.5">Totens por modelo (implantação)</p>
-              {Object.keys(totensByModel).length === 0 ? (
-                <p className="text-xs text-muted-foreground italic">Nenhum totem cadastrado ainda.</p>
-              ) : (
-                <div className="flex flex-wrap gap-x-6 gap-y-1">
-                  {Object.entries(totensByModel)
-                    .sort(([a], [b]) => a.localeCompare(b))
-                    .map(([modelo, { totens, cameras }]) => (
-                      <div key={modelo} className="flex items-baseline gap-1.5">
-                        <span className="text-xs text-muted-foreground">{modelo}</span>
-                        <span className="text-sm font-semibold tabular-nums">{totens}</span>
-                        <span className="text-[10px] text-muted-foreground">({cameras} câm.)</span>
+            {(() => {
+              const totalTotens = Object.values(totensByModel).reduce((s, v) => s + v.totens, 0);
+              const totalTotemCameras = Object.values(totensByModel).reduce((s, v) => s + v.cameras, 0);
+              const modelEntries = Object.entries(totensByModel).sort(([a], [b]) => a.localeCompare(b));
+              const fmtBRL = (n: number) => `R$ ${n.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+              return (
+                <div className="mb-4 grid grid-cols-12 gap-3">
+                  {/* KPIs */}
+                  <Card className="col-span-12 md:col-span-3">
+                    <CardContent className="pt-3 pb-3 flex items-center gap-3">
+                      <div className="p-2 bg-primary/10 rounded-lg"><Users className="w-4 h-4 text-primary" /></div>
+                      <div>
+                        <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Clientes PPE</p>
+                        <p className="text-2xl font-bold leading-tight">{customers.length}</p>
                       </div>
-                    ))}
+                    </CardContent>
+                  </Card>
+                  <Card className="col-span-6 md:col-span-3">
+                    <CardContent className="pt-3 pb-3 flex items-center gap-3">
+                      <div className="p-2 bg-primary/10 rounded-lg"><Camera className="w-4 h-4 text-primary" /></div>
+                      <div>
+                        <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Câmeras</p>
+                        <p className="text-2xl font-bold leading-tight">{totals.cameras.toLocaleString('pt-BR')}</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                  <Card className="col-span-6 md:col-span-3">
+                    <CardContent className="pt-3 pb-3 flex items-center gap-3">
+                      <div className="p-2 bg-primary/10 rounded-lg"><DoorOpen className="w-4 h-4 text-primary" /></div>
+                      <div>
+                        <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Totens</p>
+                        <p className="text-2xl font-bold leading-tight">{totalTotens}</p>
+                        <p className="text-[10px] text-muted-foreground">{totalTotemCameras} câm. vinculadas</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                  <Card className="col-span-12 md:col-span-3 border-l-4 border-l-primary">
+                    <CardContent className="pt-3 pb-3 flex items-center gap-3">
+                      <div className="p-2 bg-primary/10 rounded-lg"><DollarSign className="w-4 h-4 text-primary" /></div>
+                      <div>
+                        <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Ticket Médio Total</p>
+                        <p className="text-2xl font-bold leading-tight text-primary">{fmtBRL(ticketMedioStats.total.avg)}</p>
+                        <p className="text-[10px] text-muted-foreground">{ticketMedioStats.total.withValue} de {ticketMedioStats.total.count}</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Breakdowns */}
+                  <Card className="col-span-12 lg:col-span-6">
+                    <CardContent className="pt-3 pb-3">
+                      <p className="text-[11px] uppercase tracking-wide text-muted-foreground mb-2">Contratos por filial</p>
+                      <div className="flex flex-wrap gap-x-5 gap-y-1.5">
+                        {filialContractEntries.length === 0 ? (
+                          <span className="text-xs text-muted-foreground italic">Sem dados</span>
+                        ) : filialContractEntries.map(([filial, count]) => (
+                          <div key={filial} className="flex items-baseline gap-1.5">
+                            <span className="text-xs text-muted-foreground">{filial}</span>
+                            <span className="text-sm font-semibold tabular-nums">{count}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                  <Card className="col-span-12 lg:col-span-6">
+                    <CardContent className="pt-3 pb-3">
+                      <p className="text-[11px] uppercase tracking-wide text-muted-foreground mb-2">Totens por modelo</p>
+                      {modelEntries.length === 0 ? (
+                        <p className="text-xs text-muted-foreground italic">Nenhum totem cadastrado ainda.</p>
+                      ) : (
+                        <div className="flex flex-wrap gap-x-5 gap-y-1.5">
+                          {modelEntries.map(([modelo, { totens, cameras }]) => (
+                            <div key={modelo} className="flex items-baseline gap-1.5">
+                              <span className="text-xs text-muted-foreground">{modelo}</span>
+                              <span className="text-sm font-semibold tabular-nums">{totens}</span>
+                              <span className="text-[10px] text-muted-foreground">({cameras} câm.)</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+
+                  {/* Ticket split */}
+                  <Card className="col-span-6 border-l-4 border-l-green-500">
+                    <CardContent className="pt-3 pb-3 flex items-center gap-3">
+                      <div className="p-2 bg-green-100 rounded-lg"><DollarSign className="w-4 h-4 text-green-600" /></div>
+                      <div>
+                        <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Ticket Médio Ativados</p>
+                        <p className="text-lg font-bold text-green-600 leading-tight">{fmtBRL(ticketMedioStats.ativados.avg)}</p>
+                        <p className="text-[10px] text-muted-foreground">{ticketMedioStats.ativados.withValue} de {ticketMedioStats.ativados.count}</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                  <Card className="col-span-6 border-l-4 border-l-amber-500">
+                    <CardContent className="pt-3 pb-3 flex items-center gap-3">
+                      <div className="p-2 bg-amber-100 rounded-lg"><DollarSign className="w-4 h-4 text-amber-600" /></div>
+                      <div>
+                        <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Ticket Médio Não Ativados</p>
+                        <p className="text-lg font-bold text-amber-600 leading-tight">{fmtBRL(ticketMedioStats.naoAtivados.avg)}</p>
+                        <p className="text-[10px] text-muted-foreground">{ticketMedioStats.naoAtivados.withValue} de {ticketMedioStats.naoAtivados.count}</p>
+                      </div>
+                    </CardContent>
+                  </Card>
                 </div>
-              )}
-            </div>
+              );
+            })()}
           </>
         ) : (
         <div className="grid grid-cols-4 gap-3 mb-4">
@@ -914,7 +912,7 @@ export default function CarteiraClientes({ tipoCarteira = 'PCI' }: CarteiraClien
 
 
         {/* Ticket Médio Summary */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+        {tipoCarteira !== 'PPE' && <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
           <Card className="border-l-4 border-l-green-500">
             <CardContent className="pt-3 pb-3">
               <div className="flex items-center gap-2">
@@ -971,7 +969,7 @@ export default function CarteiraClientes({ tipoCarteira = 'PCI' }: CarteiraClien
               </div>
             </CardContent>
           </Card>
-        </div>
+        </div>}
 
         {/* Active Clients by Praça */}
         {tipoCarteira !== 'PPE' && <div className="grid grid-cols-5 gap-3 mb-4">

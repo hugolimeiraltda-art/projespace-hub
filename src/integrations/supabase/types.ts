@@ -1366,30 +1366,40 @@ export type Database = {
           cameras: number
           codigo_alarme: string | null
           created_at: string
+          customer_id: string | null
           id: string
           modelo: string
-          project_id: string
+          project_id: string | null
           updated_at: string
         }
         Insert: {
           cameras?: number
           codigo_alarme?: string | null
           created_at?: string
+          customer_id?: string | null
           id?: string
           modelo: string
-          project_id: string
+          project_id?: string | null
           updated_at?: string
         }
         Update: {
           cameras?: number
           codigo_alarme?: string | null
           created_at?: string
+          customer_id?: string | null
           id?: string
           modelo?: string
-          project_id?: string
+          project_id?: string | null
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "implantacao_totens_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customer_portfolio"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "implantacao_totens_project_id_fkey"
             columns: ["project_id"]

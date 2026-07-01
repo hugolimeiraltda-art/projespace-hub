@@ -323,7 +323,6 @@ export function useImplantacaoIntegration() {
         contato_telefone: params.contato_telefone || null,
         data_ativacao: new Date().toISOString().split('T')[0],
         sistema: 'ATIVO',
-        project_id: params.projectId,
       };
 
       if (existing) {
@@ -331,7 +330,6 @@ export function useImplantacaoIntegration() {
       } else {
         await supabase.from('ppe_customers').insert(payload);
       }
-
 
       await supabase
         .from('projects')

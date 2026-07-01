@@ -1,1 +1,0 @@
-ALTER TABLE public.ppe_customers ADD COLUMN IF NOT EXISTS project_id uuid REFERENCES public.projects(id) ON DELETE SET NULL; CREATE INDEX IF NOT EXISTS ppe_customers_project_id_idx ON public.ppe_customers(project_id);

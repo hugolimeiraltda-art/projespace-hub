@@ -2548,7 +2548,6 @@ export type Database = {
           mensalidade: number | null
           noc: string | null
           observacoes: string | null
-          project_id: string | null
           razao_social: string
           sistema: string | null
           taxa_ativacao: number | null
@@ -2572,7 +2571,6 @@ export type Database = {
           mensalidade?: number | null
           noc?: string | null
           observacoes?: string | null
-          project_id?: string | null
           razao_social: string
           sistema?: string | null
           taxa_ativacao?: number | null
@@ -2596,22 +2594,13 @@ export type Database = {
           mensalidade?: number | null
           noc?: string | null
           observacoes?: string | null
-          project_id?: string | null
           razao_social?: string
           sistema?: string | null
           taxa_ativacao?: number | null
           tipo?: string | null
           updated_at?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "ppe_customers_project_id_fkey"
-            columns: ["project_id"]
-            isOneToOne: false
-            referencedRelation: "projects"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       prestador_documentos: {
         Row: {

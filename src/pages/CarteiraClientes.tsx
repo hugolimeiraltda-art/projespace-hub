@@ -492,7 +492,7 @@ export default function CarteiraClientes({ tipoCarteira = 'PCI' }: CarteiraClien
                     />
                   </div>
 
-                  <div className="grid grid-cols-4 gap-4">
+                  <div className={`grid gap-4 ${tipoCarteira === 'PPE' ? 'grid-cols-3' : 'grid-cols-4'}`}>
                     <div>
                       <Label htmlFor="mensalidade">Mensalidade (R$)</Label>
                       <Input
@@ -511,15 +511,17 @@ export default function CarteiraClientes({ tipoCarteira = 'PCI' }: CarteiraClien
                         placeholder="0.00"
                       />
                     </div>
-                    <div>
-                      <Label htmlFor="unidades">Unidades</Label>
-                      <Input
-                        id="unidades"
-                        type="number"
-                        value={form.unidades}
-                        onChange={(e) => setForm({ ...form, unidades: e.target.value })}
-                      />
-                    </div>
+                    {tipoCarteira !== 'PPE' && (
+                      <div>
+                        <Label htmlFor="unidades">Unidades</Label>
+                        <Input
+                          id="unidades"
+                          type="number"
+                          value={form.unidades}
+                          onChange={(e) => setForm({ ...form, unidades: e.target.value })}
+                        />
+                      </div>
+                    )}
                     <div>
                       <Label htmlFor="data_ativacao">Data Ativação (Início)</Label>
                       <Input

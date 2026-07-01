@@ -64,7 +64,8 @@ export function TotensImplantacao({ projectId, customerId, onTotalsChange }: Pro
     const { data, error } = await supabase
       .from('implantacao_totens')
       .insert({
-        project_id: projectId,
+        project_id: projectId ?? null,
+        customer_id: projectId ? null : (customerId ?? null),
         modelo: newModelo,
         cameras: Math.max(0, Number(newCameras) || 0),
         codigo_alarme: newCodigo.trim() || null,

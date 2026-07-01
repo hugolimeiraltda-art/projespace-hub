@@ -110,6 +110,7 @@ export default function CarteiraClientes({ tipoCarteira = 'PCI' }: CarteiraClien
   const { user } = useAuth();
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
+  const [totensByModel, setTotensByModel] = useState<Record<string, { totens: number; cameras: number }>>({});
   
   const [dialogOpen, setDialogOpen] = useState(false);
   const [form, setForm] = useState(EMPTY_FORM);

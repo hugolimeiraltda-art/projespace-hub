@@ -611,7 +611,7 @@ export default function CustomerDetail() {
               </div>
 
               {/* Financeiro e Tipo */}
-              <div className={`grid gap-4 ${isPPE ? 'grid-cols-3' : 'grid-cols-4'}`}>
+              <div className={`grid gap-4 ${isPPE ? 'grid-cols-2' : 'grid-cols-4'}`}>
                 <div>
                   <Label>Mensalidade (R$)</Label>
                   <Input value={form.mensalidade} onChange={(e) => setForm({ ...form, mensalidade: e.target.value })} disabled={!canEdit} />
@@ -620,22 +620,24 @@ export default function CustomerDetail() {
                   <Label>Taxa de Ativação (R$)</Label>
                   <Input value={form.taxa_ativacao} onChange={(e) => setForm({ ...form, taxa_ativacao: e.target.value })} disabled={!canEdit} />
                 </div>
-                <div>
-                  <Label>Unidades</Label>
-                  <Input type="number" value={form.unidades} onChange={(e) => setForm({ ...form, unidades: e.target.value })} disabled={!canEdit} />
-                </div>
                 {!isPPE && (
-                  <div>
-                    <Label>Tipo de Produto</Label>
-                    <Select value={form.tipo} onValueChange={(v) => setForm({ ...form, tipo: v })} disabled={!canEdit}>
-                      <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="360">360</SelectItem>
-                        <SelectItem value="MINI">MINI</SelectItem>
-                        <SelectItem value="GRABER VISION">GRABER VISION</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                  <>
+                    <div>
+                      <Label>Unidades</Label>
+                      <Input type="number" value={form.unidades} onChange={(e) => setForm({ ...form, unidades: e.target.value })} disabled={!canEdit} />
+                    </div>
+                    <div>
+                      <Label>Tipo de Produto</Label>
+                      <Select value={form.tipo} onValueChange={(v) => setForm({ ...form, tipo: v })} disabled={!canEdit}>
+                        <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="360">360</SelectItem>
+                          <SelectItem value="MINI">MINI</SelectItem>
+                          <SelectItem value="GRABER VISION">GRABER VISION</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </>
                 )}
               </div>
 

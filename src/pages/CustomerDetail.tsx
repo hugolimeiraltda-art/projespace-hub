@@ -668,27 +668,31 @@ export default function CustomerDetail() {
                 </div>
               </div>
 
-              {/* Leitores */}
-              <div className="grid grid-cols-3 gap-4">
-                <div>
-                  <Label>Leitores</Label>
-                  <Input value={form.leitores} onChange={(e) => setForm({ ...form, leitores: e.target.value })} disabled={!canEdit} />
-                </div>
-                <div>
-                  <Label>Qtd Leitores</Label>
-                  <Input type="number" value={form.quantidade_leitores} onChange={(e) => setForm({ ...form, quantidade_leitores: e.target.value })} disabled={!canEdit} />
-                </div>
-                <div className="flex items-end gap-6">
-                  <div className="flex items-center gap-2">
-                    <Switch id="transbordo" checked={form.transbordo} onCheckedChange={(v) => setForm({ ...form, transbordo: v })} disabled={!canEdit} />
-                    <Label htmlFor="transbordo">Transbordo</Label>
+              {!isPPE && (
+                <>
+                  {/* Leitores */}
+                  <div className="grid grid-cols-3 gap-4">
+                    <div>
+                      <Label>Leitores</Label>
+                      <Input value={form.leitores} onChange={(e) => setForm({ ...form, leitores: e.target.value })} disabled={!canEdit} />
+                    </div>
+                    <div>
+                      <Label>Qtd Leitores</Label>
+                      <Input type="number" value={form.quantidade_leitores} onChange={(e) => setForm({ ...form, quantidade_leitores: e.target.value })} disabled={!canEdit} />
+                    </div>
+                    <div className="flex items-end gap-6">
+                      <div className="flex items-center gap-2">
+                        <Switch id="transbordo" checked={form.transbordo} onCheckedChange={(v) => setForm({ ...form, transbordo: v })} disabled={!canEdit} />
+                        <Label htmlFor="transbordo">Transbordo</Label>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Switch id="gateway" checked={form.gateway} onCheckedChange={(v) => setForm({ ...form, gateway: v })} disabled={!canEdit} />
+                        <Label htmlFor="gateway">Gateway</Label>
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Switch id="gateway" checked={form.gateway} onCheckedChange={(v) => setForm({ ...form, gateway: v })} disabled={!canEdit} />
-                    <Label htmlFor="gateway">Gateway</Label>
-                  </div>
-                </div>
-              </div>
+                </>
+              )}
 
               {/* Equipamentos */}
               {isPPE && (

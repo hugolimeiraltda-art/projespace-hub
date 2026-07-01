@@ -1394,13 +1394,6 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "implantacao_totens_customer_id_fkey"
-            columns: ["customer_id"]
-            isOneToOne: false
-            referencedRelation: "customer_portfolio"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "implantacao_totens_project_id_fkey"
             columns: ["project_id"]
             isOneToOne: false

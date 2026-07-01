@@ -21,6 +21,7 @@ import { ArrowLeft, Save, Loader2, Upload, Trash2, FileText, Image, Video, File,
 import { format, addMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { AdministradoresCondominio } from '@/components/AdministradoresCondominio';
+import { TotensImplantacao } from '@/components/TotensImplantacao';
 
 const NOC_STATUS_OPTIONS = [
   { value: 'ATIVADO', label: 'Ativado no NOC' },

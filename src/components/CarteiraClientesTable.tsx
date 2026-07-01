@@ -305,9 +305,19 @@ export function CarteiraClientesTable({ customers, onDelete, basePath = '/cartei
         }
 
         if (typeof aValue === 'string') {
+          if (sortConfig.column === 'contrato' || sortConfig.column === 'alarme_codigo') {
+            const aNum = parseInt((aValue as string).replace(/\D/g, ''), 10);
+            const bNum = parseInt((bValue as string).replace(/\D/g, ''), 10);
+            const aOk = !isNaN(aNum);
+            const bOk = !isNaN(bNum);
+            if (aOk && bOk && aNum !== bNum) {
+              return sortConfig.direction === 'asc' ? aNum - bNum : bNum - aNum;
+            }
+            if (aOk !== bOk) return aOk ? -1 : 1;
+          }
           return sortConfig.direction === 'asc'
-            ? aValue.localeCompare(bValue as string, undefined, { numeric: true, sensitivity: 'base' })
-            : (bValue as string).localeCompare(aValue, undefined, { numeric: true, sensitivity: 'base' });
+            ? (aValue as string).localeCompare(bValue as string, undefined, { numeric: true, sensitivity: 'base' })
+            : (bValue as string).localeCompare(aValue as string, undefined, { numeric: true, sensitivity: 'base' });
         }
         return sortConfig.direction === 'asc' ? (aValue as number) - (bValue as number) : (bValue as number) - (aValue as number);
       });

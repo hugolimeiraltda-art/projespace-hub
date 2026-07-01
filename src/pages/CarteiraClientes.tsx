@@ -110,6 +110,7 @@ export default function CarteiraClientes({ tipoCarteira = 'PCI' }: CarteiraClien
   const { user } = useAuth();
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
+  const [totensByModel, setTotensByModel] = useState<Record<string, { totens: number; cameras: number }>>({});
   
   const [dialogOpen, setDialogOpen] = useState(false);
   const [form, setForm] = useState(EMPTY_FORM);
@@ -125,7 +126,26 @@ export default function CarteiraClientes({ tipoCarteira = 'PCI' }: CarteiraClien
 
   useEffect(() => {
     fetchCustomers();
+    if (tipoCarteira === 'PPE') fetchTotensSummary();
   }, [tipoCarteira]);
+
+  const fetchTotensSummary = async () => {
+    try {
+      const { data, error } = await (supabase.from('implantacao_totens' as any) as any)
+        .select('modelo, cameras');
+      if (error) throw error;
+      const agg: Record<string, { totens: number; cameras: number }> = {};
+      (data || []).forEach((t: any) => {
+        const key = t.modelo || 'Sem modelo';
+        if (!agg[key]) agg[key] = { totens: 0, cameras: 0 };
+        agg[key].totens += 1;
+        agg[key].cameras += Number(t.cameras) || 0;
+      });
+      setTotensByModel(agg);
+    } catch (e) {
+      console.error('Error fetching totens summary', e);
+    }
+  };
 
   const fetchCustomers = async () => {
     try {
@@ -798,6 +818,25 @@ export default function CarteiraClientes({ tipoCarteira = 'PCI' }: CarteiraClien
                   </div>
                 </div>
               </div>
+            </div>
+
+            <div className="rounded-lg border bg-card px-3 py-2 mb-4">
+              <p className="text-[11px] uppercase tracking-wide text-muted-foreground mb-1.5">Totens por modelo (implantação)</p>
+              {Object.keys(totensByModel).length === 0 ? (
+                <p className="text-xs text-muted-foreground italic">Nenhum totem cadastrado ainda.</p>
+              ) : (
+                <div className="flex flex-wrap gap-x-6 gap-y-1">
+                  {Object.entries(totensByModel)
+                    .sort(([a], [b]) => a.localeCompare(b))
+                    .map(([modelo, { totens, cameras }]) => (
+                      <div key={modelo} className="flex items-baseline gap-1.5">
+                        <span className="text-xs text-muted-foreground">{modelo}</span>
+                        <span className="text-sm font-semibold tabular-nums">{totens}</span>
+                        <span className="text-[10px] text-muted-foreground">({cameras} câm.)</span>
+                      </div>
+                    ))}
+                </div>
+              )}
             </div>
           </>
         ) : (

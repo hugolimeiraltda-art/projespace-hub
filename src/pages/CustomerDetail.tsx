@@ -686,12 +686,37 @@ export default function CustomerDetail() {
 
               {/* Equipamentos */}
               {isPPE && (
-                <div className="border-t pt-4 mt-2">
-                  <h3 className="font-semibold mb-3">Dados PPE</h3>
+                <div className="border-t pt-4 mt-2 space-y-4">
+                  <h3 className="font-semibold mb-1">Dados PPE</h3>
+
+                  {(customer as any)?.project_id ? (
+                    <div className="border rounded-md p-3 bg-muted/10">
+                      <h4 className="text-sm font-medium mb-2">Totens da Implantação</h4>
+                      <TotensImplantacao
+                        projectId={(customer as any).project_id}
+                        onTotalsChange={(_totens, cameras) => {
+                          setForm((prev) => (prev.cameras === String(cameras) ? prev : { ...prev, cameras: String(cameras) }));
+                        }}
+                      />
+                      <p className="text-xs text-muted-foreground mt-2">
+                        O total de câmeras abaixo é atualizado automaticamente a partir dos totens cadastrados.
+                      </p>
+                    </div>
+                  ) : (
+                    <p className="text-xs text-muted-foreground italic">
+                      Este cliente ainda não está vinculado a um projeto de implantação — cadastre a quantidade de câmeras manualmente.
+                    </p>
+                  )}
+
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
                       <Label>Total de Câmeras</Label>
-                      <Input type="number" value={form.cameras} onChange={(e) => setForm({ ...form, cameras: e.target.value })} disabled={!canEdit} />
+                      <Input
+                        type="number"
+                        value={form.cameras}
+                        onChange={(e) => setForm({ ...form, cameras: e.target.value })}
+                        disabled={!canEdit || !!(customer as any)?.project_id}
+                      />
                     </div>
                   </div>
                 </div>

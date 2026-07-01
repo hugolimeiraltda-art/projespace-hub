@@ -548,6 +548,7 @@ export default function CustomerDetail() {
                   </Select>
                 </div>
                 )}
+                {!isPPE && (
                 <div>
                   <Label>APP</Label>
                   <Select value={form.app || ''} onValueChange={(v) => setForm({ ...form, app: v })} disabled={!canEdit}>
@@ -559,6 +560,7 @@ export default function CustomerDetail() {
                     </SelectContent>
                   </Select>
                 </div>
+                )}
                 <div>
                   <Label>Empresa</Label>
                   <Select value={form.empresa || ''} onValueChange={(v) => setForm({ ...form, empresa: v })} disabled={!canEdit}>

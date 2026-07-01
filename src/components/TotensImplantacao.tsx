@@ -11,18 +11,20 @@ type Modelo = typeof MODELOS[number];
 
 interface Totem {
   id: string;
-  project_id: string;
+  project_id: string | null;
+  customer_id: string | null;
   modelo: Modelo;
   cameras: number;
   codigo_alarme: string | null;
 }
 
 interface Props {
-  projectId: string;
+  projectId?: string;
+  customerId?: string;
   onTotalsChange?: (totens: number, cameras: number) => void;
 }
 
-export function TotensImplantacao({ projectId, onTotalsChange }: Props) {
+export function TotensImplantacao({ projectId, customerId, onTotalsChange }: Props) {
   const [totens, setTotens] = useState<Totem[]>([]);
   const [loading, setLoading] = useState(true);
   const [adding, setAdding] = useState(false);
@@ -32,12 +34,13 @@ export function TotensImplantacao({ projectId, onTotalsChange }: Props) {
   const [saving, setSaving] = useState(false);
 
   const load = async () => {
+    if (!projectId && !customerId) { setLoading(false); return; }
     setLoading(true);
-    const { data, error } = await supabase
-      .from('implantacao_totens')
-      .select('*')
-      .eq('project_id', projectId)
-      .order('created_at', { ascending: true });
+    const base = supabase.from('implantacao_totens').select('*');
+    const { data, error } = await (projectId
+      ? base.eq('project_id', projectId)
+      : base.eq('customer_id', customerId!)
+    ).order('created_at', { ascending: true });
     if (error) {
       toast.error('Erro ao carregar totens', { description: error.message });
     } else {
@@ -46,7 +49,7 @@ export function TotensImplantacao({ projectId, onTotalsChange }: Props) {
     setLoading(false);
   };
 
-  useEffect(() => { load(); }, [projectId]);
+  useEffect(() => { load(); }, [projectId, customerId]);
 
   useEffect(() => {
     if (onTotalsChange) {

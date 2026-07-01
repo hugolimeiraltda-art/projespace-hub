@@ -607,7 +607,7 @@ export default function CustomerDetail() {
               </div>
 
               {/* Financeiro e Tipo */}
-              <div className="grid grid-cols-4 gap-4">
+              <div className={`grid gap-4 ${isPPE ? 'grid-cols-3' : 'grid-cols-4'}`}>
                 <div>
                   <Label>Mensalidade (R$)</Label>
                   <Input value={form.mensalidade} onChange={(e) => setForm({ ...form, mensalidade: e.target.value })} disabled={!canEdit} />
@@ -620,17 +620,19 @@ export default function CustomerDetail() {
                   <Label>Unidades</Label>
                   <Input type="number" value={form.unidades} onChange={(e) => setForm({ ...form, unidades: e.target.value })} disabled={!canEdit} />
                 </div>
-                <div>
-                  <Label>Tipo de Produto</Label>
-                  <Select value={form.tipo} onValueChange={(v) => setForm({ ...form, tipo: v })} disabled={!canEdit}>
-                    <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="360">360</SelectItem>
-                      <SelectItem value="MINI">MINI</SelectItem>
-                      <SelectItem value="GRABER VISION">GRABER VISION</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+                {!isPPE && (
+                  <div>
+                    <Label>Tipo de Produto</Label>
+                    <Select value={form.tipo} onValueChange={(v) => setForm({ ...form, tipo: v })} disabled={!canEdit}>
+                      <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="360">360</SelectItem>
+                        <SelectItem value="MINI">MINI</SelectItem>
+                        <SelectItem value="GRABER VISION">GRABER VISION</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
               </div>
 
               {/* Datas e NOC */}

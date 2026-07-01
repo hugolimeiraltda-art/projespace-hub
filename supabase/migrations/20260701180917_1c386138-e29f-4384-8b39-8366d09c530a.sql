@@ -1,0 +1,1 @@
+ALTER TABLE public.implantacao_totens DROP CONSTRAINT IF EXISTS implantacao_totens_customer_id_fkey;

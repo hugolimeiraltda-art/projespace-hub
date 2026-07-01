@@ -776,6 +776,54 @@ export default function CustomerDetail() {
           </CardContent>
         </Card>
 
+        {/* Totens da Implantação (read-only reflection from implantacao_totens) */}
+        {projectId && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">
+                Totens da Implantação{' '}
+                <span className="text-sm font-normal text-muted-foreground">
+                  ({totens.length} totens · {totens.reduce((s, t) => s + (t.cameras || 0), 0)} câmeras)
+                </span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {totens.length === 0 ? (
+                <p className="text-sm text-muted-foreground italic">
+                  Nenhum totem cadastrado na implantação deste projeto.
+                </p>
+              ) : (
+                <div className="border rounded-md overflow-hidden">
+                  <table className="w-full text-sm">
+                    <thead className="bg-muted/50">
+                      <tr className="text-left">
+                        <th className="px-3 py-2 font-medium">#</th>
+                        <th className="px-3 py-2 font-medium">Modelo</th>
+                        <th className="px-3 py-2 font-medium">Câmeras</th>
+                        <th className="px-3 py-2 font-medium">Cód. de Alarme</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {totens.map((t, i) => (
+                        <tr key={t.id} className="border-t">
+                          <td className="px-3 py-2 text-muted-foreground">{i + 1}</td>
+                          <td className="px-3 py-2 font-medium">{t.modelo}</td>
+                          <td className="px-3 py-2">{t.cameras}</td>
+                          <td className="px-3 py-2">{t.codigo_alarme || '-'}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+              <p className="text-xs text-muted-foreground mt-2">
+                Estes dados vêm da etapa de implantação do projeto e são somente leitura aqui.
+              </p>
+            </CardContent>
+          </Card>
+        )}
+
+
         {/* Documentação */}
         {!isPPE && <AdministradoresCondominio customerId={id!} canEdit={canEdit} />}
 

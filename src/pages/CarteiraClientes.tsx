@@ -969,7 +969,7 @@ export default function CarteiraClientes({ tipoCarteira = 'PCI' }: CarteiraClien
               </div>
             </CardContent>
           </Card>
-        </div>
+        </div>}
 
         {/* Active Clients by Praça */}
         {tipoCarteira !== 'PPE' && <div className="grid grid-cols-5 gap-3 mb-4">

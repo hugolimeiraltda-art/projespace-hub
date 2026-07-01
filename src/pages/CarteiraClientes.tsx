@@ -126,7 +126,26 @@ export default function CarteiraClientes({ tipoCarteira = 'PCI' }: CarteiraClien
 
   useEffect(() => {
     fetchCustomers();
+    if (tipoCarteira === 'PPE') fetchTotensSummary();
   }, [tipoCarteira]);
+
+  const fetchTotensSummary = async () => {
+    try {
+      const { data, error } = await (supabase.from('implantacao_totens' as any) as any)
+        .select('modelo, quantidade_cameras');
+      if (error) throw error;
+      const agg: Record<string, { totens: number; cameras: number }> = {};
+      (data || []).forEach((t: any) => {
+        const key = t.modelo || 'Sem modelo';
+        if (!agg[key]) agg[key] = { totens: 0, cameras: 0 };
+        agg[key].totens += 1;
+        agg[key].cameras += Number(t.quantidade_cameras) || 0;
+      });
+      setTotensByModel(agg);
+    } catch (e) {
+      console.error('Error fetching totens summary', e);
+    }
+  };
 
   const fetchCustomers = async () => {
     try {

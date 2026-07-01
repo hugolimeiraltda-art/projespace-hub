@@ -858,19 +858,21 @@ export default function CarteiraClientes({ tipoCarteira = 'PCI' }: CarteiraClien
               </div>
             </CardContent>
           </Card>
-          <Card>
-            <CardContent className="pt-3 pb-3">
-              <div className="flex items-center gap-2">
-                <div className="p-1.5 bg-primary/10 rounded-lg">
-                  <Building2 className="w-4 h-4 text-primary" />
+          {tipoCarteira !== 'PPE' && (
+            <Card>
+              <CardContent className="pt-3 pb-3">
+                <div className="flex items-center gap-2">
+                  <div className="p-1.5 bg-primary/10 rounded-lg">
+                    <Building2 className="w-4 h-4 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Total Unidades</p>
+                    <p className="text-xl font-bold">{totals.unidades.toLocaleString('pt-BR')}</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">Total Unidades</p>
-                  <p className="text-xl font-bold">{totals.unidades.toLocaleString('pt-BR')}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          )}
           <Card>
             <CardContent className="pt-3 pb-3">
               <div className="flex items-center gap-2">

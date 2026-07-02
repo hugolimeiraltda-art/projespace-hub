@@ -232,6 +232,7 @@ export function CarteiraClientesTable({ customers, onDelete, basePath = '/cartei
           case 'filial': return (c.filial || '-').toLowerCase().includes(filterLower);
           case 'tipo': return (c.tipo || '-').toLowerCase().includes(filterLower);
           case 'qtd_produto': return (totensCountMap[c.id] || 0).toString().includes(filter.value);
+          case 'qtd_cameras': return (camerasCountMap[c.id] || 0).toString().includes(filter.value);
           case 'data_ativacao': return formatDate(c.data_ativacao).includes(filter.value);
           case 'data_termino': return calculateTermino(c).includes(filter.value);
           case 'taxa_ativacao': 

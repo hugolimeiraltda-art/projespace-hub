@@ -133,7 +133,7 @@ export default function CarteiraClientes({ tipoCarteira = 'PCI' }: CarteiraClien
   const fetchTotensSummary = async () => {
     try {
       const { data, error } = await (supabase.from('implantacao_totens' as any) as any)
-        .select('modelo, cameras, customer_id, ppe_customer_id');
+        .select('modelo, cameras, customer_id');
       if (error) throw error;
       const agg: Record<string, { totens: number; cameras: number }> = {};
       const perCustomer: Record<string, number> = {};
@@ -142,8 +142,7 @@ export default function CarteiraClientes({ tipoCarteira = 'PCI' }: CarteiraClien
         if (!agg[key]) agg[key] = { totens: 0, cameras: 0 };
         agg[key].totens += 1;
         agg[key].cameras += Number(t.cameras) || 0;
-        const cid = t.ppe_customer_id || t.customer_id;
-        if (cid) perCustomer[cid] = (perCustomer[cid] || 0) + 1;
+        if (t.customer_id) perCustomer[t.customer_id] = (perCustomer[t.customer_id] || 0) + 1;
       });
       setTotensByModel(agg);
       setTotensCountMap(perCustomer);

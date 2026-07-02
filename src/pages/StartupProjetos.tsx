@@ -475,7 +475,7 @@ export default function StartupProjetos() {
         projectsQuery,
         supabase
           .from('customer_portfolio')
-          .select('project_id, mensalidade, taxa_ativacao')
+          .select('project_id, mensalidade, taxa_ativacao, contrato')
           .not('project_id', 'is', null),
         supabase
           .from('implantacao_etapas')

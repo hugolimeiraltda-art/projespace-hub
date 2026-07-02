@@ -221,21 +221,29 @@ export default function StartupProjetos() {
   };
 
   const handleCreateCustomer = async () => {
-    const tipoCarteira = activeTab === 'ppe' ? 'PPE' : 'PCI';
+    const isPPE = activeTab === 'ppe';
     const razao = newObraNome.trim() || 'Novo Cliente';
     const contrato = `TEMP-${Date.now()}`;
     setCreatingCustomer(true);
     try {
       const enderecoCompleto = [newObraEndereco.trim(), newObraCidade.trim(), newObraEstado].filter(Boolean).join(', ');
+      const table = isPPE ? 'ppe_customers' : 'customer_portfolio';
+      const payload: any = isPPE
+        ? {
+            contrato,
+            razao_social: razao,
+            endereco: enderecoCompleto || null,
+          }
+        : {
+            contrato,
+            razao_social: razao,
+            endereco: enderecoCompleto || null,
+            tipo_carteira: 'PCI',
+            status_implantacao: 'EM_IMPLANTACAO',
+          };
       const { data, error } = await supabase
-        .from('customer_portfolio')
-        .insert({
-          contrato,
-          razao_social: razao,
-          endereco: enderecoCompleto || null,
-          tipo_carteira: tipoCarteira,
-          status_implantacao: 'EM_IMPLANTACAO',
-        })
+        .from(table)
+        .insert(payload)
         .select('id')
         .single();
       if (error) {
@@ -252,8 +260,10 @@ export default function StartupProjetos() {
           newObraVendedor,
           newObraTipo,
         }));
-        navigate(`/carteira-clientes/${data.id}?returnToObra=${activeTab}`);
+        const basePath = isPPE ? '/carteira-clientes-ppe' : '/carteira-clientes';
+        navigate(`${basePath}/${data.id}?returnToObra=${activeTab}`);
       }
+
     } catch (e: any) {
       console.error('Error creating customer:', e);
       toast({ title: 'Erro inesperado', variant: 'destructive' });

@@ -171,6 +171,63 @@ export default function StartupProjetos() {
     }
   };
 
+  const handleCreateCustomer = async () => {
+    if (!newObraNome.trim()) {
+      toast({ title: 'Informe o nome do condomínio antes', variant: 'destructive' });
+      return;
+    }
+    const tipoCarteira = activeTab === 'ppe' ? 'PPE' : 'PCI';
+    let contrato = newCustomerContrato.trim();
+    if (!contrato) {
+      contrato = `TEMP-${Date.now()}`;
+    } else {
+      const upper = contrato.toUpperCase();
+      const validPPE = tipoCarteira === 'PPE' && upper.startsWith('PPE');
+      const validPCI = tipoCarteira === 'PCI' && (upper.startsWith('SP') || upper.startsWith('PR') || upper.startsWith('PD') || upper.startsWith('PCI'));
+      const validTemp = upper.startsWith('TEMP-');
+      if (!validPPE && !validPCI && !validTemp) {
+        toast({
+          title: 'Contrato inválido',
+          description: tipoCarteira === 'PPE' ? 'Contratos PPE devem começar com PPE (ou TEMP-)' : 'Contratos PCI devem começar com SP, PR, PD ou PCI (ou TEMP-)',
+          variant: 'destructive',
+        });
+        return;
+      }
+      contrato = upper;
+    }
+    setCreatingCustomer(true);
+    try {
+      const enderecoCompleto = [newObraEndereco.trim(), newObraCidade.trim(), newObraEstado].filter(Boolean).join(', ');
+      const { data, error } = await supabase
+        .from('customer_portfolio')
+        .insert({
+          contrato,
+          razao_social: newObraNome.trim(),
+          endereco: enderecoCompleto || null,
+          tipo_carteira: tipoCarteira,
+          status_implantacao: 'EM_IMPLANTACAO',
+        })
+        .select('id, razao_social, contrato, endereco, filial')
+        .single();
+      if (error) {
+        toast({ title: 'Erro ao criar cliente', description: error.message, variant: 'destructive' });
+        return;
+      }
+      if (data) {
+        setCustomersList(prev => [data, ...prev]);
+        setSelectedCustomerId(data.id);
+        setShowNewCustomer(false);
+        setNewCustomerContrato('');
+        toast({ title: 'Cliente criado', description: `${data.contrato} - ${data.razao_social}` });
+      }
+    } catch (e: any) {
+      console.error('Error creating customer:', e);
+      toast({ title: 'Erro inesperado', variant: 'destructive' });
+    } finally {
+      setCreatingCustomer(false);
+    }
+  };
+
   const handleCreateObra = async () => {
     if (!newObraNome.trim()) {
       toast({ title: 'Informe o nome do condomínio', variant: 'destructive' });

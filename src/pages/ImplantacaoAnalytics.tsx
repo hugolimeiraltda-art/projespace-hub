@@ -88,9 +88,35 @@ const getPraca = (filial?: string | null, praca?: string | null): string => {
 
 export default function ImplantacaoAnalytics() {
   const navigate = useNavigate();
-  const [projects, setProjects] = useState<ProjectData[]>([]);
-  const [portfolio, setPortfolio] = useState<PortfolioData[]>([]);
-  const [allPortfolio, setAllPortfolio] = useState<PortfolioData[]>([]);
+  const [_rawProjects, setProjects] = useState<ProjectData[]>([]);
+  const [_rawPortfolio, setPortfolio] = useState<PortfolioData[]>([]);
+  const [_rawAllPortfolio, setAllPortfolio] = useState<PortfolioData[]>([]);
+  const [tipoFilter, setTipoFilter] = useState<'ALL' | 'PCI' | 'PPE'>('ALL');
+
+  const isPPEContract = (contrato?: string | null) => !!contrato && contrato.toUpperCase().startsWith('PPE');
+
+  const projectTipoMap = useMemo(() => {
+    const map: Record<string, 'PCI' | 'PPE'> = {};
+    _rawAllPortfolio.forEach(p => {
+      if (p.project_id) map[p.project_id] = isPPEContract(p.contrato) ? 'PPE' : 'PCI';
+    });
+    return map;
+  }, [_rawAllPortfolio]);
+
+  const projects = useMemo(() => {
+    if (tipoFilter === 'ALL') return _rawProjects;
+    return _rawProjects.filter(p => (projectTipoMap[p.id] ?? 'PCI') === tipoFilter);
+  }, [_rawProjects, projectTipoMap, tipoFilter]);
+
+  const portfolio = useMemo(() => {
+    if (tipoFilter === 'ALL') return _rawPortfolio;
+    return _rawPortfolio.filter(p => tipoFilter === 'PPE' ? isPPEContract(p.contrato) : !isPPEContract(p.contrato));
+  }, [_rawPortfolio, tipoFilter]);
+
+  const allPortfolio = useMemo(() => {
+    if (tipoFilter === 'ALL') return _rawAllPortfolio;
+    return _rawAllPortfolio.filter(p => tipoFilter === 'PPE' ? isPPEContract(p.contrato) : !isPPEContract(p.contrato));
+  }, [_rawAllPortfolio, tipoFilter]);
   const [etapasMap, setEtapasMap] = useState<Record<string, { data_vencimento_primeiro_boleto: string | null; data_ativacao_realizada: string | null }>>({});
   const [cancelamentos, setCancelamentos] = useState<CancelamentoData[]>([]);
   const [plans, setPlans] = useState<PlanData[]>([]);
@@ -502,9 +528,22 @@ export default function ImplantacaoAnalytics() {
             </div>
             <p className="text-muted-foreground">Métricas de tempo, receita e desempenho da implantação</p>
           </div>
-          <Button variant="outline" size="sm" className="gap-2" onClick={() => navigate('/implantacao-relatorios')}>
-            <FileBarChart className="w-4 h-4" /> Relatórios
-          </Button>
+          <div className="flex items-center gap-2">
+            <div className="inline-flex rounded-md border border-border overflow-hidden">
+              {(['ALL','PCI','PPE'] as const).map(t => (
+                <button
+                  key={t}
+                  onClick={() => setTipoFilter(t)}
+                  className={`px-3 py-1.5 text-xs font-medium transition-colors ${tipoFilter === t ? 'bg-primary text-primary-foreground' : 'bg-background text-foreground hover:bg-muted'}`}
+                >
+                  {t === 'ALL' ? 'Todos' : t}
+                </button>
+              ))}
+            </div>
+            <Button variant="outline" size="sm" className="gap-2" onClick={() => navigate('/implantacao-relatorios')}>
+              <FileBarChart className="w-4 h-4" /> Relatórios
+            </Button>
+          </div>
         </div>
 
         {/* KPI Cards */}

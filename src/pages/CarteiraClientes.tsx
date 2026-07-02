@@ -744,15 +744,6 @@ export default function CarteiraClientes({ tipoCarteira = 'PCI' }: CarteiraClien
               return (
                 <div className="mb-4 grid grid-cols-12 gap-3">
                   {/* KPIs */}
-                  <Card className="col-span-12 md:col-span-4">
-                    <CardContent className="pt-3 pb-3 flex items-center gap-3">
-                      <div className="p-2 bg-primary/10 rounded-lg"><Users className="w-4 h-4 text-primary" /></div>
-                      <div>
-                        <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Clientes PPE</p>
-                        <p className="text-2xl font-bold leading-tight">{customers.length}</p>
-                      </div>
-                    </CardContent>
-                  </Card>
                   <Card className="col-span-6 md:col-span-4">
                     <CardContent className="pt-3 pb-3 flex items-center gap-3">
                       <div className="p-2 bg-primary/10 rounded-lg"><DoorOpen className="w-4 h-4 text-primary" /></div>
@@ -768,6 +759,15 @@ export default function CarteiraClientes({ tipoCarteira = 'PCI' }: CarteiraClien
                       <div>
                         <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Câmeras</p>
                         <p className="text-2xl font-bold leading-tight">{totals.cameras.toLocaleString('pt-BR')}</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                  <Card className="col-span-12 md:col-span-4">
+                    <CardContent className="pt-3 pb-3 flex items-center gap-3">
+                      <div className="p-2 bg-primary/10 rounded-lg"><Users className="w-4 h-4 text-primary" /></div>
+                      <div>
+                        <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Clientes PPE</p>
+                        <p className="text-2xl font-bold leading-tight">{customers.length}</p>
                       </div>
                     </CardContent>
                   </Card>

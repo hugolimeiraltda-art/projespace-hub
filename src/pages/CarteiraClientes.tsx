@@ -111,6 +111,7 @@ export default function CarteiraClientes({ tipoCarteira = 'PCI' }: CarteiraClien
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
   const [totensByModel, setTotensByModel] = useState<Record<string, { totens: number; cameras: number }>>({});
+  const [totensCountMap, setTotensCountMap] = useState<Record<string, number>>({});
   
   const [dialogOpen, setDialogOpen] = useState(false);
   const [form, setForm] = useState(EMPTY_FORM);
@@ -132,16 +133,20 @@ export default function CarteiraClientes({ tipoCarteira = 'PCI' }: CarteiraClien
   const fetchTotensSummary = async () => {
     try {
       const { data, error } = await (supabase.from('implantacao_totens' as any) as any)
-        .select('modelo, cameras');
+        .select('modelo, cameras, customer_id, ppe_customer_id');
       if (error) throw error;
       const agg: Record<string, { totens: number; cameras: number }> = {};
+      const perCustomer: Record<string, number> = {};
       (data || []).forEach((t: any) => {
         const key = t.modelo || 'Sem modelo';
         if (!agg[key]) agg[key] = { totens: 0, cameras: 0 };
         agg[key].totens += 1;
         agg[key].cameras += Number(t.cameras) || 0;
+        const cid = t.ppe_customer_id || t.customer_id;
+        if (cid) perCustomer[cid] = (perCustomer[cid] || 0) + 1;
       });
       setTotensByModel(agg);
+      setTotensCountMap(perCustomer);
     } catch (e) {
       console.error('Error fetching totens summary', e);
     }
@@ -1062,7 +1067,7 @@ export default function CarteiraClientes({ tipoCarteira = 'PCI' }: CarteiraClien
                 <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
               </div>
             ) : (
-              <CarteiraClientesTable customers={customers} onDelete={fetchCustomers} basePath={basePath} tableName={dataTable} />
+              <CarteiraClientesTable customers={customers} onDelete={fetchCustomers} basePath={basePath} tableName={dataTable} totensCountMap={totensCountMap} />
             )}
           </CardContent>
         </Card>

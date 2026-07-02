@@ -129,6 +129,9 @@ export default function StartupProjetos() {
   const [customersList, setCustomersList] = useState<{ id: string; razao_social: string; contrato: string; endereco: string | null; filial: string | null }[]>([]);
   const [selectedCustomerId, setSelectedCustomerId] = useState<string>('');
   const [customerSearch, setCustomerSearch] = useState('');
+  const [showNewCustomer, setShowNewCustomer] = useState(false);
+  const [newCustomerContrato, setNewCustomerContrato] = useState('');
+  const [creatingCustomer, setCreatingCustomer] = useState(false);
 
   useEffect(() => {
     fetchProjects();

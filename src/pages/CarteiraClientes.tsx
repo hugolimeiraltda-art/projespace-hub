@@ -1067,7 +1067,7 @@ export default function CarteiraClientes({ tipoCarteira = 'PCI' }: CarteiraClien
                 <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
               </div>
             ) : (
-              <CarteiraClientesTable customers={customers} onDelete={fetchCustomers} basePath={basePath} tableName={dataTable} />
+              <CarteiraClientesTable customers={customers} onDelete={fetchCustomers} basePath={basePath} tableName={dataTable} totensCountMap={totensCountMap} />
             )}
           </CardContent>
         </Card>

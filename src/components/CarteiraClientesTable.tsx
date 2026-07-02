@@ -281,6 +281,10 @@ export function CarteiraClientesTable({ customers, onDelete, basePath = '/cartei
             aValue = totensCountMap[a.id] || 0;
             bValue = totensCountMap[b.id] || 0;
             break;
+          case 'qtd_cameras':
+            aValue = camerasCountMap[a.id] || 0;
+            bValue = camerasCountMap[b.id] || 0;
+            break;
           case 'data_ativacao':
             aValue = a.data_ativacao ? new Date(a.data_ativacao).getTime() : 0;
             bValue = b.data_ativacao ? new Date(b.data_ativacao).getTime() : 0;

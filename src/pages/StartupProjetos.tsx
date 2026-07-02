@@ -654,56 +654,97 @@ export default function StartupProjetos() {
                   </div>
                   {/* Customer selection for pre-fill */}
                   <div>
-                    <Label>Cliente Existente {newObraTipo === 'acrescimo' ? '*' : '(opcional)'}</Label>
-                    <Select value={selectedCustomerId} onValueChange={(customerId) => {
-                      setSelectedCustomerId(customerId);
-                      const customer = customersList.find(c => c.id === customerId);
-                      if (customer) {
-                        setNewObraNome(customer.razao_social);
-                        if (customer.endereco) {
-                          const parts = customer.endereco.split(',').map(p => p.trim());
-                          if (parts.length >= 2) {
-                            const estado = parts[parts.length - 1];
-                            const cidade = parts.slice(0, -1).join(', ');
-                            if (estado.length === 2) {
-                              setNewObraCidade(cidade);
-                              setNewObraEstado(estado);
+                    <div className="flex items-center justify-between mb-1">
+                      <Label>Cliente Existente {newObraTipo === 'acrescimo' ? '*' : '(opcional)'}</Label>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 px-2 text-xs text-primary"
+                        onClick={() => {
+                          setShowNewCustomer(v => !v);
+                          setSelectedCustomerId('');
+                        }}
+                      >
+                        <Plus className="h-3 w-3 mr-1" />
+                        {showNewCustomer ? 'Cancelar' : 'Novo Cliente'}
+                      </Button>
+                    </div>
+                    {showNewCustomer ? (
+                      <div className="border rounded-md p-3 space-y-2 bg-muted/30">
+                        <p className="text-xs text-muted-foreground">
+                          Será criado um cliente na carteira {activeTab === 'ppe' ? 'PPE' : 'PCI'} com o nome, endereço, cidade e estado informados acima.
+                        </p>
+                        <div>
+                          <Label className="text-xs">Contrato (opcional)</Label>
+                          <Input
+                            value={newCustomerContrato}
+                            onChange={(e) => setNewCustomerContrato(e.target.value)}
+                            placeholder={activeTab === 'ppe' ? 'Ex: PPE12345 (deixe em branco para TEMP-)' : 'Ex: SP12345 (deixe em branco para TEMP-)'}
+                          />
+                        </div>
+                        <Button
+                          type="button"
+                          size="sm"
+                          onClick={handleCreateCustomer}
+                          disabled={creatingCustomer}
+                          className="w-full"
+                        >
+                          {creatingCustomer ? <><Loader2 className="mr-2 h-3 w-3 animate-spin" />Criando cliente...</> : 'Criar Cliente'}
+                        </Button>
+                      </div>
+                    ) : (
+                      <Select value={selectedCustomerId} onValueChange={(customerId) => {
+                        setSelectedCustomerId(customerId);
+                        const customer = customersList.find(c => c.id === customerId);
+                        if (customer) {
+                          setNewObraNome(customer.razao_social);
+                          if (customer.endereco) {
+                            const parts = customer.endereco.split(',').map(p => p.trim());
+                            if (parts.length >= 2) {
+                              const estado = parts[parts.length - 1];
+                              const cidade = parts.slice(0, -1).join(', ');
+                              if (estado.length === 2) {
+                                setNewObraCidade(cidade);
+                                setNewObraEstado(estado);
+                              } else {
+                                setNewObraEndereco(customer.endereco);
+                              }
                             } else {
                               setNewObraEndereco(customer.endereco);
                             }
-                          } else {
-                            setNewObraEndereco(customer.endereco);
                           }
                         }
-                      }
-                    }}>
-                      <SelectTrigger><SelectValue placeholder="Selecione um cliente da carteira" /></SelectTrigger>
-                      <SelectContent>
-                        <div className="p-2">
-                          <Input
-                            placeholder="Buscar cliente..."
-                            value={customerSearch}
-                            onChange={(e) => setCustomerSearch(e.target.value)}
-                            className="mb-2"
-                            onClick={(e) => e.stopPropagation()}
-                            onKeyDown={(e) => e.stopPropagation()}
-                          />
-                        </div>
-                        {customersList
-                          .filter(c => {
-                            if (!customerSearch) return true;
-                            const search = customerSearch.toLowerCase();
-                            return c.razao_social.toLowerCase().includes(search) || c.contrato.toLowerCase().includes(search);
-                          })
-                          .slice(0, 50)
-                          .map(c => (
-                            <SelectItem key={c.id} value={c.id}>
-                              {c.contrato} - {c.razao_social}
-                            </SelectItem>
-                          ))}
-                      </SelectContent>
-                    </Select>
+                      }}>
+                        <SelectTrigger><SelectValue placeholder="Selecione um cliente da carteira" /></SelectTrigger>
+                        <SelectContent>
+                          <div className="p-2">
+                            <Input
+                              placeholder="Buscar cliente..."
+                              value={customerSearch}
+                              onChange={(e) => setCustomerSearch(e.target.value)}
+                              className="mb-2"
+                              onClick={(e) => e.stopPropagation()}
+                              onKeyDown={(e) => e.stopPropagation()}
+                            />
+                          </div>
+                          {customersList
+                            .filter(c => {
+                              if (!customerSearch) return true;
+                              const search = customerSearch.toLowerCase();
+                              return c.razao_social.toLowerCase().includes(search) || c.contrato.toLowerCase().includes(search);
+                            })
+                            .slice(0, 50)
+                            .map(c => (
+                              <SelectItem key={c.id} value={c.id}>
+                                {c.contrato} - {c.razao_social}
+                              </SelectItem>
+                            ))}
+                        </SelectContent>
+                      </Select>
+                    )}
                   </div>
+
                   <div>
                     <Label>Vendedor Responsável *</Label>
                     <Select value={newObraVendedor} onValueChange={setNewObraVendedor}>

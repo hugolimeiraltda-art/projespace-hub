@@ -273,6 +273,10 @@ export function CarteiraClientesTable({ customers, onDelete, basePath = '/cartei
             aValue = a.tipo || '';
             bValue = b.tipo || '';
             break;
+          case 'qtd_produto':
+            aValue = totensCountMap[a.id] || 0;
+            bValue = totensCountMap[b.id] || 0;
+            break;
           case 'data_ativacao':
             aValue = a.data_ativacao ? new Date(a.data_ativacao).getTime() : 0;
             bValue = b.data_ativacao ? new Date(b.data_ativacao).getTime() : 0;

@@ -362,7 +362,7 @@ export default function StartupProjetos() {
       // with status "Implantação" (sistema = 'EM_IMPLANTACAO').
       if (activeTab === 'ppe' && newProject) {
         const selectedCustomer = customersList.find(c => c.id === selectedCustomerId);
-        const contrato = selectedCustomer?.contrato || `TEMP-PPE-${newProject.numero_projeto}`;
+        const contrato = selectedCustomer?.contrato || `PPE${newProject.numero_projeto}`;
         const enderecoCompleto = [newObraEndereco.trim(), newObraCidade.trim(), newObraEstado].filter(Boolean).join(', ');
         const filialFromUF: Record<string, string> = { SP: 'SPO', MG: 'BHZ', ES: 'VIX', RJ: 'RJO' };
         const { error: ppeErr } = await supabase.from('ppe_customers').insert({

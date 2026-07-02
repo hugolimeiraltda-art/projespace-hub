@@ -29,6 +29,7 @@ interface Customer {
   cameras: number;
   mensalidade: number | null;
   endereco?: string | null;
+  sistema?: string | null;
 }
 
 interface ColumnFilter {

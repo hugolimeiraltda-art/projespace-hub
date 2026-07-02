@@ -29,6 +29,7 @@ interface Customer {
   cameras: number;
   mensalidade: number | null;
   endereco?: string | null;
+  sistema?: string | null;
 }
 
 interface ColumnFilter {
@@ -539,6 +540,9 @@ export function CarteiraClientesTable({ customers, onDelete, basePath = '/cartei
       case 'qtd_cameras':
         return <TableCell className="text-right">{camerasCountMap[customer.id] || 0}</TableCell>;
       case 'data_ativacao':
+        if (!customer.data_ativacao && customer.sistema === 'EM_IMPLANTACAO') {
+          return <TableCell><span className="inline-flex items-center rounded-full bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200 px-2 py-0.5 text-xs font-medium">Implantação</span></TableCell>;
+        }
         return <TableCell>{formatDate(customer.data_ativacao)}</TableCell>;
       case 'data_termino':
         return <TableCell>{calculateTermino(customer)}</TableCell>;
@@ -566,7 +570,7 @@ export function CarteiraClientesTable({ customers, onDelete, basePath = '/cartei
       'Tipo de Produto': c.tipo || '',
       'Qtd Totens': totensCountMap[c.id] || 0,
       'Qtd Câmeras': camerasCountMap[c.id] || 0,
-      'Início': formatDate(c.data_ativacao),
+      'Início': (!c.data_ativacao && c.sistema === 'EM_IMPLANTACAO') ? 'Implantação' : formatDate(c.data_ativacao),
       'Término': calculateTermino(c),
       'Taxa Ativação': c.taxa_ativacao || 0,
       'Portões': c.portoes,

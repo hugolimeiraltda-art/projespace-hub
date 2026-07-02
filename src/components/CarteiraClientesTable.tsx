@@ -449,6 +449,7 @@ export function CarteiraClientesTable({ customers, onDelete, basePath = '/cartei
       Filial: c.filial || '',
       'Tipo de Produto': c.tipo || '',
       'Qtd Totens': totensCountMap[c.id] || 0,
+      'Qtd Câmeras': camerasCountMap[c.id] || 0,
       'Início': formatDate(c.data_ativacao),
       'Término': calculateTermino(c),
       'Taxa Ativação': c.taxa_ativacao || 0,

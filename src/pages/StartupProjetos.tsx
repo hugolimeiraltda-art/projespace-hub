@@ -1109,6 +1109,7 @@ export default function StartupProjetos() {
                   <StartupProjectCardCompact
                     key={project.id}
                     project={project}
+                    contrato={portfolioMap[project.id]?.contrato || null}
                     etapas={etapasMap[project.id] || null}
                     pendenciasCount={pendenciasMap[project.id] || 0}
                     isAdmin={user?.role === 'admin'}

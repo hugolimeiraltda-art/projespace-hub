@@ -179,18 +179,9 @@ export default function StartupProjetos() {
   };
 
   const handleCreateCustomer = async () => {
-    if (!newObraNome.trim()) {
-      toast({ title: 'Informe o nome do condomínio antes', variant: 'destructive' });
-      return;
-    }
     const tipoCarteira = activeTab === 'ppe' ? 'PPE' : 'PCI';
-    const numero = newCustomerContrato.trim().replace(/\D/g, '');
-    if (!numero) {
-      toast({ title: 'Informe o número do contrato', variant: 'destructive' });
-      return;
-    }
-    const prefixo = tipoCarteira === 'PPE' ? 'PPE' : newCustomerPrefixo;
-    const contrato = `${prefixo}${numero}`;
+    const razao = newObraNome.trim() || 'Novo Cliente';
+    const contrato = `TEMP-${Date.now()}`;
     setCreatingCustomer(true);
     try {
       const enderecoCompleto = [newObraEndereco.trim(), newObraCidade.trim(), newObraEstado].filter(Boolean).join(', ');
@@ -198,23 +189,28 @@ export default function StartupProjetos() {
         .from('customer_portfolio')
         .insert({
           contrato,
-          razao_social: newObraNome.trim(),
+          razao_social: razao,
           endereco: enderecoCompleto || null,
           tipo_carteira: tipoCarteira,
           status_implantacao: 'EM_IMPLANTACAO',
         })
-        .select('id, razao_social, contrato, endereco, filial')
+        .select('id')
         .single();
       if (error) {
         toast({ title: 'Erro ao criar cliente', description: error.message, variant: 'destructive' });
         return;
       }
       if (data) {
-        setCustomersList(prev => [data, ...prev]);
-        setSelectedCustomerId(data.id);
-        setShowNewCustomer(false);
-        setNewCustomerContrato('');
-        toast({ title: 'Cliente criado', description: `${data.contrato} - ${data.razao_social}` });
+        sessionStorage.setItem('obra-new-customer-return', JSON.stringify({
+          tab: activeTab,
+          newObraNome,
+          newObraEndereco,
+          newObraCidade,
+          newObraEstado,
+          newObraVendedor,
+          newObraTipo,
+        }));
+        navigate(`/carteira-clientes/${data.id}?returnToObra=${activeTab}`);
       }
     } catch (e: any) {
       console.error('Error creating customer:', e);

@@ -362,19 +362,49 @@ export default function StartupProjetos() {
       // with status "Implantação" (sistema = 'EM_IMPLANTACAO').
       if (activeTab === 'ppe' && newProject) {
         const selectedCustomer = customersList.find(c => c.id === selectedCustomerId);
-        const contrato = selectedCustomer?.contrato || `PPE${newProject.numero_projeto}`;
+        const contrato = `PPE${newProject.numero_projeto}`;
         const enderecoCompleto = [newObraEndereco.trim(), newObraCidade.trim(), newObraEstado].filter(Boolean).join(', ');
         const filialFromUF: Record<string, string> = { SP: 'SPO', MG: 'BHZ', ES: 'VIX', RJ: 'RJO' };
-        const { error: ppeErr } = await supabase.from('ppe_customers').insert({
-          contrato,
-          razao_social: newObraNome.trim(),
-          endereco: enderecoCompleto || null,
-          filial: selectedCustomer?.filial || filialFromUF[newObraEstado] || null,
-          project_id: newProject.id,
-          sistema: 'EM_IMPLANTACAO',
-        });
-        if (ppeErr) {
-          console.error('Error inserting into ppe_customers:', ppeErr);
+        if (selectedCustomer?.id) {
+          // Link the pre-created draft customer to the new project and assign the definitive contract.
+          const { error: updErr } = await supabase
+            .from('ppe_customers')
+            .update({
+              contrato,
+              project_id: newProject.id,
+              razao_social: newObraNome.trim(),
+              endereco: enderecoCompleto || null,
+              filial: selectedCustomer.filial || filialFromUF[newObraEstado] || null,
+              sistema: 'EM_IMPLANTACAO',
+            })
+            .eq('id', selectedCustomer.id);
+          if (updErr) console.error('Error linking ppe_customers:', updErr);
+        } else {
+          const { error: ppeErr } = await supabase.from('ppe_customers').insert({
+            contrato,
+            razao_social: newObraNome.trim(),
+            endereco: enderecoCompleto || null,
+            filial: filialFromUF[newObraEstado] || null,
+            project_id: newProject.id,
+            sistema: 'EM_IMPLANTACAO',
+          });
+          if (ppeErr) console.error('Error inserting into ppe_customers:', ppeErr);
+        }
+      }
+
+      // For PCI, if a draft customer was created upfront, link it to the project and rename the contract.
+      if (activeTab === 'pci' && newProject) {
+        const selectedCustomer = customersList.find(c => c.id === selectedCustomerId);
+        if (selectedCustomer?.id && selectedCustomer.contrato?.startsWith('TEMP-')) {
+          const { error: updErr } = await supabase
+            .from('customer_portfolio')
+            .update({
+              contrato: `PCI${newProject.numero_projeto}`,
+              project_id: newProject.id,
+              tipo_carteira: 'PCI',
+            })
+            .eq('id', selectedCustomer.id);
+          if (updErr) console.error('Error linking customer_portfolio:', updErr);
         }
       }
 

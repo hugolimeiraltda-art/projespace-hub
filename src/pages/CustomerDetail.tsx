@@ -297,6 +297,11 @@ export default function CustomerDetail() {
 
       if (error) throw error;
       toast({ title: 'Cliente atualizado!', description: 'Os dados foram salvos com sucesso.' });
+      const returnToObra = new URLSearchParams(window.location.search).get('returnToObra');
+      if (returnToObra) {
+        navigate(`/startup-projetos?tab=${returnToObra}&newObraCustomerId=${id}`);
+        return;
+      }
       fetchCustomer();
     } catch (error: any) {
       console.error('Error saving customer:', error);

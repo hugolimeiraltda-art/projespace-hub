@@ -146,6 +146,48 @@ export default function StartupProjetos() {
     fetchCustomers();
   }, [activeTab]);
 
+  // Restore obra dialog after coming back from CustomerDetail
+  useEffect(() => {
+    const newCustomerId = searchParams.get('newObraCustomerId');
+    if (!newCustomerId) return;
+    const ctxRaw = sessionStorage.getItem('obra-new-customer-return');
+    if (ctxRaw) {
+      try {
+        const ctx = JSON.parse(ctxRaw);
+        setNewObraNome(ctx.newObraNome || '');
+        setNewObraEndereco(ctx.newObraEndereco || '');
+        setNewObraCidade(ctx.newObraCidade || '');
+        setNewObraEstado(ctx.newObraEstado || '');
+        setNewObraVendedor(ctx.newObraVendedor || '');
+        setNewObraTipo(ctx.newObraTipo || 'nova');
+      } catch {}
+      sessionStorage.removeItem('obra-new-customer-return');
+    }
+    // Fetch the newly created customer and inject into list
+    (async () => {
+      const { data } = await supabase
+        .from('customer_portfolio')
+        .select('id, razao_social, contrato, endereco, filial')
+        .eq('id', newCustomerId)
+        .maybeSingle();
+      if (data) {
+        setCustomersList(prev => {
+          if (prev.some(c => c.id === data.id)) return prev;
+          return [data, ...prev];
+        });
+        setSelectedCustomerId(data.id);
+        setNewObraNome(data.razao_social);
+        if (data.endereco) setNewObraEndereco(data.endereco);
+      }
+      setShowNewObra(true);
+      // Clean up the query param
+      const url = new URL(window.location.href);
+      url.searchParams.delete('newObraCustomerId');
+      window.history.replaceState({}, '', url.toString());
+    })();
+  }, [searchParams]);
+
+
   const fetchCustomers = async () => {
     try {
       const { data } = await supabase
@@ -179,18 +221,9 @@ export default function StartupProjetos() {
   };
 
   const handleCreateCustomer = async () => {
-    if (!newObraNome.trim()) {
-      toast({ title: 'Informe o nome do condomínio antes', variant: 'destructive' });
-      return;
-    }
     const tipoCarteira = activeTab === 'ppe' ? 'PPE' : 'PCI';
-    const numero = newCustomerContrato.trim().replace(/\D/g, '');
-    if (!numero) {
-      toast({ title: 'Informe o número do contrato', variant: 'destructive' });
-      return;
-    }
-    const prefixo = tipoCarteira === 'PPE' ? 'PPE' : newCustomerPrefixo;
-    const contrato = `${prefixo}${numero}`;
+    const razao = newObraNome.trim() || 'Novo Cliente';
+    const contrato = `TEMP-${Date.now()}`;
     setCreatingCustomer(true);
     try {
       const enderecoCompleto = [newObraEndereco.trim(), newObraCidade.trim(), newObraEstado].filter(Boolean).join(', ');
@@ -198,23 +231,28 @@ export default function StartupProjetos() {
         .from('customer_portfolio')
         .insert({
           contrato,
-          razao_social: newObraNome.trim(),
+          razao_social: razao,
           endereco: enderecoCompleto || null,
           tipo_carteira: tipoCarteira,
           status_implantacao: 'EM_IMPLANTACAO',
         })
-        .select('id, razao_social, contrato, endereco, filial')
+        .select('id')
         .single();
       if (error) {
         toast({ title: 'Erro ao criar cliente', description: error.message, variant: 'destructive' });
         return;
       }
       if (data) {
-        setCustomersList(prev => [data, ...prev]);
-        setSelectedCustomerId(data.id);
-        setShowNewCustomer(false);
-        setNewCustomerContrato('');
-        toast({ title: 'Cliente criado', description: `${data.contrato} - ${data.razao_social}` });
+        sessionStorage.setItem('obra-new-customer-return', JSON.stringify({
+          tab: activeTab,
+          newObraNome,
+          newObraEndereco,
+          newObraCidade,
+          newObraEstado,
+          newObraVendedor,
+          newObraTipo,
+        }));
+        navigate(`/carteira-clientes/${data.id}?returnToObra=${activeTab}`);
       }
     } catch (e: any) {
       console.error('Error creating customer:', e);
@@ -707,106 +745,63 @@ export default function StartupProjetos() {
                         variant="ghost"
                         size="sm"
                         className="h-7 px-2 text-xs text-primary"
-                        onClick={() => {
-                          setShowNewCustomer(v => !v);
-                          setSelectedCustomerId('');
-                        }}
+                        onClick={handleCreateCustomer}
+                        disabled={creatingCustomer}
                       >
-                        <Plus className="h-3 w-3 mr-1" />
-                        {showNewCustomer ? 'Cancelar' : 'Novo Cliente'}
+                        {creatingCustomer ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <Plus className="h-3 w-3 mr-1" />}
+                        Novo Cliente
                       </Button>
                     </div>
-                    {showNewCustomer ? (
-                      <div className="border rounded-md p-3 space-y-2 bg-muted/30">
-                        <p className="text-xs text-muted-foreground">
-                          Será criado um cliente na carteira {activeTab === 'ppe' ? 'PPE' : 'PCI'} com o nome, endereço, cidade e estado informados acima.
-                        </p>
-                        <div>
-                          <Label className="text-xs">Contrato *</Label>
-                          <div className="flex gap-2">
-                            {activeTab === 'ppe' ? (
-                              <div className="flex items-center px-3 rounded-md border bg-muted font-mono text-sm">PPE</div>
-                            ) : (
-                              <Select value={newCustomerPrefixo} onValueChange={(v) => setNewCustomerPrefixo(v as any)}>
-                                <SelectTrigger className="w-24"><SelectValue /></SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="SP">SP</SelectItem>
-                                  <SelectItem value="PR">PR</SelectItem>
-                                  <SelectItem value="PD">PD</SelectItem>
-                                  <SelectItem value="PCI">PCI</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            )}
-                            <Input
-                              value={newCustomerContrato}
-                              onChange={(e) => setNewCustomerContrato(e.target.value.replace(/\D/g, ''))}
-                              placeholder="Somente números"
-                              inputMode="numeric"
-                              className="flex-1"
-                            />
-                          </div>
-                        </div>
-                        <Button
-                          type="button"
-                          size="sm"
-                          onClick={handleCreateCustomer}
-                          disabled={creatingCustomer}
-                          className="w-full"
-                        >
-                          {creatingCustomer ? <><Loader2 className="mr-2 h-3 w-3 animate-spin" />Criando cliente...</> : 'Criar Cliente'}
-                        </Button>
-                      </div>
-                    ) : (
-                      <Select value={selectedCustomerId} onValueChange={(customerId) => {
-                        setSelectedCustomerId(customerId);
-                        const customer = customersList.find(c => c.id === customerId);
-                        if (customer) {
-                          setNewObraNome(customer.razao_social);
-                          if (customer.endereco) {
-                            const parts = customer.endereco.split(',').map(p => p.trim());
-                            if (parts.length >= 2) {
-                              const estado = parts[parts.length - 1];
-                              const cidade = parts.slice(0, -1).join(', ');
-                              if (estado.length === 2) {
-                                setNewObraCidade(cidade);
-                                setNewObraEstado(estado);
-                              } else {
-                                setNewObraEndereco(customer.endereco);
-                              }
+                    <Select value={selectedCustomerId} onValueChange={(customerId) => {
+                      setSelectedCustomerId(customerId);
+                      const customer = customersList.find(c => c.id === customerId);
+                      if (customer) {
+                        setNewObraNome(customer.razao_social);
+                        if (customer.endereco) {
+                          const parts = customer.endereco.split(',').map(p => p.trim());
+                          if (parts.length >= 2) {
+                            const estado = parts[parts.length - 1];
+                            const cidade = parts.slice(0, -1).join(', ');
+                            if (estado.length === 2) {
+                              setNewObraCidade(cidade);
+                              setNewObraEstado(estado);
                             } else {
                               setNewObraEndereco(customer.endereco);
                             }
+                          } else {
+                            setNewObraEndereco(customer.endereco);
                           }
                         }
-                      }}>
-                        <SelectTrigger><SelectValue placeholder="Selecione um cliente da carteira" /></SelectTrigger>
-                        <SelectContent>
-                          <div className="p-2">
-                            <Input
-                              placeholder="Buscar cliente..."
-                              value={customerSearch}
-                              onChange={(e) => setCustomerSearch(e.target.value)}
-                              className="mb-2"
-                              onClick={(e) => e.stopPropagation()}
-                              onKeyDown={(e) => e.stopPropagation()}
-                            />
-                          </div>
-                          {customersList
-                            .filter(c => {
-                              if (!customerSearch) return true;
-                              const search = customerSearch.toLowerCase();
-                              return c.razao_social.toLowerCase().includes(search) || c.contrato.toLowerCase().includes(search);
-                            })
-                            .slice(0, 50)
-                            .map(c => (
-                              <SelectItem key={c.id} value={c.id}>
-                                {c.contrato} - {c.razao_social}
-                              </SelectItem>
-                            ))}
-                        </SelectContent>
-                      </Select>
-                    )}
+                      }
+                    }}>
+                      <SelectTrigger><SelectValue placeholder="Selecione um cliente da carteira" /></SelectTrigger>
+                      <SelectContent>
+                        <div className="p-2">
+                          <Input
+                            placeholder="Buscar cliente..."
+                            value={customerSearch}
+                            onChange={(e) => setCustomerSearch(e.target.value)}
+                            className="mb-2"
+                            onClick={(e) => e.stopPropagation()}
+                            onKeyDown={(e) => e.stopPropagation()}
+                          />
+                        </div>
+                        {customersList
+                          .filter(c => {
+                            if (!customerSearch) return true;
+                            const search = customerSearch.toLowerCase();
+                            return c.razao_social.toLowerCase().includes(search) || c.contrato.toLowerCase().includes(search);
+                          })
+                          .slice(0, 50)
+                          .map(c => (
+                            <SelectItem key={c.id} value={c.id}>
+                              {c.contrato} - {c.razao_social}
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
                   </div>
+
 
                   <div>
                     <div className="flex items-center justify-between mb-1">

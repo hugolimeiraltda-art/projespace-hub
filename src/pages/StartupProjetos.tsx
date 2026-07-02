@@ -131,6 +131,7 @@ export default function StartupProjetos() {
   const [customerSearch, setCustomerSearch] = useState('');
   const [showNewCustomer, setShowNewCustomer] = useState(false);
   const [newCustomerContrato, setNewCustomerContrato] = useState('');
+  const [newCustomerPrefixo, setNewCustomerPrefixo] = useState<'SP' | 'PR' | 'PD' | 'PCI'>('SP');
   const [creatingCustomer, setCreatingCustomer] = useState(false);
 
   useEffect(() => {
@@ -177,24 +178,13 @@ export default function StartupProjetos() {
       return;
     }
     const tipoCarteira = activeTab === 'ppe' ? 'PPE' : 'PCI';
-    let contrato = newCustomerContrato.trim();
-    if (!contrato) {
-      contrato = `TEMP-${Date.now()}`;
-    } else {
-      const upper = contrato.toUpperCase();
-      const validPPE = tipoCarteira === 'PPE' && upper.startsWith('PPE');
-      const validPCI = tipoCarteira === 'PCI' && (upper.startsWith('SP') || upper.startsWith('PR') || upper.startsWith('PD') || upper.startsWith('PCI'));
-      const validTemp = upper.startsWith('TEMP-');
-      if (!validPPE && !validPCI && !validTemp) {
-        toast({
-          title: 'Contrato inválido',
-          description: tipoCarteira === 'PPE' ? 'Contratos PPE devem começar com PPE (ou TEMP-)' : 'Contratos PCI devem começar com SP, PR, PD ou PCI (ou TEMP-)',
-          variant: 'destructive',
-        });
-        return;
-      }
-      contrato = upper;
+    const numero = newCustomerContrato.trim().replace(/\D/g, '');
+    if (!numero) {
+      toast({ title: 'Informe o número do contrato', variant: 'destructive' });
+      return;
     }
+    const prefixo = tipoCarteira === 'PPE' ? 'PPE' : newCustomerPrefixo;
+    const contrato = `${prefixo}${numero}`;
     setCreatingCustomer(true);
     try {
       const enderecoCompleto = [newObraEndereco.trim(), newObraCidade.trim(), newObraEstado].filter(Boolean).join(', ');
@@ -676,12 +666,29 @@ export default function StartupProjetos() {
                           Será criado um cliente na carteira {activeTab === 'ppe' ? 'PPE' : 'PCI'} com o nome, endereço, cidade e estado informados acima.
                         </p>
                         <div>
-                          <Label className="text-xs">Contrato (opcional)</Label>
-                          <Input
-                            value={newCustomerContrato}
-                            onChange={(e) => setNewCustomerContrato(e.target.value)}
-                            placeholder={activeTab === 'ppe' ? 'Ex: PPE12345 (deixe em branco para TEMP-)' : 'Ex: SP12345 (deixe em branco para TEMP-)'}
-                          />
+                          <Label className="text-xs">Contrato *</Label>
+                          <div className="flex gap-2">
+                            {activeTab === 'ppe' ? (
+                              <div className="flex items-center px-3 rounded-md border bg-muted font-mono text-sm">PPE</div>
+                            ) : (
+                              <Select value={newCustomerPrefixo} onValueChange={(v) => setNewCustomerPrefixo(v as any)}>
+                                <SelectTrigger className="w-24"><SelectValue /></SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="SP">SP</SelectItem>
+                                  <SelectItem value="PR">PR</SelectItem>
+                                  <SelectItem value="PD">PD</SelectItem>
+                                  <SelectItem value="PCI">PCI</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            )}
+                            <Input
+                              value={newCustomerContrato}
+                              onChange={(e) => setNewCustomerContrato(e.target.value.replace(/\D/g, ''))}
+                              placeholder="Somente números"
+                              inputMode="numeric"
+                              className="flex-1"
+                            />
+                          </div>
                         </div>
                         <Button
                           type="button"

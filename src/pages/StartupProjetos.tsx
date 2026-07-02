@@ -100,7 +100,7 @@ export default function StartupProjetos() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<ImplantacaoStatus | 'TODOS'>('TODOS');
   const [stageFilter, setStageFilter] = useState<'TODOS' | 'ONBOARDING' | 'OBRA' | 'PROGRAMACAO'>('TODOS');
-  const [portfolioMap, setPortfolioMap] = useState<Record<string, { mensalidade: number | null; taxa_ativacao: number | null }>>({});
+  const [portfolioMap, setPortfolioMap] = useState<Record<string, { mensalidade: number | null; taxa_ativacao: number | null; contrato: string | null }>>({});
   const [etapasMap, setEtapasMap] = useState<Record<string, ImplantacaoEtapasData>>({});
   const [pendenciasMap, setPendenciasMap] = useState<Record<string, number>>({});
   const [pendenciaFilter, setPendenciaFilter] = useState<'todas' | 'com' | 'sem'>('todas');

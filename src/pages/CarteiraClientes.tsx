@@ -138,15 +138,20 @@ export default function CarteiraClientes({ tipoCarteira = 'PCI' }: CarteiraClien
       if (error) throw error;
       const agg: Record<string, { totens: number; cameras: number }> = {};
       const perCustomer: Record<string, number> = {};
+      const perCustomerCameras: Record<string, number> = {};
       (data || []).forEach((t: any) => {
         const key = t.modelo || 'Sem modelo';
         if (!agg[key]) agg[key] = { totens: 0, cameras: 0 };
         agg[key].totens += 1;
         agg[key].cameras += Number(t.cameras) || 0;
-        if (t.customer_id) perCustomer[t.customer_id] = (perCustomer[t.customer_id] || 0) + 1;
+        if (t.customer_id) {
+          perCustomer[t.customer_id] = (perCustomer[t.customer_id] || 0) + 1;
+          perCustomerCameras[t.customer_id] = (perCustomerCameras[t.customer_id] || 0) + (Number(t.cameras) || 0);
+        }
       });
       setTotensByModel(agg);
       setTotensCountMap(perCustomer);
+      setCamerasCountMap(perCustomerCameras);
     } catch (e) {
       console.error('Error fetching totens summary', e);
     }

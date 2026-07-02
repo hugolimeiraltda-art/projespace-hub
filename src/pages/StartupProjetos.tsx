@@ -224,6 +224,56 @@ export default function StartupProjetos() {
     }
   };
 
+  const handleCreateVendedor = async () => {
+    const nome = newVendedorNome.trim();
+    const sobrenome = newVendedorSobrenome.trim();
+    if (!nome || !sobrenome) {
+      toast({ title: 'Informe nome e sobrenome', variant: 'destructive' });
+      return;
+    }
+    if (!newVendedorFilial) {
+      toast({ title: 'Selecione a filial', variant: 'destructive' });
+      return;
+    }
+    setCreatingVendedor(true);
+    try {
+      const slug = (s: string) => s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/g, '');
+      const email = `${slug(nome)}.${slug(sobrenome)}.${Date.now().toString(36)}@vendedor.local`;
+      const password = `Vend@${Math.random().toString(36).slice(2, 10)}${Math.floor(Math.random() * 900 + 100)}`;
+      const fullName = `${nome} ${sobrenome}`;
+      const { data, error } = await supabase.functions.invoke('manage-users', {
+        body: {
+          action: 'create',
+          email,
+          password,
+          nome: fullName,
+          role: 'vendedor',
+          filial: newVendedorFilial,
+        },
+      });
+      if (error) {
+        toast({ title: 'Erro ao criar vendedor', description: error.message, variant: 'destructive' });
+        return;
+      }
+      const newId = (data as any)?.userId || (data as any)?.user?.id;
+      if (newId) {
+        const newV = { id: newId, nome: fullName, email };
+        setVendedoresList(prev => [newV, ...prev].sort((a, b) => a.nome.localeCompare(b.nome)));
+        setNewObraVendedor(newId);
+      } else {
+        await fetchVendedores();
+      }
+      setShowNewVendedor(false);
+      setNewVendedorNome(''); setNewVendedorSobrenome(''); setNewVendedorFilial('');
+      toast({ title: 'Vendedor criado', description: fullName });
+    } catch (e: any) {
+      console.error('Error creating vendedor:', e);
+      toast({ title: 'Erro inesperado', description: e?.message, variant: 'destructive' });
+    } finally {
+      setCreatingVendedor(false);
+    }
+  };
+
   const handleCreateObra = async () => {
     if (!newObraNome.trim()) {
       toast({ title: 'Informe o nome do condomínio', variant: 'destructive' });

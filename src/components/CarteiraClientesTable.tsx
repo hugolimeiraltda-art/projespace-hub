@@ -50,6 +50,7 @@ interface CarteiraClientesTableProps {
   basePath?: string;
   tableName?: string;
   totensCountMap?: Record<string, number>;
+  camerasCountMap?: Record<string, number>;
 }
 
 const TABLE_COLUMNS: { key: ColumnKey; label: string; className: string; align?: 'left' | 'right' }[] = [

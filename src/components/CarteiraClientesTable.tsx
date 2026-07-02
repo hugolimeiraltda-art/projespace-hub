@@ -60,6 +60,7 @@ const TABLE_COLUMNS: { key: ColumnKey; label: string; className: string; align?:
   { key: 'filial', label: 'Filial', className: 'min-w-[80px]' },
   { key: 'tipo', label: 'Tipo de Produto', className: 'min-w-[130px]' },
   { key: 'qtd_produto', label: 'Qtd Totens', className: 'min-w-[110px] text-right', align: 'right' },
+  { key: 'qtd_cameras', label: 'Qtd Câmeras', className: 'min-w-[120px] text-right', align: 'right' },
   { key: 'data_ativacao', label: 'Início', className: 'min-w-[100px]' },
   { key: 'data_termino', label: 'Término', className: 'min-w-[100px]' },
   { key: 'taxa_ativacao', label: 'Taxa Ativação', className: 'min-w-[120px] text-right', align: 'right' },

@@ -1,4 +1,4 @@
-import { Fragment, useState, useMemo } from 'react';
+import { Fragment, useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
@@ -7,7 +7,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { ArrowUp, ArrowDown, ArrowUpDown, Filter, X, Trash2, Columns3, FileDown } from 'lucide-react';
+import { ArrowUp, ArrowDown, ArrowUpDown, Filter, X, Trash2, Columns3, FileDown, GripVertical } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { format, addMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -53,22 +53,22 @@ interface CarteiraClientesTableProps {
   camerasCountMap?: Record<string, number>;
 }
 
-const TABLE_COLUMNS: { key: ColumnKey; label: string; className: string; align?: 'left' | 'right' }[] = [
-  { key: 'contrato', label: 'Contrato', className: 'min-w-[100px]' },
-  { key: 'alarme_codigo', label: 'Código Alarme', className: 'min-w-[130px]' },
-  { key: 'razao_social', label: 'Razão Social', className: 'min-w-[200px]' },
-  { key: 'filial', label: 'Filial', className: 'min-w-[80px]' },
-  { key: 'tipo', label: 'Tipo de Produto', className: 'min-w-[130px]' },
-  { key: 'qtd_produto', label: 'Qtd Totens', className: 'min-w-[110px] text-right', align: 'right' },
-  { key: 'qtd_cameras', label: 'Qtd Câmeras', className: 'min-w-[120px] text-right', align: 'right' },
-  { key: 'data_ativacao', label: 'Início', className: 'min-w-[100px]' },
-  { key: 'data_termino', label: 'Término', className: 'min-w-[100px]' },
-  { key: 'taxa_ativacao', label: 'Taxa Ativação', className: 'min-w-[120px] text-right', align: 'right' },
-  { key: 'portoes', label: 'Portões', className: 'min-w-[80px] text-right', align: 'right' },
-  { key: 'zonas_perimetro', label: 'Zonas', className: 'min-w-[80px] text-right', align: 'right' },
-  { key: 'cameras', label: 'Câmeras', className: 'min-w-[80px] text-right', align: 'right' },
-  { key: 'mensalidade', label: 'Mensalidade', className: 'min-w-[120px] text-right', align: 'right' },
-  { key: 'endereco', label: 'Endereço', className: 'min-w-[240px]' },
+const TABLE_COLUMNS: { key: ColumnKey; label: string; align?: 'left' | 'right' }[] = [
+  { key: 'contrato', label: 'Contrato' },
+  { key: 'alarme_codigo', label: 'Código Alarme' },
+  { key: 'razao_social', label: 'Razão Social' },
+  { key: 'filial', label: 'Filial' },
+  { key: 'tipo', label: 'Tipo de Produto' },
+  { key: 'qtd_produto', label: 'Qtd Totens', align: 'right' },
+  { key: 'qtd_cameras', label: 'Qtd Câmeras', align: 'right' },
+  { key: 'data_ativacao', label: 'Início' },
+  { key: 'data_termino', label: 'Término' },
+  { key: 'taxa_ativacao', label: 'Taxa Ativação', align: 'right' },
+  { key: 'portoes', label: 'Portões', align: 'right' },
+  { key: 'zonas_perimetro', label: 'Zonas', align: 'right' },
+  { key: 'cameras', label: 'Câmeras', align: 'right' },
+  { key: 'mensalidade', label: 'Mensalidade', align: 'right' },
+  { key: 'endereco', label: 'Endereço' },
 ];
 
 const DEFAULT_VISIBLE_COLUMNS: ColumnKey[] = [
@@ -82,20 +82,83 @@ const DEFAULT_VISIBLE_COLUMNS: ColumnKey[] = [
   'mensalidade',
 ];
 
+const STORAGE_KEY = 'carteira-clientes-table-config';
+
+const DEFAULT_WIDTHS: Record<ColumnKey, number> = {
+  contrato: 110,
+  alarme_codigo: 130,
+  razao_social: 220,
+  filial: 80,
+  tipo: 140,
+  qtd_produto: 110,
+  qtd_cameras: 120,
+  data_ativacao: 110,
+  data_termino: 110,
+  taxa_ativacao: 130,
+  portoes: 85,
+  zonas_perimetro: 85,
+  cameras: 85,
+  mensalidade: 130,
+  endereco: 260,
+};
+
+function loadStoredConfig(): { order: ColumnKey[]; visible: ColumnKey[]; widths: Record<ColumnKey, number> } | null {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed.order) || !Array.isArray(parsed.visible) || typeof parsed.widths !== 'object') return null;
+    return {
+      order: parsed.order,
+      visible: parsed.visible,
+      widths: { ...DEFAULT_WIDTHS, ...parsed.widths },
+    };
+  } catch {
+    return null;
+  }
+}
+
+function saveStoredConfig(order: ColumnKey[], visible: ColumnKey[], widths: Record<ColumnKey, number>) {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ order, visible, widths }));
+  } catch {
+    // ignore storage errors
+  }
+}
+
 export function CarteiraClientesTable({ customers, onDelete, basePath = '/carteira-clientes', tableName = 'customer_portfolio', totensCountMap = {}, camerasCountMap = {} }: CarteiraClientesTableProps) {
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  const stored = loadStoredConfig();
+  const initialOrder = stored?.order ?? TABLE_COLUMNS.map((c) => c.key);
+  const initialVisible = stored?.visible ?? DEFAULT_VISIBLE_COLUMNS;
+  const initialWidths = stored?.widths ?? { ...DEFAULT_WIDTHS };
+
   const [columnFilters, setColumnFilters] = useState<ColumnFilter[]>([]);
   const [deleteCustomer, setDeleteCustomer] = useState<Customer | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [sortConfig, setSortConfig] = useState<SortConfig>({ column: '', direction: null });
   const [activeFilterColumn, setActiveFilterColumn] = useState<string | null>(null);
-  const [visibleColumns, setVisibleColumns] = useState<ColumnKey[]>(DEFAULT_VISIBLE_COLUMNS);
+  const [visibleColumns, setVisibleColumns] = useState<ColumnKey[]>(initialVisible);
+  const [columnOrder, setColumnOrder] = useState<ColumnKey[]>(initialOrder);
+  const [columnWidths, setColumnWidths] = useState<Record<ColumnKey, number>>(initialWidths);
   const [globalSearch, setGlobalSearch] = useState('');
+
+  const tableContainerRef = useRef<HTMLDivElement>(null);
+  const resizingRef = useRef<{ key: ColumnKey; startX: number; startWidth: number } | null>(null);
+
+  useEffect(() => {
+    saveStoredConfig(columnOrder, visibleColumns, columnWidths);
+  }, [columnOrder, visibleColumns, columnWidths]);
 
   const isColumnVisible = (column: ColumnKey) => visibleColumns.includes(column);
   const visibleColumnCount = visibleColumns.length + 1;
   const footerLabelColSpan = isColumnVisible('mensalidade') ? Math.max(1, visibleColumnCount - 1) : visibleColumnCount;
+
+  const orderedVisibleColumns = useMemo(() => {
+    return columnOrder.filter((key) => visibleColumns.includes(key));
+  }, [columnOrder, visibleColumns]);
 
   const toggleColumn = (column: ColumnKey) => {
     setVisibleColumns((prev) => {
@@ -106,7 +169,58 @@ export function CarteiraClientesTable({ customers, onDelete, basePath = '/cartei
     });
   };
 
-  const resetColumns = () => setVisibleColumns(TABLE_COLUMNS.map((column) => column.key));
+  const resetColumns = () => {
+    setVisibleColumns(TABLE_COLUMNS.map((column) => column.key));
+    setColumnOrder(TABLE_COLUMNS.map((c) => c.key));
+    setColumnWidths({ ...DEFAULT_WIDTHS });
+  };
+
+  // Drag & drop reordering helpers
+  const moveColumn = useCallback((fromKey: ColumnKey, toKey: ColumnKey) => {
+    if (fromKey === toKey) return;
+    setColumnOrder((prev) => {
+      const fromIndex = prev.indexOf(fromKey);
+      const toIndex = prev.indexOf(toKey);
+      if (fromIndex === -1 || toIndex === -1) return prev;
+      const next = [...prev];
+      next.splice(fromIndex, 1);
+      next.splice(toIndex, 0, fromKey);
+      return next;
+    });
+  }, []);
+
+  // Resize helpers
+  const startResize = useCallback((key: ColumnKey, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    resizingRef.current = { key, startX: e.clientX, startWidth: columnWidths[key] };
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+  }, [columnWidths]);
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!resizingRef.current) return;
+      const { key, startX, startWidth } = resizingRef.current;
+      const delta = e.clientX - startX;
+      const newWidth = Math.max(60, startWidth + delta);
+      setColumnWidths((prev) => ({ ...prev, [key]: newWidth }));
+    };
+
+    const handleMouseUp = () => {
+      if (!resizingRef.current) return;
+      resizingRef.current = null;
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, []);
 
   const formatDate = (dateString: string | null) => {
     if (!dateString) return '-';
@@ -235,7 +349,7 @@ export function CarteiraClientesTable({ customers, onDelete, basePath = '/cartei
           case 'qtd_cameras': return (camerasCountMap[c.id] || 0).toString().includes(filter.value);
           case 'data_ativacao': return formatDate(c.data_ativacao).includes(filter.value);
           case 'data_termino': return calculateTermino(c).includes(filter.value);
-          case 'taxa_ativacao': 
+          case 'taxa_ativacao':
             if (!c.taxa_ativacao) return filter.value === '-' || filter.value === '';
             return c.taxa_ativacao.toString().includes(filter.value);
           case 'portoes': return c.portoes.toString().includes(filter.value);
@@ -339,7 +453,7 @@ export function CarteiraClientesTable({ customers, onDelete, basePath = '/cartei
     }
 
     return result;
-  }, [customers, columnFilters, sortConfig, globalSearch, totensCountMap]);
+  }, [customers, columnFilters, sortConfig, globalSearch, totensCountMap, camerasCountMap]);
 
   const renderColumnHeader = (column: string, label: string, align: 'left' | 'right' = 'left') => {
     const hasActiveFilter = hasFilter(column);
@@ -406,6 +520,8 @@ export function CarteiraClientesTable({ customers, onDelete, basePath = '/cartei
     );
   };
 
+  const getColumnDef = (key: ColumnKey) => TABLE_COLUMNS.find((c) => c.key === key)!;
+
   const renderCell = (customer: Customer, column: ColumnKey) => {
     switch (column) {
       case 'contrato':
@@ -467,6 +583,14 @@ export function CarteiraClientesTable({ customers, onDelete, basePath = '/cartei
     toast({ title: 'Exportado!', description: `${rows.length} cliente(s) exportado(s) para Excel.` });
   };
 
+  // Drag state for header reordering
+  const [dragOverKey, setDragOverKey] = useState<ColumnKey | null>(null);
+  const [dragFromKey, setDragFromKey] = useState<ColumnKey | null>(null);
+
+  // Drag state for popover reordering
+  const [popoverDragOver, setPopoverDragOver] = useState<ColumnKey | null>(null);
+  const [popoverDragFrom, setPopoverDragFrom] = useState<ColumnKey | null>(null);
+
   return (
     <div className="space-y-2">
       <div className="flex justify-end items-center gap-2">
@@ -487,17 +611,38 @@ export function CarteiraClientesTable({ customers, onDelete, basePath = '/cartei
               Colunas
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-64 p-3" align="end">
+          <PopoverContent className="w-72 p-3" align="end">
             <div className="space-y-3">
               <div className="flex items-center justify-between gap-2">
-                <span className="text-sm font-medium">Exibir colunas</span>
-                <Button variant="ghost" size="sm" onClick={resetColumns}>Todas</Button>
+                <span className="text-sm font-medium">Exibir e ordenar colunas</span>
+                <Button variant="ghost" size="sm" onClick={resetColumns}>Padrão</Button>
               </div>
-              <div className="space-y-2">
+              <div className="text-xs text-muted-foreground">
+                Arraste as linhas para reordenar. Marque para exibir/ocultar.
+              </div>
+              <div className="space-y-1">
                 {TABLE_COLUMNS.map((column) => (
-                  <label key={column.key} className="flex cursor-pointer items-center gap-2 text-sm">
+                  <label
+                    key={column.key}
+                    className="flex cursor-pointer items-center gap-2 text-sm rounded px-1 py-1 transition-colors hover:bg-accent"
+                    draggable
+                    onDragStart={() => setPopoverDragFrom(column.key)}
+                    onDragEnd={() => {
+                      if (popoverDragFrom && popoverDragOver && popoverDragFrom !== popoverDragOver) {
+                        moveColumn(popoverDragFrom, popoverDragOver);
+                      }
+                      setPopoverDragFrom(null);
+                      setPopoverDragOver(null);
+                    }}
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      setPopoverDragOver(column.key);
+                    }}
+                    style={popoverDragOver === column.key && popoverDragFrom !== column.key ? { borderTop: '2px solid hsl(var(--primary))' } : undefined}
+                  >
+                    <GripVertical className="h-3.5 w-3.5 text-muted-foreground shrink-0 cursor-grab" />
                     <Checkbox checked={isColumnVisible(column.key)} onCheckedChange={() => toggleColumn(column.key)} />
-                    <span>{column.label}</span>
+                    <span className="flex-1">{column.label}</span>
                   </label>
                 ))}
               </div>
@@ -527,14 +672,43 @@ export function CarteiraClientesTable({ customers, onDelete, basePath = '/cartei
         </div>
       )}
 
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto" ref={tableContainerRef}>
         <Table>
           <TableHeader>
             <TableRow className="bg-muted/30">
               <TableHead className="w-[40px]"></TableHead>
-              {TABLE_COLUMNS.filter((column) => isColumnVisible(column.key)).map((column) => (
-                <TableHead key={column.key} className={column.className}>{renderColumnHeader(column.key, column.label, column.align)}</TableHead>
-              ))}
+              {orderedVisibleColumns.map((key) => {
+                const col = getColumnDef(key);
+                return (
+                  <TableHead
+                    key={key}
+                    className="relative select-none"
+                    style={{ width: columnWidths[key], minWidth: 60 }}
+                    draggable
+                    onDragStart={() => setDragFromKey(key)}
+                    onDragEnd={() => {
+                      if (dragFromKey && dragOverKey && dragFromKey !== dragOverKey) {
+                        moveColumn(dragFromKey, dragOverKey);
+                      }
+                      setDragFromKey(null);
+                      setDragOverKey(null);
+                    }}
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      setDragOverKey(key);
+                    }}
+                  >
+                    <div className={dragOverKey === key && dragFromKey !== key ? 'border-t-2 border-primary' : ''}>
+                      {renderColumnHeader(col.key, col.label, col.align)}
+                    </div>
+                    {/* Resize handle */}
+                    <div
+                      className="absolute top-0 right-0 h-full w-[4px] cursor-col-resize z-10 hover:bg-primary/20 active:bg-primary/40"
+                      onMouseDown={(e) => startResize(key, e)}
+                    />
+                  </TableHead>
+                );
+              })}
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -546,8 +720,8 @@ export function CarteiraClientesTable({ customers, onDelete, basePath = '/cartei
               </TableRow>
             ) : (
               filteredAndSortedCustomers.map((customer) => (
-                <TableRow 
-                  key={customer.id} 
+                <TableRow
+                  key={customer.id}
                   className="cursor-pointer hover:bg-muted/50"
                   onClick={() => navigate(`${basePath}/${customer.id}`)}
                 >
@@ -564,8 +738,34 @@ export function CarteiraClientesTable({ customers, onDelete, basePath = '/cartei
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </TableCell>
-                  {TABLE_COLUMNS.filter((column) => isColumnVisible(column.key)).map((column) => (
-                    <Fragment key={column.key}>{renderCell(customer, column.key)}</Fragment>
+                  {orderedVisibleColumns.map((key) => (
+                    <Fragment key={key}>
+                      <TableCell
+                        style={{ width: columnWidths[key], minWidth: 60 }}
+                        className={getColumnDef(key).align === 'right' ? 'text-right' : ''}
+                      >
+                        {(() => {
+                          switch (key) {
+                            case 'contrato': return <span className="font-medium text-primary hover:underline">{customer.contrato}</span>;
+                            case 'alarme_codigo': return customer.alarme_codigo || '-';
+                            case 'razao_social': return <span className="truncate text-primary hover:underline">{customer.razao_social}</span>;
+                            case 'filial': return customer.filial || '-';
+                            case 'tipo': return customer.tipo || '-';
+                            case 'qtd_produto': return totensCountMap[customer.id] || 0;
+                            case 'qtd_cameras': return camerasCountMap[customer.id] || 0;
+                            case 'data_ativacao': return formatDate(customer.data_ativacao);
+                            case 'data_termino': return calculateTermino(customer);
+                            case 'taxa_ativacao': return customer.taxa_ativacao ? `R$ ${customer.taxa_ativacao.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '-';
+                            case 'portoes': return customer.portoes;
+                            case 'zonas_perimetro': return customer.zonas_perimetro;
+                            case 'cameras': return customer.cameras;
+                            case 'mensalidade': return customer.mensalidade ? `R$ ${customer.mensalidade.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '-';
+                            case 'endereco': return <span className="truncate" title={customer.endereco || ''}>{customer.endereco || '-'}</span>;
+                            default: return '-';
+                          }
+                        })()}
+                      </TableCell>
+                    </Fragment>
                   ))}
                 </TableRow>
               ))

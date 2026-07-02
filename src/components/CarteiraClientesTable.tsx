@@ -420,6 +420,8 @@ export function CarteiraClientesTable({ customers, onDelete, basePath = '/cartei
         return <TableCell>{customer.tipo || '-'}</TableCell>;
       case 'qtd_produto':
         return <TableCell className="text-right">{totensCountMap[customer.id] || 0}</TableCell>;
+      case 'qtd_cameras':
+        return <TableCell className="text-right">{camerasCountMap[customer.id] || 0}</TableCell>;
       case 'data_ativacao':
         return <TableCell>{formatDate(customer.data_ativacao)}</TableCell>;
       case 'data_termino':

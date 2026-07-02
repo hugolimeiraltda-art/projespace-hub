@@ -133,6 +133,12 @@ export default function StartupProjetos() {
   const [newCustomerContrato, setNewCustomerContrato] = useState('');
   const [newCustomerPrefixo, setNewCustomerPrefixo] = useState<'SP' | 'PR' | 'PD' | 'PCI'>('SP');
   const [creatingCustomer, setCreatingCustomer] = useState(false);
+  const [vendedorSearch, setVendedorSearch] = useState('');
+  const [showNewVendedor, setShowNewVendedor] = useState(false);
+  const [newVendedorNome, setNewVendedorNome] = useState('');
+  const [newVendedorSobrenome, setNewVendedorSobrenome] = useState('');
+  const [newVendedorFilial, setNewVendedorFilial] = useState<string>('');
+  const [creatingVendedor, setCreatingVendedor] = useState(false);
 
   useEffect(() => {
     fetchProjects();

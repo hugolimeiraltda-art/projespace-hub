@@ -340,12 +340,32 @@ export default function StartupProjetos() {
           tipo_obra: newObraTipo,
           tipo_implantacao: activeTab === 'ppe' ? 'PPE' : 'PCI',
         })
-        .select('id')
+        .select('id, numero_projeto')
         .single();
 
       if (error) {
         toast({ title: 'Erro ao criar obra', description: error.message, variant: 'destructive' });
         return;
+      }
+
+      // Ensure PPE projects appear immediately in the PPE customer portfolio
+      // with status "Implantação" (sistema = 'EM_IMPLANTACAO').
+      if (activeTab === 'ppe' && newProject) {
+        const selectedCustomer = customersList.find(c => c.id === selectedCustomerId);
+        const contrato = selectedCustomer?.contrato || `TEMP-PPE-${newProject.numero_projeto}`;
+        const enderecoCompleto = [newObraEndereco.trim(), newObraCidade.trim(), newObraEstado].filter(Boolean).join(', ');
+        const filialFromUF: Record<string, string> = { SP: 'SPO', MG: 'BHZ', ES: 'VIX', RJ: 'RJO' };
+        const { error: ppeErr } = await supabase.from('ppe_customers').insert({
+          contrato,
+          razao_social: newObraNome.trim(),
+          endereco: enderecoCompleto || null,
+          filial: selectedCustomer?.filial || filialFromUF[newObraEstado] || null,
+          project_id: newProject.id,
+          sistema: 'EM_IMPLANTACAO',
+        });
+        if (ppeErr) {
+          console.error('Error inserting into ppe_customers:', ppeErr);
+        }
       }
 
       toast({ title: 'Obra cadastrada com sucesso!' });

@@ -1,4 +1,4 @@
-import { Fragment, useState, useMemo } from 'react';
+import { Fragment, useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
@@ -7,7 +7,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { ArrowUp, ArrowDown, ArrowUpDown, Filter, X, Trash2, Columns3, FileDown } from 'lucide-react';
+import { ArrowUp, ArrowDown, ArrowUpDown, Filter, X, Trash2, Columns3, FileDown, GripVertical } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { format, addMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -53,22 +53,22 @@ interface CarteiraClientesTableProps {
   camerasCountMap?: Record<string, number>;
 }
 
-const TABLE_COLUMNS: { key: ColumnKey; label: string; className: string; align?: 'left' | 'right' }[] = [
-  { key: 'contrato', label: 'Contrato', className: 'min-w-[100px]' },
-  { key: 'alarme_codigo', label: 'Código Alarme', className: 'min-w-[130px]' },
-  { key: 'razao_social', label: 'Razão Social', className: 'min-w-[200px]' },
-  { key: 'filial', label: 'Filial', className: 'min-w-[80px]' },
-  { key: 'tipo', label: 'Tipo de Produto', className: 'min-w-[130px]' },
-  { key: 'qtd_produto', label: 'Qtd Totens', className: 'min-w-[110px] text-right', align: 'right' },
-  { key: 'qtd_cameras', label: 'Qtd Câmeras', className: 'min-w-[120px] text-right', align: 'right' },
-  { key: 'data_ativacao', label: 'Início', className: 'min-w-[100px]' },
-  { key: 'data_termino', label: 'Término', className: 'min-w-[100px]' },
-  { key: 'taxa_ativacao', label: 'Taxa Ativação', className: 'min-w-[120px] text-right', align: 'right' },
-  { key: 'portoes', label: 'Portões', className: 'min-w-[80px] text-right', align: 'right' },
-  { key: 'zonas_perimetro', label: 'Zonas', className: 'min-w-[80px] text-right', align: 'right' },
-  { key: 'cameras', label: 'Câmeras', className: 'min-w-[80px] text-right', align: 'right' },
-  { key: 'mensalidade', label: 'Mensalidade', className: 'min-w-[120px] text-right', align: 'right' },
-  { key: 'endereco', label: 'Endereço', className: 'min-w-[240px]' },
+const TABLE_COLUMNS: { key: ColumnKey; label: string; align?: 'left' | 'right' }[] = [
+  { key: 'contrato', label: 'Contrato' },
+  { key: 'alarme_codigo', label: 'Código Alarme' },
+  { key: 'razao_social', label: 'Razão Social' },
+  { key: 'filial', label: 'Filial' },
+  { key: 'tipo', label: 'Tipo de Produto' },
+  { key: 'qtd_produto', label: 'Qtd Totens', align: 'right' },
+  { key: 'qtd_cameras', label: 'Qtd Câmeras', align: 'right' },
+  { key: 'data_ativacao', label: 'Início' },
+  { key: 'data_termino', label: 'Término' },
+  { key: 'taxa_ativacao', label: 'Taxa Ativação', align: 'right' },
+  { key: 'portoes', label: 'Portões', align: 'right' },
+  { key: 'zonas_perimetro', label: 'Zonas', align: 'right' },
+  { key: 'cameras', label: 'Câmeras', align: 'right' },
+  { key: 'mensalidade', label: 'Mensalidade', align: 'right' },
+  { key: 'endereco', label: 'Endereço' },
 ];
 
 const DEFAULT_VISIBLE_COLUMNS: ColumnKey[] = [
@@ -81,6 +81,33 @@ const DEFAULT_VISIBLE_COLUMNS: ColumnKey[] = [
   'data_ativacao',
   'mensalidade',
 ];
+
+const STORAGE_KEY = 'carteira-clientes-table-config';
+
+interface StoredColumnConfig {
+  order: ColumnKey[];
+  visible: ColumnKey[];
+  widths: Record<ColumnKey, number>;
+}
+
+const DEFAULT_ORDER: ColumnKey[] = TABLE_COLUMNS.map((c) => c.key);
+const DEFAULT_WIDTHS: Record<ColumnKey, number> = {
+  contrato: 110,
+  alarme_codigo: 130,
+  razao_social: 220,
+  filial: 80,
+  tipo: 140,
+  qtd_produto: 110,
+  qtd_cameras: 120,
+  data_ativacao: 110,
+  data_termino: 110,
+  taxa_ativacao: 130,
+  portoes: 85,
+  zonas_perimetro: 85,
+  cameras: 85,
+  mensalidade: 130,
+  endereco: 260,
+};
 
 export function CarteiraClientesTable({ customers, onDelete, basePath = '/carteira-clientes', tableName = 'customer_portfolio', totensCountMap = {}, camerasCountMap = {} }: CarteiraClientesTableProps) {
   const navigate = useNavigate();

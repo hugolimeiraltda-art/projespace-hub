@@ -37,7 +37,7 @@ interface ColumnFilter {
 }
 
 type SortDirection = 'asc' | 'desc' | null;
-type ColumnKey = 'contrato' | 'alarme_codigo' | 'razao_social' | 'filial' | 'tipo' | 'qtd_produto' | 'data_ativacao' | 'data_termino' | 'taxa_ativacao' | 'portoes' | 'zonas_perimetro' | 'cameras' | 'mensalidade' | 'endereco';
+type ColumnKey = 'contrato' | 'alarme_codigo' | 'razao_social' | 'filial' | 'tipo' | 'qtd_produto' | 'qtd_cameras' | 'data_ativacao' | 'data_termino' | 'taxa_ativacao' | 'portoes' | 'zonas_perimetro' | 'cameras' | 'mensalidade' | 'endereco';
 
 interface SortConfig {
   column: string;
@@ -50,6 +50,7 @@ interface CarteiraClientesTableProps {
   basePath?: string;
   tableName?: string;
   totensCountMap?: Record<string, number>;
+  camerasCountMap?: Record<string, number>;
 }
 
 const TABLE_COLUMNS: { key: ColumnKey; label: string; className: string; align?: 'left' | 'right' }[] = [
@@ -59,6 +60,7 @@ const TABLE_COLUMNS: { key: ColumnKey; label: string; className: string; align?:
   { key: 'filial', label: 'Filial', className: 'min-w-[80px]' },
   { key: 'tipo', label: 'Tipo de Produto', className: 'min-w-[130px]' },
   { key: 'qtd_produto', label: 'Qtd Totens', className: 'min-w-[110px] text-right', align: 'right' },
+  { key: 'qtd_cameras', label: 'Qtd Câmeras', className: 'min-w-[120px] text-right', align: 'right' },
   { key: 'data_ativacao', label: 'Início', className: 'min-w-[100px]' },
   { key: 'data_termino', label: 'Término', className: 'min-w-[100px]' },
   { key: 'taxa_ativacao', label: 'Taxa Ativação', className: 'min-w-[120px] text-right', align: 'right' },
@@ -80,7 +82,7 @@ const DEFAULT_VISIBLE_COLUMNS: ColumnKey[] = [
   'mensalidade',
 ];
 
-export function CarteiraClientesTable({ customers, onDelete, basePath = '/carteira-clientes', tableName = 'customer_portfolio', totensCountMap = {} }: CarteiraClientesTableProps) {
+export function CarteiraClientesTable({ customers, onDelete, basePath = '/carteira-clientes', tableName = 'customer_portfolio', totensCountMap = {}, camerasCountMap = {} }: CarteiraClientesTableProps) {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [columnFilters, setColumnFilters] = useState<ColumnFilter[]>([]);
@@ -230,6 +232,7 @@ export function CarteiraClientesTable({ customers, onDelete, basePath = '/cartei
           case 'filial': return (c.filial || '-').toLowerCase().includes(filterLower);
           case 'tipo': return (c.tipo || '-').toLowerCase().includes(filterLower);
           case 'qtd_produto': return (totensCountMap[c.id] || 0).toString().includes(filter.value);
+          case 'qtd_cameras': return (camerasCountMap[c.id] || 0).toString().includes(filter.value);
           case 'data_ativacao': return formatDate(c.data_ativacao).includes(filter.value);
           case 'data_termino': return calculateTermino(c).includes(filter.value);
           case 'taxa_ativacao': 
@@ -277,6 +280,10 @@ export function CarteiraClientesTable({ customers, onDelete, basePath = '/cartei
           case 'qtd_produto':
             aValue = totensCountMap[a.id] || 0;
             bValue = totensCountMap[b.id] || 0;
+            break;
+          case 'qtd_cameras':
+            aValue = camerasCountMap[a.id] || 0;
+            bValue = camerasCountMap[b.id] || 0;
             break;
           case 'data_ativacao':
             aValue = a.data_ativacao ? new Date(a.data_ativacao).getTime() : 0;
@@ -413,6 +420,8 @@ export function CarteiraClientesTable({ customers, onDelete, basePath = '/cartei
         return <TableCell>{customer.tipo || '-'}</TableCell>;
       case 'qtd_produto':
         return <TableCell className="text-right">{totensCountMap[customer.id] || 0}</TableCell>;
+      case 'qtd_cameras':
+        return <TableCell className="text-right">{camerasCountMap[customer.id] || 0}</TableCell>;
       case 'data_ativacao':
         return <TableCell>{formatDate(customer.data_ativacao)}</TableCell>;
       case 'data_termino':
@@ -440,6 +449,7 @@ export function CarteiraClientesTable({ customers, onDelete, basePath = '/cartei
       Filial: c.filial || '',
       'Tipo de Produto': c.tipo || '',
       'Qtd Totens': totensCountMap[c.id] || 0,
+      'Qtd Câmeras': camerasCountMap[c.id] || 0,
       'Início': formatDate(c.data_ativacao),
       'Término': calculateTermino(c),
       'Taxa Ativação': c.taxa_ativacao || 0,

@@ -112,6 +112,7 @@ export default function CarteiraClientes({ tipoCarteira = 'PCI' }: CarteiraClien
   const [loading, setLoading] = useState(true);
   const [totensByModel, setTotensByModel] = useState<Record<string, { totens: number; cameras: number }>>({});
   const [totensCountMap, setTotensCountMap] = useState<Record<string, number>>({});
+  const [camerasCountMap, setCamerasCountMap] = useState<Record<string, number>>({});
   
   const [dialogOpen, setDialogOpen] = useState(false);
   const [form, setForm] = useState(EMPTY_FORM);
@@ -137,15 +138,20 @@ export default function CarteiraClientes({ tipoCarteira = 'PCI' }: CarteiraClien
       if (error) throw error;
       const agg: Record<string, { totens: number; cameras: number }> = {};
       const perCustomer: Record<string, number> = {};
+      const perCustomerCameras: Record<string, number> = {};
       (data || []).forEach((t: any) => {
         const key = t.modelo || 'Sem modelo';
         if (!agg[key]) agg[key] = { totens: 0, cameras: 0 };
         agg[key].totens += 1;
         agg[key].cameras += Number(t.cameras) || 0;
-        if (t.customer_id) perCustomer[t.customer_id] = (perCustomer[t.customer_id] || 0) + 1;
+        if (t.customer_id) {
+          perCustomer[t.customer_id] = (perCustomer[t.customer_id] || 0) + 1;
+          perCustomerCameras[t.customer_id] = (perCustomerCameras[t.customer_id] || 0) + (Number(t.cameras) || 0);
+        }
       });
       setTotensByModel(agg);
       setTotensCountMap(perCustomer);
+      setCamerasCountMap(perCustomerCameras);
     } catch (e) {
       console.error('Error fetching totens summary', e);
     }
@@ -1066,7 +1072,7 @@ export default function CarteiraClientes({ tipoCarteira = 'PCI' }: CarteiraClien
                 <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
               </div>
             ) : (
-              <CarteiraClientesTable customers={customers} onDelete={fetchCustomers} basePath={basePath} tableName={dataTable} totensCountMap={totensCountMap} />
+              <CarteiraClientesTable customers={customers} onDelete={fetchCustomers} basePath={basePath} tableName={dataTable} totensCountMap={totensCountMap} camerasCountMap={camerasCountMap} />
             )}
           </CardContent>
         </Card>

@@ -133,6 +133,12 @@ export default function StartupProjetos() {
   const [newCustomerContrato, setNewCustomerContrato] = useState('');
   const [newCustomerPrefixo, setNewCustomerPrefixo] = useState<'SP' | 'PR' | 'PD' | 'PCI'>('SP');
   const [creatingCustomer, setCreatingCustomer] = useState(false);
+  const [vendedorSearch, setVendedorSearch] = useState('');
+  const [showNewVendedor, setShowNewVendedor] = useState(false);
+  const [newVendedorNome, setNewVendedorNome] = useState('');
+  const [newVendedorSobrenome, setNewVendedorSobrenome] = useState('');
+  const [newVendedorFilial, setNewVendedorFilial] = useState<string>('');
+  const [creatingVendedor, setCreatingVendedor] = useState(false);
 
   useEffect(() => {
     fetchProjects();
@@ -215,6 +221,56 @@ export default function StartupProjetos() {
       toast({ title: 'Erro inesperado', variant: 'destructive' });
     } finally {
       setCreatingCustomer(false);
+    }
+  };
+
+  const handleCreateVendedor = async () => {
+    const nome = newVendedorNome.trim();
+    const sobrenome = newVendedorSobrenome.trim();
+    if (!nome || !sobrenome) {
+      toast({ title: 'Informe nome e sobrenome', variant: 'destructive' });
+      return;
+    }
+    if (!newVendedorFilial) {
+      toast({ title: 'Selecione a filial', variant: 'destructive' });
+      return;
+    }
+    setCreatingVendedor(true);
+    try {
+      const slug = (s: string) => s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/g, '');
+      const email = `${slug(nome)}.${slug(sobrenome)}.${Date.now().toString(36)}@vendedor.local`;
+      const password = `Vend@${Math.random().toString(36).slice(2, 10)}${Math.floor(Math.random() * 900 + 100)}`;
+      const fullName = `${nome} ${sobrenome}`;
+      const { data, error } = await supabase.functions.invoke('manage-users', {
+        body: {
+          action: 'create',
+          email,
+          password,
+          nome: fullName,
+          role: 'vendedor',
+          filial: newVendedorFilial,
+        },
+      });
+      if (error) {
+        toast({ title: 'Erro ao criar vendedor', description: error.message, variant: 'destructive' });
+        return;
+      }
+      const newId = (data as any)?.userId || (data as any)?.user?.id;
+      if (newId) {
+        const newV = { id: newId, nome: fullName, email };
+        setVendedoresList(prev => [newV, ...prev].sort((a, b) => a.nome.localeCompare(b.nome)));
+        setNewObraVendedor(newId);
+      } else {
+        await fetchVendedores();
+      }
+      setShowNewVendedor(false);
+      setNewVendedorNome(''); setNewVendedorSobrenome(''); setNewVendedorFilial('');
+      toast({ title: 'Vendedor criado', description: fullName });
+    } catch (e: any) {
+      console.error('Error creating vendedor:', e);
+      toast({ title: 'Erro inesperado', description: e?.message, variant: 'destructive' });
+    } finally {
+      setCreatingVendedor(false);
     }
   };
 
@@ -753,14 +809,70 @@ export default function StartupProjetos() {
                   </div>
 
                   <div>
-                    <Label>Vendedor Responsável *</Label>
-                    <Select value={newObraVendedor} onValueChange={setNewObraVendedor}>
-                      <SelectTrigger><SelectValue placeholder="Selecione o vendedor" /></SelectTrigger>
-                      <SelectContent>
-                        {vendedoresList.map(v => <SelectItem key={v.id} value={v.id}>{v.nome}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
+                    <div className="flex items-center justify-between mb-1">
+                      <Label>Vendedor Responsável *</Label>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 px-2 text-xs text-primary"
+                        onClick={() => setShowNewVendedor(v => !v)}
+                      >
+                        <Plus className="h-3 w-3 mr-1" />
+                        {showNewVendedor ? 'Cancelar' : 'Novo Vendedor'}
+                      </Button>
+                    </div>
+                    {showNewVendedor ? (
+                      <div className="border rounded-md p-3 space-y-2 bg-muted/30">
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <Label className="text-xs">Nome *</Label>
+                            <Input value={newVendedorNome} onChange={e => setNewVendedorNome(e.target.value)} placeholder="Nome" />
+                          </div>
+                          <div>
+                            <Label className="text-xs">Sobrenome *</Label>
+                            <Input value={newVendedorSobrenome} onChange={e => setNewVendedorSobrenome(e.target.value)} placeholder="Sobrenome" />
+                          </div>
+                        </div>
+                        <div>
+                          <Label className="text-xs">Filial *</Label>
+                          <Select value={newVendedorFilial} onValueChange={setNewVendedorFilial}>
+                            <SelectTrigger><SelectValue placeholder="Selecione a filial" /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="SPO">SPO - São Paulo</SelectItem>
+                              <SelectItem value="BHZ">BHZ - Belo Horizonte</SelectItem>
+                              <SelectItem value="VIX">VIX - Vitória</SelectItem>
+                              <SelectItem value="RJO">RJO - Rio de Janeiro</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <Button type="button" size="sm" onClick={handleCreateVendedor} disabled={creatingVendedor} className="w-full">
+                          {creatingVendedor ? <><Loader2 className="mr-2 h-3 w-3 animate-spin" />Criando vendedor...</> : 'Criar Vendedor'}
+                        </Button>
+                      </div>
+                    ) : (
+                      <Select value={newObraVendedor} onValueChange={setNewObraVendedor}>
+                        <SelectTrigger><SelectValue placeholder="Selecione o vendedor" /></SelectTrigger>
+                        <SelectContent>
+                          <div className="p-2">
+                            <Input
+                              placeholder="Buscar vendedor..."
+                              value={vendedorSearch}
+                              onChange={(e) => setVendedorSearch(e.target.value)}
+                              className="mb-2"
+                              onClick={(e) => e.stopPropagation()}
+                              onKeyDown={(e) => e.stopPropagation()}
+                            />
+                          </div>
+                          {vendedoresList
+                            .filter(v => !vendedorSearch || v.nome.toLowerCase().includes(vendedorSearch.toLowerCase()) || v.email.toLowerCase().includes(vendedorSearch.toLowerCase()))
+                            .slice(0, 100)
+                            .map(v => <SelectItem key={v.id} value={v.id}>{v.nome}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    )}
                   </div>
+
                   <Button onClick={handleCreateObra} disabled={creatingObra} className="w-full">
                     {creatingObra ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Criando...</> : 'Cadastrar Obra'}
                   </Button>

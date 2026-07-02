@@ -137,7 +137,7 @@ export async function generateEquipamentosExcel(data: PropostaData) {
   if (data.itens) {
     summaryRows.push({ 'Campo': '', 'Valor': '' });
     summaryRows.push({ 'Campo': 'Mensalidade (Locação)', 'Valor': `R$ ${(data.itens.mensalidade_total || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` });
-    summaryRows.push({ 'Campo': 'Taxa de Instalação', 'Valor': `R$ ${(data.itens.taxa_conexao_total || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` });
+    summaryRows.push({ 'Campo': 'Vendido', 'Valor': `R$ ${(data.itens.taxa_conexao_total || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` });
     summaryRows.push({ 'Campo': 'Parcela (até 10x)', 'Valor': `R$ ${((data.itens.taxa_conexao_total || 0) / 10).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` });
   }
   const ws2 = XLSX.utils.json_to_sheet(summaryRows);

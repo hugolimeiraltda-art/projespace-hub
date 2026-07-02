@@ -128,7 +128,7 @@ const TEMPLATES: Record<string, (v: Record<string, string>) => { subject: string
         ${v.endereco ? `<p style="margin:4px 0;color:#374151;font-size:14px;"><strong>Endereço:</strong> ${escapeHtml(v.endereco)}</p>` : ''}
         ${v.qtd_ambientes ? `<p style="margin:4px 0;color:#374151;font-size:14px;"><strong>Ambientes:</strong> ${escapeHtml(v.qtd_ambientes)}</p>` : ''}
         ${v.mensalidade ? `<p style="margin:4px 0;color:#374151;font-size:14px;"><strong>Mensalidade:</strong> R$ ${escapeHtml(v.mensalidade)}</p>` : ''}
-        ${v.taxa_instalacao ? `<p style="margin:4px 0;color:#374151;font-size:14px;"><strong>Taxa de Instalação:</strong> R$ ${escapeHtml(v.taxa_instalacao)}</p>` : ''}
+        ${v.taxa_instalacao ? `<p style="margin:4px 0;color:#374151;font-size:14px;"><strong>Vendido:</strong> R$ ${escapeHtml(v.taxa_instalacao)}</p>` : ''}
       </div>
       <p style="color:#374151;font-size:14px;">Acesse o sistema para visualizar o detalhamento completo, baixar o PDF ou a planilha de equipamentos.</p>
       <div style="text-align:center;margin:24px 0;">

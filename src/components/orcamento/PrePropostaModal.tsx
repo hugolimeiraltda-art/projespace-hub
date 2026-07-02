@@ -385,7 +385,7 @@ export default function PrePropostaModal({ open, onClose, initialData, onConfirm
                   </div>
                   <Separator orientation="vertical" className="hidden sm:block" />
                   <div>
-                    <p className="text-xs text-muted-foreground">Taxa de Instalação Estimada</p>
+                    <p className="text-xs text-muted-foreground">Vendido Estimado</p>
                     <p className="text-xl font-bold text-foreground">
                       {formatBRL(totals.instalacao)}
                     </p>

@@ -666,12 +666,29 @@ export default function StartupProjetos() {
                           Será criado um cliente na carteira {activeTab === 'ppe' ? 'PPE' : 'PCI'} com o nome, endereço, cidade e estado informados acima.
                         </p>
                         <div>
-                          <Label className="text-xs">Contrato (opcional)</Label>
-                          <Input
-                            value={newCustomerContrato}
-                            onChange={(e) => setNewCustomerContrato(e.target.value)}
-                            placeholder={activeTab === 'ppe' ? 'Ex: PPE12345 (deixe em branco para TEMP-)' : 'Ex: SP12345 (deixe em branco para TEMP-)'}
-                          />
+                          <Label className="text-xs">Contrato *</Label>
+                          <div className="flex gap-2">
+                            {activeTab === 'ppe' ? (
+                              <div className="flex items-center px-3 rounded-md border bg-muted font-mono text-sm">PPE</div>
+                            ) : (
+                              <Select value={newCustomerPrefixo} onValueChange={(v) => setNewCustomerPrefixo(v as any)}>
+                                <SelectTrigger className="w-24"><SelectValue /></SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="SP">SP</SelectItem>
+                                  <SelectItem value="PR">PR</SelectItem>
+                                  <SelectItem value="PD">PD</SelectItem>
+                                  <SelectItem value="PCI">PCI</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            )}
+                            <Input
+                              value={newCustomerContrato}
+                              onChange={(e) => setNewCustomerContrato(e.target.value.replace(/\D/g, ''))}
+                              placeholder="Somente números"
+                              inputMode="numeric"
+                              className="flex-1"
+                            />
+                          </div>
                         </div>
                         <Button
                           type="button"

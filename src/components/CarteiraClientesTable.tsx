@@ -75,6 +75,7 @@ const DEFAULT_VISIBLE_COLUMNS: ColumnKey[] = [
   'razao_social',
   'filial',
   'tipo',
+  'qtd_produto',
   'data_ativacao',
   'mensalidade',
 ];

@@ -177,24 +177,13 @@ export default function StartupProjetos() {
       return;
     }
     const tipoCarteira = activeTab === 'ppe' ? 'PPE' : 'PCI';
-    let contrato = newCustomerContrato.trim();
-    if (!contrato) {
-      contrato = `TEMP-${Date.now()}`;
-    } else {
-      const upper = contrato.toUpperCase();
-      const validPPE = tipoCarteira === 'PPE' && upper.startsWith('PPE');
-      const validPCI = tipoCarteira === 'PCI' && (upper.startsWith('SP') || upper.startsWith('PR') || upper.startsWith('PD') || upper.startsWith('PCI'));
-      const validTemp = upper.startsWith('TEMP-');
-      if (!validPPE && !validPCI && !validTemp) {
-        toast({
-          title: 'Contrato inválido',
-          description: tipoCarteira === 'PPE' ? 'Contratos PPE devem começar com PPE (ou TEMP-)' : 'Contratos PCI devem começar com SP, PR, PD ou PCI (ou TEMP-)',
-          variant: 'destructive',
-        });
-        return;
-      }
-      contrato = upper;
+    const numero = newCustomerContrato.trim().replace(/\D/g, '');
+    if (!numero) {
+      toast({ title: 'Informe o número do contrato', variant: 'destructive' });
+      return;
     }
+    const prefixo = tipoCarteira === 'PPE' ? 'PPE' : newCustomerPrefixo;
+    const contrato = `${prefixo}${numero}`;
     setCreatingCustomer(true);
     try {
       const enderecoCompleto = [newObraEndereco.trim(), newObraCidade.trim(), newObraEstado].filter(Boolean).join(', ');

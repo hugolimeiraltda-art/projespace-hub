@@ -81,7 +81,7 @@ const DEFAULT_VISIBLE_COLUMNS: ColumnKey[] = [
   'mensalidade',
 ];
 
-export function CarteiraClientesTable({ customers, onDelete, basePath = '/carteira-clientes', tableName = 'customer_portfolio', totensCountMap = {} }: CarteiraClientesTableProps) {
+export function CarteiraClientesTable({ customers, onDelete, basePath = '/carteira-clientes', tableName = 'customer_portfolio', totensCountMap = {}, camerasCountMap = {} }: CarteiraClientesTableProps) {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [columnFilters, setColumnFilters] = useState<ColumnFilter[]>([]);

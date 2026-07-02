@@ -131,6 +131,7 @@ export default function StartupProjetos() {
   const [customerSearch, setCustomerSearch] = useState('');
   const [showNewCustomer, setShowNewCustomer] = useState(false);
   const [newCustomerContrato, setNewCustomerContrato] = useState('');
+  const [newCustomerPrefixo, setNewCustomerPrefixo] = useState<'SP' | 'PR' | 'PD' | 'PCI'>('SP');
   const [creatingCustomer, setCreatingCustomer] = useState(false);
 
   useEffect(() => {

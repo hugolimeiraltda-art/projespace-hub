@@ -540,6 +540,9 @@ export function CarteiraClientesTable({ customers, onDelete, basePath = '/cartei
       case 'qtd_cameras':
         return <TableCell className="text-right">{camerasCountMap[customer.id] || 0}</TableCell>;
       case 'data_ativacao':
+        if (!customer.data_ativacao && customer.sistema === 'EM_IMPLANTACAO') {
+          return <TableCell><span className="inline-flex items-center rounded-full bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200 px-2 py-0.5 text-xs font-medium">Implantação</span></TableCell>;
+        }
         return <TableCell>{formatDate(customer.data_ativacao)}</TableCell>;
       case 'data_termino':
         return <TableCell>{calculateTermino(customer)}</TableCell>;

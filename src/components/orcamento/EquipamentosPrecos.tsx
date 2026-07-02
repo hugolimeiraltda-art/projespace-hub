@@ -220,7 +220,7 @@ export default function EquipamentosPrecos({ sessaoId, initialData, initialItens
                 </div>
                 <Separator orientation="vertical" className="hidden sm:block" />
                 <div>
-                  <p className="text-xs text-muted-foreground">Taxa de Instalação</p>
+                  <p className="text-xs text-muted-foreground">Vendido</p>
                   <p className="text-lg font-bold text-foreground">
                     {formatBRL(itens.taxa_conexao_total || totalInstalacao)}
                   </p>

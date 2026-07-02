@@ -354,7 +354,7 @@ export default function PropostaView({ data, onVoltar, sessaoId, encaminhadoEnge
                   </div>
                   <Separator orientation="vertical" className="hidden sm:block" />
                   <div>
-                    <p className="text-sm text-muted-foreground">Taxa de Instalação</p>
+                    <p className="text-sm text-muted-foreground">Vendido</p>
                     <p className="text-2xl font-bold text-foreground">
                       {formatBRL(itens.taxa_conexao_total || totalInstalacao)}
                     </p>

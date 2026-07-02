@@ -1474,7 +1474,7 @@ export default function ImplantacaoExecucao() {
                               if (!contratoInfo.alarme_codigo?.trim()) missingFields.push('Código de Alarme');
                               if (!contratoInfo.mensalidade?.trim()) missingFields.push('Mensalidade');
                               if (!contratoInfo.prazo_contrato) missingFields.push('Prazo do Contrato');
-                              if (!contratoInfo.taxa_instalacao?.trim()) missingFields.push('Taxa de Instalação');
+                              if (!contratoInfo.taxa_instalacao?.trim()) missingFields.push('Vendido');
                               if (!contratoInfo.filial) missingFields.push('Praça');
 
                               if (missingFields.length > 0) {
@@ -1632,7 +1632,7 @@ export default function ImplantacaoExecucao() {
                         )}
                       </div>
                       <div>
-                        <Label htmlFor="taxa-instalacao" className="text-sm">Taxa de Instalação (R$)</Label>
+                        <Label htmlFor="taxa-instalacao" className="text-sm">Vendido (R$)</Label>
                         {editingContrato ? (
                           <Input
                             id="taxa-instalacao"
@@ -1786,7 +1786,7 @@ export default function ImplantacaoExecucao() {
                             if (!contratoInfo.alarme_codigo?.trim()) missingFields.push('Código de Alarme');
                             if (!contratoInfo.mensalidade?.trim()) missingFields.push('Mensalidade');
                             if (!contratoInfo.prazo_contrato) missingFields.push('Prazo do Contrato');
-                            if (!contratoInfo.taxa_instalacao?.trim()) missingFields.push('Taxa de Instalação');
+                            if (!contratoInfo.taxa_instalacao?.trim()) missingFields.push('Vendido');
 
                             if (missingFields.length > 0) {
                               toast({

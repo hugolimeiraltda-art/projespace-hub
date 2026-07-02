@@ -315,7 +315,7 @@ export function ProjetoIASection({ sessaoId }: ProjetoIASectionProps) {
               </p>
             </div>
             <div className="bg-muted/50 rounded-lg p-3">
-              <p className="text-xs text-muted-foreground uppercase">Taxa de Instalação</p>
+              <p className="text-xs text-muted-foreground uppercase">Vendido</p>
               <p className="text-lg font-bold text-foreground">
                 R$ {(itens.taxa_conexao_total || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
               </p>

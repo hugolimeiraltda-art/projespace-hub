@@ -38,6 +38,7 @@ interface ProjectData {
 
 interface Props {
   project: ProjectData;
+  contrato?: string | null;
   etapas: ImplantacaoEtapasData | null;
   pendenciasCount: number;
   isAdmin: boolean;
@@ -49,7 +50,7 @@ interface Props {
 }
 
 export function StartupProjectCardCompact({
-  project, etapas, pendenciasCount, isAdmin,
+  project, contrato, etapas, pendenciasCount, isAdmin,
   onContinue, onStart, onViewForm, onViewDetails, onDelete,
 }: Props) {
   const [expanded, setExpanded] = useState(false);

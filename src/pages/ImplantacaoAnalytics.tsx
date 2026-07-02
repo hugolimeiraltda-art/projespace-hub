@@ -528,9 +528,22 @@ export default function ImplantacaoAnalytics() {
             </div>
             <p className="text-muted-foreground">Métricas de tempo, receita e desempenho da implantação</p>
           </div>
-          <Button variant="outline" size="sm" className="gap-2" onClick={() => navigate('/implantacao-relatorios')}>
-            <FileBarChart className="w-4 h-4" /> Relatórios
-          </Button>
+          <div className="flex items-center gap-2">
+            <div className="inline-flex rounded-md border border-border overflow-hidden">
+              {(['ALL','PCI','PPE'] as const).map(t => (
+                <button
+                  key={t}
+                  onClick={() => setTipoFilter(t)}
+                  className={`px-3 py-1.5 text-xs font-medium transition-colors ${tipoFilter === t ? 'bg-primary text-primary-foreground' : 'bg-background text-foreground hover:bg-muted'}`}
+                >
+                  {t === 'ALL' ? 'Todos' : t}
+                </button>
+              ))}
+            </div>
+            <Button variant="outline" size="sm" className="gap-2" onClick={() => navigate('/implantacao-relatorios')}>
+              <FileBarChart className="w-4 h-4" /> Relatórios
+            </Button>
+          </div>
         </div>
 
         {/* KPI Cards */}

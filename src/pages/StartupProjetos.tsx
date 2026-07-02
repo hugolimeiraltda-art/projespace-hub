@@ -809,14 +809,70 @@ export default function StartupProjetos() {
                   </div>
 
                   <div>
-                    <Label>Vendedor Responsável *</Label>
-                    <Select value={newObraVendedor} onValueChange={setNewObraVendedor}>
-                      <SelectTrigger><SelectValue placeholder="Selecione o vendedor" /></SelectTrigger>
-                      <SelectContent>
-                        {vendedoresList.map(v => <SelectItem key={v.id} value={v.id}>{v.nome}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
+                    <div className="flex items-center justify-between mb-1">
+                      <Label>Vendedor Responsável *</Label>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 px-2 text-xs text-primary"
+                        onClick={() => setShowNewVendedor(v => !v)}
+                      >
+                        <Plus className="h-3 w-3 mr-1" />
+                        {showNewVendedor ? 'Cancelar' : 'Novo Vendedor'}
+                      </Button>
+                    </div>
+                    {showNewVendedor ? (
+                      <div className="border rounded-md p-3 space-y-2 bg-muted/30">
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <Label className="text-xs">Nome *</Label>
+                            <Input value={newVendedorNome} onChange={e => setNewVendedorNome(e.target.value)} placeholder="Nome" />
+                          </div>
+                          <div>
+                            <Label className="text-xs">Sobrenome *</Label>
+                            <Input value={newVendedorSobrenome} onChange={e => setNewVendedorSobrenome(e.target.value)} placeholder="Sobrenome" />
+                          </div>
+                        </div>
+                        <div>
+                          <Label className="text-xs">Filial *</Label>
+                          <Select value={newVendedorFilial} onValueChange={setNewVendedorFilial}>
+                            <SelectTrigger><SelectValue placeholder="Selecione a filial" /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="SPO">SPO - São Paulo</SelectItem>
+                              <SelectItem value="BHZ">BHZ - Belo Horizonte</SelectItem>
+                              <SelectItem value="VIX">VIX - Vitória</SelectItem>
+                              <SelectItem value="RJO">RJO - Rio de Janeiro</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <Button type="button" size="sm" onClick={handleCreateVendedor} disabled={creatingVendedor} className="w-full">
+                          {creatingVendedor ? <><Loader2 className="mr-2 h-3 w-3 animate-spin" />Criando vendedor...</> : 'Criar Vendedor'}
+                        </Button>
+                      </div>
+                    ) : (
+                      <Select value={newObraVendedor} onValueChange={setNewObraVendedor}>
+                        <SelectTrigger><SelectValue placeholder="Selecione o vendedor" /></SelectTrigger>
+                        <SelectContent>
+                          <div className="p-2">
+                            <Input
+                              placeholder="Buscar vendedor..."
+                              value={vendedorSearch}
+                              onChange={(e) => setVendedorSearch(e.target.value)}
+                              className="mb-2"
+                              onClick={(e) => e.stopPropagation()}
+                              onKeyDown={(e) => e.stopPropagation()}
+                            />
+                          </div>
+                          {vendedoresList
+                            .filter(v => !vendedorSearch || v.nome.toLowerCase().includes(vendedorSearch.toLowerCase()) || v.email.toLowerCase().includes(vendedorSearch.toLowerCase()))
+                            .slice(0, 100)
+                            .map(v => <SelectItem key={v.id} value={v.id}>{v.nome}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    )}
                   </div>
+
                   <Button onClick={handleCreateObra} disabled={creatingObra} className="w-full">
                     {creatingObra ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Criando...</> : 'Cadastrar Obra'}
                   </Button>

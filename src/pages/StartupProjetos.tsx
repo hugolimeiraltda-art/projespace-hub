@@ -146,6 +146,48 @@ export default function StartupProjetos() {
     fetchCustomers();
   }, [activeTab]);
 
+  // Restore obra dialog after coming back from CustomerDetail
+  useEffect(() => {
+    const newCustomerId = searchParams.get('newObraCustomerId');
+    if (!newCustomerId) return;
+    const ctxRaw = sessionStorage.getItem('obra-new-customer-return');
+    if (ctxRaw) {
+      try {
+        const ctx = JSON.parse(ctxRaw);
+        setNewObraNome(ctx.newObraNome || '');
+        setNewObraEndereco(ctx.newObraEndereco || '');
+        setNewObraCidade(ctx.newObraCidade || '');
+        setNewObraEstado(ctx.newObraEstado || '');
+        setNewObraVendedor(ctx.newObraVendedor || '');
+        setNewObraTipo(ctx.newObraTipo || 'nova');
+      } catch {}
+      sessionStorage.removeItem('obra-new-customer-return');
+    }
+    // Fetch the newly created customer and inject into list
+    (async () => {
+      const { data } = await supabase
+        .from('customer_portfolio')
+        .select('id, razao_social, contrato, endereco, filial')
+        .eq('id', newCustomerId)
+        .maybeSingle();
+      if (data) {
+        setCustomersList(prev => {
+          if (prev.some(c => c.id === data.id)) return prev;
+          return [data, ...prev];
+        });
+        setSelectedCustomerId(data.id);
+        setNewObraNome(data.razao_social);
+        if (data.endereco) setNewObraEndereco(data.endereco);
+      }
+      setShowNewObra(true);
+      // Clean up the query param
+      const url = new URL(window.location.href);
+      url.searchParams.delete('newObraCustomerId');
+      window.history.replaceState({}, '', url.toString());
+    })();
+  }, [searchParams]);
+
+
   const fetchCustomers = async () => {
     try {
       const { data } = await supabase

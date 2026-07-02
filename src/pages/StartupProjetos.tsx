@@ -100,7 +100,7 @@ export default function StartupProjetos() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<ImplantacaoStatus | 'TODOS'>('TODOS');
   const [stageFilter, setStageFilter] = useState<'TODOS' | 'ONBOARDING' | 'OBRA' | 'PROGRAMACAO'>('TODOS');
-  const [portfolioMap, setPortfolioMap] = useState<Record<string, { mensalidade: number | null; taxa_ativacao: number | null }>>({});
+  const [portfolioMap, setPortfolioMap] = useState<Record<string, { mensalidade: number | null; taxa_ativacao: number | null; contrato: string | null }>>({});
   const [etapasMap, setEtapasMap] = useState<Record<string, ImplantacaoEtapasData>>({});
   const [pendenciasMap, setPendenciasMap] = useState<Record<string, number>>({});
   const [pendenciaFilter, setPendenciaFilter] = useState<'todas' | 'com' | 'sem'>('todas');
@@ -475,7 +475,7 @@ export default function StartupProjetos() {
         projectsQuery,
         supabase
           .from('customer_portfolio')
-          .select('project_id, mensalidade, taxa_ativacao')
+          .select('project_id, mensalidade, taxa_ativacao, contrato')
           .not('project_id', 'is', null),
         supabase
           .from('implantacao_etapas')
@@ -493,10 +493,10 @@ export default function StartupProjetos() {
       }
 
       // Build portfolio map
-      const pMap: Record<string, { mensalidade: number | null; taxa_ativacao: number | null }> = {};
-      portfolioRes.data?.forEach((p) => {
+      const pMap: Record<string, { mensalidade: number | null; taxa_ativacao: number | null; contrato: string | null }> = {};
+      portfolioRes.data?.forEach((p: any) => {
         if (p.project_id) {
-          pMap[p.project_id] = { mensalidade: p.mensalidade ? Number(p.mensalidade) : null, taxa_ativacao: p.taxa_ativacao ? Number(p.taxa_ativacao) : null };
+          pMap[p.project_id] = { mensalidade: p.mensalidade ? Number(p.mensalidade) : null, taxa_ativacao: p.taxa_ativacao ? Number(p.taxa_ativacao) : null, contrato: p.contrato ?? null };
         }
       });
       setPortfolioMap(pMap);
@@ -1109,6 +1109,7 @@ export default function StartupProjetos() {
                   <StartupProjectCardCompact
                     key={project.id}
                     project={project}
+                    contrato={portfolioMap[project.id]?.contrato || null}
                     etapas={etapasMap[project.id] || null}
                     pendenciasCount={pendenciasMap[project.id] || 0}
                     isAdmin={user?.role === 'admin'}

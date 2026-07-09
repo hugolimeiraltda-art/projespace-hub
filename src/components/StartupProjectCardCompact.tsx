@@ -59,7 +59,7 @@ export function StartupProjectCardCompact({
 
   const extraDates = isPPE && etapas ? [
     { label: '3.7 Base', value: etapas.ppe_execucao_base_data },
-    { label: '4.1 Agendamento', value: etapas.agendamento_visita_startup_data },
+    { label: 'Totem', value: etapas.agendamento_visita_startup_data },
   ] : [];
 
   const STEPS_DEF: { key: keyof ImplantacaoEtapasData; label: string }[] = isPPE

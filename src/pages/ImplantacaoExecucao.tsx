@@ -846,12 +846,13 @@ export default function ImplantacaoExecucao() {
     return icons[etapaNum] || FileText;
   };
 
+  const isPPE = project?.tipo_implantacao === 'PPE';
+
   const isEtapaComplete = (etapaNum: number): boolean => {
     if (!etapas) return false;
-    const isPPE = project?.tipo_implantacao === 'PPE';
-    
+
     switch (etapaNum) {
-      case 1: return etapas.contrato_assinado;
+      case 1: return isPPE ? true : etapas.contrato_assinado;
       case 2: return etapas.contrato_cadastrado;
       case 3: return isPPE
         ? etapas.ligacao_boas_vindas && etapas.cadastro_gear

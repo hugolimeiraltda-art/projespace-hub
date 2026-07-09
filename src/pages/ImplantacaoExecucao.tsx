@@ -846,12 +846,13 @@ export default function ImplantacaoExecucao() {
     return icons[etapaNum] || FileText;
   };
 
+  const isPPE = project?.tipo_implantacao === 'PPE';
+
   const isEtapaComplete = (etapaNum: number): boolean => {
     if (!etapas) return false;
-    const isPPE = project?.tipo_implantacao === 'PPE';
-    
+
     switch (etapaNum) {
-      case 1: return etapas.contrato_assinado;
+      case 1: return isPPE ? true : etapas.contrato_assinado;
       case 2: return etapas.contrato_cadastrado;
       case 3: return isPPE
         ? etapas.ligacao_boas_vindas && etapas.cadastro_gear
@@ -997,9 +998,7 @@ export default function ImplantacaoExecucao() {
     );
   }
 
-  const isPPE = project.tipo_implantacao === 'PPE';
-
-  const SubItem = ({ 
+  const SubItem = ({
     label, 
     checked, 
     field, 
@@ -1378,12 +1377,12 @@ export default function ImplantacaoExecucao() {
             <div className="flex items-center justify-between mb-4">
               <span className="text-sm font-medium">Progresso Geral</span>
               <span className="text-sm text-muted-foreground">
-                {[1, 2, 3, 4, 5, 6, 7, 8, 9].filter(n => isEtapaComplete(n)).length}/9 etapas
+                {(isPPE ? [2, 3, 4, 5, 6, 7, 8, 9] : [1, 2, 3, 4, 5, 6, 7, 8, 9]).filter(n => isEtapaComplete(n)).length}/{isPPE ? 8 : 9} etapas
               </span>
             </div>
             <div className="flex gap-1">
-              {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(n => (
-                <div 
+              {(isPPE ? [2, 3, 4, 5, 6, 7, 8, 9] : [1, 2, 3, 4, 5, 6, 7, 8, 9]).map(n => (
+                <div
                   key={n}
                   className={cn(
                     "h-2 flex-1 rounded-full transition-colors",
@@ -1397,38 +1396,40 @@ export default function ImplantacaoExecucao() {
 
         {/* Etapas */}
         <div className="space-y-4">
-          {/* Etapa 1: Contrato Assinado */}
-          <Card>
-            <Collapsible open={expandedEtapas.includes(1)} onOpenChange={() => toggleEtapa(1)}>
-              <CollapsibleTrigger asChild>
-                <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className={cn(
-                        "w-8 h-8 rounded-full flex items-center justify-center",
-                        isEtapaComplete(1) ? "bg-green-500 text-white" : "bg-muted text-muted-foreground"
-                      )}>
-                        {isEtapaComplete(1) ? <Check className="w-4 h-4" /> : <FileText className="w-4 h-4" />}
+          {/* Etapa 1: Contrato Assinado (oculto para PPE) */}
+          {!isPPE && (
+            <Card>
+              <Collapsible open={expandedEtapas.includes(1)} onOpenChange={() => toggleEtapa(1)}>
+                <CollapsibleTrigger asChild>
+                  <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className={cn(
+                          "w-8 h-8 rounded-full flex items-center justify-center",
+                          isEtapaComplete(1) ? "bg-green-500 text-white" : "bg-muted text-muted-foreground"
+                        )}>
+                          {isEtapaComplete(1) ? <Check className="w-4 h-4" /> : <FileText className="w-4 h-4" />}
+                        </div>
+                        <CardTitle className="text-base">1 - Contrato Assinado</CardTitle>
                       </div>
-                      <CardTitle className="text-base">1 - Contrato Assinado</CardTitle>
+                      {expandedEtapas.includes(1) ? <ChevronDown className="w-5 h-5" /> : <ChevronRight className="w-5 h-5" />}
                     </div>
-                    {expandedEtapas.includes(1) ? <ChevronDown className="w-5 h-5" /> : <ChevronRight className="w-5 h-5" />}
-                  </div>
-                </CardHeader>
-              </CollapsibleTrigger>
-              <CollapsibleContent>
-                <CardContent className="pt-0">
-                  <SubItem 
-                    label="Contrato assinado pelo cliente" 
-                    checked={etapas.contrato_assinado} 
-                    field="contrato_assinado"
-                    dateField="contrato_assinado_at"
-                    date={etapas.contrato_assinado_at}
-                  />
-                </CardContent>
-              </CollapsibleContent>
-            </Collapsible>
-          </Card>
+                  </CardHeader>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <CardContent className="pt-0">
+                    <SubItem
+                      label="Contrato assinado pelo cliente"
+                      checked={etapas.contrato_assinado}
+                      field="contrato_assinado"
+                      dateField="contrato_assinado_at"
+                      date={etapas.contrato_assinado_at}
+                    />
+                  </CardContent>
+                </CollapsibleContent>
+              </Collapsible>
+            </Card>
+          )}
 
           {/* Etapa 2: Contrato Cadastrado */}
           <Card>

@@ -81,6 +81,8 @@ export default function ImplantacaoDashboard() {
             confirmacao_ativacao_financeira_at: e.confirmacao_ativacao_financeira_at,
             operacao_assistida_inicio: e.operacao_assistida_inicio,
             operacao_assistida_fim: e.operacao_assistida_fim,
+            agendamento_visita_startup_data: e.agendamento_visita_startup_data,
+            ppe_execucao_base_data: e.ppe_execucao_base_data,
           };
         }
       });

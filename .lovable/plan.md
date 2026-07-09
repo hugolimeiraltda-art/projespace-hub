@@ -1,38 +1,56 @@
-## Objetivo
-Brenda (`brenda.morais@emive.com.br`) precisa atuar como **vendedora** (criar/editar projetos próprios, informar venda) **e** como **sucesso do cliente** (já é seu role atual), sem virar admin e sem afetar outros usuários.
+# Agenda PPE + Renomear rótulo "Totem"
 
-## Abordagem
-Manter o `role = sucesso_cliente` e introduzir um **data scope exclusivo** chamado `vendedor_plus`. Esse scope é concedido só pra ela e referenciado nas policies que hoje exigem o role `vendedor` para gravação. Assim a mudança é cirúrgica — só ela ganha o acesso extra.
+## 1) Renomear rótulo no card de projeto PPE
+Arquivo: `src/components/StartupProjectCardCompact.tsx`
+- Trocar label `4.1 Agendamento` por **`Totem`** nos blocos desktop e mobile.
+- Nada muda no banco: continua usando `agendamento_visita_startup_data`.
+- `3.7 Base` e demais rótulos permanecem.
 
-## Passos
+## 2) Novo menu "Agenda PPE" em Implantação
+Rota: `/implantacao/agenda-ppe` — visível apenas para `admin` e `implantacao`.
+Entrada no submenu de Implantação (`src/components/Layout.tsx`), com ícone de calendário.
 
-1. **Liberar os menus de vendedor pra ela**
-   Hoje os overrides dela em `user_menu_overrides` zeram `projetos/novo` e `projetos/informar-venda`. Remover esses dois overrides e adicionar `completo` em `projetos/lista`. Os menus de Sucesso do Cliente continuam como estão.
+### Fonte de dados
+Query em `implantacao_etapas` (join com `projects` e `prestadores`), filtrando:
+- `projects.tipo_implantacao = 'PPE'`
+- `projects.implantacao_status IN ('EM_EXECUCAO','A_EXECUTAR')` (excluir concluídos)
+- Registros com `ppe_execucao_base_data` **ou** `agendamento_visita_startup_data` preenchidos
 
-2. **Conceder o scope `vendedor_plus`**
-   Inserir uma linha em `user_data_scopes` (`user_id = Brenda`, `scope_key = vendedor_plus`).
+Instalador vem de `implantacao_etapas.ppe_equipe_prestador_id` → nome em `prestadores.nome_completo`.
 
-3. **Migration de RLS — estender policies de escrita para reconhecer o scope**
-   Nas tabelas onde a gravação hoje é restrita por role, adicionar a cláusula `OR has_data_scope(auth.uid(), 'vendedor_plus')` (sempre mantendo a verificação de "dono do projeto" quando aplicável):
-   - `projects` — UPDATE: permitir quando dona do projeto + scope
-   - `sale_forms` — INSERT/UPDATE: permitir quando vinculada a projeto dela + scope
-   - `tap_forms` — INSERT/UPDATE: mesma regra
-   - `project_attachments` — INSERT/DELETE: dona + scope
-   - `sale_form_attachments` — INSERT/DELETE: dona + scope
-   - `sale_validations` — INSERT/UPDATE: quando dona do projeto + scope
+Cada projeto pode gerar até 2 eventos:
+- **3.7 Base** na data `ppe_execucao_base_data`
+- **4.1 Totem** na data `agendamento_visita_startup_data`
 
-4. **Verificação**
-   Após aplicar, conferir no banco:
-   - `select * from user_data_scopes where user_id = Brenda` retorna `vendedor_plus`
-   - Policies novas presentes via `pg_policies`
-   - Brenda consegue ver "Novo Projeto" e "Informar Nova Venda" no menu
+### Layout — Calendário semanal com swimlanes por instalador
+```text
+                 Seg 07  Ter 08  Qua 09  Qui 10  Sex 11  Sáb 12  Dom 13
+William BH   |  [3.7 PPE143]        [4.1 PPE143]
+João SP      |          [3.7 PPE150]           [3.7 PPE151]
+Sem equipe   |                     [4.1 PPE160]
+```
+- Cards de evento coloridos:
+  - **Laranja** = 3.7 Base
+  - **Azul** = 4.1 Totem
+- Cada card mostra: contrato (PPE...), condomínio, cidade/UF.
+- Clique no card abre o projeto em `/startup-projetos/:id/execucao`.
+- Linha "Sem equipe" agrupa projetos com instalador ainda não atribuído.
+
+### Controles
+- Navegação semanal: << Semana anterior | **Semana de 07/07 a 13/07** | Próxima >>
+- Botão "Hoje" para voltar à semana atual.
+- Toggle rápido: **Semana** / **Mês** (visão mensal = grade tradicional com badges 3.7/4.1 nos dias).
+- Filtros no topo: Filial, Instalador (multi), Tipo de serviço (3.7 / 4.1 / ambos), Busca por contrato/cliente.
+- Botão "Exportar CSV" da visão atual.
+
+### KPIs no topo
+- Total de obras na semana
+- Bases (3.7) agendadas na semana
+- Totens (4.1) agendados na semana
+- Instaladores empenhados na semana
 
 ## Detalhes técnicos
-- Nenhuma policy existente é removida — só são adicionadas cláusulas `OR` para o novo scope. Sem impacto em outros usuários.
-- Tabelas de Sucesso do Cliente (`customer_*`, `clientes_inativos`, `customer_nps`, etc.) não mudam — o role `sucesso_cliente` dela já cobre.
-- Caso outro usuário precise no futuro do mesmo combo, basta inserir uma linha em `user_data_scopes` — sem nova migration.
-
-## Fora de escopo
-- Não alteramos role nem promovemos a admin.
-- Não criamos novo role no enum `app_role`.
-- Não mexemos em tabelas de Sucesso do Cliente.
+- Novo arquivo `src/pages/ImplantacaoAgendaPPE.tsx`.
+- Rota registrada em `src/App.tsx`, protegida por `has_role admin | implantacao`.
+- Nenhuma migração de banco: reaproveita colunas existentes de `implantacao_etapas`.
+- Sem alteração no fluxo de edição; a página é read-only e navega para a Execução ao clicar.

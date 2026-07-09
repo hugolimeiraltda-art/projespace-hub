@@ -45,10 +45,12 @@ export default function ImplantacaoAgendaPPE() {
   useEffect(() => {
     const load = async () => {
       setLoading(true);
-      const { data: etapas } = await supabase
+      const { data: etapasRaw } = await supabase
         .from('implantacao_etapas')
-        .select('project_id, ppe_execucao_base_data, agendamento_visita_startup_data, ppe_equipe_prestador_id')
-        .or('ppe_execucao_base_data.not.is.null,agendamento_visita_startup_data.not.is.null');
+        .select('project_id, ppe_execucao_base_data, agendamento_visita_startup_data, ppe_equipe_prestador_id');
+      const etapas = (etapasRaw || []).filter(e =>
+        e.ppe_execucao_base_data || e.agendamento_visita_startup_data
+      );
 
       const projectIds = (etapas || []).map(e => e.project_id).filter(Boolean);
       const prestadorIds = Array.from(new Set((etapas || []).map(e => e.ppe_equipe_prestador_id).filter(Boolean))) as string[];

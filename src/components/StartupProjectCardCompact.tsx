@@ -57,6 +57,11 @@ export function StartupProjectCardCompact({
   const status = project.implantacao_status || 'A_EXECUTAR';
   const isPPE = project.tipo_implantacao === 'PPE';
 
+  const extraDates = isPPE && etapas ? [
+    { label: '3.7 Base', value: etapas.ppe_execucao_base_data },
+    { label: '4.1 Agendamento', value: etapas.agendamento_visita_startup_data },
+  ] : [];
+
   const STEPS_DEF: { key: keyof ImplantacaoEtapasData; label: string }[] = isPPE
     ? [
         { key: 'contrato_assinado_at', label: 'Contrato' },

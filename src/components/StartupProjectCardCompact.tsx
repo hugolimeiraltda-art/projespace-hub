@@ -137,7 +137,7 @@ export function StartupProjectCardCompact({
           </div>
 
           {/* Dates block */}
-          <div className="hidden md:grid grid-cols-2 gap-6 text-xs shrink-0">
+          <div className={cn("hidden md:grid gap-6 text-xs shrink-0", extraDates.length ? "grid-cols-4" : "grid-cols-2")}>
             <div>
               <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Início</div>
               <div className="font-medium text-foreground mt-0.5 tabular-nums">{fmt(project.implantacao_started_at)}</div>
@@ -146,6 +146,12 @@ export function StartupProjectCardCompact({
               <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Previsão</div>
               <div className="font-medium text-foreground mt-0.5 tabular-nums">{fmt(project.prazo_entrega_projeto)}</div>
             </div>
+            {extraDates.map((d) => (
+              <div key={d.label}>
+                <div className="text-[10px] uppercase tracking-wide text-muted-foreground">{d.label}</div>
+                <div className="font-medium text-foreground mt-0.5 tabular-nums">{fmt(d.value)}</div>
+              </div>
+            ))}
           </div>
 
           {/* Progress mini */}

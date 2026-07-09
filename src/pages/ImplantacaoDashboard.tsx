@@ -57,7 +57,7 @@ export default function ImplantacaoDashboard() {
           .order('updated_at', { ascending: false }),
         supabase
           .from('implantacao_etapas')
-          .select('project_id, contrato_assinado_at, ligacao_boas_vindas_at, agendamento_visita_startup_at, laudo_visita_startup_at, check_programacao_at, confirmacao_ativacao_financeira_at, operacao_assistida_inicio, operacao_assistida_fim'),
+          .select('project_id, contrato_assinado_at, ligacao_boas_vindas_at, agendamento_visita_startup_at, laudo_visita_startup_at, check_programacao_at, confirmacao_ativacao_financeira_at, operacao_assistida_inicio, operacao_assistida_fim, agendamento_visita_startup_data, ppe_execucao_base_data'),
         supabase
           .from('customer_portfolio')
           .select('project_id, mensalidade, taxa_ativacao, contrato')

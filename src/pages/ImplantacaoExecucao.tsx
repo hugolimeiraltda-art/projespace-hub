@@ -1978,25 +1978,6 @@ export default function ImplantacaoExecucao() {
                         </div>
                       </div>
 
-                      {/* 3.6 - Agendamento da visita para instalação da base */}
-                      <div className="flex items-center justify-between py-2 px-4 hover:bg-muted/50 rounded-md gap-3 flex-wrap">
-                        <div className="flex items-center gap-3 min-w-0">
-                          <Checkbox
-                            checked={etapas.ligacao_boas_vindas}
-                            onCheckedChange={(value) => updateEtapa('ligacao_boas_vindas', value, 'ligacao_boas_vindas_at')}
-                            disabled={isSaving}
-                          />
-                          <span className={cn("text-sm", etapas.ligacao_boas_vindas && "text-muted-foreground line-through")}>
-                            3.6 - Agendamento da visita para instalação da base
-                          </span>
-                        </div>
-                        <Input
-                          type="date"
-                          value={etapas.ppe_agendamento_base_data || ''}
-                          onChange={(e) => updateEtapa('ppe_agendamento_base_data', e.target.value)}
-                          className="w-44"
-                        />
-                      </div>
 
                       {/* 3.7 - Data de execução da instalação sapata/engastamento */}
                       <div className="flex items-center justify-between py-2 px-4 hover:bg-muted/50 rounded-md gap-3 flex-wrap">

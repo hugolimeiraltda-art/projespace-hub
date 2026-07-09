@@ -35,6 +35,7 @@ import ImplantacaoPagamentoInstaladores from "./pages/ImplantacaoPagamentoInstal
 import ImplantacaoOrcamentoSetor from "./pages/ImplantacaoOrcamentoSetor";
 import ImplantacaoBancoPrestadores from "./pages/ImplantacaoBancoPrestadores";
 import ImplantacaoAgendaPrestadores from "./pages/ImplantacaoAgendaPrestadores";
+import ImplantacaoAgendaPPE from "./pages/ImplantacaoAgendaPPE";
 import CarteiraClientes from "./pages/CarteiraClientes";
 import CustomerDetail from "./pages/CustomerDetail";
 import ControleEstoque from "./pages/ControleEstoque";

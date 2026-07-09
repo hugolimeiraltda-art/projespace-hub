@@ -479,7 +479,7 @@ export default function StartupProjetos() {
           .not('project_id', 'is', null),
         supabase
           .from('implantacao_etapas')
-          .select('project_id, contrato_assinado_at, ligacao_boas_vindas_at, agendamento_visita_startup_at, laudo_visita_startup_at, check_programacao_at, confirmacao_ativacao_financeira_at, operacao_assistida_inicio, operacao_assistida_fim'),
+          .select('project_id, contrato_assinado_at, ligacao_boas_vindas_at, agendamento_visita_startup_at, laudo_visita_startup_at, check_programacao_at, confirmacao_ativacao_financeira_at, operacao_assistida_inicio, operacao_assistida_fim, agendamento_visita_startup_data, ppe_execucao_base_data'),
       ]);
 
       if (projectsRes.error) {
@@ -514,6 +514,8 @@ export default function StartupProjetos() {
             confirmacao_ativacao_financeira_at: e.confirmacao_ativacao_financeira_at,
             operacao_assistida_inicio: e.operacao_assistida_inicio,
             operacao_assistida_fim: e.operacao_assistida_fim,
+            agendamento_visita_startup_data: e.agendamento_visita_startup_data,
+            ppe_execucao_base_data: e.ppe_execucao_base_data,
           };
         }
       });

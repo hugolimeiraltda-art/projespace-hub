@@ -57,6 +57,11 @@ export function StartupProjectCardCompact({
   const status = project.implantacao_status || 'A_EXECUTAR';
   const isPPE = project.tipo_implantacao === 'PPE';
 
+  const extraDates = isPPE && etapas ? [
+    { label: '3.7 Base', value: etapas.ppe_execucao_base_data },
+    { label: '4.1 Agendamento', value: etapas.agendamento_visita_startup_data },
+  ] : [];
+
   const STEPS_DEF: { key: keyof ImplantacaoEtapasData; label: string }[] = isPPE
     ? [
         { key: 'contrato_assinado_at', label: 'Contrato' },
@@ -132,7 +137,7 @@ export function StartupProjectCardCompact({
           </div>
 
           {/* Dates block */}
-          <div className="hidden md:grid grid-cols-2 gap-6 text-xs shrink-0">
+          <div className={cn("hidden md:grid gap-6 text-xs shrink-0", extraDates.length ? "grid-cols-4" : "grid-cols-2")}>
             <div>
               <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Início</div>
               <div className="font-medium text-foreground mt-0.5 tabular-nums">{fmt(project.implantacao_started_at)}</div>
@@ -141,6 +146,12 @@ export function StartupProjectCardCompact({
               <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Previsão</div>
               <div className="font-medium text-foreground mt-0.5 tabular-nums">{fmt(project.prazo_entrega_projeto)}</div>
             </div>
+            {extraDates.map((d) => (
+              <div key={d.label}>
+                <div className="text-[10px] uppercase tracking-wide text-muted-foreground">{d.label}</div>
+                <div className="font-medium text-foreground mt-0.5 tabular-nums">{fmt(d.value)}</div>
+              </div>
+            ))}
           </div>
 
           {/* Progress mini */}
@@ -226,7 +237,7 @@ export function StartupProjectCardCompact({
         </div>
 
         {/* Mobile metadata row */}
-        <div className="md:hidden mt-2 grid grid-cols-2 gap-2 text-xs">
+        <div className={cn("md:hidden mt-2 grid gap-2 text-xs", extraDates.length ? "grid-cols-2" : "grid-cols-2")}>
           <div>
             <div className="text-[10px] text-muted-foreground">Início</div>
             <div className="font-medium tabular-nums">{fmt(project.implantacao_started_at)}</div>
@@ -235,6 +246,12 @@ export function StartupProjectCardCompact({
             <div className="text-[10px] text-muted-foreground">Previsão</div>
             <div className="font-medium tabular-nums">{fmt(project.prazo_entrega_projeto)}</div>
           </div>
+          {extraDates.map((d) => (
+            <div key={d.label}>
+              <div className="text-[10px] text-muted-foreground">{d.label}</div>
+              <div className="font-medium tabular-nums">{fmt(d.value)}</div>
+            </div>
+          ))}
         </div>
 
         {/* Expandable timeline */}

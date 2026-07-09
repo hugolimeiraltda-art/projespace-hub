@@ -237,7 +237,7 @@ export function StartupProjectCardCompact({
         </div>
 
         {/* Mobile metadata row */}
-        <div className="md:hidden mt-2 grid grid-cols-2 gap-2 text-xs">
+        <div className={cn("md:hidden mt-2 grid gap-2 text-xs", extraDates.length ? "grid-cols-2" : "grid-cols-2")}>
           <div>
             <div className="text-[10px] text-muted-foreground">Início</div>
             <div className="font-medium tabular-nums">{fmt(project.implantacao_started_at)}</div>
@@ -246,6 +246,12 @@ export function StartupProjectCardCompact({
             <div className="text-[10px] text-muted-foreground">Previsão</div>
             <div className="font-medium tabular-nums">{fmt(project.prazo_entrega_projeto)}</div>
           </div>
+          {extraDates.map((d) => (
+            <div key={d.label}>
+              <div className="text-[10px] text-muted-foreground">{d.label}</div>
+              <div className="font-medium tabular-nums">{fmt(d.value)}</div>
+            </div>
+          ))}
         </div>
 
         {/* Expandable timeline */}

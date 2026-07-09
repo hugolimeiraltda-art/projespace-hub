@@ -45,9 +45,15 @@ export default function ImplantacaoAgendaPPE() {
   useEffect(() => {
     const load = async () => {
       setLoading(true);
-      const { data: etapasRaw } = await supabase
+      const { data: etapasRaw, error: etapasError } = await supabase
         .from('implantacao_etapas')
         .select('project_id, ppe_execucao_base_data, agendamento_visita_startup_data, ppe_equipe_prestador_id');
+      if (etapasError) {
+        console.error('Erro ao carregar etapas PPE:', etapasError);
+        setEvents([]);
+        setLoading(false);
+        return;
+      }
       const etapas = (etapasRaw || []).filter(e =>
         e.ppe_execucao_base_data || e.agendamento_visita_startup_data
       );
@@ -58,7 +64,7 @@ export default function ImplantacaoAgendaPPE() {
       const [projRes, prestRes] = await Promise.all([
         projectIds.length
           ? supabase.from('projects')
-              .select('id, cliente_condominio_nome, cliente_cidade, cliente_estado, filial, tipo_implantacao, implantacao_status, sale_status')
+              .select('id, cliente_condominio_nome, cliente_cidade, cliente_estado, tipo_implantacao, implantacao_status, sale_status')
               .in('id', projectIds as string[])
           : Promise.resolve({ data: [] as any[] }),
         prestadorIds.length
@@ -69,20 +75,37 @@ export default function ImplantacaoAgendaPPE() {
       const projMap = new Map((projRes.data || []).map((p: any) => [p.id, p]));
       const prestMap = new Map((prestRes.data || []).map((p: any) => [p.id, p.nome as string]));
 
-      // Try to find contract numbers from customer_portfolio & ppe_customers linked by name (best-effort)
+      if ((projRes as any).error) console.error('Erro ao carregar projetos PPE:', (projRes as any).error);
+      if ((prestRes as any).error) console.error('Erro ao carregar prestadores PPE:', (prestRes as any).error);
+
+      // Find contract numbers from PPE/customer portfolio using project_id first, then name fallback.
       const [{ data: portfolio }, { data: ppeCustomers }] = await Promise.all([
-        supabase.from('customer_portfolio').select('contrato, condominio, tipo_carteira'),
-        supabase.from('ppe_customers').select('contrato, condominio'),
+        supabase.from('customer_portfolio').select('project_id, contrato, razao_social, tipo_carteira, filial'),
+        supabase.from('ppe_customers').select('project_id, contrato, razao_social, filial'),
       ]);
+      const contratoByProject = new Map<string, string>();
       const contratoByNome = new Map<string, string>();
+      const filialByProject = new Map<string, string>();
+      const filialByNome = new Map<string, string>();
       (portfolio || []).forEach((c: any) => {
-        if (c.condominio && c.contrato && !c.contrato.startsWith('TEMP-')) {
-          contratoByNome.set(c.condominio.trim().toLowerCase(), c.contrato);
+        if (c.tipo_carteira !== 'PPE') return;
+        if (c.contrato && !c.contrato.startsWith('TEMP-')) {
+          if (c.project_id) contratoByProject.set(c.project_id, c.contrato);
+          if (c.razao_social) contratoByNome.set(c.razao_social.trim().toLowerCase(), c.contrato);
+        }
+        if (c.filial) {
+          if (c.project_id) filialByProject.set(c.project_id, c.filial);
+          if (c.razao_social) filialByNome.set(c.razao_social.trim().toLowerCase(), c.filial);
         }
       });
       (ppeCustomers || []).forEach((c: any) => {
-        if (c.condominio && c.contrato && !c.contrato.startsWith('TEMP-')) {
-          contratoByNome.set(c.condominio.trim().toLowerCase(), c.contrato);
+        if (c.contrato && !c.contrato.startsWith('TEMP-')) {
+          if (c.project_id) contratoByProject.set(c.project_id, c.contrato);
+          if (c.razao_social) contratoByNome.set(c.razao_social.trim().toLowerCase(), c.contrato);
+        }
+        if (c.filial) {
+          if (c.project_id) filialByProject.set(c.project_id, c.filial);
+          if (c.razao_social) filialByNome.set(c.razao_social.trim().toLowerCase(), c.filial);
         }
       });
 
@@ -92,8 +115,14 @@ export default function ImplantacaoAgendaPPE() {
         if (!proj) continue;
         if (proj.tipo_implantacao !== 'PPE') continue;
         if (proj.implantacao_status === 'CONCLUIDO_IMPLANTACAO') continue;
-        const contrato = contratoByNome.get((proj.cliente_condominio_nome || '').trim().toLowerCase())
+        const nomeKey = (proj.cliente_condominio_nome || '').trim().toLowerCase();
+        const contrato = contratoByProject.get(proj.id)
+          || contratoByNome.get(nomeKey)
           || `PPE-${proj.id.slice(0, 6)}`;
+        const estado = filialByProject.get(proj.id)
+          || filialByNome.get(nomeKey)
+          || proj.cliente_estado
+          || '';
         const instaladorNome = et.ppe_equipe_prestador_id
           ? (prestMap.get(et.ppe_equipe_prestador_id) || 'Prestador')
           : SEM_EQUIPE_LABEL;
@@ -103,7 +132,7 @@ export default function ImplantacaoAgendaPPE() {
           contrato,
           cliente: proj.cliente_condominio_nome || 'Sem nome',
           cidade: proj.cliente_cidade || '',
-          estado: proj.cliente_estado || '',
+          estado,
           instaladorId: et.ppe_equipe_prestador_id || null,
           instaladorNome,
         };

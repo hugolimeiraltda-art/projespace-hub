@@ -228,6 +228,10 @@ function AppRoutes() {
         element={<ProtectedRoute><ImplantacaoAgendaPrestadores /></ProtectedRoute>} 
       />
       <Route 
+        path="/implantacao-agenda-ppe" 
+        element={<ProtectedRoute menuKey="implantacao/ppe"><ImplantacaoAgendaPPE /></ProtectedRoute>} 
+      />
+      <Route 
         path="/startup-projetos" 
         element={<ProtectedRoute><StartupProjetos /></ProtectedRoute>} 
       />

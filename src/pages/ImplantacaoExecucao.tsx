@@ -998,9 +998,7 @@ export default function ImplantacaoExecucao() {
     );
   }
 
-  const isPPE = project.tipo_implantacao === 'PPE';
-
-  const SubItem = ({ 
+  const SubItem = ({
     label, 
     checked, 
     field, 

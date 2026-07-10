@@ -108,6 +108,7 @@ export default function StartupProjetos() {
   const [viewMode, setViewMode] = useState<'cards' | 'table'>(() => {
     return (localStorage.getItem('startup-projetos-view') as 'cards' | 'table') || 'cards';
   });
+  const [cardsExpanded, setCardsExpanded] = useState(true);
 
   const handleViewModeChange = (mode: 'cards' | 'table') => {
     setViewMode(mode);

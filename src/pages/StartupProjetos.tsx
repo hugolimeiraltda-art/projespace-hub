@@ -99,7 +99,7 @@ export default function StartupProjetos() {
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<ImplantacaoStatus | 'TODOS'>('TODOS');
-  const [stageFilter, setStageFilter] = useState<'TODOS' | 'ONBOARDING' | 'OBRA' | 'PROGRAMACAO'>('TODOS');
+  const [stageFilter, setStageFilter] = useState<'TODOS' | 'ONBOARDING' | 'OBRA' | 'PROGRAMACAO' | 'FINANCEIRO'>('TODOS');
   const [portfolioMap, setPortfolioMap] = useState<Record<string, { mensalidade: number | null; taxa_ativacao: number | null; contrato: string | null }>>({});
   const [etapasMap, setEtapasMap] = useState<Record<string, ImplantacaoEtapasData>>({});
   const [pendenciasMap, setPendenciasMap] = useState<Record<string, number>>({});
@@ -684,7 +684,20 @@ export default function StartupProjetos() {
     }
     
     const stage = getStage(project.id, project.tipo_implantacao === 'PPE');
-    const matchesStage = stageFilter === 'TODOS' || stage === stageFilter;
+    let matchesStage: boolean;
+    if (stageFilter === 'TODOS') {
+      matchesStage = true;
+    } else if (activeTab === 'ppe') {
+      const e = etapasMap[project.id];
+      if (!e) matchesStage = false;
+      else if (stageFilter === 'ONBOARDING') matchesStage = !!e.ligacao_boas_vindas_at;
+      else if (stageFilter === 'OBRA') matchesStage = !!e.ppe_execucao_base_data;
+      else if (stageFilter === 'PROGRAMACAO') matchesStage = !!e.agendamento_visita_startup_data;
+      else if (stageFilter === 'FINANCEIRO') matchesStage = !!e.confirmacao_ativacao_financeira_at;
+      else matchesStage = false;
+    } else {
+      matchesStage = stage === stageFilter;
+    }
 
     // Hide fully-completed PPE projects from Implantação lists (moved to PPE portfolio)
     if (project.tipo_implantacao === 'PPE' && activeTab !== 'historico') {
@@ -728,7 +741,23 @@ export default function StartupProjetos() {
     }
     return true;
   });
-  const stageCounts = {
+  // PPE tab: cards count projects that REACHED that specific milestone
+  const ppeMilestone = (p: typeof tabProjects[number], key: 'ONBOARDING' | 'OBRA' | 'PROGRAMACAO' | 'FINANCEIRO') => {
+    const e = etapasMap[p.id];
+    if (!e) return false;
+    if (key === 'ONBOARDING') return !!e.ligacao_boas_vindas_at;
+    if (key === 'OBRA') return !!e.ppe_execucao_base_data;
+    if (key === 'PROGRAMACAO') return !!e.agendamento_visita_startup_data;
+    if (key === 'FINANCEIRO') return !!e.confirmacao_ativacao_financeira_at;
+    return false;
+  };
+  const stageCounts = activeTab === 'ppe' ? {
+    TODOS: tabProjects.length,
+    ONBOARDING: tabProjects.filter(p => ppeMilestone(p, 'ONBOARDING')).length,
+    OBRA: tabProjects.filter(p => ppeMilestone(p, 'OBRA')).length,
+    PROGRAMACAO: tabProjects.filter(p => ppeMilestone(p, 'PROGRAMACAO')).length,
+    FINANCEIRO: tabProjects.filter(p => ppeMilestone(p, 'FINANCEIRO')).length,
+  } : {
     TODOS: tabProjects.length,
     ONBOARDING: tabProjects.filter(p => getStage(p.id, p.tipo_implantacao === 'PPE') === 'ONBOARDING').length,
     OBRA: tabProjects.filter(p => getStage(p.id, p.tipo_implantacao === 'PPE') === 'OBRA').length,
@@ -965,9 +994,9 @@ export default function StartupProjetos() {
             <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
               {([
                 { key: 'TODOS', label: 'Total', icon: Filter, color: 'text-foreground', ring: 'ring-primary' },
-                { key: 'ONBOARDING', label: 'Em Onboarding', icon: Phone, color: 'text-amber-600', ring: 'ring-amber-500' },
-                { key: 'OBRA', label: activeTab === 'ppe' ? 'Em Instalação' : 'Em Obra', icon: HardHat, color: 'text-blue-600', ring: 'ring-blue-500' },
-                { key: 'PROGRAMACAO', label: 'Em Programação', icon: Settings, color: 'text-purple-600', ring: 'ring-purple-500' },
+                { key: 'ONBOARDING', label: activeTab === 'ppe' ? 'Onboarding Concluído' : 'Em Onboarding', icon: Phone, color: 'text-amber-600', ring: 'ring-amber-500' },
+                { key: 'OBRA', label: activeTab === 'ppe' ? 'Instalação Base' : 'Em Obra', icon: HardHat, color: 'text-blue-600', ring: 'ring-blue-500' },
+                { key: 'PROGRAMACAO', label: activeTab === 'ppe' ? 'Conclusão' : 'Em Programação', icon: Settings, color: 'text-purple-600', ring: 'ring-purple-500' },
                 { key: 'FINANCEIRO', label: 'Ativação Financeira', icon: DollarSign, color: 'text-green-600', ring: 'ring-green-500' },
               ] as const).map(({ key, label, icon: Icon, color, ring }) => (
                 <Card

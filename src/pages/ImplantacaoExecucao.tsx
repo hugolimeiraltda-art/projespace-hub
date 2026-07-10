@@ -1232,17 +1232,19 @@ export default function ImplantacaoExecucao() {
                     <span className="text-muted-foreground">
                       {elapsedDays > 0 ? `${elapsedDays} dias decorridos` : 'Projeto não iniciado'}
                     </span>
-                    <span className={cn(
-                      "font-medium",
-                      isOverdue ? "text-destructive" : remainingDays <= 7 ? "text-amber-600" : "text-green-600"
-                    )}>
-                      {isOverdue 
-                        ? `${Math.abs(remainingDays)} dias em atraso` 
-                        : remainingDays === 0 
-                          ? 'Prazo vence hoje!'
-                          : `${remainingDays} dias restantes`
-                      }
-                    </span>
+                    {!isPPE && (
+                      <span className={cn(
+                        "font-medium",
+                        isOverdue ? "text-destructive" : remainingDays <= 7 ? "text-amber-600" : "text-green-600"
+                      )}>
+                        {isOverdue 
+                          ? `${Math.abs(remainingDays)} dias em atraso` 
+                          : remainingDays === 0 
+                            ? 'Prazo vence hoje!'
+                            : `${remainingDays} dias restantes`
+                        }
+                      </span>
+                    )}
                   </div>
                 </div>
               );

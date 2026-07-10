@@ -215,6 +215,8 @@ export default function SucessoCliente() {
     fetchPendenciasClientes();
     fetchPendenciasDepartamento();
     fetchAdministradores();
+    fetchChamados();
+    fetchDepoimentos();
   }, []);
 
   const fetchCustomers = async () => {
@@ -918,12 +920,37 @@ export default function SucessoCliente() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-center py-8 text-muted-foreground">
-                <MessageSquare className="w-12 h-12 mx-auto mb-3 opacity-30" />
-                <p>Clique para ver chamados</p>
-                <p className="text-sm">Visualize e gerencie reclamações</p>
-              </div>
+              {chamados.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <MessageSquare className="w-12 h-12 mx-auto mb-3 opacity-30" />
+                  <p>Nenhum chamado registrado</p>
+                  <p className="text-sm">Clique para gerenciar</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-3xl font-bold">{chamados.length}</span>
+                    <div className="text-right text-sm">
+                      <div className="text-orange-600 font-medium">
+                        {chamados.filter(c => c.status !== 'RESOLVIDO' && c.status !== 'FECHADO').length} em aberto
+                      </div>
+                      <div className="text-muted-foreground">
+                        {chamados.filter(c => c.prioridade === 'ALTA' || c.prioridade === 'URGENTE').length} alta prioridade
+                      </div>
+                    </div>
+                  </div>
+                  <div className="space-y-1 pt-2 border-t">
+                    {chamados.slice(0, 3).map(c => (
+                      <div key={c.id} className="flex items-center justify-between text-sm">
+                        <span className="truncate flex-1">{c.customer_portfolio?.razao_social || '—'}</span>
+                        <Badge variant="outline" className="ml-2 text-xs">{c.status}</Badge>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </CardContent>
+
           </Card>
 
           {/* Testimonials */}
@@ -938,12 +965,42 @@ export default function SucessoCliente() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-center py-8 text-muted-foreground">
-                <ThumbsUp className="w-12 h-12 mx-auto mb-3 opacity-30" />
-                <p>Clique para ver depoimentos</p>
-                <p className="text-sm">Elogios e feedbacks positivos</p>
-              </div>
+              {depoimentos.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <ThumbsUp className="w-12 h-12 mx-auto mb-3 opacity-30" />
+                  <p>Nenhum depoimento registrado</p>
+                  <p className="text-sm">Clique para adicionar</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-3xl font-bold">{depoimentos.length}</span>
+                    <div className="text-right text-sm">
+                      <div className="text-green-600 font-medium">
+                        {depoimentos.filter(d => d.tipo === 'elogio').length} elogios
+                      </div>
+                      <div className="text-blue-600">
+                        {depoimentos.filter(d => d.tipo === 'sugestao').length} sugestões
+                      </div>
+                    </div>
+                  </div>
+                  <div className="space-y-1 pt-2 border-t">
+                    {depoimentos.slice(0, 3).map(d => (
+                      <div key={d.id} className="text-sm">
+                        <div className="flex items-center justify-between">
+                          <span className="truncate flex-1 font-medium">{d.customer_portfolio?.razao_social || '—'}</span>
+                          <Badge className={`ml-2 text-xs ${d.tipo === 'elogio' ? 'bg-green-500' : 'bg-blue-500'}`}>
+                            {d.tipo === 'elogio' ? 'Elogio' : 'Sugestão'}
+                          </Badge>
+                        </div>
+                        <p className="text-xs text-muted-foreground italic truncate">"{d.texto}"</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </CardContent>
+
           </Card>
         </div>
 

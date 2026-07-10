@@ -1166,17 +1166,19 @@ export default function ImplantacaoExecucao() {
                           className="w-auto"
                         />
                       </div>
-                      <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 rounded-full bg-green-500" />
-                        <Label htmlFor="end-date" className="font-medium whitespace-nowrap">Prazo:</Label>
-                        <Input
-                          id="end-date"
-                          type="date"
-                          value={tempEndDate}
-                          onChange={(e) => setTempEndDate(e.target.value)}
-                          className="w-auto"
-                        />
-                      </div>
+                      {!isPPE && (
+                        <div className="flex items-center gap-2">
+                          <div className="w-3 h-3 rounded-full bg-green-500" />
+                          <Label htmlFor="end-date" className="font-medium whitespace-nowrap">Prazo:</Label>
+                          <Input
+                            id="end-date"
+                            type="date"
+                            value={tempEndDate}
+                            onChange={(e) => setTempEndDate(e.target.value)}
+                            className="w-auto"
+                          />
+                        </div>
+                      )}
                       <div className="flex gap-2">
                         <Button
                           size="sm"
@@ -1205,13 +1207,15 @@ export default function ImplantacaoExecucao() {
                           {format(startDate, "dd/MM/yyyy", { locale: ptBR })}
                         </span>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <div className={cn("w-3 h-3 rounded-full", isOverdue ? "bg-destructive" : "bg-green-500")} />
-                        <span className="font-medium">Prazo:</span>
-                        <span className={cn("text-muted-foreground", isOverdue && "text-destructive font-medium")}>
-                          {format(endDate, "dd/MM/yyyy", { locale: ptBR })}
-                        </span>
-                      </div>
+                      {!isPPE && (
+                        <div className="flex items-center gap-2">
+                          <div className={cn("w-3 h-3 rounded-full", isOverdue ? "bg-destructive" : "bg-green-500")} />
+                          <span className="font-medium">Prazo:</span>
+                          <span className={cn("text-muted-foreground", isOverdue && "text-destructive font-medium")}>
+                            {format(endDate, "dd/MM/yyyy", { locale: ptBR })}
+                          </span>
+                        </div>
+                      )}
                     </div>
                   )}
 
@@ -1228,17 +1232,19 @@ export default function ImplantacaoExecucao() {
                     <span className="text-muted-foreground">
                       {elapsedDays > 0 ? `${elapsedDays} dias decorridos` : 'Projeto não iniciado'}
                     </span>
-                    <span className={cn(
-                      "font-medium",
-                      isOverdue ? "text-destructive" : remainingDays <= 7 ? "text-amber-600" : "text-green-600"
-                    )}>
-                      {isOverdue 
-                        ? `${Math.abs(remainingDays)} dias em atraso` 
-                        : remainingDays === 0 
-                          ? 'Prazo vence hoje!'
-                          : `${remainingDays} dias restantes`
-                      }
-                    </span>
+                    {!isPPE && (
+                      <span className={cn(
+                        "font-medium",
+                        isOverdue ? "text-destructive" : remainingDays <= 7 ? "text-amber-600" : "text-green-600"
+                      )}>
+                        {isOverdue 
+                          ? `${Math.abs(remainingDays)} dias em atraso` 
+                          : remainingDays === 0 
+                            ? 'Prazo vence hoje!'
+                            : `${remainingDays} dias restantes`
+                        }
+                      </span>
+                    )}
                   </div>
                 </div>
               );

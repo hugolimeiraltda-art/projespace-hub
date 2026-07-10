@@ -116,7 +116,8 @@ export default function ImplantacaoAgendaPPE() {
         if (proj.tipo_implantacao !== 'PPE') continue;
         if (proj.implantacao_status === 'CONCLUIDO_IMPLANTACAO') continue;
         // Hide PPE projects that are fully completed (all 5 steps)
-        const ppeDone = !!(et.contrato_assinado_at && et.ligacao_boas_vindas_at && et.laudo_visita_startup_at && et.check_programacao_at && et.confirmacao_ativacao_financeira_at);
+        const _et: any = et;
+        const ppeDone = !!(_et.contrato_assinado_at && _et.ligacao_boas_vindas_at && _et.laudo_visita_startup_at && _et.check_programacao_at && _et.confirmacao_ativacao_financeira_at);
         if (ppeDone) continue;
         const nomeKey = (proj.cliente_condominio_nome || '').trim().toLowerCase();
         const contrato = contratoByProject.get(proj.id)

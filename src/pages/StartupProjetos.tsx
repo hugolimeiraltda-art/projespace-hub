@@ -713,8 +713,21 @@ export default function StartupProjetos() {
     CONCLUIDO_IMPLANTACAO: projects.filter(p => p.implantacao_status === 'CONCLUIDO_IMPLANTACAO').length,
   };
 
-  // Stage counts for current tab projects (excluding op assistida)
-  const tabProjects = projects.filter(p => !isInOperacaoAssistida(p.id));
+  // Stage counts for current tab projects (excluding op assistida and respecting tab type)
+  const tabProjects = projects.filter(p => {
+    if (isInOperacaoAssistida(p.id)) return activeTab === 'operacao-assistida';
+    if (activeTab === 'ppe') {
+      if (p.tipo_implantacao !== 'PPE') return false;
+      const e = etapasMap[p.id];
+      const ppeDone = !!(e && e.contrato_assinado_at && e.ligacao_boas_vindas_at && e.laudo_visita_startup_at && e.check_programacao_at && e.confirmacao_ativacao_financeira_at);
+      if (ppeDone) return false;
+      return true;
+    }
+    if (activeTab === 'em-implantacao') {
+      return p.tipo_implantacao !== 'PPE';
+    }
+    return true;
+  });
   const stageCounts = {
     TODOS: tabProjects.length,
     ONBOARDING: tabProjects.filter(p => getStage(p.id, p.tipo_implantacao === 'PPE') === 'ONBOARDING').length,

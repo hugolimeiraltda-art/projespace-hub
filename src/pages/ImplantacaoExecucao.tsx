@@ -2378,14 +2378,14 @@ export default function ImplantacaoExecucao() {
 
                         {(!nocChamado || nocChamado.item_6_1_status === 'pending' || nocChamado.item_6_1_status === 'error') && (
                           <div className="ml-9 space-y-3">
-                            {!(isEtapaComplete(1) && isEtapaComplete(2) && isEtapaComplete(3) && etapas.agendamento_visita_startup && etapas.laudo_visita_startup) && (
+                            {!(etapas.agendamento_visita_startup && etapas.laudo_visita_startup) && (
                               <p className="text-sm text-muted-foreground italic">
-                                As etapas anteriores (1, 2, 3 e os itens 4.1 e 4.2) precisam estar concluídas para abrir o chamado.
+                                Os itens 4.1 e 4.2 precisam estar concluídos para abrir o chamado.
                               </p>
                             )}
                             <Button
                               onClick={handleAbrirChamadoNoc}
-                              disabled={nocLoading || !(isEtapaComplete(1) && isEtapaComplete(2) && isEtapaComplete(3) && etapas.agendamento_visita_startup && etapas.laudo_visita_startup)}
+                              disabled={nocLoading || !(etapas.agendamento_visita_startup && etapas.laudo_visita_startup)}
                               className="w-full"
                             >
                               {nocLoading ? (

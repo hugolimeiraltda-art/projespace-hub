@@ -728,7 +728,23 @@ export default function StartupProjetos() {
     }
     return true;
   });
-  const stageCounts = {
+  // PPE tab: cards count projects that REACHED that specific milestone
+  const ppeMilestone = (p: typeof tabProjects[number], key: 'ONBOARDING' | 'OBRA' | 'PROGRAMACAO' | 'FINANCEIRO') => {
+    const e = etapasMap[p.id];
+    if (!e) return false;
+    if (key === 'ONBOARDING') return !!e.ligacao_boas_vindas_at;
+    if (key === 'OBRA') return !!e.ppe_execucao_base_data;
+    if (key === 'PROGRAMACAO') return !!e.agendamento_visita_startup_data;
+    if (key === 'FINANCEIRO') return !!e.confirmacao_ativacao_financeira_at;
+    return false;
+  };
+  const stageCounts = activeTab === 'ppe' ? {
+    TODOS: tabProjects.length,
+    ONBOARDING: tabProjects.filter(p => ppeMilestone(p, 'ONBOARDING')).length,
+    OBRA: tabProjects.filter(p => ppeMilestone(p, 'OBRA')).length,
+    PROGRAMACAO: tabProjects.filter(p => ppeMilestone(p, 'PROGRAMACAO')).length,
+    FINANCEIRO: tabProjects.filter(p => ppeMilestone(p, 'FINANCEIRO')).length,
+  } : {
     TODOS: tabProjects.length,
     ONBOARDING: tabProjects.filter(p => getStage(p.id, p.tipo_implantacao === 'PPE') === 'ONBOARDING').length,
     OBRA: tabProjects.filter(p => getStage(p.id, p.tipo_implantacao === 'PPE') === 'OBRA').length,

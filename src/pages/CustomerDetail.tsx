@@ -918,6 +918,7 @@ export default function CustomerDetail() {
             )}
           </CardContent>
         </Card>
+        </>)}
       </div>
     </Layout>
   );

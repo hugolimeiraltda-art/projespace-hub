@@ -1207,13 +1207,15 @@ export default function ImplantacaoExecucao() {
                           {format(startDate, "dd/MM/yyyy", { locale: ptBR })}
                         </span>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <div className={cn("w-3 h-3 rounded-full", isOverdue ? "bg-destructive" : "bg-green-500")} />
-                        <span className="font-medium">Prazo:</span>
-                        <span className={cn("text-muted-foreground", isOverdue && "text-destructive font-medium")}>
-                          {format(endDate, "dd/MM/yyyy", { locale: ptBR })}
-                        </span>
-                      </div>
+                      {!isPPE && (
+                        <div className="flex items-center gap-2">
+                          <div className={cn("w-3 h-3 rounded-full", isOverdue ? "bg-destructive" : "bg-green-500")} />
+                          <span className="font-medium">Prazo:</span>
+                          <span className={cn("text-muted-foreground", isOverdue && "text-destructive font-medium")}>
+                            {format(endDate, "dd/MM/yyyy", { locale: ptBR })}
+                          </span>
+                        </div>
+                      )}
                     </div>
                   )}
 

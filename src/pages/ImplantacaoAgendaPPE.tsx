@@ -47,7 +47,7 @@ export default function ImplantacaoAgendaPPE() {
       setLoading(true);
       const { data: etapasRaw, error: etapasError } = await supabase
         .from('implantacao_etapas')
-        .select('project_id, ppe_execucao_base_data, agendamento_visita_startup_data, ppe_equipe_prestador_id');
+        .select('project_id, ppe_execucao_base_data, agendamento_visita_startup_data, ppe_equipe_prestador_id, contrato_assinado_at, ligacao_boas_vindas_at, laudo_visita_startup_at, check_programacao_at, confirmacao_ativacao_financeira_at');
       if (etapasError) {
         console.error('Erro ao carregar etapas PPE:', etapasError);
         setEvents([]);

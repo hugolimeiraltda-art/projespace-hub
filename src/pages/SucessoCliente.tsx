@@ -215,6 +215,8 @@ export default function SucessoCliente() {
     fetchPendenciasClientes();
     fetchPendenciasDepartamento();
     fetchAdministradores();
+    fetchChamados();
+    fetchDepoimentos();
   }, []);
 
   const fetchCustomers = async () => {

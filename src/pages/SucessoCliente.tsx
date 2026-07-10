@@ -920,12 +920,37 @@ export default function SucessoCliente() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-center py-8 text-muted-foreground">
-                <MessageSquare className="w-12 h-12 mx-auto mb-3 opacity-30" />
-                <p>Clique para ver chamados</p>
-                <p className="text-sm">Visualize e gerencie reclamações</p>
-              </div>
+              {chamados.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <MessageSquare className="w-12 h-12 mx-auto mb-3 opacity-30" />
+                  <p>Nenhum chamado registrado</p>
+                  <p className="text-sm">Clique para gerenciar</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-3xl font-bold">{chamados.length}</span>
+                    <div className="text-right text-sm">
+                      <div className="text-orange-600 font-medium">
+                        {chamados.filter(c => c.status !== 'RESOLVIDO' && c.status !== 'FECHADO').length} em aberto
+                      </div>
+                      <div className="text-muted-foreground">
+                        {chamados.filter(c => c.prioridade === 'ALTA' || c.prioridade === 'URGENTE').length} alta prioridade
+                      </div>
+                    </div>
+                  </div>
+                  <div className="space-y-1 pt-2 border-t">
+                    {chamados.slice(0, 3).map(c => (
+                      <div key={c.id} className="flex items-center justify-between text-sm">
+                        <span className="truncate flex-1">{c.customer_portfolio?.razao_social || '—'}</span>
+                        <Badge variant="outline" className="ml-2 text-xs">{c.status}</Badge>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </CardContent>
+
           </Card>
 
           {/* Testimonials */}

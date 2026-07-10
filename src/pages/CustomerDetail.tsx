@@ -515,6 +515,20 @@ export default function CustomerDetail() {
           </div>
         )}
 
+        {isPPE && (
+          <Tabs value={activeSection} onValueChange={(v) => setActiveSection(v as any)} className="mb-4">
+            <TabsList>
+              <TabsTrigger value="cadastro">Cadastro</TabsTrigger>
+              <TabsTrigger value="implantacao">Implantação</TabsTrigger>
+            </TabsList>
+          </Tabs>
+        )}
+
+        {isPPE && activeSection === 'implantacao' && (
+          <ImplantacaoHistoricoPPE projectId={projectId} />
+        )}
+
+        {(!isPPE || activeSection === 'cadastro') && (<>
         {/* Dados do Cliente */}
         <Card className="mb-6">
           <CardHeader>

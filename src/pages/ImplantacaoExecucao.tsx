@@ -1166,17 +1166,19 @@ export default function ImplantacaoExecucao() {
                           className="w-auto"
                         />
                       </div>
-                      <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 rounded-full bg-green-500" />
-                        <Label htmlFor="end-date" className="font-medium whitespace-nowrap">Prazo:</Label>
-                        <Input
-                          id="end-date"
-                          type="date"
-                          value={tempEndDate}
-                          onChange={(e) => setTempEndDate(e.target.value)}
-                          className="w-auto"
-                        />
-                      </div>
+                      {!isPPE && (
+                        <div className="flex items-center gap-2">
+                          <div className="w-3 h-3 rounded-full bg-green-500" />
+                          <Label htmlFor="end-date" className="font-medium whitespace-nowrap">Prazo:</Label>
+                          <Input
+                            id="end-date"
+                            type="date"
+                            value={tempEndDate}
+                            onChange={(e) => setTempEndDate(e.target.value)}
+                            className="w-auto"
+                          />
+                        </div>
+                      )}
                       <div className="flex gap-2">
                         <Button
                           size="sm"

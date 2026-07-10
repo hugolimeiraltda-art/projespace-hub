@@ -22,6 +22,8 @@ import { format, addMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { AdministradoresCondominio } from '@/components/AdministradoresCondominio';
 import { TotensImplantacao } from '@/components/TotensImplantacao';
+import { ImplantacaoHistoricoPPE } from '@/components/ImplantacaoHistoricoPPE';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const NOC_STATUS_OPTIONS = [
   { value: 'ATIVADO', label: 'Ativado no NOC' },
@@ -87,6 +89,8 @@ export default function CustomerDetail() {
   const dataTable = isPPE ? 'ppe_customers' : 'customer_portfolio';
 
   const [customer, setCustomer] = useState<Customer | null>(null);
+  const [projectId, setProjectId] = useState<string | null>(null);
+  const [activeSection, setActiveSection] = useState<'cadastro' | 'implantacao'>('cadastro');
   const [documents, setDocuments] = useState<CustomerDocument[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -146,6 +150,7 @@ export default function CustomerDetail() {
         .single();
 
       if (error) throw error;
+      setProjectId((data as any).project_id || null);
       const normalizedData = {
         ...data,
         tipo_carteira: isPPE ? 'PPE' : data.tipo_carteira,
@@ -510,6 +515,20 @@ export default function CustomerDetail() {
           </div>
         )}
 
+        {isPPE && (
+          <Tabs value={activeSection} onValueChange={(v) => setActiveSection(v as any)} className="mb-4">
+            <TabsList>
+              <TabsTrigger value="cadastro">Cadastro</TabsTrigger>
+              <TabsTrigger value="implantacao">Implantação</TabsTrigger>
+            </TabsList>
+          </Tabs>
+        )}
+
+        {isPPE && activeSection === 'implantacao' && (
+          <ImplantacaoHistoricoPPE projectId={projectId} />
+        )}
+
+        {(!isPPE || activeSection === 'cadastro') && (<>
         {/* Dados do Cliente */}
         <Card className="mb-6">
           <CardHeader>
@@ -899,6 +918,7 @@ export default function CustomerDetail() {
             )}
           </CardContent>
         </Card>
+        </>)}
       </div>
     </Layout>
   );

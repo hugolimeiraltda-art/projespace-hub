@@ -47,7 +47,7 @@ export default function ImplantacaoAgendaPPE() {
       setLoading(true);
       const { data: etapasRaw, error: etapasError } = await supabase
         .from('implantacao_etapas')
-        .select('project_id, ppe_execucao_base_data, agendamento_visita_startup_data, ppe_equipe_prestador_id');
+        .select('project_id, ppe_execucao_base_data, agendamento_visita_startup_data, ppe_equipe_prestador_id, contrato_assinado_at, ligacao_boas_vindas_at, laudo_visita_startup_at, check_programacao_at, confirmacao_ativacao_financeira_at');
       if (etapasError) {
         console.error('Erro ao carregar etapas PPE:', etapasError);
         setEvents([]);
@@ -115,6 +115,10 @@ export default function ImplantacaoAgendaPPE() {
         if (!proj) continue;
         if (proj.tipo_implantacao !== 'PPE') continue;
         if (proj.implantacao_status === 'CONCLUIDO_IMPLANTACAO') continue;
+        // Hide PPE projects that are fully completed (all 5 steps)
+        const _et: any = et;
+        const ppeDone = !!(_et.contrato_assinado_at && _et.ligacao_boas_vindas_at && _et.laudo_visita_startup_at && _et.check_programacao_at && _et.confirmacao_ativacao_financeira_at);
+        if (ppeDone) continue;
         const nomeKey = (proj.cliente_condominio_nome || '').trim().toLowerCase();
         const contrato = contratoByProject.get(proj.id)
           || contratoByNome.get(nomeKey)

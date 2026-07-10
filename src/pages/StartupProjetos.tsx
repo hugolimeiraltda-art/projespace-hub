@@ -686,6 +686,13 @@ export default function StartupProjetos() {
     const stage = getStage(project.id, project.tipo_implantacao === 'PPE');
     const matchesStage = stageFilter === 'TODOS' || stage === stageFilter;
 
+    // Hide fully-completed PPE projects from Implantação lists (moved to PPE portfolio)
+    if (project.tipo_implantacao === 'PPE' && activeTab !== 'historico') {
+      const e = etapasMap[project.id];
+      const ppeDone = !!(e && e.contrato_assinado_at && e.ligacao_boas_vindas_at && e.laudo_visita_startup_at && e.check_programacao_at && e.confirmacao_ativacao_financeira_at);
+      if (ppeDone) return false;
+    }
+
     return matchesSearch && matchesStatus && matchesTipoObra && matchesPendencia && matchesStage;
   }).sort((a, b) => {
     let result: number;

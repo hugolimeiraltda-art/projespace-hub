@@ -994,9 +994,9 @@ export default function StartupProjetos() {
             <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
               {([
                 { key: 'TODOS', label: 'Total', icon: Filter, color: 'text-foreground', ring: 'ring-primary' },
-                { key: 'ONBOARDING', label: 'Em Onboarding', icon: Phone, color: 'text-amber-600', ring: 'ring-amber-500' },
-                { key: 'OBRA', label: activeTab === 'ppe' ? 'Em Instalação' : 'Em Obra', icon: HardHat, color: 'text-blue-600', ring: 'ring-blue-500' },
-                { key: 'PROGRAMACAO', label: 'Em Programação', icon: Settings, color: 'text-purple-600', ring: 'ring-purple-500' },
+                { key: 'ONBOARDING', label: activeTab === 'ppe' ? 'Onboarding Concluído' : 'Em Onboarding', icon: Phone, color: 'text-amber-600', ring: 'ring-amber-500' },
+                { key: 'OBRA', label: activeTab === 'ppe' ? 'Instalação Base' : 'Em Obra', icon: HardHat, color: 'text-blue-600', ring: 'ring-blue-500' },
+                { key: 'PROGRAMACAO', label: activeTab === 'ppe' ? 'Conclusão' : 'Em Programação', icon: Settings, color: 'text-purple-600', ring: 'ring-purple-500' },
                 { key: 'FINANCEIRO', label: 'Ativação Financeira', icon: DollarSign, color: 'text-green-600', ring: 'ring-green-500' },
               ] as const).map(({ key, label, icon: Icon, color, ring }) => (
                 <Card

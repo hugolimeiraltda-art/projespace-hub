@@ -684,7 +684,20 @@ export default function StartupProjetos() {
     }
     
     const stage = getStage(project.id, project.tipo_implantacao === 'PPE');
-    const matchesStage = stageFilter === 'TODOS' || stage === stageFilter;
+    let matchesStage: boolean;
+    if (stageFilter === 'TODOS') {
+      matchesStage = true;
+    } else if (activeTab === 'ppe') {
+      const e = etapasMap[project.id];
+      if (!e) matchesStage = false;
+      else if (stageFilter === 'ONBOARDING') matchesStage = !!e.ligacao_boas_vindas_at;
+      else if (stageFilter === 'OBRA') matchesStage = !!e.ppe_execucao_base_data;
+      else if (stageFilter === 'PROGRAMACAO') matchesStage = !!e.agendamento_visita_startup_data;
+      else if (stageFilter === 'FINANCEIRO') matchesStage = !!e.confirmacao_ativacao_financeira_at;
+      else matchesStage = false;
+    } else {
+      matchesStage = stage === stageFilter;
+    }
 
     // Hide fully-completed PPE projects from Implantação lists (moved to PPE portfolio)
     if (project.tipo_implantacao === 'PPE' && activeTab !== 'historico') {

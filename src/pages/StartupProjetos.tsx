@@ -19,6 +19,7 @@ import { cn } from '@/lib/utils';
 import { ImplantacaoTimeline, ImplantacaoEtapasData } from '@/components/ImplantacaoTimeline';
 import { StartupProjectCardCompact } from '@/components/StartupProjectCardCompact';
 import { StartupProjectsTable } from '@/components/StartupProjectsTable';
+import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible';
 import {
   Search,
   Filter,

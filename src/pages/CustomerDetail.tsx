@@ -150,6 +150,7 @@ export default function CustomerDetail() {
         .single();
 
       if (error) throw error;
+      setProjectId((data as any).project_id || null);
       const normalizedData = {
         ...data,
         tipo_carteira: isPPE ? 'PPE' : data.tipo_carteira,

@@ -993,34 +993,44 @@ export default function StartupProjetos() {
         {(activeTab === 'em-implantacao' || activeTab === 'ppe') && (
           <>
             {/* Stage Cards */}
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
-              {([
-                { key: 'TODOS', label: 'Total', icon: Filter, color: 'text-foreground', ring: 'ring-primary' },
-                { key: 'ONBOARDING', label: activeTab === 'ppe' ? 'Onboarding Concluído' : 'Em Onboarding', icon: Phone, color: 'text-amber-600', ring: 'ring-amber-500' },
-                { key: 'OBRA', label: activeTab === 'ppe' ? 'Instalação Base' : 'Em Obra', icon: HardHat, color: 'text-blue-600', ring: 'ring-blue-500' },
-                { key: 'PROGRAMACAO', label: activeTab === 'ppe' ? 'Programação' : 'Em Programação', icon: Settings, color: 'text-purple-600', ring: 'ring-purple-500' },
-                { key: 'FINANCEIRO', label: 'Ativação Financeira', icon: DollarSign, color: 'text-green-600', ring: 'ring-green-500' },
-              ] as const).map(({ key, label, icon: Icon, color, ring }) => (
-                <Card
-                  key={key}
-                  className={cn(
-                    "cursor-pointer transition-all hover:shadow-md",
-                    stageFilter === key && `ring-2 ${ring}`
-                  )}
-                  onClick={() => setStageFilter(key as typeof stageFilter)}
-                >
-                  <CardContent className="pt-4">
-                    <div className="flex items-center justify-between">
-                      <div className="min-w-0">
-                        <p className="text-xs text-muted-foreground truncate">{label}</p>
-                        <p className={cn("text-2xl font-bold", color)}>{stageCounts[key as keyof typeof stageCounts]}</p>
-                      </div>
-                      <Icon className={cn("w-7 h-7 shrink-0", color)} />
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+            <Collapsible open={cardsExpanded} onOpenChange={setCardsExpanded} className="mb-2">
+              <CollapsibleTrigger asChild>
+                <Button variant="ghost" size="sm" className="mb-2 gap-1 h-8 px-2 text-xs text-muted-foreground hover:text-foreground">
+                  {cardsExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                  Indicadores
+                </Button>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
+                  {([
+                    { key: 'TODOS', label: 'Total', icon: Filter, color: 'text-foreground', ring: 'ring-primary' },
+                    { key: 'ONBOARDING', label: activeTab === 'ppe' ? 'Onboarding Concluído' : 'Em Onboarding', icon: Phone, color: 'text-amber-600', ring: 'ring-amber-500' },
+                    { key: 'OBRA', label: activeTab === 'ppe' ? 'Instalação Base' : 'Em Obra', icon: HardHat, color: 'text-blue-600', ring: 'ring-blue-500' },
+                    { key: 'PROGRAMACAO', label: activeTab === 'ppe' ? 'Programação' : 'Em Programação', icon: Settings, color: 'text-purple-600', ring: 'ring-purple-500' },
+                    { key: 'FINANCEIRO', label: 'Ativação Financeira', icon: DollarSign, color: 'text-green-600', ring: 'ring-green-500' },
+                  ] as const).map(({ key, label, icon: Icon, color, ring }) => (
+                    <Card
+                      key={key}
+                      className={cn(
+                        "cursor-pointer transition-all hover:shadow-md",
+                        stageFilter === key && `ring-2 ${ring}`
+                      )}
+                      onClick={() => setStageFilter(key as typeof stageFilter)}
+                    >
+                      <CardContent className="pt-4">
+                        <div className="flex items-center justify-between">
+                          <div className="min-w-0">
+                            <p className="text-xs text-muted-foreground truncate">{label}</p>
+                            <p className={cn("text-2xl font-bold", color)}>{stageCounts[key as keyof typeof stageCounts]}</p>
+                          </div>
+                          <Icon className={cn("w-7 h-7 shrink-0", color)} />
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
 
             {/* Clean filter bar */}
             <div className="mb-4 flex flex-wrap gap-2 items-center">

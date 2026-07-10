@@ -89,6 +89,8 @@ export default function CustomerDetail() {
   const dataTable = isPPE ? 'ppe_customers' : 'customer_portfolio';
 
   const [customer, setCustomer] = useState<Customer | null>(null);
+  const [projectId, setProjectId] = useState<string | null>(null);
+  const [activeSection, setActiveSection] = useState<'cadastro' | 'implantacao'>('cadastro');
   const [documents, setDocuments] = useState<CustomerDocument[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);

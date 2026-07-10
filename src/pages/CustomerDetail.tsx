@@ -22,6 +22,8 @@ import { format, addMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { AdministradoresCondominio } from '@/components/AdministradoresCondominio';
 import { TotensImplantacao } from '@/components/TotensImplantacao';
+import { ImplantacaoHistoricoPPE } from '@/components/ImplantacaoHistoricoPPE';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const NOC_STATUS_OPTIONS = [
   { value: 'ATIVADO', label: 'Ativado no NOC' },

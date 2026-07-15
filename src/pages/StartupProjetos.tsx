@@ -518,6 +518,7 @@ export default function StartupProjetos() {
             operacao_assistida_fim: e.operacao_assistida_fim,
             agendamento_visita_startup_data: e.agendamento_visita_startup_data,
             ppe_execucao_base_data: e.ppe_execucao_base_data,
+            ppe_observacao_instalacao: e.ppe_observacao_instalacao,
           };
         }
       });

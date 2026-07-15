@@ -1,0 +1,1 @@
+ALTER TABLE public.projects ADD COLUMN IF NOT EXISTS pendencia_status text CHECK (pendencia_status IN ('PENDENCIA_CLIENTE','PENDENCIA_COMERCIAL')), ADD COLUMN IF NOT EXISTS pendencia_status_at timestamptz, ADD COLUMN IF NOT EXISTS pendencia_status_by uuid;

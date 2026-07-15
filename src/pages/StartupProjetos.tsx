@@ -750,7 +750,7 @@ export default function StartupProjetos() {
     if (!e) return false;
     if (key === 'ONBOARDING') return !!e.ligacao_boas_vindas_at;
     if (key === 'OBRA') return !!e.ppe_execucao_base_data;
-    if (key === 'PROGRAMACAO') return !!e.agendamento_visita_startup_data;
+    if (key === 'PROGRAMACAO') return !!(e.agendamento_visita_startup_at || e.agendamento_visita_startup_data || e.laudo_visita_startup_at || e.ppe_observacao_instalacao);
     if (key === 'FINANCEIRO') return !!e.confirmacao_ativacao_financeira_at;
     return false;
   };

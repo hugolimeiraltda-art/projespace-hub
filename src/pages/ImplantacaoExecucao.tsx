@@ -1053,7 +1053,7 @@ export default function ImplantacaoExecucao() {
         <div className="mb-6">
           <Button
             variant="ghost"
-            onClick={() => navigate('/startup-projetos')}
+            onClick={() => navigate(isPPE ? '/startup-projetos?tab=ppe' : '/startup-projetos')}
             className="mb-4"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />

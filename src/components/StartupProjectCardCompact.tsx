@@ -126,6 +126,18 @@ export function StartupProjectCardCompact({
                   {pendenciasCount}
                 </Badge>
               )}
+              {(project as any).pendencia_status === 'PENDENCIA_CLIENTE' && (
+                <Badge className="bg-amber-500/15 text-amber-700 dark:text-amber-400 border-amber-500/40 border text-[10px] h-5 px-1.5 shrink-0" title="Projeto marcado com pendência de cliente">
+                  <AlertTriangle className="w-3 h-3 mr-0.5" />
+                  Pend. Cliente
+                </Badge>
+              )}
+              {(project as any).pendencia_status === 'PENDENCIA_COMERCIAL' && (
+                <Badge className="bg-blue-500/15 text-blue-700 dark:text-blue-400 border-blue-500/40 border text-[10px] h-5 px-1.5 shrink-0" title="Projeto marcado com pendência comercial">
+                  <AlertTriangle className="w-3 h-3 mr-0.5" />
+                  Pend. Comercial
+                </Badge>
+              )}
             </div>
             <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-muted-foreground mt-1">
               <span className="truncate">{project.cliente_cidade}, {project.cliente_estado}</span>

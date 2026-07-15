@@ -15,6 +15,7 @@ export interface ImplantacaoEtapasData {
   operacao_assistida_fim: string | null;
   agendamento_visita_startup_data: string | null;
   ppe_execucao_base_data: string | null;
+  ppe_observacao_instalacao?: string | null;
 }
 
 interface Step {

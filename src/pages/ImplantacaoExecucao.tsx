@@ -2262,6 +2262,75 @@ export default function ImplantacaoExecucao() {
                       </div>
                     </>
                   )}
+
+                  {/* Marcar projeto como Pendência */}
+                  <div className="px-4 py-3 space-y-2 border-t border-border">
+                    <span className="text-sm font-medium">Marcar status de pendência do projeto</span>
+                    {(project as any)?.pendencia_status && (
+                      <div className="text-xs text-muted-foreground">
+                        Atual:{' '}
+                        <span className={cn(
+                          "font-semibold",
+                          (project as any).pendencia_status === 'PENDENCIA_CLIENTE' ? 'text-amber-600' : 'text-blue-600'
+                        )}>
+                          {(project as any).pendencia_status === 'PENDENCIA_CLIENTE' ? 'Pendência de Cliente' : 'Pendência Comercial'}
+                        </span>
+                        {(project as any).pendencia_status_at && (
+                          <> · {format(parseISO((project as any).pendencia_status_at), "dd/MM/yyyy HH:mm", { locale: ptBR })}</>
+                        )}
+                      </div>
+                    )}
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        size="sm"
+                        variant={(project as any)?.pendencia_status === 'PENDENCIA_CLIENTE' ? 'default' : 'outline'}
+                        onClick={async () => {
+                          if (!project) return;
+                          const novo = (project as any).pendencia_status === 'PENDENCIA_CLIENTE' ? null : 'PENDENCIA_CLIENTE';
+                          const { error } = await supabase
+                            .from('projects')
+                            .update({
+                              pendencia_status: novo,
+                              pendencia_status_at: novo ? new Date().toISOString() : null,
+                              pendencia_status_by: novo ? user?.id : null,
+                            } as any)
+                            .eq('id', project.id);
+                          if (error) {
+                            toast({ title: 'Erro', description: error.message, variant: 'destructive' });
+                          } else {
+                            setProject({ ...(project as any), pendencia_status: novo, pendencia_status_at: novo ? new Date().toISOString() : null } as any);
+                            toast({ title: novo ? 'Marcado como Pendência de Cliente' : 'Pendência removida' });
+                          }
+                        }}
+                      >
+                        Pendência de Cliente
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant={(project as any)?.pendencia_status === 'PENDENCIA_COMERCIAL' ? 'default' : 'outline'}
+                        onClick={async () => {
+                          if (!project) return;
+                          const novo = (project as any).pendencia_status === 'PENDENCIA_COMERCIAL' ? null : 'PENDENCIA_COMERCIAL';
+                          const { error } = await supabase
+                            .from('projects')
+                            .update({
+                              pendencia_status: novo,
+                              pendencia_status_at: novo ? new Date().toISOString() : null,
+                              pendencia_status_by: novo ? user?.id : null,
+                            } as any)
+                            .eq('id', project.id);
+                          if (error) {
+                            toast({ title: 'Erro', description: error.message, variant: 'destructive' });
+                          } else {
+                            setProject({ ...(project as any), pendencia_status: novo, pendencia_status_at: novo ? new Date().toISOString() : null } as any);
+                            toast({ title: novo ? 'Marcado como Pendência Comercial' : 'Pendência removida' });
+                          }
+                        }}
+                      >
+                        Pendência Comercial
+                      </Button>
+                    </div>
+                  </div>
                 </CardContent>
               </CollapsibleContent>
             </Collapsible>

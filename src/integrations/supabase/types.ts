@@ -3064,6 +3064,9 @@ export type Database = {
           numero_projeto: number
           numero_unidades: number | null
           observacoes: string | null
+          pendencia_status: string | null
+          pendencia_status_at: string | null
+          pendencia_status_by: string | null
           prazo_entrega_projeto: string | null
           sale_status: Database["public"]["Enums"]["sale_status"]
           status: Database["public"]["Enums"]["project_status"]
@@ -3100,6 +3103,9 @@ export type Database = {
           numero_projeto?: number
           numero_unidades?: number | null
           observacoes?: string | null
+          pendencia_status?: string | null
+          pendencia_status_at?: string | null
+          pendencia_status_by?: string | null
           prazo_entrega_projeto?: string | null
           sale_status?: Database["public"]["Enums"]["sale_status"]
           status?: Database["public"]["Enums"]["project_status"]
@@ -3136,6 +3142,9 @@ export type Database = {
           numero_projeto?: number
           numero_unidades?: number | null
           observacoes?: string | null
+          pendencia_status?: string | null
+          pendencia_status_at?: string | null
+          pendencia_status_by?: string | null
           prazo_entrega_projeto?: string | null
           sale_status?: Database["public"]["Enums"]["sale_status"]
           status?: Database["public"]["Enums"]["project_status"]

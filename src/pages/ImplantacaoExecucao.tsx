@@ -990,7 +990,7 @@ export default function ImplantacaoExecucao() {
       <Layout>
         <div className="p-8 text-center">
           <p className="text-muted-foreground">Projeto não encontrado.</p>
-          <Button onClick={() => navigate('/startup-projetos')} className="mt-4">
+          <Button onClick={() => navigate(project?.tipo_implantacao === 'PPE' ? '/startup-projetos?tab=ppe' : '/startup-projetos')} className="mt-4">
             Voltar
           </Button>
         </div>

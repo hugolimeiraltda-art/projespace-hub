@@ -405,21 +405,64 @@ export default function SucessoClienteChamados() {
                 </div>
               )}
 
-              {/* Status */}
-              <div className="flex items-center gap-3">
-                <span className="text-sm text-muted-foreground">Status:</span>
-                <Select value={statusEdit} onValueChange={setStatusEdit}>
-                  <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="aberto">Aberto</SelectItem>
-                    <SelectItem value="em_andamento">Em Andamento</SelectItem>
-                    <SelectItem value="resolvido">Resolvido</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Button size="sm" onClick={handleSaveStatus} disabled={savingStatus || statusEdit === selected.status}>
-                  {savingStatus ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Atualizar'}
-                </Button>
-                <div className="ml-auto">{getPrioridadeBadge(selected.prioridade)}</div>
+              {/* Status + Renovação */}
+              <div className="rounded-lg border p-4 space-y-4">
+                <div className="flex items-center gap-3">
+                  <RefreshCw className="w-4 h-4 text-muted-foreground" />
+                  <span className="text-sm text-muted-foreground">Status:</span>
+                  <Select value={statusEdit} onValueChange={setStatusEdit}>
+                    <SelectTrigger className="w-56"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="em_andamento">Em Andamento</SelectItem>
+                      <SelectItem value="renovado">Renovado</SelectItem>
+                      <SelectItem value="nao_renovado">Não Renovado</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <div className="ml-auto">{getPrioridadeBadge(selected.prioridade)}</div>
+                </div>
+
+                {(statusEdit === 'renovado' || statusEdit === 'nao_renovado') && (
+                  <div className="space-y-4 pt-2 border-t">
+                    <div className="grid grid-cols-3 gap-3">
+                      <div className="space-y-1">
+                        <Label className="text-xs">Novo valor mensalidade (R$) *</Label>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          value={novoValor}
+                          onChange={e => setNovoValor(e.target.value)}
+                          placeholder="0,00"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs">Vigência a partir de *</Label>
+                        <Input type="date" value={novoValorVigencia} onChange={e => setNovoValorVigencia(e.target.value)} />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs">Nova data de vencimento *</Label>
+                        <Input type="date" value={novaDataVenc} onChange={e => setNovaDataVenc(e.target.value)} />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-xs">Recursos utilizados para renovação</Label>
+                      <div className="flex flex-wrap gap-4">
+                        {RECURSOS_OPTIONS.map(opt => (
+                          <label key={opt.value} className="flex items-center gap-2 text-sm cursor-pointer">
+                            <Checkbox checked={recursos.includes(opt.value)} onCheckedChange={() => toggleRecurso(opt.value)} />
+                            {opt.label}
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex justify-end">
+                  <Button size="sm" onClick={handleSaveRenovacao} disabled={savingStatus}>
+                    {savingStatus ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Salvar alterações'}
+                  </Button>
+                </div>
               </div>
 
               {/* Administração / contatos */}

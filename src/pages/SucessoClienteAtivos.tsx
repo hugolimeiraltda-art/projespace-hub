@@ -11,9 +11,14 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { supabase } from '@/integrations/supabase/client';
 import { Search, Building2, MoreHorizontal, RefreshCw, UserCheck, MessageSquareWarning, ThumbsUp, Eye, ArrowUp, ArrowDown, ArrowUpDown, Filter, X, Hammer, ExternalLink } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { differenceInDays, parseISO, addMonths } from 'date-fns';
+import { differenceInDays, parseISO, addMonths, format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { useToast } from '@/hooks/use-toast';
 
 interface Customer {
   id: string;
@@ -162,6 +167,63 @@ export default function SucessoClienteAtivos() {
 
   const customers = carteira === 'pci' ? customersPci : customersPpe;
   const loading = carteira === 'pci' ? loadingPci : loadingPpe;
+
+  const { toast } = useToast();
+  const [renovacaoCustomer, setRenovacaoCustomer] = useState<Customer | null>(null);
+  const [renovacaoObs, setRenovacaoObs] = useState('');
+  const [renovacaoSaving, setRenovacaoSaving] = useState(false);
+
+  const openRenovacao = (c: Customer) => {
+    setRenovacaoCustomer(c);
+    setRenovacaoObs('');
+  };
+
+  const handleAbrirChamadoRenovacao = async () => {
+    if (!renovacaoCustomer) return;
+    setRenovacaoSaving(true);
+    try {
+      const { data: userData } = await supabase.auth.getUser();
+      const userId = userData.user?.id ?? null;
+      const userName = userData.user?.user_metadata?.nome || userData.user?.email || 'Sistema';
+
+      const termino = renovacaoCustomer.data_termino
+        ? parseISO(renovacaoCustomer.data_termino)
+        : renovacaoCustomer.data_ativacao
+          ? addMonths(parseISO(renovacaoCustomer.data_ativacao), 36)
+          : null;
+      const dias = termino ? differenceInDays(termino, new Date()) : null;
+
+      const partes: string[] = [
+        'Processo de Renovação Contratual iniciado.',
+        `Cliente: ${renovacaoCustomer.razao_social} (${renovacaoCustomer.contrato})`,
+        `Data de Ativação: ${renovacaoCustomer.data_ativacao ? format(parseISO(renovacaoCustomer.data_ativacao), 'dd/MM/yyyy', { locale: ptBR }) : '-'}`,
+        `Término do Contrato: ${termino ? format(termino, 'dd/MM/yyyy', { locale: ptBR }) : '-'}`,
+        `Mensalidade Atual: ${renovacaoCustomer.mensalidade != null ? `R$ ${renovacaoCustomer.mensalidade.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '-'}`,
+        `Status: ${dias === null ? 'Sem informação' : dias < 0 ? 'Contrato vencido' : `${dias} dias restantes`}`,
+      ];
+      if (renovacaoObs.trim()) partes.push('', `Observações: ${renovacaoObs.trim()}`);
+
+      const { error } = await supabase.from('customer_chamados').insert({
+        customer_id: renovacaoCustomer.id,
+        assunto: 'Renovação Contratual',
+        descricao: partes.join('\n'),
+        prioridade: 'alta',
+        status: 'aberto',
+        created_by: userId,
+        created_by_name: userName,
+      });
+      if (error) throw error;
+
+      toast({ title: 'Chamado aberto', description: 'Chamado de Renovação Contratual criado com sucesso.' });
+      setRenovacaoCustomer(null);
+      setRenovacaoObs('');
+    } catch (error) {
+      console.error(error);
+      toast({ title: 'Erro', description: 'Não foi possível abrir o chamado.', variant: 'destructive' });
+    } finally {
+      setRenovacaoSaving(false);
+    }
+  };
 
   useEffect(() => {
     (async () => {
@@ -506,7 +568,7 @@ export default function SucessoClienteAtivos() {
                                 )}
 
                                 <DropdownMenuSeparator />
-                                <DropdownMenuItem onClick={() => navigate(`/sucesso-cliente/cliente/${c.id}#renovacao`)}>
+                                <DropdownMenuItem onClick={() => openRenovacao(c)}>
                                   <RefreshCw className="h-4 w-4 mr-2" />
                                   Renovar Contrato
                                 </DropdownMenuItem>
@@ -547,6 +609,64 @@ export default function SucessoClienteAtivos() {
           </CardContent>
         </Card>
       </div>
+
+      <Dialog open={!!renovacaoCustomer} onOpenChange={(o) => !o && setRenovacaoCustomer(null)}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Abrir Chamado - Renovação Contratual</DialogTitle>
+            <DialogDescription>
+              Um chamado será aberto para a equipe de Sucesso do Cliente com as informações atuais do contrato.
+            </DialogDescription>
+          </DialogHeader>
+          {renovacaoCustomer && (() => {
+            const termino = renovacaoCustomer.data_termino
+              ? parseISO(renovacaoCustomer.data_termino)
+              : renovacaoCustomer.data_ativacao
+                ? addMonths(parseISO(renovacaoCustomer.data_ativacao), 36)
+                : null;
+            const dias = termino ? differenceInDays(termino, new Date()) : null;
+            return (
+              <div className="grid grid-cols-2 gap-4 py-2 text-sm">
+                <div className="col-span-2">
+                  <p className="text-muted-foreground">Cliente</p>
+                  <p className="font-medium">{renovacaoCustomer.razao_social} <span className="text-muted-foreground">({renovacaoCustomer.contrato})</span></p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground">Data de Ativação</p>
+                  <p className="font-medium">{renovacaoCustomer.data_ativacao ? format(parseISO(renovacaoCustomer.data_ativacao), 'dd/MM/yyyy', { locale: ptBR }) : '-'}</p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground">Término do Contrato</p>
+                  <p className="font-medium">{termino ? format(termino, 'dd/MM/yyyy', { locale: ptBR }) : '-'}</p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground">Mensalidade Atual</p>
+                  <p className="font-medium">{renovacaoCustomer.mensalidade != null ? `R$ ${renovacaoCustomer.mensalidade.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '-'}</p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground">Status</p>
+                  <p className="font-medium">{dias === null ? 'Sem informação' : dias < 0 ? 'Contrato vencido' : `${dias} dias restantes`}</p>
+                </div>
+              </div>
+            );
+          })()}
+          <div className="space-y-2">
+            <Label>Observações / Comentários</Label>
+            <Textarea
+              value={renovacaoObs}
+              onChange={(e) => setRenovacaoObs(e.target.value)}
+              placeholder="Adicione detalhes, condições propostas, contexto do cliente..."
+              rows={5}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRenovacaoCustomer(null)} disabled={renovacaoSaving}>Cancelar</Button>
+            <Button onClick={handleAbrirChamadoRenovacao} disabled={renovacaoSaving} className="bg-amber-500 hover:bg-amber-600">
+              {renovacaoSaving ? 'Abrindo...' : 'Abrir Chamado'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Layout>
   );
 }

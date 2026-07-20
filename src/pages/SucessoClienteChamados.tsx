@@ -279,16 +279,16 @@ export default function SucessoClienteChamados() {
 
         <div className="grid grid-cols-4 gap-4">
           <Card><CardContent className="pt-4 text-center">
-            <p className="text-2xl font-bold text-red-600">{filteredChamados.filter(c => c.status === 'aberto').length}</p>
-            <p className="text-sm text-muted-foreground">Abertos</p>
-          </CardContent></Card>
-          <Card><CardContent className="pt-4 text-center">
             <p className="text-2xl font-bold text-yellow-600">{filteredChamados.filter(c => c.status === 'em_andamento').length}</p>
             <p className="text-sm text-muted-foreground">Em Andamento</p>
           </CardContent></Card>
           <Card><CardContent className="pt-4 text-center">
-            <p className="text-2xl font-bold text-green-600">{filteredChamados.filter(c => c.status === 'resolvido').length}</p>
-            <p className="text-sm text-muted-foreground">Resolvidos</p>
+            <p className="text-2xl font-bold text-green-600">{filteredChamados.filter(c => c.status === 'renovado').length}</p>
+            <p className="text-sm text-muted-foreground">Renovados</p>
+          </CardContent></Card>
+          <Card><CardContent className="pt-4 text-center">
+            <p className="text-2xl font-bold text-red-600">{filteredChamados.filter(c => c.status === 'nao_renovado').length}</p>
+            <p className="text-sm text-muted-foreground">Não Renovados</p>
           </CardContent></Card>
           <Card><CardContent className="pt-4 text-center">
             <p className="text-2xl font-bold text-primary">{filteredChamados.length}</p>
@@ -299,20 +299,20 @@ export default function SucessoClienteChamados() {
         {loading ? (
           <div className="flex justify-center py-12"><Loader2 className="w-8 h-8 animate-spin" /></div>
         ) : (
-          <Tabs defaultValue="abertos">
+          <Tabs defaultValue="andamento">
             <TabsList>
-              <TabsTrigger value="abertos">Abertos ({filteredChamados.filter(c => c.status === 'aberto').length})</TabsTrigger>
               <TabsTrigger value="andamento">Em Andamento ({filteredChamados.filter(c => c.status === 'em_andamento').length})</TabsTrigger>
-              <TabsTrigger value="resolvidos">Resolvidos ({filteredChamados.filter(c => c.status === 'resolvido').length})</TabsTrigger>
+              <TabsTrigger value="renovados">Renovados ({filteredChamados.filter(c => c.status === 'renovado').length})</TabsTrigger>
+              <TabsTrigger value="nao_renovados">Não Renovados ({filteredChamados.filter(c => c.status === 'nao_renovado').length})</TabsTrigger>
               <TabsTrigger value="todos">Todos ({filteredChamados.length})</TabsTrigger>
             </TabsList>
 
-            {['abertos', 'andamento', 'resolvidos', 'todos'].map(tab => {
+            {['andamento', 'renovados', 'nao_renovados', 'todos'].map(tab => {
               const rows = filteredChamados.filter(c =>
                 tab === 'todos' ||
-                (tab === 'abertos' && c.status === 'aberto') ||
                 (tab === 'andamento' && c.status === 'em_andamento') ||
-                (tab === 'resolvidos' && c.status === 'resolvido'));
+                (tab === 'renovados' && c.status === 'renovado') ||
+                (tab === 'nao_renovados' && c.status === 'nao_renovado'));
               return (
                 <TabsContent key={tab} value={tab}>
                   <Card>

@@ -68,31 +68,47 @@ export function RenovacaoSection({ customerId, dataAtivacao, dataTermino, mensal
     }
   };
 
-  const handleRenovar = async () => {
-    if (!novaDataTermino) {
-      toast({ title: 'Erro', description: 'Informe a nova data de término.', variant: 'destructive' });
-      return;
-    }
-
+  const handleStartRenovacao = async () => {
     setSaving(true);
     try {
-      const updateData: Record<string, unknown> = {
-        data_termino: novaDataTermino,
-      };
+      const { data: userData } = await supabase.auth.getUser();
+      const userId = userData.user?.id ?? null;
+      const userName = userData.user?.user_metadata?.nome || userData.user?.email || 'Sistema';
 
       const parsedMensalidade = parseBRL(novaMensalidade);
-      if (parsedMensalidade !== null) {
-        updateData.mensalidade = parsedMensalidade;
+      const partes: string[] = ['Processo de Renovação iniciado.'];
+      if (novaDataTermino) partes.push(`Nova data de término proposta: ${format(parseISO(novaDataTermino), 'dd/MM/yyyy', { locale: ptBR })}.`);
+      if (parsedMensalidade !== null) partes.push(`Nova mensalidade proposta: R$ ${formatBRL(parsedMensalidade)}.`);
+      if (observacoes) partes.push(`Observações: ${observacoes}`);
+
+      const { error: chamadoError } = await supabase
+        .from('customer_chamados')
+        .insert({
+          customer_id: customerId,
+          assunto: 'Renovação de Contrato',
+          descricao: partes.join('\n'),
+          prioridade: 'alta',
+          status: 'aberto',
+          created_by: userId,
+          created_by_name: userName,
+        });
+
+      if (chamadoError) throw chamadoError;
+
+      // Update portfolio only if user filled new data
+      const updateData: Record<string, unknown> = {};
+      if (novaDataTermino) updateData.data_termino = novaDataTermino;
+      if (parsedMensalidade !== null) updateData.mensalidade = parsedMensalidade;
+
+      if (Object.keys(updateData).length > 0) {
+        const { error } = await supabase
+          .from('customer_portfolio')
+          .update(updateData)
+          .eq('id', customerId);
+        if (error) throw error;
       }
 
-      const { error } = await supabase
-        .from('customer_portfolio')
-        .update(updateData)
-        .eq('id', customerId);
-
-      if (error) throw error;
-      
-      toast({ title: 'Contrato renovado', description: 'Data de término e mensalidade atualizados com sucesso.' });
+      toast({ title: 'Chamado aberto', description: 'Chamado de Renovação de Contrato criado com sucesso.' });
       setEditing(false);
       setNovaDataTermino('');
       setNovaMensalidade('');
@@ -100,7 +116,7 @@ export function RenovacaoSection({ customerId, dataAtivacao, dataTermino, mensal
       onUpdate();
     } catch (error) {
       console.error(error);
-      toast({ title: 'Erro', description: 'Não foi possível renovar o contrato.', variant: 'destructive' });
+      toast({ title: 'Erro', description: 'Não foi possível abrir o chamado de renovação.', variant: 'destructive' });
     } finally {
       setSaving(false);
     }

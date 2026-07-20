@@ -1,0 +1,2 @@
+REVOKE EXECUTE ON FUNCTION public.abrir_chamados_renovacao_automatica() FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.abrir_chamados_renovacao_automatica() TO service_role, postgres;

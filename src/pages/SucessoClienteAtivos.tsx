@@ -11,9 +11,14 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { supabase } from '@/integrations/supabase/client';
 import { Search, Building2, MoreHorizontal, RefreshCw, UserCheck, MessageSquareWarning, ThumbsUp, Eye, ArrowUp, ArrowDown, ArrowUpDown, Filter, X, Hammer, ExternalLink } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { differenceInDays, parseISO, addMonths } from 'date-fns';
+import { differenceInDays, parseISO, addMonths, format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { useToast } from '@/hooks/use-toast';
 
 interface Customer {
   id: string;

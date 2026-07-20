@@ -85,8 +85,12 @@ export default function SucessoClienteChamados() {
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [novoComentario, setNovoComentario] = useState('');
   const [savingComentario, setSavingComentario] = useState(false);
-  const [statusEdit, setStatusEdit] = useState<string>('aberto');
+  const [statusEdit, setStatusEdit] = useState<string>('em_andamento');
   const [savingStatus, setSavingStatus] = useState(false);
+  const [novoValor, setNovoValor] = useState<string>('');
+  const [novoValorVigencia, setNovoValorVigencia] = useState<string>('');
+  const [novaDataVenc, setNovaDataVenc] = useState<string>('');
+  const [recursos, setRecursos] = useState<string[]>([]);
 
   useEffect(() => { fetchChamados(); }, []);
 

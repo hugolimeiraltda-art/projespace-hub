@@ -568,7 +568,7 @@ export default function SucessoClienteAtivos() {
                                 )}
 
                                 <DropdownMenuSeparator />
-                                <DropdownMenuItem onClick={() => navigate(`/sucesso-cliente/cliente/${c.id}#renovacao`)}>
+                                <DropdownMenuItem onClick={() => openRenovacao(c)}>
                                   <RefreshCw className="h-4 w-4 mr-2" />
                                   Renovar Contrato
                                 </DropdownMenuItem>

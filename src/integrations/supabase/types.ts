@@ -3729,6 +3729,7 @@ export type Database = {
       }
     }
     Functions: {
+      abrir_chamados_renovacao_automatica: { Args: never; Returns: undefined }
       can_gerente_view_project: {
         Args: { project_user_id: string }
         Returns: boolean

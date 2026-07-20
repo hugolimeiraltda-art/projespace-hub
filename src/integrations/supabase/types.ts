@@ -258,6 +258,7 @@ export type Database = {
       customer_chamados: {
         Row: {
           assunto: string
+          comentarios: Json
           created_at: string
           created_by: string | null
           created_by_name: string | null
@@ -273,6 +274,7 @@ export type Database = {
         }
         Insert: {
           assunto: string
+          comentarios?: Json
           created_at?: string
           created_by?: string | null
           created_by_name?: string | null
@@ -288,6 +290,7 @@ export type Database = {
         }
         Update: {
           assunto?: string
+          comentarios?: Json
           created_at?: string
           created_by?: string | null
           created_by_name?: string | null

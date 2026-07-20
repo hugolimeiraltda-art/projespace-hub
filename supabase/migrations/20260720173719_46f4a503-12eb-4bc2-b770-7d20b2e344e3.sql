@@ -1,0 +1,1 @@
+ALTER TABLE public.customer_chamados ADD COLUMN IF NOT EXISTS comentarios jsonb NOT NULL DEFAULT '[]'::jsonb;

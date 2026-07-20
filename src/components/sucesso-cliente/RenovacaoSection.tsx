@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { RefreshCw, Calendar, AlertTriangle, CheckCircle } from 'lucide-react';
@@ -24,19 +24,10 @@ const formatBRL = (value: number | null) => {
   return value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 };
 
-const parseBRL = (str: string): number | null => {
-  if (!str) return null;
-  const cleaned = str.replace(/\./g, '').replace(',', '.');
-  const num = parseFloat(cleaned);
-  return isNaN(num) ? null : num;
-};
-
 export function RenovacaoSection({ customerId, dataAtivacao, dataTermino, mensalidade, onUpdate }: RenovacaoSectionProps) {
   const { toast } = useToast();
-  const [editing, setEditing] = useState(false);
+  const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [novaDataTermino, setNovaDataTermino] = useState('');
-  const [novaMensalidade, setNovaMensalidade] = useState('');
   const [observacoes, setObservacoes] = useState('');
 
   const calculateTermino = () => {
@@ -49,74 +40,48 @@ export function RenovacaoSection({ customerId, dataAtivacao, dataTermino, mensal
   const diasRestantes = terminoDate ? differenceInDays(terminoDate, new Date()) : null;
 
   const getStatusBadge = () => {
-    if (!diasRestantes) return <Badge variant="outline">Sem data</Badge>;
+    if (diasRestantes === null) return <Badge variant="outline">Sem data</Badge>;
     if (diasRestantes < 0) return <Badge variant="destructive">Vencido</Badge>;
     if (diasRestantes <= 90) return <Badge variant="destructive">Vence em {diasRestantes} dias</Badge>;
     if (diasRestantes <= 180) return <Badge className="bg-yellow-500">Vence em {diasRestantes} dias</Badge>;
     return <Badge className="bg-green-500">Vigente ({diasRestantes} dias)</Badge>;
   };
 
-  const handleStartEditing = () => {
-    setEditing(true);
-    setNovaMensalidade(mensalidade != null ? formatBRL(mensalidade) : '');
-  };
-
-  const handleMensalidadeBlur = () => {
-    const parsed = parseBRL(novaMensalidade);
-    if (parsed !== null) {
-      setNovaMensalidade(formatBRL(parsed));
-    }
-  };
-
-  const handleStartRenovacao = async () => {
+  const handleAbrirChamado = async () => {
     setSaving(true);
     try {
       const { data: userData } = await supabase.auth.getUser();
       const userId = userData.user?.id ?? null;
       const userName = userData.user?.user_metadata?.nome || userData.user?.email || 'Sistema';
 
-      const parsedMensalidade = parseBRL(novaMensalidade);
-      const partes: string[] = ['Processo de Renovação iniciado.'];
-      if (novaDataTermino) partes.push(`Nova data de término proposta: ${format(parseISO(novaDataTermino), 'dd/MM/yyyy', { locale: ptBR })}.`);
-      if (parsedMensalidade !== null) partes.push(`Nova mensalidade proposta: R$ ${formatBRL(parsedMensalidade)}.`);
-      if (observacoes) partes.push(`Observações: ${observacoes}`);
+      const partes: string[] = [
+        'Processo de Renovação Contratual iniciado.',
+        `Data de Ativação: ${dataAtivacao ? format(parseISO(dataAtivacao), 'dd/MM/yyyy', { locale: ptBR }) : '-'}`,
+        `Término do Contrato: ${terminoDate ? format(terminoDate, 'dd/MM/yyyy', { locale: ptBR }) : '-'}`,
+        `Mensalidade Atual: ${mensalidade != null ? `R$ ${formatBRL(mensalidade)}` : '-'}`,
+        `Status: ${diasRestantes === null ? 'Sem informação' : diasRestantes < 0 ? 'Contrato vencido' : `${diasRestantes} dias restantes`}`,
+      ];
+      if (observacoes.trim()) partes.push('', `Observações: ${observacoes.trim()}`);
 
-      const { error: chamadoError } = await supabase
-        .from('customer_chamados')
-        .insert({
-          customer_id: customerId,
-          assunto: 'Renovação de Contrato',
-          descricao: partes.join('\n'),
-          prioridade: 'alta',
-          status: 'aberto',
-          created_by: userId,
-          created_by_name: userName,
-        });
+      const { error } = await supabase.from('customer_chamados').insert({
+        customer_id: customerId,
+        assunto: 'Renovação Contratual',
+        descricao: partes.join('\n'),
+        prioridade: 'alta',
+        status: 'aberto',
+        created_by: userId,
+        created_by_name: userName,
+      });
 
-      if (chamadoError) throw chamadoError;
+      if (error) throw error;
 
-      // Update portfolio only if user filled new data
-      const updateData: Record<string, unknown> = {};
-      if (novaDataTermino) updateData.data_termino = novaDataTermino;
-      if (parsedMensalidade !== null) updateData.mensalidade = parsedMensalidade;
-
-      if (Object.keys(updateData).length > 0) {
-        const { error } = await supabase
-          .from('customer_portfolio')
-          .update(updateData)
-          .eq('id', customerId);
-        if (error) throw error;
-      }
-
-      toast({ title: 'Chamado aberto', description: 'Chamado de Renovação de Contrato criado com sucesso.' });
-      setEditing(false);
-      setNovaDataTermino('');
-      setNovaMensalidade('');
+      toast({ title: 'Chamado aberto', description: 'Chamado de Renovação Contratual criado com sucesso.' });
+      setOpen(false);
       setObservacoes('');
       onUpdate();
     } catch (error) {
       console.error(error);
-      toast({ title: 'Erro', description: 'Não foi possível abrir o chamado de renovação.', variant: 'destructive' });
+      toast({ title: 'Erro', description: 'Não foi possível abrir o chamado.', variant: 'destructive' });
     } finally {
       setSaving(false);
     }
@@ -165,7 +130,7 @@ export function RenovacaoSection({ customerId, dataAtivacao, dataTermino, mensal
 
           <div className="space-y-2">
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              {diasRestantes && diasRestantes <= 90 ? (
+              {diasRestantes !== null && diasRestantes <= 90 ? (
                 <AlertTriangle className="w-4 h-4 text-destructive" />
               ) : (
                 <CheckCircle className="w-4 h-4 text-green-500" />
@@ -182,53 +147,65 @@ export function RenovacaoSection({ customerId, dataAtivacao, dataTermino, mensal
           </div>
         </div>
 
-        {/* Renovação */}
-        {editing ? (
-          <div className="mt-6 p-4 border rounded-lg space-y-4">
-            <h4 className="font-medium">Renovar Contrato</h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="mt-6">
+          <Button onClick={() => setOpen(true)} className="bg-amber-500 hover:bg-amber-600">
+            <RefreshCw className="w-4 h-4 mr-2" />
+            Iniciar Processo de Renovação
+          </Button>
+        </div>
+
+        <Dialog open={open} onOpenChange={setOpen}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Abrir Chamado - Renovação Contratual</DialogTitle>
+              <DialogDescription>
+                Um chamado será aberto para a equipe de Sucesso do Cliente com as informações atuais do contrato.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="grid grid-cols-2 gap-4 py-2 text-sm">
               <div>
-                <Label>Nova Data de Término</Label>
-                <Input
-                  type="date"
-                  value={novaDataTermino}
-                  onChange={(e) => setNovaDataTermino(e.target.value)}
-                />
+                <p className="text-muted-foreground">Data de Ativação</p>
+                <p className="font-medium">{dataAtivacao ? format(parseISO(dataAtivacao), 'dd/MM/yyyy', { locale: ptBR }) : '-'}</p>
               </div>
               <div>
-                <Label>Novo Valor da Mensalidade (R$)</Label>
-                <Input
-                  value={novaMensalidade}
-                  onChange={(e) => setNovaMensalidade(e.target.value)}
-                  onBlur={handleMensalidadeBlur}
-                  placeholder="Ex: 12.500,00"
-                />
+                <p className="text-muted-foreground">Término do Contrato</p>
+                <p className="font-medium">{terminoDate ? format(terminoDate, 'dd/MM/yyyy', { locale: ptBR }) : '-'}</p>
+              </div>
+              <div>
+                <p className="text-muted-foreground">Mensalidade Atual</p>
+                <p className="font-medium">{mensalidade != null ? `R$ ${formatBRL(mensalidade)}` : '-'}</p>
+              </div>
+              <div>
+                <p className="text-muted-foreground">Status</p>
+                <p className="font-medium">
+                  {diasRestantes !== null
+                    ? diasRestantes < 0
+                      ? 'Contrato vencido'
+                      : `${diasRestantes} dias restantes`
+                    : 'Sem informação'}
+                </p>
               </div>
             </div>
-            <div>
-              <Label>Observações</Label>
+
+            <div className="space-y-2">
+              <Label>Observações / Comentários</Label>
               <Textarea
                 value={observacoes}
                 onChange={(e) => setObservacoes(e.target.value)}
-                placeholder="Observações sobre a renovação..."
-                rows={3}
+                placeholder="Adicione detalhes, condições propostas, contexto do cliente..."
+                rows={5}
               />
             </div>
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={() => setEditing(false)}>Cancelar</Button>
-              <Button onClick={handleStartRenovacao} disabled={saving}>
-                {saving ? 'Abrindo chamado...' : 'Confirmar Renovação'}
+
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setOpen(false)} disabled={saving}>Cancelar</Button>
+              <Button onClick={handleAbrirChamado} disabled={saving} className="bg-amber-500 hover:bg-amber-600">
+                {saving ? 'Abrindo...' : 'Abrir Chamado'}
               </Button>
-            </div>
-          </div>
-        ) : (
-          <div className="mt-6">
-            <Button onClick={handleStartEditing} className="bg-amber-500 hover:bg-amber-600">
-              <RefreshCw className="w-4 h-4 mr-2" />
-              Iniciar Processo de Renovação
-            </Button>
-          </div>
-        )}
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </CardContent>
     </Card>
   );

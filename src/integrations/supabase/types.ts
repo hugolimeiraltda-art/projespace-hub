@@ -265,7 +265,11 @@ export type Database = {
           customer_id: string
           descricao: string | null
           id: string
+          nova_data_vencimento: string | null
+          novo_valor_mensalidade: number | null
+          novo_valor_vigencia: string | null
           prioridade: string
+          recursos_renovacao: string[]
           resolved_at: string | null
           resolved_by: string | null
           resolved_by_name: string | null
@@ -281,7 +285,11 @@ export type Database = {
           customer_id: string
           descricao?: string | null
           id?: string
+          nova_data_vencimento?: string | null
+          novo_valor_mensalidade?: number | null
+          novo_valor_vigencia?: string | null
           prioridade?: string
+          recursos_renovacao?: string[]
           resolved_at?: string | null
           resolved_by?: string | null
           resolved_by_name?: string | null
@@ -297,7 +305,11 @@ export type Database = {
           customer_id?: string
           descricao?: string | null
           id?: string
+          nova_data_vencimento?: string | null
+          novo_valor_mensalidade?: number | null
+          novo_valor_vigencia?: string | null
           prioridade?: string
+          recursos_renovacao?: string[]
           resolved_at?: string | null
           resolved_by?: string | null
           resolved_by_name?: string | null

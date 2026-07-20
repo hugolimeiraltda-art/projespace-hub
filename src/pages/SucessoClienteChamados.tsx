@@ -9,9 +9,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { MessageSquare, ArrowLeft, Loader2, ExternalLink, Plus, User, Phone, Mail, Calendar, DollarSign, AlertTriangle } from 'lucide-react';
+import { MessageSquare, ArrowLeft, Loader2, ExternalLink, Plus, User, Phone, Mail, Calendar, DollarSign, AlertTriangle, RefreshCw } from 'lucide-react';
 import { format, addMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { FilialMultiSelect } from '@/components/FilialMultiSelect';
@@ -43,6 +46,10 @@ interface Chamado {
   created_at: string;
   created_by_name?: string | null;
   comentarios?: Comentario[] | null;
+  novo_valor_mensalidade?: number | null;
+  novo_valor_vigencia?: string | null;
+  nova_data_vencimento?: string | null;
+  recursos_renovacao?: string[] | null;
   customer_portfolio?: CustomerPortfolioRef;
 }
 
@@ -78,8 +85,12 @@ export default function SucessoClienteChamados() {
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [novoComentario, setNovoComentario] = useState('');
   const [savingComentario, setSavingComentario] = useState(false);
-  const [statusEdit, setStatusEdit] = useState<string>('aberto');
+  const [statusEdit, setStatusEdit] = useState<string>('em_andamento');
   const [savingStatus, setSavingStatus] = useState(false);
+  const [novoValor, setNovoValor] = useState<string>('');
+  const [novoValorVigencia, setNovoValorVigencia] = useState<string>('');
+  const [novaDataVenc, setNovaDataVenc] = useState<string>('');
+  const [recursos, setRecursos] = useState<string[]>([]);
 
   useEffect(() => { fetchChamados(); }, []);
 
@@ -101,8 +112,12 @@ export default function SucessoClienteChamados() {
 
   const openDetail = async (chamado: Chamado) => {
     setSelected(chamado);
-    setStatusEdit(chamado.status);
+    setStatusEdit(chamado.status === 'aberto' || chamado.status === 'resolvido' ? 'em_andamento' : chamado.status);
     setNovoComentario('');
+    setNovoValor(chamado.novo_valor_mensalidade != null ? String(chamado.novo_valor_mensalidade) : '');
+    setNovoValorVigencia(chamado.novo_valor_vigencia || '');
+    setNovaDataVenc(chamado.nova_data_vencimento || '');
+    setRecursos(chamado.recursos_renovacao || []);
     setLoadingDetail(true);
     setAdmins([]);
     setPendencias([]);
@@ -148,21 +163,51 @@ export default function SucessoClienteChamados() {
     }
   };
 
-  const handleSaveStatus = async () => {
-    if (!selected || statusEdit === selected.status) return;
+  const RECURSOS_OPTIONS = [
+    { value: 'reducao_mensalidade', label: 'Redução de mensalidade' },
+    { value: 'retrofit', label: 'Retrofit' },
+    { value: 'acrescimo_sem_custo', label: 'Acréscimo sem custo' },
+  ];
+
+  const toggleRecurso = (v: string) => {
+    setRecursos(prev => prev.includes(v) ? prev.filter(r => r !== v) : [...prev, v]);
+  };
+
+  const handleSaveRenovacao = async () => {
+    if (!selected) return;
+    const precisaCampos = statusEdit === 'renovado' || statusEdit === 'nao_renovado';
+    if (precisaCampos) {
+      if (!novoValor || !novoValorVigencia || !novaDataVenc) {
+        toast({
+          title: 'Campos obrigatórios',
+          description: 'Informe o novo valor, a data de vigência e a nova data de vencimento.',
+          variant: 'destructive',
+        });
+        return;
+      }
+    }
     setSavingStatus(true);
     try {
+      const parsedValor = novoValor ? parseFloat(novoValor.replace(',', '.')) : null;
+      const payload: any = {
+        status: statusEdit,
+        novo_valor_mensalidade: precisaCampos ? parsedValor : null,
+        novo_valor_vigencia: precisaCampos ? novoValorVigencia : null,
+        nova_data_vencimento: precisaCampos ? novaDataVenc : null,
+        recursos_renovacao: precisaCampos ? recursos : [],
+      };
       const { error } = await supabase
         .from('customer_chamados')
-        .update({ status: statusEdit })
+        .update(payload)
         .eq('id', selected.id);
       if (error) throw error;
-      setSelected({ ...selected, status: statusEdit });
-      setChamados(prev => prev.map(c => c.id === selected.id ? { ...c, status: statusEdit } : c));
-      toast({ title: 'Status atualizado' });
+      const updated: Chamado = { ...selected, ...payload };
+      setSelected(updated);
+      setChamados(prev => prev.map(c => c.id === selected.id ? updated : c));
+      toast({ title: 'Chamado atualizado' });
     } catch (e) {
       console.error(e);
-      toast({ title: 'Erro', description: 'Não foi possível atualizar o status', variant: 'destructive' });
+      toast({ title: 'Erro', description: 'Não foi possível atualizar o chamado', variant: 'destructive' });
     } finally {
       setSavingStatus(false);
     }
@@ -195,8 +240,8 @@ export default function SucessoClienteChamados() {
   };
 
   const getStatusBadge = (status: string) => {
-    const colors: Record<string, string> = { aberto: 'bg-red-500', em_andamento: 'bg-yellow-500', resolvido: 'bg-green-500' };
-    const labels: Record<string, string> = { aberto: 'Aberto', em_andamento: 'Em Andamento', resolvido: 'Resolvido' };
+    const colors: Record<string, string> = { em_andamento: 'bg-yellow-500', renovado: 'bg-green-500', nao_renovado: 'bg-red-500' };
+    const labels: Record<string, string> = { em_andamento: 'Em Andamento', renovado: 'Renovado', nao_renovado: 'Não Renovado' };
     return <Badge className={colors[status] || 'bg-gray-500'}>{labels[status] || status}</Badge>;
   };
 
@@ -234,16 +279,16 @@ export default function SucessoClienteChamados() {
 
         <div className="grid grid-cols-4 gap-4">
           <Card><CardContent className="pt-4 text-center">
-            <p className="text-2xl font-bold text-red-600">{filteredChamados.filter(c => c.status === 'aberto').length}</p>
-            <p className="text-sm text-muted-foreground">Abertos</p>
-          </CardContent></Card>
-          <Card><CardContent className="pt-4 text-center">
             <p className="text-2xl font-bold text-yellow-600">{filteredChamados.filter(c => c.status === 'em_andamento').length}</p>
             <p className="text-sm text-muted-foreground">Em Andamento</p>
           </CardContent></Card>
           <Card><CardContent className="pt-4 text-center">
-            <p className="text-2xl font-bold text-green-600">{filteredChamados.filter(c => c.status === 'resolvido').length}</p>
-            <p className="text-sm text-muted-foreground">Resolvidos</p>
+            <p className="text-2xl font-bold text-green-600">{filteredChamados.filter(c => c.status === 'renovado').length}</p>
+            <p className="text-sm text-muted-foreground">Renovados</p>
+          </CardContent></Card>
+          <Card><CardContent className="pt-4 text-center">
+            <p className="text-2xl font-bold text-red-600">{filteredChamados.filter(c => c.status === 'nao_renovado').length}</p>
+            <p className="text-sm text-muted-foreground">Não Renovados</p>
           </CardContent></Card>
           <Card><CardContent className="pt-4 text-center">
             <p className="text-2xl font-bold text-primary">{filteredChamados.length}</p>
@@ -254,20 +299,20 @@ export default function SucessoClienteChamados() {
         {loading ? (
           <div className="flex justify-center py-12"><Loader2 className="w-8 h-8 animate-spin" /></div>
         ) : (
-          <Tabs defaultValue="abertos">
+          <Tabs defaultValue="andamento">
             <TabsList>
-              <TabsTrigger value="abertos">Abertos ({filteredChamados.filter(c => c.status === 'aberto').length})</TabsTrigger>
               <TabsTrigger value="andamento">Em Andamento ({filteredChamados.filter(c => c.status === 'em_andamento').length})</TabsTrigger>
-              <TabsTrigger value="resolvidos">Resolvidos ({filteredChamados.filter(c => c.status === 'resolvido').length})</TabsTrigger>
+              <TabsTrigger value="renovados">Renovados ({filteredChamados.filter(c => c.status === 'renovado').length})</TabsTrigger>
+              <TabsTrigger value="nao_renovados">Não Renovados ({filteredChamados.filter(c => c.status === 'nao_renovado').length})</TabsTrigger>
               <TabsTrigger value="todos">Todos ({filteredChamados.length})</TabsTrigger>
             </TabsList>
 
-            {['abertos', 'andamento', 'resolvidos', 'todos'].map(tab => {
+            {['andamento', 'renovados', 'nao_renovados', 'todos'].map(tab => {
               const rows = filteredChamados.filter(c =>
                 tab === 'todos' ||
-                (tab === 'abertos' && c.status === 'aberto') ||
                 (tab === 'andamento' && c.status === 'em_andamento') ||
-                (tab === 'resolvidos' && c.status === 'resolvido'));
+                (tab === 'renovados' && c.status === 'renovado') ||
+                (tab === 'nao_renovados' && c.status === 'nao_renovado'));
               return (
                 <TabsContent key={tab} value={tab}>
                   <Card>
@@ -360,21 +405,64 @@ export default function SucessoClienteChamados() {
                 </div>
               )}
 
-              {/* Status */}
-              <div className="flex items-center gap-3">
-                <span className="text-sm text-muted-foreground">Status:</span>
-                <Select value={statusEdit} onValueChange={setStatusEdit}>
-                  <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="aberto">Aberto</SelectItem>
-                    <SelectItem value="em_andamento">Em Andamento</SelectItem>
-                    <SelectItem value="resolvido">Resolvido</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Button size="sm" onClick={handleSaveStatus} disabled={savingStatus || statusEdit === selected.status}>
-                  {savingStatus ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Atualizar'}
-                </Button>
-                <div className="ml-auto">{getPrioridadeBadge(selected.prioridade)}</div>
+              {/* Status + Renovação */}
+              <div className="rounded-lg border p-4 space-y-4">
+                <div className="flex items-center gap-3">
+                  <RefreshCw className="w-4 h-4 text-muted-foreground" />
+                  <span className="text-sm text-muted-foreground">Status:</span>
+                  <Select value={statusEdit} onValueChange={setStatusEdit}>
+                    <SelectTrigger className="w-56"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="em_andamento">Em Andamento</SelectItem>
+                      <SelectItem value="renovado">Renovado</SelectItem>
+                      <SelectItem value="nao_renovado">Não Renovado</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <div className="ml-auto">{getPrioridadeBadge(selected.prioridade)}</div>
+                </div>
+
+                {(statusEdit === 'renovado' || statusEdit === 'nao_renovado') && (
+                  <div className="space-y-4 pt-2 border-t">
+                    <div className="grid grid-cols-3 gap-3">
+                      <div className="space-y-1">
+                        <Label className="text-xs">Novo valor mensalidade (R$) *</Label>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          value={novoValor}
+                          onChange={e => setNovoValor(e.target.value)}
+                          placeholder="0,00"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs">Vigência a partir de *</Label>
+                        <Input type="date" value={novoValorVigencia} onChange={e => setNovoValorVigencia(e.target.value)} />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs">Nova data de vencimento *</Label>
+                        <Input type="date" value={novaDataVenc} onChange={e => setNovaDataVenc(e.target.value)} />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-xs">Recursos utilizados para renovação</Label>
+                      <div className="flex flex-wrap gap-4">
+                        {RECURSOS_OPTIONS.map(opt => (
+                          <label key={opt.value} className="flex items-center gap-2 text-sm cursor-pointer">
+                            <Checkbox checked={recursos.includes(opt.value)} onCheckedChange={() => toggleRecurso(opt.value)} />
+                            {opt.label}
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex justify-end">
+                  <Button size="sm" onClick={handleSaveRenovacao} disabled={savingStatus}>
+                    {savingStatus ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Salvar alterações'}
+                  </Button>
+                </div>
               </div>
 
               {/* Administração / contatos */}

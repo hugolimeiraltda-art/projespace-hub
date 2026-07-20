@@ -216,8 +216,8 @@ export function RenovacaoSection({ customerId, dataAtivacao, dataTermino, mensal
             </div>
             <div className="flex gap-2">
               <Button variant="outline" onClick={() => setEditing(false)}>Cancelar</Button>
-              <Button onClick={handleRenovar} disabled={saving}>
-                {saving ? 'Salvando...' : 'Confirmar Renovação'}
+              <Button onClick={handleStartRenovacao} disabled={saving}>
+                {saving ? 'Abrindo chamado...' : 'Confirmar Renovação'}
               </Button>
             </div>
           </div>

@@ -112,8 +112,12 @@ export default function SucessoClienteChamados() {
 
   const openDetail = async (chamado: Chamado) => {
     setSelected(chamado);
-    setStatusEdit(chamado.status);
+    setStatusEdit(chamado.status === 'aberto' || chamado.status === 'resolvido' ? 'em_andamento' : chamado.status);
     setNovoComentario('');
+    setNovoValor(chamado.novo_valor_mensalidade != null ? String(chamado.novo_valor_mensalidade) : '');
+    setNovoValorVigencia(chamado.novo_valor_vigencia || '');
+    setNovaDataVenc(chamado.nova_data_vencimento || '');
+    setRecursos(chamado.recursos_renovacao || []);
     setLoadingDetail(true);
     setAdmins([]);
     setPendencias([]);

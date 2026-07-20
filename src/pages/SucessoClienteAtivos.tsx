@@ -168,6 +168,63 @@ export default function SucessoClienteAtivos() {
   const customers = carteira === 'pci' ? customersPci : customersPpe;
   const loading = carteira === 'pci' ? loadingPci : loadingPpe;
 
+  const { toast } = useToast();
+  const [renovacaoCustomer, setRenovacaoCustomer] = useState<Customer | null>(null);
+  const [renovacaoObs, setRenovacaoObs] = useState('');
+  const [renovacaoSaving, setRenovacaoSaving] = useState(false);
+
+  const openRenovacao = (c: Customer) => {
+    setRenovacaoCustomer(c);
+    setRenovacaoObs('');
+  };
+
+  const handleAbrirChamadoRenovacao = async () => {
+    if (!renovacaoCustomer) return;
+    setRenovacaoSaving(true);
+    try {
+      const { data: userData } = await supabase.auth.getUser();
+      const userId = userData.user?.id ?? null;
+      const userName = userData.user?.user_metadata?.nome || userData.user?.email || 'Sistema';
+
+      const termino = renovacaoCustomer.data_termino
+        ? parseISO(renovacaoCustomer.data_termino)
+        : renovacaoCustomer.data_ativacao
+          ? addMonths(parseISO(renovacaoCustomer.data_ativacao), 36)
+          : null;
+      const dias = termino ? differenceInDays(termino, new Date()) : null;
+
+      const partes: string[] = [
+        'Processo de Renovação Contratual iniciado.',
+        `Cliente: ${renovacaoCustomer.razao_social} (${renovacaoCustomer.contrato})`,
+        `Data de Ativação: ${renovacaoCustomer.data_ativacao ? format(parseISO(renovacaoCustomer.data_ativacao), 'dd/MM/yyyy', { locale: ptBR }) : '-'}`,
+        `Término do Contrato: ${termino ? format(termino, 'dd/MM/yyyy', { locale: ptBR }) : '-'}`,
+        `Mensalidade Atual: ${renovacaoCustomer.mensalidade != null ? `R$ ${renovacaoCustomer.mensalidade.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '-'}`,
+        `Status: ${dias === null ? 'Sem informação' : dias < 0 ? 'Contrato vencido' : `${dias} dias restantes`}`,
+      ];
+      if (renovacaoObs.trim()) partes.push('', `Observações: ${renovacaoObs.trim()}`);
+
+      const { error } = await supabase.from('customer_chamados').insert({
+        customer_id: renovacaoCustomer.id,
+        assunto: 'Renovação Contratual',
+        descricao: partes.join('\n'),
+        prioridade: 'alta',
+        status: 'aberto',
+        created_by: userId,
+        created_by_name: userName,
+      });
+      if (error) throw error;
+
+      toast({ title: 'Chamado aberto', description: 'Chamado de Renovação Contratual criado com sucesso.' });
+      setRenovacaoCustomer(null);
+      setRenovacaoObs('');
+    } catch (error) {
+      console.error(error);
+      toast({ title: 'Erro', description: 'Não foi possível abrir o chamado.', variant: 'destructive' });
+    } finally {
+      setRenovacaoSaving(false);
+    }
+  };
+
   useEffect(() => {
     (async () => {
       const [{ data }, { data: cancelled }] = await Promise.all([

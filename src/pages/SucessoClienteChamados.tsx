@@ -538,8 +538,9 @@ export default function SucessoClienteChamados() {
               </div>
             </div>
           )}
+          </div>
 
-          <DialogFooter>
+          <DialogFooter className="sticky bottom-0 z-10 bg-background border-t px-6 py-4">
             <Button variant="outline" onClick={() => setSelected(null)}>Fechar</Button>
           </DialogFooter>
         </DialogContent>

@@ -163,21 +163,51 @@ export default function SucessoClienteChamados() {
     }
   };
 
-  const handleSaveStatus = async () => {
-    if (!selected || statusEdit === selected.status) return;
+  const RECURSOS_OPTIONS = [
+    { value: 'reducao_mensalidade', label: 'Redução de mensalidade' },
+    { value: 'retrofit', label: 'Retrofit' },
+    { value: 'acrescimo_sem_custo', label: 'Acréscimo sem custo' },
+  ];
+
+  const toggleRecurso = (v: string) => {
+    setRecursos(prev => prev.includes(v) ? prev.filter(r => r !== v) : [...prev, v]);
+  };
+
+  const handleSaveRenovacao = async () => {
+    if (!selected) return;
+    const precisaCampos = statusEdit === 'renovado' || statusEdit === 'nao_renovado';
+    if (precisaCampos) {
+      if (!novoValor || !novoValorVigencia || !novaDataVenc) {
+        toast({
+          title: 'Campos obrigatórios',
+          description: 'Informe o novo valor, a data de vigência e a nova data de vencimento.',
+          variant: 'destructive',
+        });
+        return;
+      }
+    }
     setSavingStatus(true);
     try {
+      const parsedValor = novoValor ? parseFloat(novoValor.replace(',', '.')) : null;
+      const payload: any = {
+        status: statusEdit,
+        novo_valor_mensalidade: precisaCampos ? parsedValor : null,
+        novo_valor_vigencia: precisaCampos ? novoValorVigencia : null,
+        nova_data_vencimento: precisaCampos ? novaDataVenc : null,
+        recursos_renovacao: precisaCampos ? recursos : [],
+      };
       const { error } = await supabase
         .from('customer_chamados')
-        .update({ status: statusEdit })
+        .update(payload)
         .eq('id', selected.id);
       if (error) throw error;
-      setSelected({ ...selected, status: statusEdit });
-      setChamados(prev => prev.map(c => c.id === selected.id ? { ...c, status: statusEdit } : c));
-      toast({ title: 'Status atualizado' });
+      const updated: Chamado = { ...selected, ...payload };
+      setSelected(updated);
+      setChamados(prev => prev.map(c => c.id === selected.id ? updated : c));
+      toast({ title: 'Chamado atualizado' });
     } catch (e) {
       console.error(e);
-      toast({ title: 'Erro', description: 'Não foi possível atualizar o status', variant: 'destructive' });
+      toast({ title: 'Erro', description: 'Não foi possível atualizar o chamado', variant: 'destructive' });
     } finally {
       setSavingStatus(false);
     }
@@ -210,8 +240,8 @@ export default function SucessoClienteChamados() {
   };
 
   const getStatusBadge = (status: string) => {
-    const colors: Record<string, string> = { aberto: 'bg-red-500', em_andamento: 'bg-yellow-500', resolvido: 'bg-green-500' };
-    const labels: Record<string, string> = { aberto: 'Aberto', em_andamento: 'Em Andamento', resolvido: 'Resolvido' };
+    const colors: Record<string, string> = { em_andamento: 'bg-yellow-500', renovado: 'bg-green-500', nao_renovado: 'bg-red-500' };
+    const labels: Record<string, string> = { em_andamento: 'Em Andamento', renovado: 'Renovado', nao_renovado: 'Não Renovado' };
     return <Badge className={colors[status] || 'bg-gray-500'}>{labels[status] || status}</Badge>;
   };
 

@@ -46,6 +46,10 @@ interface Chamado {
   created_at: string;
   created_by_name?: string | null;
   comentarios?: Comentario[] | null;
+  novo_valor_mensalidade?: number | null;
+  novo_valor_vigencia?: string | null;
+  nova_data_vencimento?: string | null;
+  recursos_renovacao?: string[] | null;
   customer_portfolio?: CustomerPortfolioRef;
 }
 

@@ -32,7 +32,7 @@ interface Customer {
 
 
 type SortDir = 'asc' | 'desc' | null;
-type SortKey = 'contrato' | 'razao_social' | 'filial' | 'unidades' | 'mensalidade' | 'data_ativacao' | 'contrato_status';
+type SortKey = 'contrato' | 'razao_social' | 'filial' | 'unidades' | 'mensalidade' | 'data_ativacao' | 'data_termino' | 'contrato_status';
 
 const getContractStatus = (c: Customer) => {
   const termino = c.data_termino
@@ -241,6 +241,7 @@ export default function SucessoClienteAtivos() {
       unidades: unique(customers.map(c => c.unidades != null ? String(c.unidades) : null)),
       mensalidade: unique(customers.map(c => c.mensalidade != null ? `R$ ${Number(c.mensalidade).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : null)),
       data_ativacao: unique(customers.map(c => c.data_ativacao ? new Date(c.data_ativacao + 'T00:00:00').toLocaleDateString('pt-BR') : null)),
+      data_termino: unique(customers.map(c => c.data_termino ? new Date(c.data_termino + 'T00:00:00').toLocaleDateString('pt-BR') : (c.data_ativacao ? addMonths(parseISO(c.data_ativacao), 36).toLocaleDateString('pt-BR') : null))),
       contrato_status: ['Vigente', 'Vencido', ...new Set(customers.map(c => {
         const s = getContractStatus(c);
         return s && s.label !== 'Vigente' && s.label !== 'Vencido' ? s.label : null;
@@ -256,6 +257,10 @@ export default function SucessoClienteAtivos() {
       case 'unidades': return c.unidades != null ? String(c.unidades) : '';
       case 'mensalidade': return c.mensalidade != null ? `R$ ${Number(c.mensalidade).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '';
       case 'data_ativacao': return c.data_ativacao ? new Date(c.data_ativacao + 'T00:00:00').toLocaleDateString('pt-BR') : '';
+      case 'data_termino': {
+        const t = c.data_termino ? new Date(c.data_termino + 'T00:00:00') : (c.data_ativacao ? addMonths(parseISO(c.data_ativacao), 36) : null);
+        return t ? t.toLocaleDateString('pt-BR') : '';
+      }
       case 'contrato_status': {
         const s = getContractStatus(c);
         return s ? s.label : 'Vigente';
@@ -272,6 +277,11 @@ export default function SucessoClienteAtivos() {
       case 'unidades': return c.unidades ?? -1;
       case 'mensalidade': return c.mensalidade ?? -1;
       case 'data_ativacao': return c.data_ativacao || '';
+      case 'data_termino': {
+        if (c.data_termino) return c.data_termino;
+        if (c.data_ativacao) return addMonths(parseISO(c.data_ativacao), 36).toISOString();
+        return '';
+      }
       case 'contrato_status': {
         const s = getContractStatus(c);
         return s ? s.dias : 99999;
@@ -417,6 +427,7 @@ export default function SucessoClienteAtivos() {
                       <ColumnHeader label={carteira === 'ppe' ? 'Câmeras' : 'Unid.'} sortKey="unidades" currentSort={sortKey} currentDir={sortDir} onSort={handleSort} filterValues={filterOptions.unidades} selectedFilters={columnFilters.unidades || []} onFilterChange={handleFilterChange} className="text-center" />
                       <ColumnHeader label="Mensalidade" sortKey="mensalidade" currentSort={sortKey} currentDir={sortDir} onSort={handleSort} filterValues={filterOptions.mensalidade} selectedFilters={columnFilters.mensalidade || []} onFilterChange={handleFilterChange} />
                       <ColumnHeader label="Ativação" sortKey="data_ativacao" currentSort={sortKey} currentDir={sortDir} onSort={handleSort} filterValues={filterOptions.data_ativacao} selectedFilters={columnFilters.data_ativacao || []} onFilterChange={handleFilterChange} />
+                      <ColumnHeader label="Término" sortKey="data_termino" currentSort={sortKey} currentDir={sortDir} onSort={handleSort} filterValues={filterOptions.data_termino} selectedFilters={columnFilters.data_termino || []} onFilterChange={handleFilterChange} />
                       <ColumnHeader label="Contrato" sortKey="contrato_status" currentSort={sortKey} currentDir={sortDir} onSort={handleSort} filterValues={filterOptions.contrato_status} selectedFilters={columnFilters.contrato_status || []} onFilterChange={handleFilterChange} />
                       <TableHead className="text-right">Ações</TableHead>
                     </TableRow>
@@ -460,6 +471,13 @@ export default function SucessoClienteAtivos() {
                             {c.data_ativacao
                               ? new Date(c.data_ativacao + 'T00:00:00').toLocaleDateString('pt-BR')
                               : '-'}
+                          </TableCell>
+                          <TableCell>
+                            {c.data_termino
+                              ? new Date(c.data_termino + 'T00:00:00').toLocaleDateString('pt-BR')
+                              : c.data_ativacao
+                                ? addMonths(parseISO(c.data_ativacao), 36).toLocaleDateString('pt-BR')
+                                : '-'}
                           </TableCell>
                           <TableCell>
                             {showBadge ? (

@@ -366,13 +366,14 @@ export default function SucessoClienteChamados() {
 
       {/* Detail dialog */}
       <Dialog open={!!selected} onOpenChange={(o) => !o && setSelected(null)}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <MessageSquare className="w-5 h-5 text-orange-500" />
+        <DialogContent className="w-screen h-screen max-w-none max-h-none p-0 rounded-none overflow-y-auto">
+          <DialogHeader className="sticky top-0 z-10 bg-background border-b px-6 py-4">
+            <DialogTitle className="flex items-center gap-2 text-xl">
+              <MessageSquare className="w-6 h-6 text-orange-500" />
               {selected?.assunto}
             </DialogTitle>
           </DialogHeader>
+          <div className="px-6 py-4">
 
           {selected && (
             <div className="space-y-5">

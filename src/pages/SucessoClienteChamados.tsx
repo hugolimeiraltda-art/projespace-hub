@@ -376,7 +376,7 @@ export default function SucessoClienteChamados() {
           <div className="px-6 py-4">
 
           {selected && (
-            <div className="space-y-5">
+            <div className="space-y-5 max-w-5xl mx-auto">
               {/* Cliente */}
               <div className="rounded-lg border p-4 space-y-2">
                 <div className="flex items-center justify-between">

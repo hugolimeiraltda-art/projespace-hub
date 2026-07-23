@@ -573,7 +573,8 @@ export default function SucessoClienteInativos() {
                 inputMode="decimal"
                 value={mensalidade}
                 onChange={e => setMensalidade(e.target.value)}
-                placeholder="Ex.: 1500,00"
+                onBlur={e => setMensalidade(formatBRLInput(e.target.value))}
+                placeholder="Ex.: 1.500,00"
               />
             </div>
             <div>

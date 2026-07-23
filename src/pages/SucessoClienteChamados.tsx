@@ -429,11 +429,10 @@ export default function SucessoClienteChamados() {
                       <div className="space-y-1">
                         <Label className="text-xs">Novo valor mensalidade (R$) *</Label>
                         <Input
-                          type="number"
-                          step="0.01"
-                          min="0"
+                          inputMode="decimal"
                           value={novoValor}
                           onChange={e => setNovoValor(e.target.value)}
+                          onBlur={e => setNovoValor(formatBRLInput(e.target.value))}
                           placeholder="0,00"
                         />
                       </div>

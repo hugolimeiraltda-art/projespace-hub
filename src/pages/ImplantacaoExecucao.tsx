@@ -1,3 +1,4 @@
+import { formatBRLInput } from '@/lib/currency';
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -1608,6 +1609,7 @@ export default function ImplantacaoExecucao() {
                             id="mensalidade"
                             value={contratoInfo.mensalidade}
                             onChange={(e) => setContratoInfo({ ...contratoInfo, mensalidade: e.target.value })}
+                            onBlur={(e) => setContratoInfo({ ...contratoInfo, mensalidade: formatBRLInput(e.target.value) })}
                             placeholder="Ex: 5.000,00"
                             className={cn("mt-1", !contratoInfo.mensalidade?.trim() && "border-destructive")}
                             required
@@ -1645,6 +1647,7 @@ export default function ImplantacaoExecucao() {
                             id="taxa-instalacao"
                             value={contratoInfo.taxa_instalacao}
                             onChange={(e) => setContratoInfo({ ...contratoInfo, taxa_instalacao: e.target.value })}
+                            onBlur={(e) => setContratoInfo({ ...contratoInfo, taxa_instalacao: formatBRLInput(e.target.value) })}
                             placeholder="Ex: 1.500,00"
                             className={cn("mt-1", !contratoInfo.taxa_instalacao?.trim() && "border-destructive")}
                             required

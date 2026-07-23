@@ -1,3 +1,4 @@
+import { formatBRLInput } from '@/lib/currency';
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -296,11 +297,11 @@ export function CustomerInfoSection({ customer, onUpdate }: CustomerInfoSectionP
               </div>
               <div>
                 <Label>Mensalidade (R$)</Label>
-                <Input value={form.mensalidade} onChange={(e) => setForm({ ...form, mensalidade: e.target.value })} />
+                <Input value={form.mensalidade} onChange={(e) => setForm({ ...form, mensalidade: e.target.value })} onBlur={(e) => setForm({ ...form, mensalidade: formatBRLInput(e.target.value) })} />
               </div>
               <div>
                 <Label>Taxa Ativação (R$)</Label>
-                <Input value={form.taxa_ativacao} onChange={(e) => setForm({ ...form, taxa_ativacao: e.target.value })} />
+                <Input value={form.taxa_ativacao} onChange={(e) => setForm({ ...form, taxa_ativacao: e.target.value })} onBlur={(e) => setForm({ ...form, taxa_ativacao: formatBRLInput(e.target.value) })} />
               </div>
             </div>
           </div>

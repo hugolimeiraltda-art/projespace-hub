@@ -1,3 +1,4 @@
+import { formatBRLInput } from '@/lib/currency';
 import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -183,11 +184,11 @@ export function PlanejamentoAtivacoes({ onUpdate }: Props) {
             </div>
             <div>
               <Label>Ticket Médio (R$)</Label>
-              <Input value={ticketMedio} onChange={e => setTicketMedio(e.target.value)} placeholder="0,00" />
+              <Input value={ticketMedio} onChange={e => setTicketMedio(e.target.value)} onBlur={e => setTicketMedio(formatBRLInput(e.target.value))} placeholder="0,00" />
             </div>
             <div>
               <Label>Valor Venda (R$)</Label>
-              <Input value={valorVenda} onChange={e => setValorVenda(e.target.value)} placeholder="0,00" />
+              <Input value={valorVenda} onChange={e => setValorVenda(e.target.value)} onBlur={e => setValorVenda(formatBRLInput(e.target.value))} placeholder="0,00" />
             </div>
             <div>
               <Label>Valor Total (R$)</Label>

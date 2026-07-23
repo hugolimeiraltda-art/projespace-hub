@@ -1,3 +1,4 @@
+import { formatBRLInput } from '@/lib/currency';
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Layout } from '@/components/Layout';
@@ -509,7 +510,8 @@ export default function CarteiraClientes({ tipoCarteira = 'PCI' }: CarteiraClien
                         id="mensalidade"
                         value={form.mensalidade}
                         onChange={(e) => setForm({ ...form, mensalidade: e.target.value })}
-                        placeholder="5000.00"
+                        onBlur={(e) => setForm({ ...form, mensalidade: formatBRLInput(e.target.value) })}
+                        placeholder="5.000,00"
                       />
                     </div>
                     <div>
@@ -518,7 +520,8 @@ export default function CarteiraClientes({ tipoCarteira = 'PCI' }: CarteiraClien
                         id="taxa_ativacao"
                         value={form.taxa_ativacao}
                         onChange={(e) => setForm({ ...form, taxa_ativacao: e.target.value })}
-                        placeholder="0.00"
+                        onBlur={(e) => setForm({ ...form, taxa_ativacao: formatBRLInput(e.target.value) })}
+                        placeholder="0,00"
                       />
                     </div>
                     {tipoCarteira !== 'PPE' && (

@@ -799,11 +799,11 @@ export default function ImplantacaoAnalytics() {
                     </div>
                     <div className="text-center p-2 rounded-lg bg-muted/50">
                       <p className="text-[10px] text-muted-foreground uppercase">Receita Prevista</p>
-                      <p className="text-sm font-bold text-chart-4">R$ {m.totalMensalidade.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                      <p className="text-sm font-bold text-chart-4">R$ {m.previstoReceita.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
                     </div>
                     <div className="text-center p-2 rounded-lg bg-muted/50">
                       <p className="text-[10px] text-muted-foreground uppercase">Receita Realizada</p>
-                      <p className="text-sm font-bold">R$ {m.realizadoMensalidade.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                      <p className="text-sm font-bold">R$ {m.realizadoReceita.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
                     </div>
                   </div>
 

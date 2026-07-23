@@ -709,11 +709,11 @@ export default function ImplantacaoAnalytics() {
                       </div>
                       <div className="flex items-center justify-between text-[10px] text-muted-foreground">
                         <span>Receita Prevista</span>
-                        <span className="font-medium">R$ {m.totalMensalidade.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                        <span className="font-medium">R$ {m.previstoReceita.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
                       </div>
                       <div className="flex items-center justify-between text-[10px]">
                         <span className="text-muted-foreground">Receita Ativada</span>
-                        <span className="font-bold text-foreground">R$ {m.realizadoMensalidade.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                        <span className="font-bold text-foreground">R$ {m.realizadoReceita.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
                       </div>
                     </div>
 

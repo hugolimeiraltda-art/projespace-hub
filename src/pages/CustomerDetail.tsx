@@ -639,11 +639,11 @@ export default function CustomerDetail() {
               <div className={`grid gap-4 ${isPPE ? 'grid-cols-2' : 'grid-cols-4'}`}>
                 <div>
                   <Label>Mensalidade (R$)</Label>
-                  <Input value={form.mensalidade} onChange={(e) => setForm({ ...form, mensalidade: e.target.value })} disabled={!canEdit} />
+                  <Input value={form.mensalidade} onChange={(e) => setForm({ ...form, mensalidade: e.target.value })} onBlur={(e) => setForm({ ...form, mensalidade: formatBRLInput(e.target.value) })} disabled={!canEdit} />
                 </div>
                 <div>
                   <Label>Taxa de Ativação (R$)</Label>
-                  <Input value={form.taxa_ativacao} onChange={(e) => setForm({ ...form, taxa_ativacao: e.target.value })} disabled={!canEdit} />
+                  <Input value={form.taxa_ativacao} onChange={(e) => setForm({ ...form, taxa_ativacao: e.target.value })} onBlur={(e) => setForm({ ...form, taxa_ativacao: formatBRLInput(e.target.value) })} disabled={!canEdit} />
                 </div>
                 {!isPPE && (
                   <>

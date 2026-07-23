@@ -1608,6 +1608,7 @@ export default function ImplantacaoExecucao() {
                             id="mensalidade"
                             value={contratoInfo.mensalidade}
                             onChange={(e) => setContratoInfo({ ...contratoInfo, mensalidade: e.target.value })}
+                            onBlur={(e) => setContratoInfo({ ...contratoInfo, mensalidade: formatBRLInput(e.target.value) })}
                             placeholder="Ex: 5.000,00"
                             className={cn("mt-1", !contratoInfo.mensalidade?.trim() && "border-destructive")}
                             required

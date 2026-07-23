@@ -1,3 +1,4 @@
+import { formatBRLInput } from '@/lib/currency';
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Layout } from '@/components/Layout';

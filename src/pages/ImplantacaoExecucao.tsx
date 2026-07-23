@@ -1647,6 +1647,7 @@ export default function ImplantacaoExecucao() {
                             id="taxa-instalacao"
                             value={contratoInfo.taxa_instalacao}
                             onChange={(e) => setContratoInfo({ ...contratoInfo, taxa_instalacao: e.target.value })}
+                            onBlur={(e) => setContratoInfo({ ...contratoInfo, taxa_instalacao: formatBRLInput(e.target.value) })}
                             placeholder="Ex: 1.500,00"
                             className={cn("mt-1", !contratoInfo.taxa_instalacao?.trim() && "border-destructive")}
                             required

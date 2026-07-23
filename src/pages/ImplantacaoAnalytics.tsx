@@ -441,7 +441,9 @@ export default function ImplantacaoAnalytics() {
       const planejadoValor = plan ? Number(plan.valor_total) : 0;
       const planejadoQtd = plan ? plan.qtd_contratos : 0;
 
-      const saldo = (realizadoMensalidade + canceladosReceita) - planejadoValor;
+      const previstoReceita = previstoMensalidade + previstoTaxa;
+      const realizadoReceita = realizadoMensalidade + realizadoTaxa;
+      const saldo = (realizadoReceita + canceladosReceita) - planejadoValor;
 
       return {
         label,
@@ -450,8 +452,12 @@ export default function ImplantacaoAnalytics() {
         count,
         previstoCount,
         previstoMensalidade,
+        previstoTaxa,
+        previstoReceita,
         realizadoCount,
         realizadoMensalidade,
+        realizadoTaxa,
+        realizadoReceita,
         contratos,
         isCurrentMonth,
         isPast,

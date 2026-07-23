@@ -362,8 +362,10 @@ export default function ImplantacaoAnalytics() {
       let count = 0;
       let previstoCount = 0;
       let previstoMensalidade = 0;
+      let previstoTaxa = 0;
       let realizadoCount = 0;
       let realizadoMensalidade = 0;
+      let realizadoTaxa = 0;
       const contratos: ContratoDetalhe[] = [];
 
       projects.forEach(p => {

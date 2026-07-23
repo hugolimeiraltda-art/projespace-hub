@@ -362,8 +362,10 @@ export default function ImplantacaoAnalytics() {
       let count = 0;
       let previstoCount = 0;
       let previstoMensalidade = 0;
+      let previstoTaxa = 0;
       let realizadoCount = 0;
       let realizadoMensalidade = 0;
+      let realizadoTaxa = 0;
       const contratos: ContratoDetalhe[] = [];
 
       projects.forEach(p => {
@@ -380,6 +382,7 @@ export default function ImplantacaoAnalytics() {
           if (isWithinInterval(previstoDate, { start: monthStart, end: monthEnd })) {
             previstoCount++;
             previstoMensalidade += Number(port.mensalidade) || 0;
+            previstoTaxa += Number(port.taxa_ativacao) || 0;
           }
         }
 
@@ -389,6 +392,7 @@ export default function ImplantacaoAnalytics() {
           if (isWithinInterval(realDate, { start: monthStart, end: monthEnd })) {
             realizadoCount++;
             realizadoMensalidade += Number(port.mensalidade) || 0;
+            realizadoTaxa += Number(port.taxa_ativacao) || 0;
           }
         }
 
@@ -437,7 +441,9 @@ export default function ImplantacaoAnalytics() {
       const planejadoValor = plan ? Number(plan.valor_total) : 0;
       const planejadoQtd = plan ? plan.qtd_contratos : 0;
 
-      const saldo = (realizadoMensalidade + canceladosReceita) - planejadoValor;
+      const previstoReceita = previstoMensalidade + previstoTaxa;
+      const realizadoReceita = realizadoMensalidade + realizadoTaxa;
+      const saldo = (realizadoReceita + canceladosReceita) - planejadoValor;
 
       return {
         label,
@@ -446,8 +452,12 @@ export default function ImplantacaoAnalytics() {
         count,
         previstoCount,
         previstoMensalidade,
+        previstoTaxa,
+        previstoReceita,
         realizadoCount,
         realizadoMensalidade,
+        realizadoTaxa,
+        realizadoReceita,
         contratos,
         isCurrentMonth,
         isPast,
@@ -642,7 +652,7 @@ export default function ImplantacaoAnalytics() {
           <CardContent>
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
               {revenueByMonthData.map((m, i) => {
-                const pctValor = m.planejadoValor > 0 ? Math.min(100, Math.round((m.realizadoMensalidade / m.planejadoValor) * 100)) : 0;
+                const pctValor = m.planejadoValor > 0 ? Math.min(100, Math.round((m.realizadoReceita / m.planejadoValor) * 100)) : 0;
                 const pctQtd = m.planejadoQtd > 0 ? Math.min(100, Math.round((m.realizadoCount / m.planejadoQtd) * 100)) : 0;
 
                 return (
@@ -699,11 +709,11 @@ export default function ImplantacaoAnalytics() {
                       </div>
                       <div className="flex items-center justify-between text-[10px] text-muted-foreground">
                         <span>Receita Prevista</span>
-                        <span className="font-medium">R$ {m.totalMensalidade.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                        <span className="font-medium">R$ {m.previstoReceita.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
                       </div>
                       <div className="flex items-center justify-between text-[10px]">
                         <span className="text-muted-foreground">Receita Ativada</span>
-                        <span className="font-bold text-foreground">R$ {m.realizadoMensalidade.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                        <span className="font-bold text-foreground">R$ {m.realizadoReceita.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
                       </div>
                     </div>
 
@@ -789,11 +799,11 @@ export default function ImplantacaoAnalytics() {
                     </div>
                     <div className="text-center p-2 rounded-lg bg-muted/50">
                       <p className="text-[10px] text-muted-foreground uppercase">Receita Prevista</p>
-                      <p className="text-sm font-bold text-chart-4">R$ {m.totalMensalidade.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                      <p className="text-sm font-bold text-chart-4">R$ {m.previstoReceita.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
                     </div>
                     <div className="text-center p-2 rounded-lg bg-muted/50">
                       <p className="text-[10px] text-muted-foreground uppercase">Receita Realizada</p>
-                      <p className="text-sm font-bold">R$ {m.realizadoMensalidade.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                      <p className="text-sm font-bold">R$ {m.realizadoReceita.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
                     </div>
                   </div>
 

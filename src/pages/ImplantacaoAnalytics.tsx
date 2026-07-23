@@ -382,6 +382,7 @@ export default function ImplantacaoAnalytics() {
           if (isWithinInterval(previstoDate, { start: monthStart, end: monthEnd })) {
             previstoCount++;
             previstoMensalidade += Number(port.mensalidade) || 0;
+            previstoTaxa += Number(port.taxa_ativacao) || 0;
           }
         }
 
@@ -391,6 +392,7 @@ export default function ImplantacaoAnalytics() {
           if (isWithinInterval(realDate, { start: monthStart, end: monthEnd })) {
             realizadoCount++;
             realizadoMensalidade += Number(port.mensalidade) || 0;
+            realizadoTaxa += Number(port.taxa_ativacao) || 0;
           }
         }
 

@@ -46,6 +46,7 @@ const ALL_NAV_ITEMS: NavItem[] = [
     menuKey: 'projetos',
     subItems: [
       { path: '/projetos', label: 'Projetos', icon: List, menuKey: 'projetos/lista' },
+      { path: '/projetos/novo', label: 'Abrir TAP', icon: FolderPlus, menuKey: 'projetos/novo' },
       { path: '/projetos?tab=chamados', label: 'Chamados', icon: ClipboardList, menuKey: 'projetos/lista' },
       { path: '/projetos?tab=relatorios', label: 'Relatórios', icon: BarChart3, menuKey: 'projetos/lista' },
     ],

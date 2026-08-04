@@ -38,6 +38,7 @@ Deno.serve(async (req) => {
     const expectedApiKey = Deno.env.get('CUSTOMER_API_KEY')
     const additionalApiKey = Deno.env.get('CUSTOMER_API_KEY_ADDITIONAL')
     const dedicatedPciApiKey = Deno.env.get('EIXO_PCI_API_KEY')
+    const dedicatedPciApiKeyV2 = Deno.env.get('EIXO_PCI_API_KEY_V2')
 
     if (!expectedApiKey) {
       return jsonResponse({ success: false, error: 'CUSTOMER_API_KEY is not configured' }, 500)

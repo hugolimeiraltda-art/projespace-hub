@@ -44,7 +44,7 @@ Deno.serve(async (req) => {
       return jsonResponse({ success: false, error: 'CUSTOMER_API_KEY is not configured' }, 500)
     }
 
-    const validApiKeys = [expectedApiKey, additionalApiKey, dedicatedPciApiKey].filter(Boolean)
+    const validApiKeys = [expectedApiKey, additionalApiKey, dedicatedPciApiKey, dedicatedPciApiKeyV2].filter(Boolean)
 
     if (!apiKey || !validApiKeys.includes(apiKey)) {
       return jsonResponse({ success: false, error: 'Unauthorized - Invalid API key' }, 401)

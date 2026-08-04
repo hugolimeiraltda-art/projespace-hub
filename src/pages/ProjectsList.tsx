@@ -411,6 +411,14 @@ export default function ProjectsList() {
               Gerencie todos os projetos
             </p>
           </div>
+          {!menuPermsLoading && canAccess('projetos/novo') && (
+            <Button asChild>
+              <Link to="/projetos/novo">
+                <FolderPlus className="w-4 h-4 mr-2" />
+                Abrir TAP
+              </Link>
+            </Button>
+          )}
         </div>
 
         {/* Tabs for Projetos and Chamados */}

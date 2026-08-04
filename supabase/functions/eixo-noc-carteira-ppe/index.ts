@@ -30,12 +30,14 @@ Deno.serve(async (req) => {
   try {
     const apiKey = req.headers.get('x-api-key') || req.headers.get('authorization')?.replace('Bearer ', '')
     const expectedApiKey = Deno.env.get('EIXO_NOC_PPE_API_KEY')
+    const expectedApiKeyV2 = Deno.env.get('EIXO_NOC_PPE_API_KEY_V2')
+    const validApiKeys = [expectedApiKey, expectedApiKeyV2].filter(Boolean)
 
-    if (!expectedApiKey) {
+    if (validApiKeys.length === 0) {
       return jsonResponse({ success: false, error: 'EIXO_NOC_PPE_API_KEY is not configured' }, 500)
     }
 
-    if (!apiKey || apiKey !== expectedApiKey) {
+    if (!apiKey || !validApiKeys.includes(apiKey)) {
       return jsonResponse({ success: false, error: 'Unauthorized - Invalid API key' }, 401)
     }
 

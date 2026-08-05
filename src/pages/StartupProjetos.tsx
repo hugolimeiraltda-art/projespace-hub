@@ -749,7 +749,7 @@ export default function StartupProjetos() {
     const e = etapasMap[p.id];
     if (!e) return key === 'ONBOARDING';
     if (key === 'ONBOARDING') return !e.ligacao_boas_vindas_at;
-    if (key === 'OBRA') return !!e.ppe_execucao_base_data;
+    if (key === 'OBRA') return !!e.cadastro_gear && !!e.ppe_execucao_base_data;
     if (key === 'PROGRAMACAO') return !!(e.agendamento_visita_startup_at || e.agendamento_visita_startup_data || e.laudo_visita_startup_at || e.ppe_observacao_instalacao);
     if (key === 'FINANCEIRO') return !!e.confirmacao_ativacao_financeira_at;
     return false;

@@ -26,6 +26,7 @@ interface Row {
   etapasAbertas: string[];
   inicio: string | null;
   prazo: string | null;
+  observacoes: string;
 }
 
 interface OsRow {
@@ -144,6 +145,9 @@ export default function ImplantacaoPendencias() {
           etapasAbertas: abertas,
           inicio: proj.implantacao_started_at || proj.created_at,
           prazo: proj.prazo_entrega_projeto,
+          observacoes: [e.ppe_observacao_onboarding, e.ppe_observacao_instalacao]
+            .filter(Boolean)
+            .join(' | '),
         });
       }
 
@@ -184,7 +188,7 @@ export default function ImplantacaoPendencias() {
         if (filtroPendencia === 'ETAPAS') return r.etapasAbertas.length > 0;
         return true;
       })
-      .filter(r => !term || r.cliente.toLowerCase().includes(term) || r.contrato.toLowerCase().includes(term) || r.vendedor.toLowerCase().includes(term))
+      .filter(r => !term || r.cliente.toLowerCase().includes(term) || r.contrato.toLowerCase().includes(term) || r.vendedor.toLowerCase().includes(term) || r.observacoes.toLowerCase().includes(term))
       .sort((a, b) => (b.diasPendencia ?? -1) - (a.diasPendencia ?? -1) || b.etapasAbertas.length - a.etapasAbertas.length);
   }, [rows, tipo, search, filtroPendencia]);
 
@@ -209,6 +213,7 @@ export default function ImplantacaoPendencias() {
       'Qtd etapas em aberto': r.etapasAbertas.length,
       'Início implantação': fmt(r.inicio),
       'Prazo de entrega': fmt(r.prazo),
+      'Observações': r.observacoes,
     }));
     const os = filteredOs.map(o => ({
       'Contrato': o.contrato,
@@ -226,7 +231,7 @@ export default function ImplantacaoPendencias() {
     const add = (data: Record<string, any>[], name: string) => {
       if (data.length === 0) return;
       const ws = XLSX.utils.json_to_sheet(data);
-      ws['!cols'] = Object.keys(data[0]).map(k => ({ wch: ['Descrição', 'Etapas em aberto', 'Cliente'].includes(k) ? 45 : Math.max(12, k.length + 2) }));
+      ws['!cols'] = Object.keys(data[0]).map(k => ({ wch: ['Descrição', 'Etapas em aberto', 'Cliente', 'Observações'].includes(k) ? 45 : Math.max(12, k.length + 2) }));
       XLSX.utils.book_append_sheet(wb, ws, name);
     };
     add(obras, 'Pendências Obras');
@@ -308,11 +313,12 @@ export default function ImplantacaoPendencias() {
                       <TableHead className="text-right">Dias</TableHead>
                       <TableHead>Etapas em aberto</TableHead>
                       <TableHead>Prazo</TableHead>
+                      <TableHead>Observações</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {filtered.length === 0 && (
-                      <TableRow><TableCell colSpan={10} className="text-center text-muted-foreground py-8">Nenhuma pendência encontrada</TableCell></TableRow>
+                      <TableRow><TableCell colSpan={11} className="text-center text-muted-foreground py-8">Nenhuma pendência encontrada</TableCell></TableRow>
                     )}
                     {filtered.map(r => (
                       <TableRow key={r.projectId} className="cursor-pointer" onClick={() => navigate(`/startup-projetos/${r.projectId}/execucao`)}>
@@ -332,6 +338,9 @@ export default function ImplantacaoPendencias() {
                           )}
                         </TableCell>
                         <TableCell>{fmt(r.prazo)}</TableCell>
+                        <TableCell className="max-w-[320px] whitespace-pre-wrap text-sm">
+                          {r.observacoes || <span className="text-muted-foreground">—</span>}
+                        </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>

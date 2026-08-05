@@ -290,7 +290,7 @@ ${observacoesGerais || 'Não informado'}`;
     if (goToReview && !canProceed) {
       toast({
         title: 'Campos obrigatórios',
-        description: 'Preencha os campos obrigatórios e anexe o croqui para continuar.',
+        description: `Falta preencher: ${missingFields.join(', ')}.`,
         variant: 'destructive',
       });
       return;

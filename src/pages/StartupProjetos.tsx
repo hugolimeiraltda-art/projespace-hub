@@ -722,7 +722,7 @@ export default function StartupProjetos() {
               ['6. Ativação financeira', e.confirmacao_ativacao_financeira_at],
             ];
         const pendentes = steps.filter(([, v]) => !v).map(([l]) => l);
-        const statusPend = proj.pendencia_status ? (pendLabel[proj.pendencia_status] || proj.pendencia_status) : '';
+        const statusPend = (proj as any).pendencia_status ? (pendLabel[(proj as any).pendencia_status] || (proj as any).pendencia_status) : '';
         if (!statusPend && pendentes.length === 0) continue;
         rows.push({
           'Contrato': portfolioMap[proj.id]?.contrato || `${isPPE ? 'PPE' : 'PCI'}-${proj.numero_projeto}`,
@@ -731,8 +731,8 @@ export default function StartupProjetos() {
           'Vendedor': proj.vendedor_nome || '',
           'Tipo': isPPE ? 'PPE' : 'PCI',
           'Pendência (status)': statusPend || '—',
-          'Desde': fmt(proj.pendencia_status_at),
-          'Dias em pendência': proj.pendencia_status_at ? dias(proj.pendencia_status_at) : '',
+          'Desde': fmt((proj as any).pendencia_status_at),
+          'Dias em pendência': (proj as any).pendencia_status_at ? dias((proj as any).pendencia_status_at) : '',
           'Etapas em aberto': pendentes.join(' | '),
           'Qtd etapas em aberto': pendentes.length,
           'Início implantação': fmt(proj.implantacao_started_at || proj.created_at),

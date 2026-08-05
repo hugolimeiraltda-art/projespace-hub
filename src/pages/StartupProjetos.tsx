@@ -519,6 +519,8 @@ export default function StartupProjetos() {
             agendamento_visita_startup_data: e.agendamento_visita_startup_data,
             ppe_execucao_base_data: e.ppe_execucao_base_data,
             ppe_observacao_instalacao: e.ppe_observacao_instalacao,
+            cadastro_gear: e.cadastro_gear,
+          } as ImplantacaoEtapasData;
           };
         }
       });

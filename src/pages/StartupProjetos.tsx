@@ -928,8 +928,8 @@ export default function StartupProjetos() {
             </p>
           </div>
           {(activeTab === 'em-implantacao' || activeTab === 'ppe') && (
-            <Button variant="outline" onClick={exportPendencias} disabled={exportingPend}>
-              {exportingPend ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileSpreadsheet className="mr-2 h-4 w-4" />}
+            <Button variant="outline" onClick={() => navigate(`/implantacao-pendencias?tipo=${activeTab === 'ppe' ? 'PPE' : 'PCI'}`)}>
+              <AlertTriangle className="mr-2 h-4 w-4" />
               Relatório de Pendências
             </Button>
           )}

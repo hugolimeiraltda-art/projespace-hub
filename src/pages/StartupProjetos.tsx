@@ -1005,7 +1005,7 @@ export default function StartupProjetos() {
                 <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
                   {([
                     { key: 'TODOS', label: 'Total', icon: Filter, color: 'text-foreground', ring: 'ring-primary' },
-                    { key: 'ONBOARDING', label: activeTab === 'ppe' ? 'Onboarding Concluído' : 'Em Onboarding', icon: Phone, color: 'text-amber-600', ring: 'ring-amber-500' },
+                    { key: 'ONBOARDING', label: activeTab === 'ppe' ? 'Onboarding Pendente' : 'Em Onboarding', icon: Phone, color: 'text-amber-600', ring: 'ring-amber-500' },
                     { key: 'OBRA', label: activeTab === 'ppe' ? 'Instalação da Base Agendada' : 'Em Obra', icon: HardHat, color: 'text-blue-600', ring: 'ring-blue-500' },
                     { key: 'PROGRAMACAO', label: activeTab === 'ppe' ? 'Programação' : 'Em Programação', icon: Settings, color: 'text-purple-600', ring: 'ring-purple-500' },
                     { key: 'FINANCEIRO', label: 'Ativação Financeira', icon: DollarSign, color: 'text-green-600', ring: 'ring-green-500' },

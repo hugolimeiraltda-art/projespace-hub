@@ -99,11 +99,13 @@ export default function NewProject() {
 
   const hasCroquiAttachment = croquiFiles.length > 0;
 
-  const canProceed = 
-    condominioNome.trim() &&
-    cidade.trim() &&
-    estado &&
-    hasCroquiAttachment;
+  const missingFields: string[] = [];
+  if (!condominioNome.trim()) missingFields.push('Nome do Condomínio');
+  if (!cidade.trim()) missingFields.push('Cidade');
+  if (!estado) missingFields.push('Estado');
+  if (!hasCroquiAttachment) missingFields.push('Croqui (anexo)');
+
+  const canProceed = missingFields.length === 0;
 
   const handleCroquiItemToggle = (item: CroquiItem) => {
     setMarcacaoCroquiItens(prev =>

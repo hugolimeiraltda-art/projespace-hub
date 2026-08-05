@@ -691,16 +691,61 @@ export default function StartupProjetos() {
         pendencias = data || [];
       }
       const custMap = new Map((customers || []).map(c => [c.id, c]));
-      const projMap = new Map(filteredProjects.map(p => [p.id, p]));
       const fmt = (d: string | null) => d ? new Date(d).toLocaleDateString('pt-BR') : '';
-      const rows = pendencias.map(p => {
+      const dias = (d: string | null) => d ? Math.floor((Date.now() - new Date(d).getTime()) / 86400000) : '';
+      const pendLabel: Record<string, string> = {
+        PENDENCIA_CLIENTE: 'Pendência Cliente',
+        PENDENCIA_COMERCIAL: 'Pendência Comercial',
+      };
+      const rows: Record<string, any>[] = [];
+
+      // 1) Pendências de status da obra + etapas em aberto
+      for (const proj of filteredProjects) {
+        const e: any = etapasMap[proj.id] || {};
+        const isPPE = proj.tipo_implantacao === 'PPE';
+        const steps: [string, string][] = isPPE
+          ? [
+              ['1. Contrato assinado', e.contrato_assinado_at],
+              ['3.1 Ligação de boas vindas', e.ligacao_boas_vindas_at],
+              ['3.7 Instalação da base', e.ppe_execucao_base_data],
+              ['4.1 Visita de conclusão (Totem)', e.agendamento_visita_startup_data],
+              ['Laudo da visita', e.laudo_visita_startup_at],
+              ['Check de programação', e.check_programacao_at],
+              ['Ativação financeira', e.confirmacao_ativacao_financeira_at],
+            ]
+          : [
+              ['1. Contrato assinado', e.contrato_assinado_at],
+              ['2. Ligação de boas vindas', e.ligacao_boas_vindas_at],
+              ['3. Agendamento visita startup', e.agendamento_visita_startup_at],
+              ['4. Laudo da visita', e.laudo_visita_startup_at],
+              ['5. Check de programação', e.check_programacao_at],
+              ['6. Ativação financeira', e.confirmacao_ativacao_financeira_at],
+            ];
+        const pendentes = steps.filter(([, v]) => !v).map(([l]) => l);
+        const statusPend = (proj as any).pendencia_status ? (pendLabel[(proj as any).pendencia_status] || (proj as any).pendencia_status) : '';
+        if (!statusPend && pendentes.length === 0) continue;
+        rows.push({
+          'Contrato': portfolioMap[proj.id]?.contrato || `${isPPE ? 'PPE' : 'PCI'}-${proj.numero_projeto}`,
+          'Cliente': proj.cliente_condominio_nome || '',
+          'Cidade/UF': `${proj.cliente_cidade || ''}${proj.cliente_estado ? '/' + proj.cliente_estado : ''}`,
+          'Vendedor': proj.vendedor_nome || '',
+          'Tipo': isPPE ? 'PPE' : 'PCI',
+          'Pendência (status)': statusPend || '—',
+          'Desde': fmt((proj as any).pendencia_status_at),
+          'Dias em pendência': (proj as any).pendencia_status_at ? dias((proj as any).pendencia_status_at) : '',
+          'Etapas em aberto': pendentes.join(' | '),
+          'Qtd etapas em aberto': pendentes.length,
+          'Início implantação': fmt(proj.implantacao_started_at || proj.created_at),
+          'Prazo de entrega': fmt(proj.prazo_entrega_projeto),
+        });
+      }
+
+      // 2) Ordens de serviço / pendências registradas em manutenção
+      const osRows = pendencias.map(p => {
         const c: any = p.customer_id ? custMap.get(p.customer_id) : null;
-        const proj: any = c?.project_id ? projMap.get(c.project_id) : null;
         return {
           'Contrato': p.contrato || c?.contrato || '',
-          'Cliente': p.razao_social || c?.razao_social || proj?.cliente_condominio_nome || '',
-          'Cidade/UF': proj ? `${proj.cliente_cidade || ''}${proj.cliente_estado ? '/' + proj.cliente_estado : ''}` : '',
-          'Vendedor': proj?.vendedor_nome || '',
+          'Cliente': p.razao_social || c?.razao_social || '',
           'Nº OS': p.numero_os || '',
           'Tipo': p.tipo || '',
           'Setor': p.setor || '',
@@ -709,22 +754,29 @@ export default function StartupProjetos() {
           'SLA (dias)': p.sla_dias ?? '',
           'Abertura': fmt(p.data_abertura),
           'Prazo': fmt(p.data_prazo),
-          'Dias em aberto': p.data_abertura ? Math.floor((Date.now() - new Date(p.data_abertura).getTime()) / 86400000) : '',
+          'Dias em aberto': dias(p.data_abertura),
           'Aberto por': p.created_by_name || '',
           'Comentário CS': p.comentario_sucesso_cliente || '',
         };
       });
-      if (rows.length === 0) {
+
+      if (rows.length === 0 && osRows.length === 0) {
         toast({ title: 'Sem pendências', description: 'As obras listadas não possuem pendências registradas.' });
         return;
       }
+
       const XLSX = await import('xlsx');
       const wb = XLSX.utils.book_new();
-      const ws = XLSX.utils.json_to_sheet(rows);
-      ws['!cols'] = Object.keys(rows[0]).map(k => ({ wch: k === 'Descrição' || k === 'Comentário CS' ? 45 : Math.max(12, k.length + 2) }));
-      XLSX.utils.book_append_sheet(wb, ws, 'Pendências');
+      const addSheet = (data: Record<string, any>[], name: string) => {
+        if (data.length === 0) return;
+        const ws = XLSX.utils.json_to_sheet(data);
+        ws['!cols'] = Object.keys(data[0]).map(k => ({ wch: ['Descrição', 'Comentário CS', 'Etapas em aberto', 'Cliente'].includes(k) ? 45 : Math.max(12, k.length + 2) }));
+        XLSX.utils.book_append_sheet(wb, ws, name);
+      };
+      addSheet(rows, 'Pendências Obras');
+      addSheet(osRows, 'Pendências OS');
       XLSX.writeFile(wb, `pendencias-${activeTab}-${new Date().toISOString().slice(0, 10)}.xlsx`);
-      toast({ title: 'Relatório gerado', description: `${rows.length} pendência(s) exportada(s).` });
+      toast({ title: 'Relatório gerado', description: `${rows.length} obra(s) com pendência e ${osRows.length} OS exportadas.` });
     } catch (e) {
       console.error(e);
       toast({ title: 'Erro ao gerar relatório', variant: 'destructive' });

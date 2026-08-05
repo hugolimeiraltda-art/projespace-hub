@@ -767,11 +767,16 @@ export default function StartupProjetos() {
 
       const XLSX = await import('xlsx');
       const wb = XLSX.utils.book_new();
-      const ws = XLSX.utils.json_to_sheet(rows);
-      ws['!cols'] = Object.keys(rows[0]).map(k => ({ wch: k === 'Descrição' || k === 'Comentário CS' ? 45 : Math.max(12, k.length + 2) }));
-      XLSX.utils.book_append_sheet(wb, ws, 'Pendências');
+      const addSheet = (data: Record<string, any>[], name: string) => {
+        if (data.length === 0) return;
+        const ws = XLSX.utils.json_to_sheet(data);
+        ws['!cols'] = Object.keys(data[0]).map(k => ({ wch: ['Descrição', 'Comentário CS', 'Etapas em aberto', 'Cliente'].includes(k) ? 45 : Math.max(12, k.length + 2) }));
+        XLSX.utils.book_append_sheet(wb, ws, name);
+      };
+      addSheet(rows, 'Pendências Obras');
+      addSheet(osRows, 'Pendências OS');
       XLSX.writeFile(wb, `pendencias-${activeTab}-${new Date().toISOString().slice(0, 10)}.xlsx`);
-      toast({ title: 'Relatório gerado', description: `${rows.length} pendência(s) exportada(s).` });
+      toast({ title: 'Relatório gerado', description: `${rows.length} obra(s) com pendência e ${osRows.length} OS exportadas.` });
     } catch (e) {
       console.error(e);
       toast({ title: 'Erro ao gerar relatório', variant: 'destructive' });

@@ -692,8 +692,8 @@ export default function StartupProjetos() {
       matchesStage = true;
     } else if (activeTab === 'ppe') {
       const e = etapasMap[project.id];
-      if (!e) matchesStage = false;
-      else if (stageFilter === 'ONBOARDING') matchesStage = !!e.ligacao_boas_vindas_at;
+      if (!e) matchesStage = stageFilter === 'ONBOARDING';
+      else if (stageFilter === 'ONBOARDING') matchesStage = !e.ligacao_boas_vindas_at;
       else if (stageFilter === 'OBRA') matchesStage = !!e.ppe_execucao_base_data;
       else if (stageFilter === 'PROGRAMACAO') matchesStage = !!e.agendamento_visita_startup_data;
       else if (stageFilter === 'FINANCEIRO') matchesStage = !!e.confirmacao_ativacao_financeira_at;
@@ -747,8 +747,8 @@ export default function StartupProjetos() {
   // PPE tab: cards count projects that REACHED that specific milestone
   const ppeMilestone = (p: typeof tabProjects[number], key: 'ONBOARDING' | 'OBRA' | 'PROGRAMACAO' | 'FINANCEIRO') => {
     const e = etapasMap[p.id];
-    if (!e) return false;
-    if (key === 'ONBOARDING') return !!e.ligacao_boas_vindas_at;
+    if (!e) return key === 'ONBOARDING';
+    if (key === 'ONBOARDING') return !e.ligacao_boas_vindas_at;
     if (key === 'OBRA') return !!e.ppe_execucao_base_data;
     if (key === 'PROGRAMACAO') return !!(e.agendamento_visita_startup_at || e.agendamento_visita_startup_data || e.laudo_visita_startup_at || e.ppe_observacao_instalacao);
     if (key === 'FINANCEIRO') return !!e.confirmacao_ativacao_financeira_at;
@@ -1005,7 +1005,7 @@ export default function StartupProjetos() {
                 <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
                   {([
                     { key: 'TODOS', label: 'Total', icon: Filter, color: 'text-foreground', ring: 'ring-primary' },
-                    { key: 'ONBOARDING', label: activeTab === 'ppe' ? 'Onboarding Concluído' : 'Em Onboarding', icon: Phone, color: 'text-amber-600', ring: 'ring-amber-500' },
+                    { key: 'ONBOARDING', label: activeTab === 'ppe' ? 'Onboarding Pendente' : 'Em Onboarding', icon: Phone, color: 'text-amber-600', ring: 'ring-amber-500' },
                     { key: 'OBRA', label: activeTab === 'ppe' ? 'Instalação da Base Agendada' : 'Em Obra', icon: HardHat, color: 'text-blue-600', ring: 'ring-blue-500' },
                     { key: 'PROGRAMACAO', label: activeTab === 'ppe' ? 'Programação' : 'Em Programação', icon: Settings, color: 'text-purple-600', ring: 'ring-purple-500' },
                     { key: 'FINANCEIRO', label: 'Ativação Financeira', icon: DollarSign, color: 'text-green-600', ring: 'ring-green-500' },

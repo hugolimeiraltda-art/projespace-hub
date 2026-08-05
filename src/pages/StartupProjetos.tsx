@@ -521,7 +521,6 @@ export default function StartupProjetos() {
             ppe_observacao_instalacao: e.ppe_observacao_instalacao,
             cadastro_gear: e.cadastro_gear,
           } as ImplantacaoEtapasData;
-          };
         }
       });
       setEtapasMap(eMap);

@@ -692,7 +692,7 @@ export default function StartupProjetos() {
       matchesStage = true;
     } else if (activeTab === 'ppe') {
       const e = etapasMap[project.id];
-      if (!e) matchesStage = false;
+      if (!e) matchesStage = stageFilter === 'ONBOARDING';
       else if (stageFilter === 'ONBOARDING') matchesStage = !e.ligacao_boas_vindas_at;
       else if (stageFilter === 'OBRA') matchesStage = !!e.ppe_execucao_base_data;
       else if (stageFilter === 'PROGRAMACAO') matchesStage = !!e.agendamento_visita_startup_data;

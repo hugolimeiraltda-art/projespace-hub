@@ -885,7 +885,7 @@ ${observacoesGerais || 'Não informado'}`;
 
               <Button
                 onClick={() => handleSave(true)}
-                disabled={!canProceed || isSubmitting}
+                disabled={isSubmitting}
               >
                 {isSubmitting ? (
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -897,9 +897,9 @@ ${observacoesGerais || 'Não informado'}`;
             </div>
           </div>
 
-          {!hasCroquiAttachment && (
-            <p className="text-sm text-muted-foreground text-center">
-              * Anexe o croqui para poder revisar e enviar o projeto
+          {missingFields.length > 0 && (
+            <p className="text-sm text-destructive text-center">
+              * Falta preencher: {missingFields.join(', ')}
             </p>
           )}
         </div>

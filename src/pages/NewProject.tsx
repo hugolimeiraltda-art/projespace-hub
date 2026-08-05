@@ -340,6 +340,8 @@ ${observacoesGerais || 'Não informado'}`;
         throw new Error('Failed to create project');
       }
 
+      const uploadFalhas: string[] = [];
+
       // Upload croqui files
       for (const cf of croquiFiles) {
         const uploadResult = await uploadFile(cf.file, projectId, 'croqui');
@@ -349,6 +351,8 @@ ${observacoesGerais || 'Não informado'}`;
             arquivo_url: uploadResult.url,
             nome_arquivo: cf.nome,
           });
+        } else {
+          uploadFalhas.push(cf.nome);
         }
       }
 
@@ -361,7 +365,17 @@ ${observacoesGerais || 'Não informado'}`;
             arquivo_url: uploadResult.url,
             nome_arquivo: foto.nome,
           });
+        } else {
+          uploadFalhas.push(foto.nome);
         }
+      }
+
+      if (uploadFalhas.length > 0) {
+        toast({
+          title: 'Alguns anexos não subiram',
+          description: `Falha no envio de: ${uploadFalhas.join(', ')}. Tente anexar novamente na tela do projeto.`,
+          variant: 'destructive',
+        });
       }
 
       toast({
@@ -379,8 +393,8 @@ ${observacoesGerais || 'Não informado'}`;
     } catch (error) {
       console.error('Error saving project:', error);
       toast({
-        title: 'Erro',
-        description: 'Ocorreu um erro ao salvar o projeto.',
+        title: 'Erro ao salvar a TAP',
+        description: error instanceof Error ? error.message : 'Ocorreu um erro ao salvar o projeto.',
         variant: 'destructive',
       });
       setIsSubmitting(false);

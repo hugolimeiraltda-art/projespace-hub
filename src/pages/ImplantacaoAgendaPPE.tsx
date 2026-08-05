@@ -140,7 +140,9 @@ export default function ImplantacaoAgendaPPE() {
           instaladorId: et.ppe_equipe_prestador_id || null,
           instaladorNome,
         };
-        if (et.ppe_execucao_base_data) {
+        const sameDay = et.ppe_execucao_base_data && et.agendamento_visita_startup_data
+          && et.ppe_execucao_base_data === et.agendamento_visita_startup_data;
+        if (et.ppe_execucao_base_data && !sameDay) {
           evs.push({ ...base, tipo: '3.7', tipoLabel: '3.7 Instalação da Base', date: parseISO(et.ppe_execucao_base_data) });
         }
         if (et.agendamento_visita_startup_data) {

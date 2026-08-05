@@ -665,6 +665,75 @@ export default function StartupProjetos() {
     return 'CONCLUIDO';
   };
 
+  const [exportingPend, setExportingPend] = useState(false);
+  const exportPendencias = async () => {
+    setExportingPend(true);
+    try {
+      const projIds = filteredProjects.map(p => p.id);
+      if (projIds.length === 0) {
+        toast({ title: 'Nenhuma obra na lista', description: 'Ajuste os filtros e tente novamente.' });
+        return;
+      }
+      const { data: customers } = await supabase
+        .from('customer_portfolio')
+        .select('id, project_id, contrato, razao_social')
+        .in('project_id', projIds);
+      const custIds = (customers || []).map(c => c.id);
+      let pendencias: any[] = [];
+      if (custIds.length > 0) {
+        const { data } = await supabase
+          .from('manutencao_pendencias')
+          .select('customer_id, numero_os, contrato, razao_social, tipo, setor, descricao, status, sla_dias, data_abertura, data_prazo, created_by_name, comentario_sucesso_cliente')
+          .in('customer_id', custIds)
+          .neq('status', 'CANCELADO')
+          .order('data_abertura', { ascending: false });
+        pendencias = data || [];
+      }
+      const custMap = new Map((customers || []).map(c => [c.id, c]));
+      const projMap = new Map(filteredProjects.map(p => [p.id, p]));
+      const fmt = (d: string | null) => d ? new Date(d).toLocaleDateString('pt-BR') : '';
+      const rows = pendencias.map(p => {
+        const c: any = p.customer_id ? custMap.get(p.customer_id) : null;
+        const proj: any = c?.project_id ? projMap.get(c.project_id) : null;
+        return {
+          'Contrato': p.contrato || c?.contrato || '',
+          'Cliente': p.razao_social || c?.razao_social || proj?.cliente_condominio_nome || '',
+          'Cidade/UF': proj ? `${proj.cliente_cidade || ''}${proj.cliente_estado ? '/' + proj.cliente_estado : ''}` : '',
+          'Vendedor': proj?.vendedor_nome || '',
+          'Nº OS': p.numero_os || '',
+          'Tipo': p.tipo || '',
+          'Setor': p.setor || '',
+          'Descrição': p.descricao || '',
+          'Status': p.status || '',
+          'SLA (dias)': p.sla_dias ?? '',
+          'Abertura': fmt(p.data_abertura),
+          'Prazo': fmt(p.data_prazo),
+          'Dias em aberto': p.data_abertura ? Math.floor((Date.now() - new Date(p.data_abertura).getTime()) / 86400000) : '',
+          'Aberto por': p.created_by_name || '',
+          'Comentário CS': p.comentario_sucesso_cliente || '',
+        };
+      });
+      if (rows.length === 0) {
+        toast({ title: 'Sem pendências', description: 'As obras listadas não possuem pendências registradas.' });
+        return;
+      }
+      const XLSX = await import('xlsx');
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.json_to_sheet(rows);
+      ws['!cols'] = Object.keys(rows[0]).map(k => ({ wch: k === 'Descrição' || k === 'Comentário CS' ? 45 : Math.max(12, k.length + 2) }));
+      XLSX.utils.book_append_sheet(wb, ws, 'Pendências');
+      XLSX.writeFile(wb, `pendencias-${activeTab}-${new Date().toISOString().slice(0, 10)}.xlsx`);
+      toast({ title: 'Relatório gerado', description: `${rows.length} pendência(s) exportada(s).` });
+    } catch (e) {
+      console.error(e);
+      toast({ title: 'Erro ao gerar relatório', variant: 'destructive' });
+    } finally {
+      setExportingPend(false);
+    }
+  };
+
+
+
   const filteredProjects = projects.filter(project => {
     const matchesSearch = 
       project.cliente_condominio_nome.toLowerCase().includes(searchTerm.toLowerCase()) ||

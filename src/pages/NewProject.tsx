@@ -99,11 +99,13 @@ export default function NewProject() {
 
   const hasCroquiAttachment = croquiFiles.length > 0;
 
-  const canProceed = 
-    condominioNome.trim() &&
-    cidade.trim() &&
-    estado &&
-    hasCroquiAttachment;
+  const missingFields: string[] = [];
+  if (!condominioNome.trim()) missingFields.push('Nome do Condomínio');
+  if (!cidade.trim()) missingFields.push('Cidade');
+  if (!estado) missingFields.push('Estado');
+  if (!hasCroquiAttachment) missingFields.push('Croqui (anexo)');
+
+  const canProceed = missingFields.length === 0;
 
   const handleCroquiItemToggle = (item: CroquiItem) => {
     setMarcacaoCroquiItens(prev =>
@@ -288,7 +290,7 @@ ${observacoesGerais || 'Não informado'}`;
     if (goToReview && !canProceed) {
       toast({
         title: 'Campos obrigatórios',
-        description: 'Preencha os campos obrigatórios e anexe o croqui para continuar.',
+        description: `Falta preencher: ${missingFields.join(', ')}.`,
         variant: 'destructive',
       });
       return;
@@ -338,6 +340,8 @@ ${observacoesGerais || 'Não informado'}`;
         throw new Error('Failed to create project');
       }
 
+      const uploadFalhas: string[] = [];
+
       // Upload croqui files
       for (const cf of croquiFiles) {
         const uploadResult = await uploadFile(cf.file, projectId, 'croqui');
@@ -347,6 +351,8 @@ ${observacoesGerais || 'Não informado'}`;
             arquivo_url: uploadResult.url,
             nome_arquivo: cf.nome,
           });
+        } else {
+          uploadFalhas.push(cf.nome);
         }
       }
 
@@ -359,7 +365,17 @@ ${observacoesGerais || 'Não informado'}`;
             arquivo_url: uploadResult.url,
             nome_arquivo: foto.nome,
           });
+        } else {
+          uploadFalhas.push(foto.nome);
         }
+      }
+
+      if (uploadFalhas.length > 0) {
+        toast({
+          title: 'Alguns anexos não subiram',
+          description: `Falha no envio de: ${uploadFalhas.join(', ')}. Tente anexar novamente na tela do projeto.`,
+          variant: 'destructive',
+        });
       }
 
       toast({
@@ -377,8 +393,8 @@ ${observacoesGerais || 'Não informado'}`;
     } catch (error) {
       console.error('Error saving project:', error);
       toast({
-        title: 'Erro',
-        description: 'Ocorreu um erro ao salvar o projeto.',
+        title: 'Erro ao salvar a TAP',
+        description: error instanceof Error ? error.message : 'Ocorreu um erro ao salvar o projeto.',
         variant: 'destructive',
       });
       setIsSubmitting(false);
@@ -869,7 +885,7 @@ ${observacoesGerais || 'Não informado'}`;
 
               <Button
                 onClick={() => handleSave(true)}
-                disabled={!canProceed || isSubmitting}
+                disabled={isSubmitting}
               >
                 {isSubmitting ? (
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -881,9 +897,9 @@ ${observacoesGerais || 'Não informado'}`;
             </div>
           </div>
 
-          {!hasCroquiAttachment && (
-            <p className="text-sm text-muted-foreground text-center">
-              * Anexe o croqui para poder revisar e enviar o projeto
+          {missingFields.length > 0 && (
+            <p className="text-sm text-destructive text-center">
+              * Falta preencher: {missingFields.join(', ')}
             </p>
           )}
         </div>

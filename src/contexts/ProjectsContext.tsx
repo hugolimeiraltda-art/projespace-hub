@@ -376,7 +376,7 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
 
       if (projectError || !newProject) {
         console.error('Error creating project:', projectError);
-        return null;
+        throw new Error(projectError?.message || 'Não foi possível criar o projeto.');
       }
 
       // Insert TAP form
@@ -434,7 +434,7 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
       return newProject.id;
     } catch (error) {
       console.error('Error in addProject:', error);
-      return null;
+      throw error;
     }
   };
 

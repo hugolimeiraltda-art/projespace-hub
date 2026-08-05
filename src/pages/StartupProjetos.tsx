@@ -481,7 +481,7 @@ export default function StartupProjetos() {
           .not('project_id', 'is', null),
         supabase
           .from('implantacao_etapas')
-          .select('project_id, contrato_assinado_at, ligacao_boas_vindas_at, agendamento_visita_startup_at, laudo_visita_startup_at, check_programacao_at, confirmacao_ativacao_financeira_at, operacao_assistida_inicio, operacao_assistida_fim, agendamento_visita_startup_data, ppe_execucao_base_data, ppe_observacao_instalacao, cadastro_gear'),
+          .select('project_id, contrato_assinado_at, ligacao_boas_vindas_at, agendamento_visita_startup_at, laudo_visita_startup_at, check_programacao_at, confirmacao_ativacao_financeira_at, operacao_assistida_inicio, operacao_assistida_fim, agendamento_visita_startup_data, ppe_execucao_base_data, ppe_observacao_instalacao, cadastro_gear, agendamento_visita_startup'),
       ]);
 
       if (projectsRes.error) {
@@ -520,6 +520,7 @@ export default function StartupProjetos() {
             ppe_execucao_base_data: e.ppe_execucao_base_data,
             ppe_observacao_instalacao: e.ppe_observacao_instalacao,
             cadastro_gear: e.cadastro_gear,
+            agendamento_visita_startup: e.agendamento_visita_startup,
           } as ImplantacaoEtapasData;
         }
       });
@@ -696,7 +697,7 @@ export default function StartupProjetos() {
       if (!e) matchesStage = stageFilter === 'ONBOARDING';
       else if (stageFilter === 'ONBOARDING') matchesStage = !e.ligacao_boas_vindas_at;
       else if (stageFilter === 'OBRA') matchesStage = !!(e as any).cadastro_gear && !!e.ppe_execucao_base_data;
-      else if (stageFilter === 'PROGRAMACAO') matchesStage = !!e.agendamento_visita_startup_data;
+      else if (stageFilter === 'PROGRAMACAO') matchesStage = !!(e as any).agendamento_visita_startup && !!e.agendamento_visita_startup_data;
       else if (stageFilter === 'FINANCEIRO') matchesStage = !!e.confirmacao_ativacao_financeira_at;
       else matchesStage = false;
     } else {
@@ -751,7 +752,7 @@ export default function StartupProjetos() {
     if (!e) return key === 'ONBOARDING';
     if (key === 'ONBOARDING') return !e.ligacao_boas_vindas_at;
     if (key === 'OBRA') return !!(e as any).cadastro_gear && !!e.ppe_execucao_base_data;
-    if (key === 'PROGRAMACAO') return !!(e.agendamento_visita_startup_at || e.agendamento_visita_startup_data || e.laudo_visita_startup_at || e.ppe_observacao_instalacao);
+    if (key === 'PROGRAMACAO') return !!(e as any).agendamento_visita_startup && !!e.agendamento_visita_startup_data;
     if (key === 'FINANCEIRO') return !!e.confirmacao_ativacao_financeira_at;
     return false;
   };
@@ -1008,7 +1009,7 @@ export default function StartupProjetos() {
                     { key: 'TODOS', label: 'Total', icon: Filter, color: 'text-foreground', ring: 'ring-primary' },
                     { key: 'ONBOARDING', label: activeTab === 'ppe' ? 'Onboarding Pendente' : 'Em Onboarding', icon: Phone, color: 'text-amber-600', ring: 'ring-amber-500' },
                     { key: 'OBRA', label: activeTab === 'ppe' ? 'Instalação da Base Executada' : 'Em Obra', icon: HardHat, color: 'text-blue-600', ring: 'ring-blue-500' },
-                    { key: 'PROGRAMACAO', label: activeTab === 'ppe' ? 'Programação' : 'Em Programação', icon: Settings, color: 'text-purple-600', ring: 'ring-purple-500' },
+                    { key: 'PROGRAMACAO', label: activeTab === 'ppe' ? 'Visita de Conclusão Agendada' : 'Em Programação', icon: Settings, color: 'text-purple-600', ring: 'ring-purple-500' },
                     { key: 'FINANCEIRO', label: 'Ativação Financeira', icon: DollarSign, color: 'text-green-600', ring: 'ring-green-500' },
                   ] as const).map(({ key, label, icon: Icon, color, ring }) => (
                     <Card

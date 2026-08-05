@@ -747,8 +747,8 @@ export default function StartupProjetos() {
   // PPE tab: cards count projects that REACHED that specific milestone
   const ppeMilestone = (p: typeof tabProjects[number], key: 'ONBOARDING' | 'OBRA' | 'PROGRAMACAO' | 'FINANCEIRO') => {
     const e = etapasMap[p.id];
-    if (!e) return false;
-    if (key === 'ONBOARDING') return !!e.ligacao_boas_vindas_at;
+    if (!e) return key === 'ONBOARDING';
+    if (key === 'ONBOARDING') return !e.ligacao_boas_vindas_at;
     if (key === 'OBRA') return !!e.ppe_execucao_base_data;
     if (key === 'PROGRAMACAO') return !!(e.agendamento_visita_startup_at || e.agendamento_visita_startup_data || e.laudo_visita_startup_at || e.ppe_observacao_instalacao);
     if (key === 'FINANCEIRO') return !!e.confirmacao_ativacao_financeira_at;

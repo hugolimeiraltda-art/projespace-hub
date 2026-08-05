@@ -16,6 +16,7 @@ export interface ImplantacaoEtapasData {
   agendamento_visita_startup_data: string | null;
   ppe_execucao_base_data: string | null;
   ppe_observacao_instalacao?: string | null;
+  cadastro_gear?: boolean | null;
 }
 
 interface Step {

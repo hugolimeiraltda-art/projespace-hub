@@ -614,7 +614,7 @@ export default function CustomerDetail() {
 
               <div>
                 <Label>Razão Social</Label>
-                <Input value={form.razao_social} onChange={(e) => setForm({ ...form, razao_social: e.target.value })} disabled={!canEdit} />
+                <Input value={form.razao_social} onChange={(e) => setForm({ ...form, razao_social: e.target.value.toUpperCase() })} className="uppercase" disabled={!canEdit} />
               </div>
 
               <div>

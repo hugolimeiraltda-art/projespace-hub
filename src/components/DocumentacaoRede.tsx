@@ -87,6 +87,7 @@ export function DocumentacaoRede({ customerId, canEdit }: { customerId: string; 
   const [saving, setSaving] = useState(false);
   const [showSecrets, setShowSecrets] = useState(false);
   const [showLinks, setShowLinks] = useState(true);
+  const [fullscreen, setFullscreen] = useState(false);
   const [equipamentos, setEquipamentos] = useState<Equipamento[]>([]);
   const [links, setLinks] = useState<LinkInternet[]>([]);
   const [editing, setEditing] = useState<{ id: string | null; values: Record<string, string> } | null>(null);

@@ -5,7 +5,18 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Trash2, Loader2, Eye, EyeOff, Network, Upload } from 'lucide-react';
+import { Plus, Trash2, Loader2, Eye, EyeOff, Network, Upload, Pencil } from 'lucide-react';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import * as XLSX from 'xlsx';
 
 interface Equipamento {
@@ -59,6 +70,8 @@ export function DocumentacaoRede({ customerId, canEdit }: { customerId: string; 
   const [showSecrets, setShowSecrets] = useState(false);
   const [equipamentos, setEquipamentos] = useState<Equipamento[]>([]);
   const [links, setLinks] = useState<LinkInternet[]>([]);
+  const [editing, setEditing] = useState<{ id: string | null; values: Record<string, string> } | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<Equipamento | null>(null);
 
   useEffect(() => {
     load();
@@ -76,19 +89,43 @@ export function DocumentacaoRede({ customerId, canEdit }: { customerId: string; 
     setLoading(false);
   };
 
-  const addEquipamento = async () => {
-    setSaving(true);
-    const { data, error } = await supabase
-      .from('customer_rede_equipamentos')
-      .insert({ customer_id: customerId, equipamento: 'Novo equipamento', ordem: equipamentos.length })
-      .select()
-      .single();
-    setSaving(false);
-    if (error) {
-      toast({ title: 'Erro', description: error.message, variant: 'destructive' });
+  const openNewEquipamento = () => {
+    setEditing({ id: null, values: {} });
+  };
+
+  const openEditEquipamento = (row: Equipamento) => {
+    const values: Record<string, string> = {};
+    EQUIP_COLS.forEach((c) => {
+      values[c.key as string] = (row[c.key] as string) || '';
+    });
+    setEditing({ id: row.id, values });
+  };
+
+  const saveEquipamentoDialog = async () => {
+    if (!editing) return;
+    const payload: Record<string, string | null> = {};
+    EQUIP_COLS.forEach((c) => {
+      const k = c.key as string;
+      payload[k] = (editing.values[k] || '').trim() || null;
+    });
+    if (!payload.equipamento) {
+      toast({ title: 'Informe o equipamento', variant: 'destructive' });
       return;
     }
-    setEquipamentos((prev) => [...prev, data as Equipamento]);
+    setSaving(true);
+    const { error } = editing.id
+      ? await supabase.from('customer_rede_equipamentos').update(payload as never).eq('id', editing.id)
+      : await supabase
+          .from('customer_rede_equipamentos')
+          .insert({ ...payload, customer_id: customerId, ordem: equipamentos.length } as never);
+    setSaving(false);
+    if (error) {
+      toast({ title: 'Erro ao salvar', description: error.message, variant: 'destructive' });
+      return;
+    }
+    toast({ title: editing.id ? 'Equipamento atualizado' : 'Equipamento adicionado' });
+    setEditing(null);
+    await load();
   };
 
   const addLink = async () => {
@@ -322,7 +359,7 @@ export function DocumentacaoRede({ customerId, canEdit }: { customerId: string; 
                 {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Upload className="w-4 h-4 mr-2" />}
                 Importar planilha
               </Button>
-              <Button size="sm" onClick={addEquipamento} disabled={saving}>
+              <Button size="sm" onClick={openNewEquipamento} disabled={saving}>
                 <Plus className="w-4 h-4 mr-2" />
                 Equipamento
               </Button>
@@ -355,28 +392,40 @@ export function DocumentacaoRede({ customerId, canEdit }: { customerId: string; 
                     </thead>
                     <tbody>
                       {equipamentos.map((row) => (
-                        <tr key={row.id}>
-                          {EQUIP_COLS.map((c) => (
-                            <td key={c.key} className="border p-1">
-                              <Input
-                                className="h-8 border-0 shadow-none focus-visible:ring-1"
-                                type={isSecret(c.key as string) && !showSecrets ? 'password' : 'text'}
-                                defaultValue={(row[c.key] as string) || ''}
-                                disabled={!canEdit}
-                                onBlur={(e) => saveEquipamento(row, c.key, e.target.value)}
-                              />
-                            </td>
-                          ))}
+                        <tr
+                          key={row.id}
+                          className={canEdit ? 'hover:bg-muted/50 cursor-pointer' : undefined}
+                          onDoubleClick={() => canEdit && openEditEquipamento(row)}
+                        >
+                          {EQUIP_COLS.map((c) => {
+                            const value = (row[c.key] as string) || '';
+                            const masked = isSecret(c.key as string) && !showSecrets && value ? '••••••••' : value;
+                            return (
+                              <td key={c.key} className="border p-2 align-middle whitespace-nowrap">
+                                {masked || <span className="text-muted-foreground">-</span>}
+                              </td>
+                            );
+                          })}
                           {canEdit && (
-                            <td className="border p-1 text-center">
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="text-destructive hover:text-destructive h-8 w-8"
-                                onClick={() => removeEquipamento(row.id)}
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </Button>
+                            <td className="border p-1">
+                              <div className="flex items-center justify-center gap-1">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8"
+                                  onClick={() => openEditEquipamento(row)}
+                                >
+                                  <Pencil className="w-4 h-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="text-destructive hover:text-destructive h-8 w-8"
+                                  onClick={() => setConfirmDelete(row)}
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
+                              </div>
                             </td>
                           )}
                         </tr>
@@ -454,6 +503,60 @@ export function DocumentacaoRede({ customerId, canEdit }: { customerId: string; 
           </div>
         )}
       </CardContent>
+      <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>{editing?.id ? 'Editar equipamento' : 'Novo equipamento'}</DialogTitle>
+          </DialogHeader>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[60vh] overflow-y-auto pr-1">
+            {EQUIP_COLS.map((c) => (
+              <div key={c.key} className={c.key === 'equipamento' || c.key === 'ddns' ? 'md:col-span-2' : ''}>
+                <Label>{c.label}</Label>
+                <Input
+                  type={isSecret(c.key as string) && !showSecrets ? 'password' : 'text'}
+                  value={editing?.values[c.key as string] || ''}
+                  onChange={(e) =>
+                    setEditing((prev) =>
+                      prev ? { ...prev, values: { ...prev.values, [c.key as string]: e.target.value } } : prev,
+                    )
+                  }
+                />
+              </div>
+            ))}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditing(null)}>
+              Cancelar
+            </Button>
+            <Button onClick={saveEquipamentoDialog} disabled={saving}>
+              {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+              Salvar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog open={!!confirmDelete} onOpenChange={(o) => !o && setConfirmDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir equipamento</AlertDialogTitle>
+            <AlertDialogDescription>
+              Deseja excluir "{confirmDelete?.equipamento}"? Essa ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={async () => {
+                if (confirmDelete) await removeEquipamento(confirmDelete.id);
+                setConfirmDelete(null);
+              }}
+            >
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 }

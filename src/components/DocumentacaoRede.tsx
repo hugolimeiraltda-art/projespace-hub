@@ -610,6 +610,26 @@ export function DocumentacaoRede({ customerId, canEdit }: { customerId: string; 
         </DialogContent>
       </Dialog>
 
+      <Dialog open={novoTipoOpen} onOpenChange={setNovoTipoOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Novo tipo de equipamento</DialogTitle>
+          </DialogHeader>
+          <div>
+            <Label>Nome do tipo</Label>
+            <Input value={novoTipo} onChange={(e) => setNovoTipo(e.target.value)} placeholder="Ex: Leitor facial" />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setNovoTipoOpen(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={criarTipo}>Criar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+
+
       <AlertDialog open={!!confirmDelete} onOpenChange={(o) => !o && setConfirmDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>

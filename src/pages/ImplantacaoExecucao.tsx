@@ -1298,6 +1298,14 @@ export default function ImplantacaoExecucao() {
                   {tapForm && (
                     <div>
                       <h3 className="text-sm font-semibold uppercase tracking-wide mb-3">Resumo do TAP</h3>
+                      <div className="mb-4">
+                        <TapSummaryDescription
+                          tap={tapForm as unknown as TapForm}
+                          projectName={project?.cliente_condominio_nome || ''}
+                          projectCity={project?.cliente_cidade || undefined}
+                          projectState={project?.cliente_estado || undefined}
+                        />
+                      </div>
                       <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                         {tapForm.portaria_virtual_atendimento_app && (
                           <div className="bg-muted/50 rounded-lg p-3">

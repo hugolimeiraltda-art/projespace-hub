@@ -7,6 +7,7 @@ import { useImplantacaoIntegration } from '@/hooks/useImplantacaoIntegration';
 import { AIFeedbackDialog } from '@/components/AIFeedbackDialog';
 import { SaleCompletedForm, TapForm, PORTARIA_VIRTUAL_LABELS, CFTV_ELEVADOR_LABELS, MODALIDADE_PORTARIA_LABELS, PortariaVirtualApp, CFTVElevador, ModalidadePortaria } from '@/types/project';
 import { TapSummaryDescription } from '@/components/TapSummaryDescription';
+import { EngineeringDeliverablesView } from '@/components/EngineeringDeliverablesView';
 import { Layout } from '@/components/Layout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';

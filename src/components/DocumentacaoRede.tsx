@@ -17,11 +17,14 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import * as XLSX from 'xlsx';
 
 interface Equipamento {
   id: string;
+  tipo_equipamento: string | null;
   equipamento: string;
+
   ip: string | null;
   ddns: string | null;
   usuario: string | null;

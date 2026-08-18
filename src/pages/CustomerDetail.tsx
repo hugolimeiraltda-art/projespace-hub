@@ -26,6 +26,7 @@ import { TotensImplantacao } from '@/components/TotensImplantacao';
 import { ImplantacaoHistoricoPPE } from '@/components/ImplantacaoHistoricoPPE';
 import { DocumentacaoRede } from '@/components/DocumentacaoRede';
 import { TapVendaResumo } from '@/components/TapVendaResumo';
+import { EngineeringDeliverablesView } from '@/components/EngineeringDeliverablesView';
 
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 

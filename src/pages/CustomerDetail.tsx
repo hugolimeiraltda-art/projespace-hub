@@ -289,8 +289,8 @@ export default function CustomerDetail() {
         sistema: form.sistema || null,
         app: form.app || null,
         empresa: form.empresa || null,
-        transbordo: form.transbordo,
-        gateway: form.gateway,
+        telefonia_funcionamento: form.telefonia_funcionamento || null,
+
         portoes: parseInt(form.portoes) || 0,
         portas: parseInt(form.portas) || 0,
         dvr_nvr: parseInt(form.dvr_nvr) || 0,

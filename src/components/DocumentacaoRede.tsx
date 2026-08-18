@@ -136,6 +136,159 @@ export function DocumentacaoRede({ customerId, canEdit }: { customerId: string; 
 
   const isSecret = (key: string) => key === 'senha' || key === 'senha_ramal';
 
+  const norm = (v: unknown) =>
+    String(v ?? '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toUpperCase()
+      .trim();
+
+  const cell = (row: unknown[], idx: number | undefined) => {
+    if (idx === undefined || idx < 0) return null;
+    const v = row[idx];
+    const s = String(v ?? '').trim();
+    return s === '' || s === '-' ? null : s;
+  };
+
+  const findCol = (header: unknown[], ...keywords: string[]) => {
+    for (let i = 0; i < header.length; i++) {
+      const h = norm(header[i]);
+      if (!h) continue;
+      if (keywords.some((k) => h.includes(k))) return i;
+    }
+    return undefined;
+  };
+
+  const importPlanilha = async (file: File) => {
+    setSaving(true);
+    try {
+      const wb = XLSX.read(await file.arrayBuffer(), { type: 'array' });
+      const eqRows: Record<string, string | null>[] = [];
+      const lkRows: Record<string, string | null>[] = [];
+
+      for (const name of wb.SheetNames) {
+        const rows = XLSX.utils.sheet_to_json<unknown[]>(wb.Sheets[name], { header: 1, blankrows: false, defval: '' });
+        let mode: 'none' | 'eq' | 'lk' = 'none';
+        let cols: Record<string, number | undefined> = {};
+
+        for (const row of rows) {
+          const joined = row.map(norm).join(' | ');
+          if (!joined.replace(/\|/g, '').trim()) {
+            mode = 'none';
+            continue;
+          }
+
+          if (joined.includes('EQUIPAMENTO')) {
+            mode = 'eq';
+            cols = {
+              equipamento: findCol(row, 'EQUIPAMENTO'),
+              ip: findCol(row, 'IP'),
+              ddns: findCol(row, 'DDNS'),
+              usuario: findCol(row, 'USUARIO', 'LOGIN'),
+              senha: findCol(row, 'SENHA'),
+              porta_web: findCol(row, 'WEB'),
+              porta_tcp: findCol(row, 'TCP'),
+              porta_rtsp: findCol(row, 'RTSP'),
+              ramal: findCol(row, 'RAMAL'),
+              senha_ramal: undefined,
+            };
+            // distinguish senha / senha ramal and ramal columns
+            const senhaIdxs = row.map((c, i) => ({ i, h: norm(c) })).filter((x) => x.h.includes('SENHA'));
+            if (senhaIdxs.length > 1) {
+              cols.senha = senhaIdxs[0].i;
+              cols.senha_ramal = senhaIdxs[senhaIdxs.length - 1].i;
+            }
+            continue;
+          }
+
+          if (joined.includes('PROVEDOR') || joined.includes('LINK DE INTERNET') || joined.includes('OPERADORA')) {
+            mode = 'lk';
+            cols = {
+              provedor: findCol(row, 'PROVEDOR', 'OPERADORA', 'LINK'),
+              contato: findCol(row, 'CONTATO', 'TELEFONE'),
+              usuario: findCol(row, 'USUARIO', 'LOGIN'),
+              senha: findCol(row, 'SENHA'),
+              ip_global: findCol(row, 'IP GLOBAL', 'GLOBAL'),
+              ip: findCol(row, 'IP INTERNO', 'IP LAN'),
+              mask: findCol(row, 'MASK', 'MASCARA'),
+              gateway: findCol(row, 'GATEWAY'),
+              dns1: findCol(row, 'DNS 1', 'DNS1', 'DNS PRIMARIO'),
+              dns2: findCol(row, 'DNS 2', 'DNS2', 'DNS SECUNDARIO'),
+              observacoes: findCol(row, 'OBS'),
+            };
+            if (cols.ip === undefined) cols.ip = findCol(row, 'IP');
+            continue;
+          }
+
+          if (mode === 'eq') {
+            const equipamento = cell(row, cols.equipamento);
+            if (!equipamento) continue;
+            eqRows.push({
+              equipamento,
+              ip: cell(row, cols.ip),
+              ddns: cell(row, cols.ddns),
+              usuario: cell(row, cols.usuario),
+              senha: cell(row, cols.senha),
+              porta_web: cell(row, cols.porta_web),
+              porta_tcp: cell(row, cols.porta_tcp),
+              porta_rtsp: cell(row, cols.porta_rtsp),
+              ramal: cell(row, cols.ramal),
+              senha_ramal: cell(row, cols.senha_ramal),
+            });
+          } else if (mode === 'lk') {
+            const provedor = cell(row, cols.provedor);
+            if (!provedor) continue;
+            lkRows.push({
+              provedor,
+              contato: cell(row, cols.contato),
+              usuario: cell(row, cols.usuario),
+              senha: cell(row, cols.senha),
+              ip_global: cell(row, cols.ip_global),
+              ip: cell(row, cols.ip),
+              mask: cell(row, cols.mask),
+              gateway: cell(row, cols.gateway),
+              dns1: cell(row, cols.dns1),
+              dns2: cell(row, cols.dns2),
+              observacoes: cell(row, cols.observacoes),
+            });
+          }
+        }
+      }
+
+      if (eqRows.length === 0 && lkRows.length === 0) {
+        toast({
+          title: 'Nada encontrado',
+          description: 'Não localizei tabelas de Equipamentos ou Links na planilha.',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      if (eqRows.length) {
+        const { error } = await supabase.from('customer_rede_equipamentos').insert(
+          eqRows.map((r, i) => ({ ...r, customer_id: customerId, ordem: equipamentos.length + i })) as never,
+        );
+        if (error) throw error;
+      }
+      if (lkRows.length) {
+        const { error } = await supabase.from('customer_rede_links').insert(
+          lkRows.map((r, i) => ({ ...r, customer_id: customerId, ordem: links.length + i })) as never,
+        );
+        if (error) throw error;
+      }
+
+      toast({
+        title: 'Planilha importada',
+        description: `${eqRows.length} equipamento(s) e ${lkRows.length} link(s) adicionados.`,
+      });
+      await load();
+    } catch (e) {
+      toast({ title: 'Erro ao importar', description: (e as Error).message, variant: 'destructive' });
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <Card className="mb-6">
       <CardHeader className="flex flex-row items-center justify-between">

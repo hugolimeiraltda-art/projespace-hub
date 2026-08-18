@@ -846,8 +846,12 @@ export default function CustomerDetail() {
           </CardContent>
         </Card>
 
-        {/* Documentação */}
+        {/* Administradores */}
         {!isPPE && <AdministradoresCondominio customerId={id!} canEdit={canEdit} />}
+
+        {/* Documentação de Rede */}
+        {!isPPE && <DocumentacaoRede customerId={id!} canEdit={canEdit} />}
+
 
         {/* Documentação */}
         <Card>

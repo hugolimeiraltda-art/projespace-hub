@@ -553,20 +553,50 @@ export function DocumentacaoRede({ customerId, canEdit }: { customerId: string; 
             <DialogTitle>{editing?.id ? 'Editar equipamento' : 'Novo equipamento'}</DialogTitle>
           </DialogHeader>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[60vh] overflow-y-auto pr-1">
-            {EQUIP_COLS.map((c) => (
-              <div key={c.key} className={c.key === 'equipamento' || c.key === 'ddns' ? 'md:col-span-2' : ''}>
-                <Label>{c.label}</Label>
-                <Input
-                  type={isSecret(c.key as string) && !showSecrets ? 'password' : 'text'}
-                  value={editing?.values[c.key as string] || ''}
-                  onChange={(e) =>
-                    setEditing((prev) =>
-                      prev ? { ...prev, values: { ...prev.values, [c.key as string]: e.target.value } } : prev,
-                    )
-                  }
-                />
-              </div>
-            ))}
+            {EQUIP_COLS.map((c) =>
+              c.key === 'tipo_equipamento' ? (
+                <div key={c.key} className="md:col-span-2">
+                  <Label>{c.label}</Label>
+                  <div className="flex gap-2">
+                    <Select
+                      value={editing?.values.tipo_equipamento || ''}
+                      onValueChange={(v) =>
+                        setEditing((prev) => (prev ? { ...prev, values: { ...prev.values, tipo_equipamento: v } } : prev))
+                      }
+                    >
+                      <SelectTrigger className="flex-1">
+                        <SelectValue placeholder="Selecione o tipo" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {tipos.map((t) => (
+                          <SelectItem key={t} value={t}>
+                            {t}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Button type="button" variant="outline" onClick={() => setNovoTipoOpen(true)}>
+                      <Plus className="w-4 h-4 mr-1" />
+                      Novo tipo
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div key={c.key} className={c.key === 'equipamento' || c.key === 'ddns' ? 'md:col-span-2' : ''}>
+                  <Label>{c.label}</Label>
+                  <Input
+                    type={isSecret(c.key as string) && !showSecrets ? 'password' : 'text'}
+                    value={editing?.values[c.key as string] || ''}
+                    onChange={(e) =>
+                      setEditing((prev) =>
+                        prev ? { ...prev, values: { ...prev.values, [c.key as string]: e.target.value } } : prev,
+                      )
+                    }
+                  />
+                </div>
+              ),
+            )}
+
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditing(null)}>

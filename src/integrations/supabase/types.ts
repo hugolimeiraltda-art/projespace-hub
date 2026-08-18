@@ -490,6 +490,7 @@ export type Database = {
           status_implantacao: string | null
           supervisor_responsavel_id: string | null
           taxa_ativacao: number | null
+          telefonia_funcionamento: string | null
           tipo: string | null
           tipo_carteira: string
           totem_duplo: number | null
@@ -533,6 +534,7 @@ export type Database = {
           status_implantacao?: string | null
           supervisor_responsavel_id?: string | null
           taxa_ativacao?: number | null
+          telefonia_funcionamento?: string | null
           tipo?: string | null
           tipo_carteira?: string
           totem_duplo?: number | null
@@ -576,6 +578,7 @@ export type Database = {
           status_implantacao?: string | null
           supervisor_responsavel_id?: string | null
           taxa_ativacao?: number | null
+          telefonia_funcionamento?: string | null
           tipo?: string | null
           tipo_carteira?: string
           totem_duplo?: number | null

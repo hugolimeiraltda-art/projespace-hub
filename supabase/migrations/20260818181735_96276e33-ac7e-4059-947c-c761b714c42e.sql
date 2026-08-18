@@ -1,0 +1,1 @@
+ALTER TABLE public.customer_portfolio ADD COLUMN IF NOT EXISTS telefonia_funcionamento text;

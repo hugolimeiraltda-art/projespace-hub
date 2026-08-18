@@ -31,6 +31,15 @@ const NOC_STATUS_OPTIONS = [
   { value: 'NAO_ATIVADO', label: 'Não ativado no NOC' },
 ];
 
+const TELEFONIA_OPTIONS = [
+  'APP + Apto + Celular',
+  'APP + Celular',
+  'Apto + Celular',
+  'Apto',
+  'Celular',
+];
+
+
 interface Customer {
   id: string;
   tipo_carteira?: 'PCI' | 'PPE' | string | null;
@@ -116,8 +125,8 @@ export default function CustomerDetail() {
     sistema: '',
     app: '',
     empresa: '',
-    transbordo: false,
-    gateway: false,
+    telefonia_funcionamento: '',
+
     portoes: '0',
     portas: '0',
     dvr_nvr: '0',
@@ -194,8 +203,8 @@ export default function CustomerDetail() {
         sistema: normalizedData.sistema || '',
         app: normalizedData.app || '',
         empresa: (data as any).empresa || '',
-        transbordo: data.transbordo,
-        gateway: data.gateway,
+        telefonia_funcionamento: (data as any).telefonia_funcionamento || '',
+
         portoes: data.portoes?.toString() || '0',
         portas: data.portas?.toString() || '0',
         dvr_nvr: data.dvr_nvr?.toString() || '0',
@@ -280,8 +289,8 @@ export default function CustomerDetail() {
         sistema: form.sistema || null,
         app: form.app || null,
         empresa: form.empresa || null,
-        transbordo: form.transbordo,
-        gateway: form.gateway,
+        telefonia_funcionamento: form.telefonia_funcionamento || null,
+
         portoes: parseInt(form.portoes) || 0,
         portas: parseInt(form.portas) || 0,
         dvr_nvr: parseInt(form.dvr_nvr) || 0,
@@ -707,16 +716,22 @@ export default function CustomerDetail() {
                       <Label>Qtd Leitores</Label>
                       <Input type="number" value={form.quantidade_leitores} onChange={(e) => setForm({ ...form, quantidade_leitores: e.target.value })} disabled={!canEdit} />
                     </div>
-                    <div className="flex items-end gap-6">
-                      <div className="flex items-center gap-2">
-                        <Switch id="transbordo" checked={form.transbordo} onCheckedChange={(v) => setForm({ ...form, transbordo: v })} disabled={!canEdit} />
-                        <Label htmlFor="transbordo">Transbordo</Label>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Switch id="gateway" checked={form.gateway} onCheckedChange={(v) => setForm({ ...form, gateway: v })} disabled={!canEdit} />
-                        <Label htmlFor="gateway">Gateway</Label>
-                      </div>
+                    <div>
+                      <Label>Telefonia</Label>
+                      <Select
+                        value={form.telefonia_funcionamento || ''}
+                        onValueChange={(v) => setForm({ ...form, telefonia_funcionamento: v })}
+                        disabled={!canEdit}
+                      >
+                        <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                        <SelectContent>
+                          {TELEFONIA_OPTIONS.map((opt) => (
+                            <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
+
                   </div>
                 </>
               )}

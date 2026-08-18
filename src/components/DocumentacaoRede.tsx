@@ -151,7 +151,7 @@ export function DocumentacaoRede({ customerId, canEdit }: { customerId: string; 
     setEditing({ id: row.id, values });
   };
 
-  const saveEquipamentoDialog = async () => {
+  const saveEquipamentoDialog = async (continueAfterSave = false) => {
     if (!editing) return;
     const payload: Record<string, string | null> = {};
     EQUIP_COLS.forEach((c) => {
@@ -174,8 +174,13 @@ export function DocumentacaoRede({ customerId, canEdit }: { customerId: string; 
       return;
     }
     toast({ title: editing.id ? 'Equipamento atualizado' : 'Equipamento adicionado' });
-    setEditing(null);
-    await load();
+    if (continueAfterSave) {
+      await load();
+      setEditing({ id: null, values: {} });
+    } else {
+      setEditing(null);
+      await load();
+    }
   };
 
   const addLink = async () => {
@@ -624,7 +629,11 @@ export function DocumentacaoRede({ customerId, canEdit }: { customerId: string; 
             <Button variant="outline" onClick={() => setEditing(null)}>
               Cancelar
             </Button>
-            <Button onClick={saveEquipamentoDialog} disabled={saving}>
+            <Button onClick={() => saveEquipamentoDialog(true)} disabled={saving} variant="outline">
+              {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+              Salvar e continuar
+            </Button>
+            <Button onClick={() => saveEquipamentoDialog(false)} disabled={saving}>
               {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
               Salvar
             </Button>

@@ -5,7 +5,20 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Trash2, Loader2, Eye, EyeOff, Network, Upload, Pencil, ChevronDown, ChevronUp } from 'lucide-react';
+import {
+  Plus,
+  Trash2,
+  Loader2,
+  Eye,
+  EyeOff,
+  Network,
+  Upload,
+  Pencil,
+  ChevronDown,
+  ChevronUp,
+  Maximize2,
+  Minimize2,
+} from 'lucide-react';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import {
   AlertDialog,
@@ -74,6 +87,7 @@ export function DocumentacaoRede({ customerId, canEdit }: { customerId: string; 
   const [saving, setSaving] = useState(false);
   const [showSecrets, setShowSecrets] = useState(false);
   const [showLinks, setShowLinks] = useState(true);
+  const [fullscreen, setFullscreen] = useState(false);
   const [equipamentos, setEquipamentos] = useState<Equipamento[]>([]);
   const [links, setLinks] = useState<LinkInternet[]>([]);
   const [editing, setEditing] = useState<{ id: string | null; values: Record<string, string> } | null>(null);
@@ -357,6 +371,57 @@ export function DocumentacaoRede({ customerId, canEdit }: { customerId: string; 
     }
   };
 
+  const renderTabelaEquipamentos = () => (
+    <table className="w-full text-sm border-collapse">
+      <thead>
+        <tr className="bg-muted">
+          {EQUIP_COLS.map((c) => (
+            <th key={c.key} className={`text-left font-semibold p-2 border ${c.width}`}>
+              {c.label}
+            </th>
+          ))}
+          {canEdit && <th className="p-2 border w-10" />}
+        </tr>
+      </thead>
+      <tbody>
+        {equipamentos.map((row) => (
+          <tr
+            key={row.id}
+            className={canEdit ? 'hover:bg-muted/50 cursor-pointer' : undefined}
+            onDoubleClick={() => canEdit && openEditEquipamento(row)}
+          >
+            {EQUIP_COLS.map((c) => {
+              const value = (row[c.key] as string) || '';
+              const masked = isSecret(c.key as string) && !showSecrets && value ? '••••••••' : value;
+              return (
+                <td key={c.key} className="border p-2 align-middle whitespace-nowrap">
+                  {masked || <span className="text-muted-foreground">-</span>}
+                </td>
+              );
+            })}
+            {canEdit && (
+              <td className="border p-1">
+                <div className="flex items-center justify-center gap-1">
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEditEquipamento(row)}>
+                    <Pencil className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="text-destructive hover:text-destructive h-8 w-8"
+                    onClick={() => setConfirmDelete(row)}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
+              </td>
+            )}
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+
   return (
     <Card className="mb-6">
       <CardHeader className="flex flex-row items-center justify-between">
@@ -367,6 +432,10 @@ export function DocumentacaoRede({ customerId, canEdit }: { customerId: string; 
           <Button variant="outline" size="sm" onClick={() => setShowSecrets((s) => !s)}>
             {showSecrets ? <EyeOff className="w-4 h-4 mr-2" /> : <Eye className="w-4 h-4 mr-2" />}
             {showSecrets ? 'Ocultar senhas' : 'Mostrar senhas'}
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => setFullscreen(true)}>
+            <Maximize2 className="w-4 h-4 mr-2" />
+            Tela cheia
           </Button>
           {canEdit && (
             <>
@@ -410,59 +479,7 @@ export function DocumentacaoRede({ customerId, canEdit }: { customerId: string; 
                 <p className="text-sm text-muted-foreground">Nenhum equipamento cadastrado.</p>
               ) : (
                 <div className="overflow-x-auto">
-                  <table className="w-full text-sm border-collapse">
-                    <thead>
-                      <tr className="bg-muted">
-                        {EQUIP_COLS.map((c) => (
-                          <th key={c.key} className={`text-left font-semibold p-2 border ${c.width}`}>
-                            {c.label}
-                          </th>
-                        ))}
-                        {canEdit && <th className="p-2 border w-10" />}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {equipamentos.map((row) => (
-                        <tr
-                          key={row.id}
-                          className={canEdit ? 'hover:bg-muted/50 cursor-pointer' : undefined}
-                          onDoubleClick={() => canEdit && openEditEquipamento(row)}
-                        >
-                          {EQUIP_COLS.map((c) => {
-                            const value = (row[c.key] as string) || '';
-                            const masked = isSecret(c.key as string) && !showSecrets && value ? '••••••••' : value;
-                            return (
-                              <td key={c.key} className="border p-2 align-middle whitespace-nowrap">
-                                {masked || <span className="text-muted-foreground">-</span>}
-                              </td>
-                            );
-                          })}
-                          {canEdit && (
-                            <td className="border p-1">
-                              <div className="flex items-center justify-center gap-1">
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-8 w-8"
-                                  onClick={() => openEditEquipamento(row)}
-                                >
-                                  <Pencil className="w-4 h-4" />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="text-destructive hover:text-destructive h-8 w-8"
-                                  onClick={() => setConfirmDelete(row)}
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </Button>
-                              </div>
-                            </td>
-                          )}
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                  {renderTabelaEquipamentos()}
                 </div>
               )}
             </div>
@@ -651,6 +668,41 @@ export function DocumentacaoRede({ customerId, canEdit }: { customerId: string; 
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {fullscreen && (
+        <div className="fixed inset-0 z-50 bg-background flex flex-col">
+          <div className="flex items-center justify-between px-6 py-4 border-b">
+            <div className="flex items-center gap-2">
+              <Network className="w-5 h-5" />
+              <h2 className="text-lg font-semibold">Documentação de Rede — Tela cheia</h2>
+              <span className="text-sm text-muted-foreground">({equipamentos.length} equipamentos)</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" onClick={() => setShowSecrets((s) => !s)}>
+                {showSecrets ? <EyeOff className="w-4 h-4 mr-2" /> : <Eye className="w-4 h-4 mr-2" />}
+                {showSecrets ? 'Ocultar senhas' : 'Mostrar senhas'}
+              </Button>
+              {canEdit && (
+                <Button size="sm" onClick={openNewEquipamento} disabled={saving}>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Equipamento
+                </Button>
+              )}
+              <Button variant="outline" size="sm" onClick={() => setFullscreen(false)}>
+                <Minimize2 className="w-4 h-4 mr-2" />
+                Sair da tela cheia
+              </Button>
+            </div>
+          </div>
+          <div className="flex-1 overflow-auto p-6">
+            {equipamentos.length === 0 ? (
+              <p className="text-sm text-muted-foreground">Nenhum equipamento cadastrado.</p>
+            ) : (
+              renderTabelaEquipamentos()
+            )}
+          </div>
+        </div>
+      )}
     </Card>
   );
 }

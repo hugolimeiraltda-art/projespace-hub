@@ -25,6 +25,7 @@ import { AdministradoresCondominio } from '@/components/AdministradoresCondomini
 import { TotensImplantacao } from '@/components/TotensImplantacao';
 import { ImplantacaoHistoricoPPE } from '@/components/ImplantacaoHistoricoPPE';
 import { DocumentacaoRede } from '@/components/DocumentacaoRede';
+import { TapVendaResumo } from '@/components/TapVendaResumo';
 
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
@@ -848,6 +849,9 @@ export default function CustomerDetail() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Resumo do Projeto (TAP + Venda) */}
+        {!isPPE && projectId && <TapVendaResumo projectId={projectId} />}
 
         {/* Administradores */}
         {!isPPE && <AdministradoresCondominio customerId={id!} canEdit={canEdit} />}

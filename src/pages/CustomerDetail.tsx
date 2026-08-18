@@ -125,8 +125,8 @@ export default function CustomerDetail() {
     sistema: '',
     app: '',
     empresa: '',
-    transbordo: false,
-    gateway: false,
+    telefonia_funcionamento: '',
+
     portoes: '0',
     portas: '0',
     dvr_nvr: '0',

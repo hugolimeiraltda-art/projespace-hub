@@ -54,7 +54,9 @@ interface LinkInternet {
 }
 
 const EQUIP_COLS: { key: keyof Equipamento; label: string; width: string }[] = [
-  { key: 'equipamento', label: 'Equipamento', width: 'min-w-[220px]' },
+  { key: 'tipo_equipamento', label: 'Tipo de equipamento', width: 'min-w-[180px]' },
+  { key: 'equipamento', label: 'Local de instalação do equipamento', width: 'min-w-[240px]' },
+
   { key: 'ip', label: 'IP', width: 'min-w-[130px]' },
   { key: 'ddns', label: 'DDNS', width: 'min-w-[220px]' },
   { key: 'usuario', label: 'Usuário', width: 'min-w-[110px]' },

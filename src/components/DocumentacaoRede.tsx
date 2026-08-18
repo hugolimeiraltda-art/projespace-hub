@@ -668,6 +668,41 @@ export function DocumentacaoRede({ customerId, canEdit }: { customerId: string; 
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {fullscreen && (
+        <div className="fixed inset-0 z-50 bg-background flex flex-col">
+          <div className="flex items-center justify-between px-6 py-4 border-b">
+            <div className="flex items-center gap-2">
+              <Network className="w-5 h-5" />
+              <h2 className="text-lg font-semibold">Documentação de Rede — Tela cheia</h2>
+              <span className="text-sm text-muted-foreground">({equipamentos.length} equipamentos)</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" onClick={() => setShowSecrets((s) => !s)}>
+                {showSecrets ? <EyeOff className="w-4 h-4 mr-2" /> : <Eye className="w-4 h-4 mr-2" />}
+                {showSecrets ? 'Ocultar senhas' : 'Mostrar senhas'}
+              </Button>
+              {canEdit && (
+                <Button size="sm" onClick={openNewEquipamento} disabled={saving}>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Equipamento
+                </Button>
+              )}
+              <Button variant="outline" size="sm" onClick={() => setFullscreen(false)}>
+                <Minimize2 className="w-4 h-4 mr-2" />
+                Sair da tela cheia
+              </Button>
+            </div>
+          </div>
+          <div className="flex-1 overflow-auto p-6">
+            {equipamentos.length === 0 ? (
+              <p className="text-sm text-muted-foreground">Nenhum equipamento cadastrado.</p>
+            ) : (
+              renderTabelaEquipamentos()
+            )}
+          </div>
+        </div>
+      )}
     </Card>
   );
 }

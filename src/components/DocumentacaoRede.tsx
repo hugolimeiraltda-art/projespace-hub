@@ -503,6 +503,60 @@ export function DocumentacaoRede({ customerId, canEdit }: { customerId: string; 
           </div>
         )}
       </CardContent>
+      <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>{editing?.id ? 'Editar equipamento' : 'Novo equipamento'}</DialogTitle>
+          </DialogHeader>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[60vh] overflow-y-auto pr-1">
+            {EQUIP_COLS.map((c) => (
+              <div key={c.key} className={c.key === 'equipamento' || c.key === 'ddns' ? 'md:col-span-2' : ''}>
+                <Label>{c.label}</Label>
+                <Input
+                  type={isSecret(c.key as string) && !showSecrets ? 'password' : 'text'}
+                  value={editing?.values[c.key as string] || ''}
+                  onChange={(e) =>
+                    setEditing((prev) =>
+                      prev ? { ...prev, values: { ...prev.values, [c.key as string]: e.target.value } } : prev,
+                    )
+                  }
+                />
+              </div>
+            ))}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditing(null)}>
+              Cancelar
+            </Button>
+            <Button onClick={saveEquipamentoDialog} disabled={saving}>
+              {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+              Salvar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog open={!!confirmDelete} onOpenChange={(o) => !o && setConfirmDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir equipamento</AlertDialogTitle>
+            <AlertDialogDescription>
+              Deseja excluir "{confirmDelete?.equipamento}"? Essa ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={async () => {
+                if (confirmDelete) await removeEquipamento(confirmDelete.id);
+                setConfirmDelete(null);
+              }}
+            >
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 }

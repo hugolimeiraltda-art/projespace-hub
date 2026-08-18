@@ -103,7 +103,12 @@ export function DocumentacaoRede({ customerId, canEdit }: { customerId: string; 
 
   const loadTipos = async () => {
     const { data } = await supabase.from('rede_equipamento_tipos').select('nome').order('nome');
-    setTipos(((data as { nome: string }[]) || []).map((t) => t.nome));
+    const nomes = ((data as { nome: string }[]) || []).map((t) => t.nome);
+    const ordenados = [
+      ...nomes.filter((n) => n.trim().toLowerCase() === 'leitor facial'),
+      ...nomes.filter((n) => n.trim().toLowerCase() !== 'leitor facial').sort((a, b) => a.localeCompare(b, 'pt-BR')),
+    ];
+    setTipos(ordenados);
   };
 
   const criarTipo = async () => {

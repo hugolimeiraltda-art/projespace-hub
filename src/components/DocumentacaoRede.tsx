@@ -111,7 +111,33 @@ export function DocumentacaoRede({ customerId, canEdit }: { customerId: string; 
     setTipos(ordenados);
   };
 
+  const inferirTipo = (local: string): string | null => {
+    const t = (local || '').toUpperCase();
+    if (!t.trim()) return null;
+    const regras: [RegExp, string][] = [
+      [/FACIAL|BIOMETRI/, 'Leitor facial'],
+      [/PLACA|CONTROLADOR/, 'Placa Controladora'],
+      [/C[AÂ]MERA|CAM\b|DVR|NVR/, 'Camera IP'],
+      [/SWITCH/, 'Switch'],
+      [/ROTEADOR|ROUTER/, 'Roteador'],
+      [/MODEM|IP GERAL|ONU/, 'Modem'],
+      [/NOBREAK|UPS/, 'Nobreak'],
+      [/INTERFONE|PORTEIRO/, 'Interfone'],
+      [/TOTEM/, 'Totem'],
+      [/ALARME|CENTRAL/, 'Central de alarme'],
+      [/TAG|LEITOR/, 'Leitor de TAG'],
+    ];
+    for (const [re, nome] of regras) {
+      if (re.test(t)) {
+        const match = tipos.find((x) => x.toLowerCase() === nome.toLowerCase());
+        if (match) return match;
+      }
+    }
+    return null;
+  };
+
   const criarTipo = async () => {
+
     const nome = novoTipo.trim();
     if (!nome) return;
     const { error } = await supabase.from('rede_equipamento_tipos').insert({ nome } as never);
@@ -615,13 +641,21 @@ export function DocumentacaoRede({ customerId, canEdit }: { customerId: string; 
                     type={isSecret(c.key as string) && !showSecrets ? 'password' : 'text'}
                     value={editing?.values[c.key as string] || ''}
                     onChange={(e) =>
-                      setEditing((prev) =>
-                        prev ? { ...prev, values: { ...prev.values, [c.key as string]: e.target.value } } : prev,
-                      )
+                      setEditing((prev) => {
+                        if (!prev) return prev;
+                        const key = c.key as string;
+                        const values = { ...prev.values, [key]: e.target.value };
+                        if (key === 'equipamento') {
+                          const sugerido = inferirTipo(e.target.value);
+                          if (sugerido) values.tipo_equipamento = sugerido;
+                        }
+                        return { ...prev, values };
+                      })
                     }
                   />
                 </div>
               ),
+
             )}
 
           </div>

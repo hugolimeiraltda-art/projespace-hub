@@ -301,10 +301,32 @@ export function DocumentacaoRede({ customerId, canEdit }: { customerId: string; 
             {showSecrets ? 'Ocultar senhas' : 'Mostrar senhas'}
           </Button>
           {canEdit && (
-            <Button size="sm" onClick={addEquipamento} disabled={saving}>
-              {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Plus className="w-4 h-4 mr-2" />}
-              Equipamento
-            </Button>
+            <>
+              <input
+                id={`rede-import-${customerId}`}
+                type="file"
+                accept=".xlsx,.xls,.csv"
+                className="hidden"
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) importPlanilha(f);
+                  e.target.value = '';
+                }}
+              />
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={saving}
+                onClick={() => document.getElementById(`rede-import-${customerId}`)?.click()}
+              >
+                {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Upload className="w-4 h-4 mr-2" />}
+                Importar planilha
+              </Button>
+              <Button size="sm" onClick={addEquipamento} disabled={saving}>
+                <Plus className="w-4 h-4 mr-2" />
+                Equipamento
+              </Button>
+            </>
           )}
         </div>
       </CardHeader>

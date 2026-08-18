@@ -615,13 +615,21 @@ export function DocumentacaoRede({ customerId, canEdit }: { customerId: string; 
                     type={isSecret(c.key as string) && !showSecrets ? 'password' : 'text'}
                     value={editing?.values[c.key as string] || ''}
                     onChange={(e) =>
-                      setEditing((prev) =>
-                        prev ? { ...prev, values: { ...prev.values, [c.key as string]: e.target.value } } : prev,
-                      )
+                      setEditing((prev) => {
+                        if (!prev) return prev;
+                        const key = c.key as string;
+                        const values = { ...prev.values, [key]: e.target.value };
+                        if (key === 'equipamento') {
+                          const sugerido = inferirTipo(e.target.value);
+                          if (sugerido) values.tipo_equipamento = sugerido;
+                        }
+                        return { ...prev, values };
+                      })
                     }
                   />
                 </div>
               ),
+
             )}
 
           </div>

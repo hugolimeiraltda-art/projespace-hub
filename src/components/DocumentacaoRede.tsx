@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Trash2, Loader2, Eye, EyeOff, Network, Upload, Pencil } from 'lucide-react';
+import { Plus, Trash2, Loader2, Eye, EyeOff, Network, Upload, Pencil, ChevronDown, ChevronUp } from 'lucide-react';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import {
   AlertDialog,
@@ -68,6 +68,7 @@ export function DocumentacaoRede({ customerId, canEdit }: { customerId: string; 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [showSecrets, setShowSecrets] = useState(false);
+  const [showLinks, setShowLinks] = useState(true);
   const [equipamentos, setEquipamentos] = useState<Equipamento[]>([]);
   const [links, setLinks] = useState<LinkInternet[]>([]);
   const [editing, setEditing] = useState<{ id: string | null; values: Record<string, string> } | null>(null);
@@ -439,65 +440,78 @@ export function DocumentacaoRede({ customerId, canEdit }: { customerId: string; 
             <div>
               <div className="flex items-center justify-between mb-3">
                 <h3 className="font-semibold">Links de Internet</h3>
-                {canEdit && (
-                  <Button variant="outline" size="sm" onClick={addLink} disabled={saving}>
-                    <Plus className="w-4 h-4 mr-2" /> Link
+                <div className="flex items-center gap-2">
+                  <Button variant="outline" size="sm" onClick={() => setShowLinks((s) => !s)}>
+                    {showLinks ? <ChevronUp className="w-4 h-4 mr-2" /> : <ChevronDown className="w-4 h-4 mr-2" />}
+                    {showLinks ? 'Ocultar links' : 'Exibir links'}
                   </Button>
-                )}
-              </div>
-              {links.length === 0 ? (
-                <p className="text-sm text-muted-foreground">Nenhum link cadastrado.</p>
-              ) : (
-                <div className="grid gap-4 md:grid-cols-2">
-                  {links.map((row) => (
-                    <div key={row.id} className="border rounded-lg p-4 space-y-3">
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="flex-1">
-                          <Label>Provedor / Link</Label>
-                          <Input
-                            defaultValue={row.provedor}
-                            disabled={!canEdit}
-                            onBlur={(e) => saveLink(row, 'provedor', e.target.value)}
-                          />
-                        </div>
-                        {canEdit && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="text-destructive hover:text-destructive mt-6"
-                            onClick={() => removeLink(row.id)}
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        )}
-                      </div>
-                      <div className="grid grid-cols-2 gap-3">
-                        {([
-                          ['contato', 'Contato'],
-                          ['usuario', 'Usuário'],
-                          ['senha', 'Senha'],
-                          ['ip_global', 'IP Global'],
-                          ['ip', 'IP'],
-                          ['mask', 'Mask'],
-                          ['gateway', 'Gateway'],
-                          ['dns1', 'DNS 1'],
-                          ['dns2', 'DNS 2'],
-                          ['observacoes', 'Observações'],
-                        ] as [keyof LinkInternet, string][]).map(([key, label]) => (
-                          <div key={key}>
-                            <Label>{label}</Label>
-                            <Input
-                              type={key === 'senha' && !showSecrets ? 'password' : 'text'}
-                              defaultValue={(row[key] as string) || ''}
-                              disabled={!canEdit}
-                              onBlur={(e) => saveLink(row, key, e.target.value)}
-                            />
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
+                  {canEdit && (
+                    <Button variant="outline" size="sm" onClick={addLink} disabled={saving}>
+                      <Plus className="w-4 h-4 mr-2" /> Link
+                    </Button>
+                  )}
                 </div>
+              </div>
+              {showLinks && (
+                <>
+                  {links.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">Nenhum link cadastrado.</p>
+                  ) : (
+                    <div className="grid gap-4 md:grid-cols-2">
+                      {links.map((row) => (
+                        <div key={row.id} className="border rounded-lg p-4 space-y-3">
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex-1">
+                              <Label>Provedor / Link</Label>
+                              <Input
+                                defaultValue={row.provedor}
+                                disabled={!canEdit}
+                                onBlur={(e) => saveLink(row, 'provedor', e.target.value)}
+                              />
+                            </div>
+                            {canEdit && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="text-destructive hover:text-destructive mt-6"
+                                onClick={() => removeLink(row.id)}
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            )}
+                          </div>
+                          <div className="grid grid-cols-2 gap-3">
+                            {([
+                              ['contato', 'Contato'],
+                              ['usuario', 'Usuário'],
+                              ['senha', 'Senha'],
+                              ['ip_global', 'IP Global'],
+                              ['ip', 'IP'],
+                              ['mask', 'Mask'],
+                              ['gateway', 'Gateway'],
+                              ['dns1', 'DNS 1'],
+                              ['dns2', 'DNS 2'],
+                              ['observacoes', 'Observações'],
+                            ] as [keyof LinkInternet, string][]).map(([key, label]) => (
+                              <div key={key}>
+                                <Label>{label}</Label>
+                                <Input
+                                  type={key === 'senha' && !showSecrets ? 'password' : 'text'}
+                                  defaultValue={(row[key] as string) || ''}
+                                  disabled={!canEdit}
+                                  onBlur={(e) => saveLink(row, key, e.target.value)}
+                                />
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </>
+              )}
+              {!showLinks && links.length > 0 && (
+                <p className="text-sm text-muted-foreground">{links.length} link(s) oculto(s).</p>
               )}
             </div>
           </div>

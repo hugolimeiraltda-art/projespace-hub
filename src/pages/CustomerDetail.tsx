@@ -707,16 +707,22 @@ export default function CustomerDetail() {
                       <Label>Qtd Leitores</Label>
                       <Input type="number" value={form.quantidade_leitores} onChange={(e) => setForm({ ...form, quantidade_leitores: e.target.value })} disabled={!canEdit} />
                     </div>
-                    <div className="flex items-end gap-6">
-                      <div className="flex items-center gap-2">
-                        <Switch id="transbordo" checked={form.transbordo} onCheckedChange={(v) => setForm({ ...form, transbordo: v })} disabled={!canEdit} />
-                        <Label htmlFor="transbordo">Transbordo</Label>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Switch id="gateway" checked={form.gateway} onCheckedChange={(v) => setForm({ ...form, gateway: v })} disabled={!canEdit} />
-                        <Label htmlFor="gateway">Gateway</Label>
-                      </div>
+                    <div>
+                      <Label>Telefonia</Label>
+                      <Select
+                        value={form.telefonia_funcionamento || ''}
+                        onValueChange={(v) => setForm({ ...form, telefonia_funcionamento: v })}
+                        disabled={!canEdit}
+                      >
+                        <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                        <SelectContent>
+                          {TELEFONIA_OPTIONS.map((opt) => (
+                            <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
+
                   </div>
                 </>
               )}

@@ -598,6 +598,117 @@ export type Database = {
           },
         ]
       }
+      customer_rede_equipamentos: {
+        Row: {
+          created_at: string
+          customer_id: string
+          ddns: string | null
+          equipamento: string
+          id: string
+          ip: string | null
+          ordem: number
+          porta_rtsp: string | null
+          porta_tcp: string | null
+          porta_web: string | null
+          ramal: string | null
+          senha: string | null
+          senha_ramal: string | null
+          updated_at: string
+          usuario: string | null
+        }
+        Insert: {
+          created_at?: string
+          customer_id: string
+          ddns?: string | null
+          equipamento: string
+          id?: string
+          ip?: string | null
+          ordem?: number
+          porta_rtsp?: string | null
+          porta_tcp?: string | null
+          porta_web?: string | null
+          ramal?: string | null
+          senha?: string | null
+          senha_ramal?: string | null
+          updated_at?: string
+          usuario?: string | null
+        }
+        Update: {
+          created_at?: string
+          customer_id?: string
+          ddns?: string | null
+          equipamento?: string
+          id?: string
+          ip?: string | null
+          ordem?: number
+          porta_rtsp?: string | null
+          porta_tcp?: string | null
+          porta_web?: string | null
+          ramal?: string | null
+          senha?: string | null
+          senha_ramal?: string | null
+          updated_at?: string
+          usuario?: string | null
+        }
+        Relationships: []
+      }
+      customer_rede_links: {
+        Row: {
+          contato: string | null
+          created_at: string
+          customer_id: string
+          dns1: string | null
+          dns2: string | null
+          gateway: string | null
+          id: string
+          ip: string | null
+          ip_global: string | null
+          mask: string | null
+          observacoes: string | null
+          ordem: number
+          provedor: string
+          senha: string | null
+          updated_at: string
+          usuario: string | null
+        }
+        Insert: {
+          contato?: string | null
+          created_at?: string
+          customer_id: string
+          dns1?: string | null
+          dns2?: string | null
+          gateway?: string | null
+          id?: string
+          ip?: string | null
+          ip_global?: string | null
+          mask?: string | null
+          observacoes?: string | null
+          ordem?: number
+          provedor: string
+          senha?: string | null
+          updated_at?: string
+          usuario?: string | null
+        }
+        Update: {
+          contato?: string | null
+          created_at?: string
+          customer_id?: string
+          dns1?: string | null
+          dns2?: string | null
+          gateway?: string | null
+          id?: string
+          ip?: string | null
+          ip_global?: string | null
+          mask?: string | null
+          observacoes?: string | null
+          ordem?: number
+          provedor?: string
+          senha?: string | null
+          updated_at?: string
+          usuario?: string | null
+        }
+        Relationships: []
+      }
       customer_satisfacao: {
         Row: {
           ambiente_organizado: string | null

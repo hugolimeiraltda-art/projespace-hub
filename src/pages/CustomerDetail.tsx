@@ -853,6 +853,9 @@ export default function CustomerDetail() {
         {/* Resumo do Projeto (TAP + Venda) */}
         {!isPPE && projectId && <TapVendaResumo projectId={projectId} />}
 
+        {/* Devolução do Projeto (Engenharia) */}
+        {!isPPE && projectId && <EngineeringDeliverablesView projectId={projectId} />}
+
         {/* Administradores */}
         {!isPPE && <AdministradoresCondominio customerId={id!} canEdit={canEdit} />}
 

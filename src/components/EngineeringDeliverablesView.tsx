@@ -72,7 +72,7 @@ export function EngineeringDeliverablesView({ projectId }: Props) {
                         variant="outline"
                         size="sm"
                         className="w-full justify-start text-xs h-auto py-2"
-                        onClick={() => openAttachment(f.arquivo_url, f.nome_arquivo)}
+                        onClick={(e) => openAttachment(f.arquivo_url, e, f.nome_arquivo)}
                       >
                         <span className="truncate">{f.nome_arquivo}</span>
                       </Button>

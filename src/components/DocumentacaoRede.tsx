@@ -78,11 +78,34 @@ export function DocumentacaoRede({ customerId, canEdit }: { customerId: string; 
   const [links, setLinks] = useState<LinkInternet[]>([]);
   const [editing, setEditing] = useState<{ id: string | null; values: Record<string, string> } | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<Equipamento | null>(null);
+  const [tipos, setTipos] = useState<string[]>([]);
+  const [novoTipoOpen, setNovoTipoOpen] = useState(false);
+  const [novoTipo, setNovoTipo] = useState('');
 
   useEffect(() => {
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [customerId]);
+
+  const loadTipos = async () => {
+    const { data } = await supabase.from('rede_equipamento_tipos').select('nome').order('nome');
+    setTipos(((data as { nome: string }[]) || []).map((t) => t.nome));
+  };
+
+  const criarTipo = async () => {
+    const nome = novoTipo.trim();
+    if (!nome) return;
+    const { error } = await supabase.from('rede_equipamento_tipos').insert({ nome } as never);
+    if (error) {
+      toast({ title: 'Erro ao criar tipo', description: error.message, variant: 'destructive' });
+      return;
+    }
+    await loadTipos();
+    setEditing((prev) => (prev ? { ...prev, values: { ...prev.values, tipo_equipamento: nome } } : prev));
+    setNovoTipo('');
+    setNovoTipoOpen(false);
+    toast({ title: 'Tipo de equipamento criado' });
+  };
 
   const load = async () => {
     setLoading(true);
@@ -92,8 +115,10 @@ export function DocumentacaoRede({ customerId, canEdit }: { customerId: string; 
     ]);
     setEquipamentos((eq.data as Equipamento[]) || []);
     setLinks((lk.data as LinkInternet[]) || []);
+    await loadTipos();
     setLoading(false);
   };
+
 
   const openNewEquipamento = () => {
     setEditing({ id: null, values: {} });

@@ -203,8 +203,8 @@ export default function CustomerDetail() {
         sistema: normalizedData.sistema || '',
         app: normalizedData.app || '',
         empresa: (data as any).empresa || '',
-        transbordo: data.transbordo,
-        gateway: data.gateway,
+        telefonia_funcionamento: (data as any).telefonia_funcionamento || '',
+
         portoes: data.portoes?.toString() || '0',
         portas: data.portas?.toString() || '0',
         dvr_nvr: data.dvr_nvr?.toString() || '0',

@@ -136,9 +136,14 @@ export function CarteiraClientesTable({ customers, onDelete, basePath = '/cartei
   const { toast } = useToast();
 
   const stored = loadStoredConfig();
-  const initialOrder = stored?.order ?? TABLE_COLUMNS.map((c) => c.key);
+  const allKeys = TABLE_COLUMNS.map((c) => c.key);
+  // Merge any new columns that did not exist when the config was stored
+  const storedOrder = (stored?.order ?? []).filter((k) => allKeys.includes(k));
+  const initialOrder = storedOrder.length
+    ? [...storedOrder, ...allKeys.filter((k) => !storedOrder.includes(k))]
+    : allKeys;
   const initialVisible = stored?.visible ?? DEFAULT_VISIBLE_COLUMNS;
-  const initialWidths = stored?.widths ?? { ...DEFAULT_WIDTHS };
+  const initialWidths = { ...DEFAULT_WIDTHS, ...(stored?.widths ?? {}) };
 
   const [columnFilters, setColumnFilters] = useState<ColumnFilter[]>([]);
   const [deleteCustomer, setDeleteCustomer] = useState<Customer | null>(null);

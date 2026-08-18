@@ -26,6 +26,7 @@ import { TotensImplantacao } from '@/components/TotensImplantacao';
 import { ImplantacaoHistoricoPPE } from '@/components/ImplantacaoHistoricoPPE';
 import { DocumentacaoRede } from '@/components/DocumentacaoRede';
 import { TapVendaResumo } from '@/components/TapVendaResumo';
+import { EngineeringDeliverablesView } from '@/components/EngineeringDeliverablesView';
 
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
@@ -852,6 +853,9 @@ export default function CustomerDetail() {
 
         {/* Resumo do Projeto (TAP + Venda) */}
         {!isPPE && projectId && <TapVendaResumo projectId={projectId} />}
+
+        {/* Devolução do Projeto (Engenharia) */}
+        {!isPPE && projectId && <EngineeringDeliverablesView projectId={projectId} />}
 
         {/* Administradores */}
         {!isPPE && <AdministradoresCondominio customerId={id!} canEdit={canEdit} />}

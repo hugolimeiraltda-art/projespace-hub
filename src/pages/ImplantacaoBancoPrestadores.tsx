@@ -60,7 +60,7 @@ interface PrestadorDoc {
   created_at: string;
 }
 
-const EMPRESAS = ['Graber', 'Emive'];
+const EMPRESAS = ['Graber', 'Emive', 'Minha Portaria'];
 const PRACAS = ['SPO', 'VIX', 'RJO', 'BHZ'];
 const PRODUTOS_HOMOLOGADOS = [
   'Portaria Digital',

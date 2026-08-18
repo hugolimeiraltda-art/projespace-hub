@@ -604,6 +604,7 @@ export default function CustomerDetail() {
                     <SelectContent>
                       <SelectItem value="Emive">Emive</SelectItem>
                       <SelectItem value="Graber">Graber</SelectItem>
+                      <SelectItem value="Minha Portaria">Minha Portaria</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

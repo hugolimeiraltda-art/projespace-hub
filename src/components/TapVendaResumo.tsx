@@ -4,7 +4,9 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { BookOpen, ChevronDown } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { SaleFormSummary } from '@/components/SaleFormSummary';
+import { TapSummaryDescription } from '@/components/TapSummaryDescription';
 import {
+  TapForm,
   SaleCompletedForm,
   PORTARIA_VIRTUAL_LABELS,
   CFTV_ELEVADOR_LABELS,

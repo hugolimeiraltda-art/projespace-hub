@@ -30,6 +30,7 @@ interface Customer {
   mensalidade: number | null;
   endereco?: string | null;
   sistema?: string | null;
+  empresa?: string | null;
 }
 
 interface ColumnFilter {
@@ -38,7 +39,7 @@ interface ColumnFilter {
 }
 
 type SortDirection = 'asc' | 'desc' | null;
-type ColumnKey = 'contrato' | 'alarme_codigo' | 'razao_social' | 'filial' | 'tipo' | 'qtd_produto' | 'qtd_cameras' | 'data_ativacao' | 'data_termino' | 'taxa_ativacao' | 'portoes' | 'zonas_perimetro' | 'cameras' | 'mensalidade' | 'endereco';
+type ColumnKey = 'empresa' | 'contrato' | 'alarme_codigo' | 'razao_social' | 'filial' | 'tipo' | 'qtd_produto' | 'qtd_cameras' | 'data_ativacao' | 'data_termino' | 'taxa_ativacao' | 'portoes' | 'zonas_perimetro' | 'cameras' | 'mensalidade' | 'endereco';
 
 interface SortConfig {
   column: string;
@@ -56,6 +57,7 @@ interface CarteiraClientesTableProps {
 
 const TABLE_COLUMNS: { key: ColumnKey; label: string; align?: 'left' | 'right' }[] = [
   { key: 'contrato', label: 'Contrato' },
+  { key: 'empresa', label: 'Empresa' },
   { key: 'alarme_codigo', label: 'Código Alarme' },
   { key: 'razao_social', label: 'Razão Social' },
   { key: 'filial', label: 'Filial' },
@@ -74,6 +76,7 @@ const TABLE_COLUMNS: { key: ColumnKey; label: string; align?: 'left' | 'right' }
 
 const DEFAULT_VISIBLE_COLUMNS: ColumnKey[] = [
   'contrato',
+  'empresa',
   'alarme_codigo',
   'razao_social',
   'filial',
@@ -87,6 +90,7 @@ const STORAGE_KEY = 'carteira-clientes-table-config';
 
 const DEFAULT_WIDTHS: Record<ColumnKey, number> = {
   contrato: 110,
+  empresa: 150,
   alarme_codigo: 130,
   razao_social: 220,
   filial: 80,
@@ -261,6 +265,7 @@ export function CarteiraClientesTable({ customers, onDelete, basePath = '/cartei
     const values = customers.map((c) => {
       switch (column) {
         case 'contrato': return c.contrato;
+        case 'empresa': return c.empresa || '-';
         case 'alarme_codigo': return c.alarme_codigo || '-';
         case 'razao_social': return c.razao_social;
         case 'filial': return c.filial || '-';
@@ -331,7 +336,7 @@ export function CarteiraClientesTable({ customers, onDelete, basePath = '/cartei
     if (globalSearch.trim()) {
       const q = globalSearch.toLowerCase();
       result = result.filter((c) =>
-        [c.contrato, c.alarme_codigo, c.razao_social, c.filial, c.tipo, c.endereco]
+        [c.contrato, c.empresa, c.alarme_codigo, c.razao_social, c.filial, c.tipo, c.endereco]
           .some((v) => (v || '').toString().toLowerCase().includes(q))
       );
     }
@@ -342,6 +347,7 @@ export function CarteiraClientesTable({ customers, onDelete, basePath = '/cartei
         const filterLower = filter.value.toLowerCase();
         switch (filter.column) {
           case 'contrato': return c.contrato.toLowerCase().includes(filterLower);
+          case 'empresa': return (c.empresa || '-').toLowerCase().includes(filterLower);
           case 'alarme_codigo': return (c.alarme_codigo || '-').toLowerCase().includes(filterLower);
           case 'razao_social': return c.razao_social.toLowerCase().includes(filterLower);
           case 'filial': return (c.filial || '-').toLowerCase().includes(filterLower);
@@ -375,6 +381,10 @@ export function CarteiraClientesTable({ customers, onDelete, basePath = '/cartei
           case 'contrato':
             aValue = a.contrato;
             bValue = b.contrato;
+            break;
+          case 'empresa':
+            aValue = a.empresa || '';
+            bValue = b.empresa || '';
             break;
           case 'alarme_codigo':
             aValue = a.alarme_codigo || '';
@@ -479,7 +489,7 @@ export function CarteiraClientesTable({ customers, onDelete, basePath = '/cartei
           <PopoverContent className="w-64 p-3" align="start">
             <div className="space-y-3">
               <div className="font-medium text-sm">Filtrar {label}</div>
-              {column === 'filial' || column === 'tipo' ? (
+              {column === 'filial' || column === 'tipo' || column === 'empresa' ? (
                 <Select
                   value={getFilterValue(column)}
                   onValueChange={(value) => setFilter(column, value)}
@@ -527,6 +537,8 @@ export function CarteiraClientesTable({ customers, onDelete, basePath = '/cartei
     switch (column) {
       case 'contrato':
         return <TableCell className="font-medium text-primary hover:underline">{customer.contrato}</TableCell>;
+      case 'empresa':
+        return <TableCell>{customer.empresa || '-'}</TableCell>;
       case 'alarme_codigo':
         return <TableCell>{customer.alarme_codigo || '-'}</TableCell>;
       case 'razao_social':
@@ -564,6 +576,7 @@ export function CarteiraClientesTable({ customers, onDelete, basePath = '/cartei
   const handleExportExcel = () => {
     const rows = filteredAndSortedCustomers.map((c) => ({
       Contrato: c.contrato,
+      Empresa: c.empresa || '',
       'Código Alarme': c.alarme_codigo || '',
       'Razão Social': c.razao_social,
       Filial: c.filial || '',
@@ -751,6 +764,7 @@ export function CarteiraClientesTable({ customers, onDelete, basePath = '/cartei
                         {(() => {
                           switch (key) {
                             case 'contrato': return <span className="font-medium text-primary hover:underline">{customer.contrato}</span>;
+                            case 'empresa': return customer.empresa || '-';
                             case 'alarme_codigo': return customer.alarme_codigo || '-';
                             case 'razao_social': return <span className="truncate text-primary hover:underline">{customer.razao_social}</span>;
                             case 'filial': return customer.filial || '-';

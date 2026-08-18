@@ -479,59 +479,7 @@ export function DocumentacaoRede({ customerId, canEdit }: { customerId: string; 
                 <p className="text-sm text-muted-foreground">Nenhum equipamento cadastrado.</p>
               ) : (
                 <div className="overflow-x-auto">
-                  <table className="w-full text-sm border-collapse">
-                    <thead>
-                      <tr className="bg-muted">
-                        {EQUIP_COLS.map((c) => (
-                          <th key={c.key} className={`text-left font-semibold p-2 border ${c.width}`}>
-                            {c.label}
-                          </th>
-                        ))}
-                        {canEdit && <th className="p-2 border w-10" />}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {equipamentos.map((row) => (
-                        <tr
-                          key={row.id}
-                          className={canEdit ? 'hover:bg-muted/50 cursor-pointer' : undefined}
-                          onDoubleClick={() => canEdit && openEditEquipamento(row)}
-                        >
-                          {EQUIP_COLS.map((c) => {
-                            const value = (row[c.key] as string) || '';
-                            const masked = isSecret(c.key as string) && !showSecrets && value ? '••••••••' : value;
-                            return (
-                              <td key={c.key} className="border p-2 align-middle whitespace-nowrap">
-                                {masked || <span className="text-muted-foreground">-</span>}
-                              </td>
-                            );
-                          })}
-                          {canEdit && (
-                            <td className="border p-1">
-                              <div className="flex items-center justify-center gap-1">
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-8 w-8"
-                                  onClick={() => openEditEquipamento(row)}
-                                >
-                                  <Pencil className="w-4 h-4" />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="text-destructive hover:text-destructive h-8 w-8"
-                                  onClick={() => setConfirmDelete(row)}
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </Button>
-                              </div>
-                            </td>
-                          )}
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                  {renderTabelaEquipamentos()}
                 </div>
               )}
             </div>

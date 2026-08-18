@@ -76,19 +76,43 @@ export function DocumentacaoRede({ customerId, canEdit }: { customerId: string; 
     setLoading(false);
   };
 
-  const addEquipamento = async () => {
-    setSaving(true);
-    const { data, error } = await supabase
-      .from('customer_rede_equipamentos')
-      .insert({ customer_id: customerId, equipamento: 'Novo equipamento', ordem: equipamentos.length })
-      .select()
-      .single();
-    setSaving(false);
-    if (error) {
-      toast({ title: 'Erro', description: error.message, variant: 'destructive' });
+  const openNewEquipamento = () => {
+    setEditing({ id: null, values: {} });
+  };
+
+  const openEditEquipamento = (row: Equipamento) => {
+    const values: Record<string, string> = {};
+    EQUIP_COLS.forEach((c) => {
+      values[c.key as string] = (row[c.key] as string) || '';
+    });
+    setEditing({ id: row.id, values });
+  };
+
+  const saveEquipamentoDialog = async () => {
+    if (!editing) return;
+    const payload: Record<string, string | null> = {};
+    EQUIP_COLS.forEach((c) => {
+      const k = c.key as string;
+      payload[k] = (editing.values[k] || '').trim() || null;
+    });
+    if (!payload.equipamento) {
+      toast({ title: 'Informe o equipamento', variant: 'destructive' });
       return;
     }
-    setEquipamentos((prev) => [...prev, data as Equipamento]);
+    setSaving(true);
+    const { error } = editing.id
+      ? await supabase.from('customer_rede_equipamentos').update(payload as never).eq('id', editing.id)
+      : await supabase
+          .from('customer_rede_equipamentos')
+          .insert({ ...payload, customer_id: customerId, ordem: equipamentos.length } as never);
+    setSaving(false);
+    if (error) {
+      toast({ title: 'Erro ao salvar', description: error.message, variant: 'destructive' });
+      return;
+    }
+    toast({ title: editing.id ? 'Equipamento atualizado' : 'Equipamento adicionado' });
+    setEditing(null);
+    await load();
   };
 
   const addLink = async () => {

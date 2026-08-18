@@ -452,59 +452,66 @@ export function DocumentacaoRede({ customerId, canEdit }: { customerId: string; 
                   )}
                 </div>
               </div>
-              {links.length === 0 ? (
-                <p className="text-sm text-muted-foreground">Nenhum link cadastrado.</p>
-              ) : (
-                <div className="grid gap-4 md:grid-cols-2">
-                  {links.map((row) => (
-                    <div key={row.id} className="border rounded-lg p-4 space-y-3">
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="flex-1">
-                          <Label>Provedor / Link</Label>
-                          <Input
-                            defaultValue={row.provedor}
-                            disabled={!canEdit}
-                            onBlur={(e) => saveLink(row, 'provedor', e.target.value)}
-                          />
-                        </div>
-                        {canEdit && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="text-destructive hover:text-destructive mt-6"
-                            onClick={() => removeLink(row.id)}
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        )}
-                      </div>
-                      <div className="grid grid-cols-2 gap-3">
-                        {([
-                          ['contato', 'Contato'],
-                          ['usuario', 'Usuário'],
-                          ['senha', 'Senha'],
-                          ['ip_global', 'IP Global'],
-                          ['ip', 'IP'],
-                          ['mask', 'Mask'],
-                          ['gateway', 'Gateway'],
-                          ['dns1', 'DNS 1'],
-                          ['dns2', 'DNS 2'],
-                          ['observacoes', 'Observações'],
-                        ] as [keyof LinkInternet, string][]).map(([key, label]) => (
-                          <div key={key}>
-                            <Label>{label}</Label>
-                            <Input
-                              type={key === 'senha' && !showSecrets ? 'password' : 'text'}
-                              defaultValue={(row[key] as string) || ''}
-                              disabled={!canEdit}
-                              onBlur={(e) => saveLink(row, key, e.target.value)}
-                            />
+              {showLinks && (
+                <>
+                  {links.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">Nenhum link cadastrado.</p>
+                  ) : (
+                    <div className="grid gap-4 md:grid-cols-2">
+                      {links.map((row) => (
+                        <div key={row.id} className="border rounded-lg p-4 space-y-3">
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex-1">
+                              <Label>Provedor / Link</Label>
+                              <Input
+                                defaultValue={row.provedor}
+                                disabled={!canEdit}
+                                onBlur={(e) => saveLink(row, 'provedor', e.target.value)}
+                              />
+                            </div>
+                            {canEdit && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="text-destructive hover:text-destructive mt-6"
+                                onClick={() => removeLink(row.id)}
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            )}
                           </div>
-                        ))}
-                      </div>
+                          <div className="grid grid-cols-2 gap-3">
+                            {([
+                              ['contato', 'Contato'],
+                              ['usuario', 'Usuário'],
+                              ['senha', 'Senha'],
+                              ['ip_global', 'IP Global'],
+                              ['ip', 'IP'],
+                              ['mask', 'Mask'],
+                              ['gateway', 'Gateway'],
+                              ['dns1', 'DNS 1'],
+                              ['dns2', 'DNS 2'],
+                              ['observacoes', 'Observações'],
+                            ] as [keyof LinkInternet, string][]).map(([key, label]) => (
+                              <div key={key}>
+                                <Label>{label}</Label>
+                                <Input
+                                  type={key === 'senha' && !showSecrets ? 'password' : 'text'}
+                                  defaultValue={(row[key] as string) || ''}
+                                  disabled={!canEdit}
+                                  onBlur={(e) => saveLink(row, key, e.target.value)}
+                                />
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
+                  )}
+                </>
+              )}
+              {!showLinks && links.length > 0 && (
+                <p className="text-sm text-muted-foreground">{links.length} link(s) oculto(s).</p>
               )}
             </div>
           </div>

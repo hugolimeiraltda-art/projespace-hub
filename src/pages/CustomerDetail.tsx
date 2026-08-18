@@ -31,6 +31,15 @@ const NOC_STATUS_OPTIONS = [
   { value: 'NAO_ATIVADO', label: 'Não ativado no NOC' },
 ];
 
+const TELEFONIA_OPTIONS = [
+  'APP + Apto + Celular',
+  'APP + Celular',
+  'Apto + Celular',
+  'Apto',
+  'Celular',
+];
+
+
 interface Customer {
   id: string;
   tipo_carteira?: 'PCI' | 'PPE' | string | null;

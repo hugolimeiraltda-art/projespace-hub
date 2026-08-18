@@ -5,7 +5,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { SaleFormSummary } from '@/components/SaleFormSummary';
 import { useImplantacaoIntegration } from '@/hooks/useImplantacaoIntegration';
 import { AIFeedbackDialog } from '@/components/AIFeedbackDialog';
-import { SaleCompletedForm, PORTARIA_VIRTUAL_LABELS, CFTV_ELEVADOR_LABELS, MODALIDADE_PORTARIA_LABELS, PortariaVirtualApp, CFTVElevador, ModalidadePortaria } from '@/types/project';
+import { SaleCompletedForm, TapForm, PORTARIA_VIRTUAL_LABELS, CFTV_ELEVADOR_LABELS, MODALIDADE_PORTARIA_LABELS, PortariaVirtualApp, CFTVElevador, ModalidadePortaria } from '@/types/project';
+import { TapSummaryDescription } from '@/components/TapSummaryDescription';
 import { Layout } from '@/components/Layout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -1298,6 +1299,14 @@ export default function ImplantacaoExecucao() {
                   {tapForm && (
                     <div>
                       <h3 className="text-sm font-semibold uppercase tracking-wide mb-3">Resumo do TAP</h3>
+                      <div className="mb-4">
+                        <TapSummaryDescription
+                          tap={tapForm as unknown as TapForm}
+                          projectName={project?.cliente_condominio_nome || ''}
+                          projectCity={project?.cliente_cidade || undefined}
+                          projectState={project?.cliente_estado || undefined}
+                        />
+                      </div>
                       <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                         {tapForm.portaria_virtual_atendimento_app && (
                           <div className="bg-muted/50 rounded-lg p-3">

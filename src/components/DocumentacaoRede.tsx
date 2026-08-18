@@ -17,11 +17,14 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import * as XLSX from 'xlsx';
 
 interface Equipamento {
   id: string;
+  tipo_equipamento: string | null;
   equipamento: string;
+
   ip: string | null;
   ddns: string | null;
   usuario: string | null;
@@ -51,7 +54,9 @@ interface LinkInternet {
 }
 
 const EQUIP_COLS: { key: keyof Equipamento; label: string; width: string }[] = [
-  { key: 'equipamento', label: 'Equipamento', width: 'min-w-[220px]' },
+  { key: 'tipo_equipamento', label: 'Tipo de equipamento', width: 'min-w-[180px]' },
+  { key: 'equipamento', label: 'Local de instalação do equipamento', width: 'min-w-[240px]' },
+
   { key: 'ip', label: 'IP', width: 'min-w-[130px]' },
   { key: 'ddns', label: 'DDNS', width: 'min-w-[220px]' },
   { key: 'usuario', label: 'Usuário', width: 'min-w-[110px]' },
@@ -73,11 +78,34 @@ export function DocumentacaoRede({ customerId, canEdit }: { customerId: string; 
   const [links, setLinks] = useState<LinkInternet[]>([]);
   const [editing, setEditing] = useState<{ id: string | null; values: Record<string, string> } | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<Equipamento | null>(null);
+  const [tipos, setTipos] = useState<string[]>([]);
+  const [novoTipoOpen, setNovoTipoOpen] = useState(false);
+  const [novoTipo, setNovoTipo] = useState('');
 
   useEffect(() => {
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [customerId]);
+
+  const loadTipos = async () => {
+    const { data } = await supabase.from('rede_equipamento_tipos').select('nome').order('nome');
+    setTipos(((data as { nome: string }[]) || []).map((t) => t.nome));
+  };
+
+  const criarTipo = async () => {
+    const nome = novoTipo.trim();
+    if (!nome) return;
+    const { error } = await supabase.from('rede_equipamento_tipos').insert({ nome } as never);
+    if (error) {
+      toast({ title: 'Erro ao criar tipo', description: error.message, variant: 'destructive' });
+      return;
+    }
+    await loadTipos();
+    setEditing((prev) => (prev ? { ...prev, values: { ...prev.values, tipo_equipamento: nome } } : prev));
+    setNovoTipo('');
+    setNovoTipoOpen(false);
+    toast({ title: 'Tipo de equipamento criado' });
+  };
 
   const load = async () => {
     setLoading(true);
@@ -87,8 +115,10 @@ export function DocumentacaoRede({ customerId, canEdit }: { customerId: string; 
     ]);
     setEquipamentos((eq.data as Equipamento[]) || []);
     setLinks((lk.data as LinkInternet[]) || []);
+    await loadTipos();
     setLoading(false);
   };
+
 
   const openNewEquipamento = () => {
     setEditing({ id: null, values: {} });
@@ -523,20 +553,50 @@ export function DocumentacaoRede({ customerId, canEdit }: { customerId: string; 
             <DialogTitle>{editing?.id ? 'Editar equipamento' : 'Novo equipamento'}</DialogTitle>
           </DialogHeader>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[60vh] overflow-y-auto pr-1">
-            {EQUIP_COLS.map((c) => (
-              <div key={c.key} className={c.key === 'equipamento' || c.key === 'ddns' ? 'md:col-span-2' : ''}>
-                <Label>{c.label}</Label>
-                <Input
-                  type={isSecret(c.key as string) && !showSecrets ? 'password' : 'text'}
-                  value={editing?.values[c.key as string] || ''}
-                  onChange={(e) =>
-                    setEditing((prev) =>
-                      prev ? { ...prev, values: { ...prev.values, [c.key as string]: e.target.value } } : prev,
-                    )
-                  }
-                />
-              </div>
-            ))}
+            {EQUIP_COLS.map((c) =>
+              c.key === 'tipo_equipamento' ? (
+                <div key={c.key} className="md:col-span-2">
+                  <Label>{c.label}</Label>
+                  <div className="flex gap-2">
+                    <Select
+                      value={editing?.values.tipo_equipamento || ''}
+                      onValueChange={(v) =>
+                        setEditing((prev) => (prev ? { ...prev, values: { ...prev.values, tipo_equipamento: v } } : prev))
+                      }
+                    >
+                      <SelectTrigger className="flex-1">
+                        <SelectValue placeholder="Selecione o tipo" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {tipos.map((t) => (
+                          <SelectItem key={t} value={t}>
+                            {t}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Button type="button" variant="outline" onClick={() => setNovoTipoOpen(true)}>
+                      <Plus className="w-4 h-4 mr-1" />
+                      Novo tipo
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div key={c.key} className={c.key === 'equipamento' || c.key === 'ddns' ? 'md:col-span-2' : ''}>
+                  <Label>{c.label}</Label>
+                  <Input
+                    type={isSecret(c.key as string) && !showSecrets ? 'password' : 'text'}
+                    value={editing?.values[c.key as string] || ''}
+                    onChange={(e) =>
+                      setEditing((prev) =>
+                        prev ? { ...prev, values: { ...prev.values, [c.key as string]: e.target.value } } : prev,
+                      )
+                    }
+                  />
+                </div>
+              ),
+            )}
+
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditing(null)}>
@@ -549,6 +609,26 @@ export function DocumentacaoRede({ customerId, canEdit }: { customerId: string; 
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={novoTipoOpen} onOpenChange={setNovoTipoOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Novo tipo de equipamento</DialogTitle>
+          </DialogHeader>
+          <div>
+            <Label>Nome do tipo</Label>
+            <Input value={novoTipo} onChange={(e) => setNovoTipo(e.target.value)} placeholder="Ex: Leitor facial" />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setNovoTipoOpen(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={criarTipo}>Criar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+
 
       <AlertDialog open={!!confirmDelete} onOpenChange={(o) => !o && setConfirmDelete(null)}>
         <AlertDialogContent>

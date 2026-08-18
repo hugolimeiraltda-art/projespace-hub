@@ -613,6 +613,7 @@ export type Database = {
           ramal: string | null
           senha: string | null
           senha_ramal: string | null
+          tipo_equipamento: string | null
           updated_at: string
           usuario: string | null
         }
@@ -630,6 +631,7 @@ export type Database = {
           ramal?: string | null
           senha?: string | null
           senha_ramal?: string | null
+          tipo_equipamento?: string | null
           updated_at?: string
           usuario?: string | null
         }
@@ -647,6 +649,7 @@ export type Database = {
           ramal?: string | null
           senha?: string | null
           senha_ramal?: string | null
+          tipo_equipamento?: string | null
           updated_at?: string
           usuario?: string | null
         }
@@ -3282,6 +3285,24 @@ export type Database = {
           updated_at?: string
           vendedor_email?: string
           vendedor_nome?: string
+        }
+        Relationships: []
+      }
+      rede_equipamento_tipos: {
+        Row: {
+          created_at: string
+          id: string
+          nome: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          nome: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          nome?: string
         }
         Relationships: []
       }

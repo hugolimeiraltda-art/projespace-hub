@@ -1280,6 +1280,9 @@ export default function ImplantacaoExecucao() {
           </CardContent>
         </Card>
 
+        {/* Devolução do Projeto (Engenharia) */}
+        {id && <EngineeringDeliverablesView projectId={id} />}
+
         {/* TAP + Project Summary */}
         {(tapForm || saleForm) && (
           <Collapsible className="mb-6">

@@ -24,6 +24,8 @@ import { ptBR } from 'date-fns/locale';
 import { AdministradoresCondominio } from '@/components/AdministradoresCondominio';
 import { TotensImplantacao } from '@/components/TotensImplantacao';
 import { ImplantacaoHistoricoPPE } from '@/components/ImplantacaoHistoricoPPE';
+import { DocumentacaoRede } from '@/components/DocumentacaoRede';
+
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const NOC_STATUS_OPTIONS = [

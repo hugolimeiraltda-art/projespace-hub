@@ -382,6 +382,10 @@ export function DocumentacaoRede({ customerId, canEdit }: { customerId: string; 
             {showSecrets ? <EyeOff className="w-4 h-4 mr-2" /> : <Eye className="w-4 h-4 mr-2" />}
             {showSecrets ? 'Ocultar senhas' : 'Mostrar senhas'}
           </Button>
+          <Button variant="outline" size="sm" onClick={() => setFullscreen(true)}>
+            <Maximize2 className="w-4 h-4 mr-2" />
+            Tela cheia
+          </Button>
           {canEdit && (
             <>
               <input

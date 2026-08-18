@@ -629,7 +629,11 @@ export function DocumentacaoRede({ customerId, canEdit }: { customerId: string; 
             <Button variant="outline" onClick={() => setEditing(null)}>
               Cancelar
             </Button>
-            <Button onClick={saveEquipamentoDialog} disabled={saving}>
+            <Button onClick={() => saveEquipamentoDialog(true)} disabled={saving} variant="outline">
+              {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+              Salvar e continuar
+            </Button>
+            <Button onClick={() => saveEquipamentoDialog(false)} disabled={saving}>
               {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
               Salvar
             </Button>

@@ -348,7 +348,7 @@ export function DocumentacaoRede({ customerId, canEdit }: { customerId: string; 
                 {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Upload className="w-4 h-4 mr-2" />}
                 Importar planilha
               </Button>
-              <Button size="sm" onClick={addEquipamento} disabled={saving}>
+              <Button size="sm" onClick={openNewEquipamento} disabled={saving}>
                 <Plus className="w-4 h-4 mr-2" />
                 Equipamento
               </Button>

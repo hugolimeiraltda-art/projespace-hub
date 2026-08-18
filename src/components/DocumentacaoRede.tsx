@@ -440,11 +440,17 @@ export function DocumentacaoRede({ customerId, canEdit }: { customerId: string; 
             <div>
               <div className="flex items-center justify-between mb-3">
                 <h3 className="font-semibold">Links de Internet</h3>
-                {canEdit && (
-                  <Button variant="outline" size="sm" onClick={addLink} disabled={saving}>
-                    <Plus className="w-4 h-4 mr-2" /> Link
+                <div className="flex items-center gap-2">
+                  <Button variant="outline" size="sm" onClick={() => setShowLinks((s) => !s)}>
+                    {showLinks ? <ChevronUp className="w-4 h-4 mr-2" /> : <ChevronDown className="w-4 h-4 mr-2" />}
+                    {showLinks ? 'Ocultar links' : 'Exibir links'}
                   </Button>
-                )}
+                  {canEdit && (
+                    <Button variant="outline" size="sm" onClick={addLink} disabled={saving}>
+                      <Plus className="w-4 h-4 mr-2" /> Link
+                    </Button>
+                  )}
+                </div>
               </div>
               {links.length === 0 ? (
                 <p className="text-sm text-muted-foreground">Nenhum link cadastrado.</p>

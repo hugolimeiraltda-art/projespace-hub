@@ -1,0 +1,2 @@
+DELETE FROM public.customer_portfolio WHERE contrato IN ('TEMP-300','TEMP-301','TEMP-305','TEMP-105');
+UPDATE public.customer_portfolio SET contrato = 'SP102', updated_at = now() WHERE contrato = 'TEMP-312';

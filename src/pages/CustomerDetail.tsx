@@ -110,6 +110,8 @@ export default function CustomerDetail() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [redeRefresh, setRedeRefresh] = useState(0);
+
   const [form, setForm] = useState({
     contrato: '',
     alarme_codigo: '',

@@ -27,6 +27,7 @@ import { ImplantacaoHistoricoPPE } from '@/components/ImplantacaoHistoricoPPE';
 import { DocumentacaoRede } from '@/components/DocumentacaoRede';
 import { TapVendaResumo } from '@/components/TapVendaResumo';
 import { EngineeringDeliverablesView } from '@/components/EngineeringDeliverablesView';
+import { parseRedePlanilha, isPlanilhaRede } from '@/lib/redeImport';
 
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
@@ -109,6 +110,8 @@ export default function CustomerDetail() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [redeRefresh, setRedeRefresh] = useState(0);
+
   const [form, setForm] = useState({
     contrato: '',
     alarme_codigo: '',
@@ -363,6 +366,32 @@ export default function CustomerDetail() {
           });
 
         if (insertError) throw insertError;
+
+        // Se for planilha de documentação de rede (clientes PCI), importa automaticamente
+        if (!isPPE && isPlanilhaRede(file.name)) {
+          try {
+            const { eqRows, lkRows } = parseRedePlanilha(await file.arrayBuffer());
+            if (eqRows.length) {
+              await supabase
+                .from('customer_rede_equipamentos')
+                .insert(eqRows.map((r, i) => ({ ...r, customer_id: id, ordem: i })) as never);
+            }
+            if (lkRows.length) {
+              await supabase
+                .from('customer_rede_links')
+                .insert(lkRows.map((r, i) => ({ ...r, customer_id: id, ordem: i })) as never);
+            }
+            if (eqRows.length || lkRows.length) {
+              setRedeRefresh((v) => v + 1);
+              toast({
+                title: 'Documentação de Rede atualizada',
+                description: `${eqRows.length} equipamento(s) e ${lkRows.length} link(s) importados de ${file.name}.`,
+              });
+            }
+          } catch (e) {
+            console.error('Erro ao importar planilha de rede:', e);
+          }
+        }
       }
 
       toast({ title: 'Upload concluído!', description: `${files.length} arquivo(s) enviado(s) com sucesso.` });
@@ -861,7 +890,7 @@ export default function CustomerDetail() {
         {!isPPE && <AdministradoresCondominio customerId={id!} canEdit={canEdit} />}
 
         {/* Documentação de Rede */}
-        {!isPPE && <DocumentacaoRede customerId={id!} canEdit={canEdit} />}
+        {!isPPE && <DocumentacaoRede key={redeRefresh} customerId={id!} canEdit={canEdit} />}
 
 
         {/* Documentação */}

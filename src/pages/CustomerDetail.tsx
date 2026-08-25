@@ -890,7 +890,7 @@ export default function CustomerDetail() {
         {!isPPE && <AdministradoresCondominio customerId={id!} canEdit={canEdit} />}
 
         {/* Documentação de Rede */}
-        {!isPPE && <DocumentacaoRede customerId={id!} canEdit={canEdit} />}
+        {!isPPE && <DocumentacaoRede key={redeRefresh} customerId={id!} canEdit={canEdit} />}
 
 
         {/* Documentação */}

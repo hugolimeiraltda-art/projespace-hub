@@ -195,8 +195,24 @@ serve(async (req) => {
               solicitacao_origem: tap.solicitacao_origem,
             }
           : null,
+        // Objeto TAP completo (todos os campos do formulário)
+        tap_completo: tap ?? null,
+        // Formulário de Venda completo (seção "Resumo do Projeto (TAP + Venda)")
+        venda: sale ?? null,
+        // Seção "Devolução do Projeto (Engenharia)"
+        devolucao_engenharia: {
+          laudo_projeto: proj?.laudo_projeto ?? null,
+          engenharia_status: proj?.engineering_status ?? null,
+          engenharia_concluida_em: proj?.engineering_completed_at ?? null,
+          planta_croqui: anexos.filter((a: any) =>
+            ["PLANTA_CROQUI_DEVOLUCAO", "PLANTA_BAIXA", "CROQUI"].includes(a.tipo)
+          ),
+          lista_equipamentos: anexos.filter((a: any) => a.tipo === "LISTA_EQUIPAMENTOS"),
+          lista_atividades: anexos.filter((a: any) => a.tipo === "LISTA_ATIVIDADES"),
+        },
         anexos_engenharia: anexos,
         updated_at: c.updated_at,
+
       };
     });
 

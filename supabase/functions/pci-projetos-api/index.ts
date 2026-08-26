@@ -102,6 +102,12 @@ serve(async (req) => {
       ? await supabase.from("tap_forms").select("*").in("project_id", projectIds)
       : { data: [] as any[] };
 
+    // --- Sale forms (Venda) ---
+    const { data: sales } = projectIds.length
+      ? await supabase.from("sale_forms").select("*").in("project_id", projectIds)
+      : { data: [] as any[] };
+
+
     // --- Engineering attachments ---
     const { data: attachments } = projectIds.length
       ? await supabase
@@ -124,10 +130,13 @@ serve(async (req) => {
 
     const projById = new Map((projects || []).map((p: any) => [p.id, p]));
     const tapByProj = new Map((taps || []).map((t: any) => [t.project_id, t]));
+    const saleByProj = new Map((sales || []).map((s: any) => [s.project_id, s]));
 
     const items = (portfolio || []).map((c: any) => {
       const proj = c.project_id ? projById.get(c.project_id) : null;
       const tap = c.project_id ? tapByProj.get(c.project_id) : null;
+      const sale = c.project_id ? saleByProj.get(c.project_id) : null;
+
       const anexos = (attachments || [])
         .filter((a: any) => a.project_id === c.project_id)
         .map((a: any) => ({
@@ -186,8 +195,24 @@ serve(async (req) => {
               solicitacao_origem: tap.solicitacao_origem,
             }
           : null,
+        // Objeto TAP completo (todos os campos do formulário)
+        tap_completo: tap ?? null,
+        // Formulário de Venda completo (seção "Resumo do Projeto (TAP + Venda)")
+        venda: sale ?? null,
+        // Seção "Devolução do Projeto (Engenharia)"
+        devolucao_engenharia: {
+          laudo_projeto: proj?.laudo_projeto ?? null,
+          engenharia_status: proj?.engineering_status ?? null,
+          engenharia_concluida_em: proj?.engineering_completed_at ?? null,
+          planta_croqui: anexos.filter((a: any) =>
+            ["PLANTA_CROQUI_DEVOLUCAO", "PLANTA_BAIXA", "CROQUI"].includes(a.tipo)
+          ),
+          lista_equipamentos: anexos.filter((a: any) => a.tipo === "LISTA_EQUIPAMENTOS"),
+          lista_atividades: anexos.filter((a: any) => a.tipo === "LISTA_ATIVIDADES"),
+        },
         anexos_engenharia: anexos,
         updated_at: c.updated_at,
+
       };
     });
 

@@ -130,10 +130,13 @@ serve(async (req) => {
 
     const projById = new Map((projects || []).map((p: any) => [p.id, p]));
     const tapByProj = new Map((taps || []).map((t: any) => [t.project_id, t]));
+    const saleByProj = new Map((sales || []).map((s: any) => [s.project_id, s]));
 
     const items = (portfolio || []).map((c: any) => {
       const proj = c.project_id ? projById.get(c.project_id) : null;
       const tap = c.project_id ? tapByProj.get(c.project_id) : null;
+      const sale = c.project_id ? saleByProj.get(c.project_id) : null;
+
       const anexos = (attachments || [])
         .filter((a: any) => a.project_id === c.project_id)
         .map((a: any) => ({

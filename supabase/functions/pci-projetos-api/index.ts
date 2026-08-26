@@ -38,14 +38,18 @@ serve(async (req) => {
   }
 
   try {
-    const expected = Deno.env.get("EIXO_PCI_API_KEY_V2");
+    const accepted = [
+      Deno.env.get("EIXO_PCI_API_KEY_V3"),
+      Deno.env.get("EIXO_PCI_API_KEY_V2"),
+    ].filter(Boolean) as string[];
     const provided =
       req.headers.get("x-api-key") ||
       req.headers.get("authorization")?.replace("Bearer ", "");
 
-    if (!expected || !provided || provided !== expected) {
+    if (!provided || !accepted.includes(provided)) {
       return json({ error: "Unauthorized" }, 401);
     }
+
 
     const url = new URL(req.url);
     const contrato = url.searchParams.get("contrato");

@@ -15,6 +15,9 @@ export function parseBRLNumber(value: string | number | null | undefined): numbe
   let normalized: string;
   if (cleaned.includes(',')) {
     normalized = cleaned.replace(/\./g, '').replace(',', '.');
+  } else if (/^\d{1,3}(\.\d{3})+$/.test(cleaned)) {
+    // "3.060" or "1.234.567" — dots are thousands separators, not decimals
+    normalized = cleaned.replace(/\./g, '');
   } else {
     normalized = cleaned;
   }

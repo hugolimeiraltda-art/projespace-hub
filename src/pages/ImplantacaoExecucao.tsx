@@ -655,9 +655,10 @@ export default function ImplantacaoExecucao() {
               || new Date().toISOString().split('T')[0];
             await supabase
               .from('customer_portfolio')
-              .update({ data_ativacao: ativacao })
+              .update({ data_ativacao: ativacao, status_implantacao: 'IMPLANTADO' })
               .eq('project_id', id!);
           }
+
 
           // For PPE projects: activate customer in PPE portfolio and conclude implantation
           if (isPPEProject) {

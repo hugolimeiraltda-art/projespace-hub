@@ -102,6 +102,12 @@ serve(async (req) => {
       ? await supabase.from("tap_forms").select("*").in("project_id", projectIds)
       : { data: [] as any[] };
 
+    // --- Sale forms (Venda) ---
+    const { data: sales } = projectIds.length
+      ? await supabase.from("sale_forms").select("*").in("project_id", projectIds)
+      : { data: [] as any[] };
+
+
     // --- Engineering attachments ---
     const { data: attachments } = projectIds.length
       ? await supabase

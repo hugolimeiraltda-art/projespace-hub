@@ -34,6 +34,47 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// Traduz erros da função de gestão de usuários para mensagens claras
+function traduzErroUsuario(msg: string): string {
+  const m = msg.toLowerCase();
+  if (m.includes('password') && (m.includes('should contain') || m.includes('weak') || m.includes('at least'))) {
+    return 'Senha inicial inválida: use no mínimo 8 caracteres, com letra maiúscula, letra minúscula, número e caractere especial (!@#$%^&*). Evite senhas comuns.';
+  }
+  if (m.includes('already been registered') || m.includes('already registered') || m.includes('user already exists')) {
+    return 'Já existe um usuário cadastrado com este e-mail.';
+  }
+  if (m.includes('invalid email') || m.includes('email address') && m.includes('invalid')) {
+    return 'E-mail inválido.';
+  }
+  if (m.includes('cannot create admin') || m.includes('cannot set admin')) {
+    return 'Você não tem permissão para criar usuários administradores.';
+  }
+  if (m.includes('only admins')) {
+    return 'Seu perfil não tem permissão para gerenciar usuários.';
+  }
+  return msg;
+}
+
+// Extrai a mensagem real de erro retornada pela edge function
+async function extrairErroFuncao(error: unknown, fallback: string): Promise<string> {
+  try {
+    const ctx = (error as { context?: Response })?.context;
+    if (ctx && typeof ctx.text === 'function') {
+      const raw = await ctx.text();
+      try {
+        const parsed = JSON.parse(raw);
+        if (parsed?.error) return traduzErroUsuario(String(parsed.error));
+      } catch {
+        if (raw) return traduzErroUsuario(raw);
+      }
+    }
+  } catch (e) {
+    console.error('Erro ao ler resposta da função:', e);
+  }
+  const msg = (error as { message?: string })?.message;
+  return msg ? traduzErroUsuario(msg) : fallback;
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
@@ -251,11 +292,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
 
       if (error) {
-        return { success: false, error: error.message };
+        return { success: false, error: await extrairErroFuncao(error, 'Erro ao criar usuário') };
       }
 
       if (result?.error) {
-        return { success: false, error: result.error };
+        return { success: false, error: traduzErroUsuario(String(result.error)) };
       }
 
       return { success: true };
@@ -275,11 +316,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
 
       if (error) {
-        return { success: false, error: error.message };
+        return { success: false, error: await extrairErroFuncao(error, 'Erro ao atualizar usuário') };
       }
 
       if (result?.error) {
-        return { success: false, error: result.error };
+        return { success: false, error: traduzErroUsuario(String(result.error)) };
       }
 
       return { success: true };
@@ -298,11 +339,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
 
       if (error) {
-        return { success: false, error: error.message };
+        return { success: false, error: await extrairErroFuncao(error, 'Erro ao deletar usuário') };
       }
 
       if (result?.error) {
-        return { success: false, error: result.error };
+        return { success: false, error: traduzErroUsuario(String(result.error)) };
       }
 
       return { success: true };
@@ -322,11 +363,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
 
       if (error) {
-        return { success: false, error: error.message };
+        return { success: false, error: await extrairErroFuncao(error, 'Erro ao resetar senha') };
       }
 
       if (result?.error) {
-        return { success: false, error: result.error };
+        return { success: false, error: traduzErroUsuario(String(result.error)) };
       }
 
       return { success: true };

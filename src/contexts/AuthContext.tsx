@@ -292,11 +292,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
 
       if (error) {
-        return { success: false, error: error.message };
+        return { success: false, error: await extrairErroFuncao(error, 'Erro ao criar usuário') };
       }
 
       if (result?.error) {
-        return { success: false, error: result.error };
+        return { success: false, error: traduzErroUsuario(String(result.error)) };
       }
 
       return { success: true };
@@ -316,11 +316,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
 
       if (error) {
-        return { success: false, error: error.message };
+        return { success: false, error: await extrairErroFuncao(error, 'Erro ao atualizar usuário') };
       }
 
       if (result?.error) {
-        return { success: false, error: result.error };
+        return { success: false, error: traduzErroUsuario(String(result.error)) };
       }
 
       return { success: true };
@@ -339,11 +339,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
 
       if (error) {
-        return { success: false, error: error.message };
+        return { success: false, error: await extrairErroFuncao(error, 'Erro ao deletar usuário') };
       }
 
       if (result?.error) {
-        return { success: false, error: result.error };
+        return { success: false, error: traduzErroUsuario(String(result.error)) };
       }
 
       return { success: true };
@@ -363,11 +363,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
 
       if (error) {
-        return { success: false, error: error.message };
+        return { success: false, error: await extrairErroFuncao(error, 'Erro ao resetar senha') };
       }
 
       if (result?.error) {
-        return { success: false, error: result.error };
+        return { success: false, error: traduzErroUsuario(String(result.error)) };
       }
 
       return { success: true };

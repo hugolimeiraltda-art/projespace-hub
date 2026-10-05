@@ -200,6 +200,7 @@ serve(async (req) => {
 
     const insertPayload = {
       ...normalizedPayload,
+      status_implantacao: normalizedPayload.status_implantacao ?? "EM_IMPLANTACAO",
       razao_social: normalizedPayload.razao_social ?? "",
       endereco: normalizedPayload.endereco ?? null,
     };

@@ -437,9 +437,9 @@ export default function ImplantacaoExecucao() {
         setContratoInfo({
           contrato: portfolioData.contrato || '',
           alarme_codigo: portfolioData.alarme_codigo || '',
-          mensalidade: portfolioData.mensalidade ? formatBRLInput(Number(portfolioData.mensalidade)) : '',
+          mensalidade: portfolioData.mensalidade != null ? formatBRLInput(Number(portfolioData.mensalidade)) : '',
           prazo_contrato: prazoValue,
-          taxa_instalacao: portfolioData.taxa_ativacao ? formatBRLInput(Number(portfolioData.taxa_ativacao)) : '',
+          taxa_instalacao: portfolioData.taxa_ativacao != null ? formatBRLInput(Number(portfolioData.taxa_ativacao)) : '',
           filial: portfolioData.filial || '',
         });
         if (portfolioData.endereco) {

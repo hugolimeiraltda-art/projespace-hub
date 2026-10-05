@@ -109,7 +109,8 @@ serve(async (req) => {
       filial: body.filial?.trim() ? body.filial.trim() : null,
       project_id: body.projectId,
       tipo_carteira: tipoCarteira,
-      status_implantacao: body.status_implantacao?.trim() ? body.status_implantacao.trim() : "EM_IMPLANTACAO",
+      // Only change status when explicitly sent, so saving contract data never resets an IMPLANTADO customer
+      status_implantacao: body.status_implantacao?.trim() ? body.status_implantacao.trim() : undefined,
       razao_social: body.razao_social?.trim() ? body.razao_social.trim() : undefined,
       endereco: body.endereco?.trim() ? body.endereco.trim() : undefined,
     };
@@ -199,6 +200,7 @@ serve(async (req) => {
 
     const insertPayload = {
       ...normalizedPayload,
+      status_implantacao: normalizedPayload.status_implantacao ?? "EM_IMPLANTACAO",
       razao_social: normalizedPayload.razao_social ?? "",
       endereco: normalizedPayload.endereco ?? null,
     };

@@ -1,4 +1,4 @@
-import { formatBRLInput } from '@/lib/currency';
+import { formatBRLInput, parseBRLNumber } from '@/lib/currency';
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -437,9 +437,9 @@ export default function ImplantacaoExecucao() {
         setContratoInfo({
           contrato: portfolioData.contrato || '',
           alarme_codigo: portfolioData.alarme_codigo || '',
-          mensalidade: portfolioData.mensalidade ? String(portfolioData.mensalidade) : '',
+          mensalidade: portfolioData.mensalidade != null ? formatBRLInput(Number(portfolioData.mensalidade)) : '',
           prazo_contrato: prazoValue,
-          taxa_instalacao: portfolioData.taxa_ativacao ? String(portfolioData.taxa_ativacao) : '',
+          taxa_instalacao: portfolioData.taxa_ativacao != null ? formatBRLInput(Number(portfolioData.taxa_ativacao)) : '',
           filial: portfolioData.filial || '',
         });
         if (portfolioData.endereco) {
@@ -1516,11 +1516,14 @@ export default function ImplantacaoExecucao() {
                                 const dataTermino = new Date();
                                 dataTermino.setMonth(dataTermino.getMonth() + prazoMeses);
 
-                                const mensalidade = parseFloat(contratoInfo.mensalidade.replace(/[^\d.,]/g, '').replace(',', '.')) || 0;
-                                const taxaAtivacao = parseFloat(contratoInfo.taxa_instalacao.replace(/[^\d.,]/g, '').replace(',', '.')) || 0;
-                                const enderecoProjeto = project?.cliente_cidade && project?.cliente_estado
-                                  ? `${project.cliente_cidade}, ${project.cliente_estado}`
-                                  : null;
+                                const mensalidade = parseBRLNumber(contratoInfo.mensalidade);
+                                const taxaAtivacao = parseBRLNumber(contratoInfo.taxa_instalacao);
+                                // Keep the installation address already saved; only fall back to city/state when none exists
+                                const enderecoProjeto = enderecoInstalacao?.trim()
+                                  || project?.endereco_condominio
+                                  || (project?.cliente_cidade && project?.cliente_estado
+                                    ? `${project.cliente_cidade}, ${project.cliente_estado}`
+                                    : null);
 
                                 const { data, error } = await supabase.functions.invoke('merge-customer-portfolio', {
                                   body: {
@@ -1533,7 +1536,6 @@ export default function ImplantacaoExecucao() {
                                     filial: contratoInfo.filial || null,
                                     razao_social: project?.cliente_condominio_nome || null,
                                     endereco: enderecoProjeto,
-                                    status_implantacao: 'EM_IMPLANTACAO',
                                   },
                                 });
 

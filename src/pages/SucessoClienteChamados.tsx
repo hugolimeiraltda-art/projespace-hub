@@ -1,4 +1,4 @@
-import { formatBRLInput } from '@/lib/currency';
+import { formatBRLInput, parseBRLNumber } from '@/lib/currency';
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Layout } from '@/components/Layout';
@@ -189,7 +189,7 @@ export default function SucessoClienteChamados() {
     }
     setSavingStatus(true);
     try {
-      const parsedValor = novoValor ? parseFloat(novoValor.replace(',', '.')) : null;
+      const parsedValor = novoValor ? parseBRLNumber(novoValor) : null;
       const payload: any = {
         status: statusEdit,
         novo_valor_mensalidade: precisaCampos ? parsedValor : null,

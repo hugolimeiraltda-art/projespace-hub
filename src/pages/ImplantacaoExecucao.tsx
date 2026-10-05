@@ -1,4 +1,4 @@
-import { formatBRLInput } from '@/lib/currency';
+import { formatBRLInput, parseBRLNumber } from '@/lib/currency';
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -1516,8 +1516,8 @@ export default function ImplantacaoExecucao() {
                                 const dataTermino = new Date();
                                 dataTermino.setMonth(dataTermino.getMonth() + prazoMeses);
 
-                                const mensalidade = parseFloat(contratoInfo.mensalidade.replace(/[^\d.,]/g, '').replace(',', '.')) || 0;
-                                const taxaAtivacao = parseFloat(contratoInfo.taxa_instalacao.replace(/[^\d.,]/g, '').replace(',', '.')) || 0;
+                                const mensalidade = parseBRLNumber(contratoInfo.mensalidade);
+                                const taxaAtivacao = parseBRLNumber(contratoInfo.taxa_instalacao);
                                 const enderecoProjeto = project?.cliente_cidade && project?.cliente_estado
                                   ? `${project.cliente_cidade}, ${project.cliente_estado}`
                                   : null;

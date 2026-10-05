@@ -1,4 +1,4 @@
-import { formatBRLInput } from '@/lib/currency';
+import { formatBRLInput, parseBRLNumber } from '@/lib/currency';
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Layout } from '@/components/Layout';
@@ -265,8 +265,8 @@ export default function CustomerDetail() {
         endereco: form.endereco || null,
         contato_nome: form.contato_nome || null,
         contato_telefone: form.contato_telefone || null,
-        mensalidade: form.mensalidade ? parseFloat(form.mensalidade.replace(',', '.')) : null,
-        taxa_ativacao: form.taxa_ativacao ? parseFloat(form.taxa_ativacao.replace(',', '.')) : null,
+        mensalidade: form.mensalidade ? parseBRLNumber(form.mensalidade) : null,
+        taxa_ativacao: form.taxa_ativacao ? parseBRLNumber(form.taxa_ativacao) : null,
         filial: form.filial || null,
         tipo: form.tipo || null,
         data_ativacao: form.data_ativacao || null,
@@ -283,8 +283,8 @@ export default function CustomerDetail() {
         endereco: form.endereco || null,
         contato_nome: form.contato_nome || null,
         contato_telefone: form.contato_telefone || null,
-        mensalidade: form.mensalidade ? parseFloat(form.mensalidade.replace(',', '.')) : null,
-        taxa_ativacao: form.taxa_ativacao ? parseFloat(form.taxa_ativacao.replace(',', '.')) : null,
+        mensalidade: form.mensalidade ? parseBRLNumber(form.mensalidade) : null,
+        taxa_ativacao: form.taxa_ativacao ? parseBRLNumber(form.taxa_ativacao) : null,
         leitores: form.leitores || null,
         quantidade_leitores: form.quantidade_leitores ? parseInt(form.quantidade_leitores) : null,
         filial: form.filial || null,

@@ -1,4 +1,4 @@
-import { formatBRLInput } from '@/lib/currency';
+import { formatBRLInput, parseBRLNumber } from '@/lib/currency';
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Layout } from '@/components/Layout';
@@ -238,8 +238,8 @@ export default function CarteiraClientes({ tipoCarteira = 'PCI' }: CarteiraClien
         contrato: form.contrato,
         alarme_codigo: form.alarme_codigo || null,
         razao_social: form.razao_social,
-        mensalidade: form.mensalidade ? parseFloat(form.mensalidade.replace(',', '.')) : null,
-        taxa_ativacao: form.taxa_ativacao ? parseFloat(form.taxa_ativacao.replace(',', '.')) : null,
+        mensalidade: form.mensalidade ? parseBRLNumber(form.mensalidade) : null,
+        taxa_ativacao: form.taxa_ativacao ? parseBRLNumber(form.taxa_ativacao) : null,
         filial: form.filial || null,
         tipo: form.tipo || null,
         data_ativacao: form.data_ativacao || null,
@@ -252,8 +252,8 @@ export default function CarteiraClientes({ tipoCarteira = 'PCI' }: CarteiraClien
         contrato: form.contrato,
         alarme_codigo: form.alarme_codigo || null,
         razao_social: form.razao_social,
-        mensalidade: form.mensalidade ? parseFloat(form.mensalidade.replace(',', '.')) : null,
-        taxa_ativacao: form.taxa_ativacao ? parseFloat(form.taxa_ativacao.replace(',', '.')) : null,
+        mensalidade: form.mensalidade ? parseBRLNumber(form.mensalidade) : null,
+        taxa_ativacao: form.taxa_ativacao ? parseBRLNumber(form.taxa_ativacao) : null,
         leitores: form.leitores || null,
         quantidade_leitores: form.quantidade_leitores ? parseInt(form.quantidade_leitores) : null,
         filial: form.filial || null,

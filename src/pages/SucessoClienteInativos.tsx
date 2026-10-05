@@ -1,4 +1,4 @@
-import { formatBRLInput } from '@/lib/currency';
+import { formatBRLInput, parseBRLNumber } from '@/lib/currency';
 import { useState, useEffect, useMemo } from 'react';
 import { Layout } from '@/components/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -202,7 +202,7 @@ export default function SucessoClienteInativos() {
           endereco: endereco || null, cidade: cidade || null, filial: filial || null,
           data_entrada: dataEntrada || null, data_cancelamento: dataCancelamento,
           data_termino: dataTermino || null,
-          mensalidade: mensalidade ? Number(mensalidade.replace(',', '.')) : null,
+          mensalidade: mensalidade ? parseBRLNumber(mensalidade) : null,
           motivo, observacoes: observacoes || null,
           created_by: user?.id, created_by_name: user?.nome,
         } as any);

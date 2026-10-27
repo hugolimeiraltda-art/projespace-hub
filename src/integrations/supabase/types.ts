@@ -1055,6 +1055,8 @@ export type Database = {
           ligacao_boas_vindas: boolean | null
           ligacao_boas_vindas_at: string | null
           observacoes_manutencao: string | null
+          operacao_assistida_encerrada_at: string | null
+          operacao_assistida_encerrada_por: string | null
           operacao_assistida_fim: string | null
           operacao_assistida_inicio: string | null
           operacao_assistida_interacoes: Json | null
@@ -1152,6 +1154,8 @@ export type Database = {
           ligacao_boas_vindas?: boolean | null
           ligacao_boas_vindas_at?: string | null
           observacoes_manutencao?: string | null
+          operacao_assistida_encerrada_at?: string | null
+          operacao_assistida_encerrada_por?: string | null
           operacao_assistida_fim?: string | null
           operacao_assistida_inicio?: string | null
           operacao_assistida_interacoes?: Json | null
@@ -1249,6 +1253,8 @@ export type Database = {
           ligacao_boas_vindas?: boolean | null
           ligacao_boas_vindas_at?: string | null
           observacoes_manutencao?: string | null
+          operacao_assistida_encerrada_at?: string | null
+          operacao_assistida_encerrada_por?: string | null
           operacao_assistida_fim?: string | null
           operacao_assistida_inicio?: string | null
           operacao_assistida_interacoes?: Json | null

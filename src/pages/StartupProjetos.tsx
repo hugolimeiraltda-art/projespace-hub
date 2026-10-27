@@ -482,7 +482,7 @@ export default function StartupProjetos() {
           .not('project_id', 'is', null),
         supabase
           .from('implantacao_etapas')
-          .select('project_id, contrato_assinado_at, ligacao_boas_vindas_at, agendamento_visita_startup_at, laudo_visita_startup_at, check_programacao_at, confirmacao_ativacao_financeira_at, operacao_assistida_inicio, operacao_assistida_fim, agendamento_visita_startup_data, ppe_execucao_base_data, ppe_observacao_instalacao, cadastro_gear, agendamento_visita_startup'),
+          .select('project_id, contrato_assinado_at, ligacao_boas_vindas_at, agendamento_visita_startup_at, laudo_visita_startup_at, check_programacao_at, confirmacao_ativacao_financeira_at, operacao_assistida_inicio, operacao_assistida_fim, operacao_assistida_encerrada_at, agendamento_visita_startup_data, ppe_execucao_base_data, ppe_observacao_instalacao, cadastro_gear, agendamento_visita_startup'),
       ]);
 
       if (projectsRes.error) {
@@ -517,6 +517,7 @@ export default function StartupProjetos() {
             confirmacao_ativacao_financeira_at: e.confirmacao_ativacao_financeira_at,
             operacao_assistida_inicio: e.operacao_assistida_inicio,
             operacao_assistida_fim: e.operacao_assistida_fim,
+            operacao_assistida_encerrada_at: e.operacao_assistida_encerrada_at,
             agendamento_visita_startup_data: e.agendamento_visita_startup_data,
             ppe_execucao_base_data: e.ppe_execucao_base_data,
             ppe_observacao_instalacao: e.ppe_observacao_instalacao,
@@ -630,6 +631,23 @@ export default function StartupProjetos() {
     } catch (error) {
       console.error('Error:', error);
     }
+  };
+
+  const encerrarOperacaoAssistida = async (projectId: string, nome: string) => {
+    if (!window.confirm(`Encerrar a Operação Assistida de "${nome}"? O cliente sairá desta tela e a data ficará no histórico.`)) return;
+    const agora = new Date().toISOString();
+    const { data: prof } = await supabase.from('profiles').select('nome').eq('id', user?.id ?? '').maybeSingle();
+    const { data: rows, error } = await supabase
+      .from('implantacao_etapas')
+      .update({ operacao_assistida_encerrada_at: agora, operacao_assistida_encerrada_por: prof?.nome || user?.email || null })
+      .eq('project_id', projectId)
+      .select('project_id');
+    if (error || !rows?.length) {
+      toast({ title: 'Não foi possível encerrar', description: error?.message || 'Sem permissão para alterar esta implantação.', variant: 'destructive' });
+      return;
+    }
+    setEtapasMap((prev) => ({ ...prev, [projectId]: { ...prev[projectId], operacao_assistida_encerrada_at: agora } as ImplantacaoEtapasData }));
+    toast({ title: 'Operação Assistida encerrada', description: 'Consulte a data em Detalhes do Cliente › Implantação.' });
   };
 
   // A project is in "Operação Assistida" when all 7 timeline steps are completed
@@ -802,6 +820,8 @@ export default function StartupProjetos() {
     const hasPend = (pendenciasMap[project.id] || 0) > 0;
     const matchesPendencia = pendenciaFilter === 'todas' || (pendenciaFilter === 'com' && hasPend) || (pendenciaFilter === 'sem' && !hasPend);
 
+    // Projects whose assisted operation was formally closed leave the active lists
+    if (etapasMap[project.id]?.operacao_assistida_encerrada_at && activeTab !== 'historico') return false;
     // Tab routing based on completion of all 7 timeline steps
     const inOpAssistida = isInOperacaoAssistida(project.id);
     if (activeTab === 'em-implantacao' || activeTab === 'ppe') {
@@ -855,6 +875,7 @@ export default function StartupProjetos() {
 
   // Stage counts for current tab projects (excluding op assistida and respecting tab type)
   const tabProjects = projects.filter(p => {
+    if (etapasMap[p.id]?.operacao_assistida_encerrada_at) return activeTab === 'historico';
     if (isInOperacaoAssistida(p.id)) return activeTab === 'operacao-assistida';
     if (activeTab === 'ppe') {
       if (p.tipo_implantacao !== 'PPE') return false;
@@ -1419,6 +1440,14 @@ export default function StartupProjetos() {
                           >
                             <Eye className="w-4 h-4 mr-2" />
                             Ver Detalhes
+                          </Button>
+                          <Button
+                            variant="default"
+                            size="sm"
+                            onClick={() => encerrarOperacaoAssistida(project.id, project.cliente_condominio_nome)}
+                          >
+                            <CheckCircle2 className="w-4 h-4 mr-2" />
+                            Encerrar Operação Assistida
                           </Button>
                         </div>
                       </div>

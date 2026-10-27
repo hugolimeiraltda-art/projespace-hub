@@ -1653,7 +1653,7 @@ export default function ImplantacaoExecucao() {
                             required
                           />
                         ) : (
-                          <p className="text-sm mt-1 font-medium">{contratoInfo.mensalidade ? `R$ ${contratoInfo.mensalidade}` : '-'}</p>
+                          <p className="text-sm mt-1 font-medium">{contratoInfo.mensalidade ? `R$ ${formatBRLInput(contratoInfo.mensalidade)}` : '-'}</p>
                         )}
                       </div>
                       <div>

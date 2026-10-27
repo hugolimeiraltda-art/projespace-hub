@@ -233,6 +233,27 @@ export default function ImplantacaoExecucao() {
   const [criandoPendencia, setCriandoPendencia] = useState(false);
   const [enderecoInstalacao, setEnderecoInstalacao] = useState('');
   const [editingEndereco, setEditingEndereco] = useState(false);
+
+  // Saves the installation address on the customer record linked to this project.
+  // Reports a clear error instead of silently doing nothing.
+  const salvarEnderecoInstalacao = async (valor: string | null): Promise<boolean> => {
+    const { data: rows, error } = await supabase
+      .from('customer_portfolio')
+      .update({ endereco: valor })
+      .eq('project_id', id!)
+      .select('id');
+    if (error || !rows || rows.length === 0) {
+      toast({
+        title: 'Endereço não salvo',
+        description: error
+          ? error.message
+          : 'Salve primeiro as Informações do Contrato (etapa 2) ou peça a alguém da Implantação/Projetos para salvar.',
+        variant: 'destructive',
+      });
+      return false;
+    }
+    return true;
+  };
   const [usarEnderecoOrigem, setUsarEnderecoOrigem] = useState(false);
   const [pendenciaDeptVisitaTexto, setPendenciaDeptVisitaTexto] = useState('');
   const [pendenciaClienteVisitaTexto, setPendenciaClienteVisitaTexto] = useState('');
@@ -662,11 +683,7 @@ export default function ImplantacaoExecucao() {
 
           // For PPE projects: activate customer in PPE portfolio and conclude implantation
           if (isPPEProject) {
-            const parseBRL = (v: string) => {
-              if (!v) return null;
-              const n = parseFloat(String(v).replace(/\./g, '').replace(',', '.'));
-              return isNaN(n) ? null : n;
-            };
+            const parseBRL = (v: string) => (v?.trim() ? parseBRLNumber(v) : null);
             activatePPECustomerOnComplete({
               projectId: id!,
               razao_social: project.cliente_condominio_nome,
@@ -675,7 +692,7 @@ export default function ImplantacaoExecucao() {
               mensalidade: parseBRL(contratoInfo?.mensalidade),
               taxa_instalacao: parseBRL(contratoInfo?.taxa_instalacao),
               filial: praca,
-              endereco: project.endereco_condominio || (project.cliente_cidade && project.cliente_estado ? `${project.cliente_cidade}, ${project.cliente_estado}` : null),
+              endereco: enderecoInstalacao?.trim() || project.endereco_condominio || (project.cliente_cidade && project.cliente_estado ? `${project.cliente_cidade}, ${project.cliente_estado}` : null),
             });
           }
         }
@@ -1559,6 +1576,11 @@ export default function ImplantacaoExecucao() {
                                   title: 'Salvo',
                                   description: 'Informações do contrato atualizadas.',
                                 });
+                                setContratoInfo((prev) => ({
+                                  ...prev,
+                                  mensalidade: prev.mensalidade?.trim() ? formatBRLInput(prev.mensalidade) : '',
+                                  taxa_instalacao: prev.taxa_instalacao?.trim() ? formatBRLInput(prev.taxa_instalacao) : '',
+                                }));
                                 setEditingContrato(false);
                               } catch (error) {
                                 console.error('Error saving contrato info:', error);
@@ -1631,7 +1653,7 @@ export default function ImplantacaoExecucao() {
                             required
                           />
                         ) : (
-                          <p className="text-sm mt-1 font-medium">{contratoInfo.mensalidade ? `R$ ${contratoInfo.mensalidade}` : '-'}</p>
+                          <p className="text-sm mt-1 font-medium">{contratoInfo.mensalidade ? `R$ ${formatBRLInput(contratoInfo.mensalidade)}` : '-'}</p>
                         )}
                       </div>
                       <div>
@@ -1706,16 +1728,10 @@ export default function ImplantacaoExecucao() {
                             <Pencil className="w-4 h-4" />
                           </Button>
                           <Button variant="ghost" size="sm" onClick={async () => {
-                            setEnderecoInstalacao('');
-                            const { data: existing } = await supabase
-                              .from('customer_portfolio')
-                              .select('id')
-                              .eq('project_id', id)
-                              .maybeSingle();
-                            if (existing) {
-                              await supabase.from('customer_portfolio').update({ endereco: null }).eq('id', existing.id);
+                            if (await salvarEnderecoInstalacao(null)) {
+                              setEnderecoInstalacao('');
+                              toast({ title: 'Endereço removido' });
                             }
-                            toast({ title: 'Endereço removido' });
                           }}>
                             <span className="text-xs text-destructive">Remover</span>
                           </Button>
@@ -1731,15 +1747,9 @@ export default function ImplantacaoExecucao() {
                         <div className="flex gap-2">
                           <Button size="sm" variant="outline" onClick={async () => {
                             setEnderecoInstalacao(project.endereco_condominio!);
-                            const { data: existing } = await supabase
-                              .from('customer_portfolio')
-                              .select('id')
-                              .eq('project_id', id)
-                              .maybeSingle();
-                            if (existing) {
-                              await supabase.from('customer_portfolio').update({ endereco: project.endereco_condominio }).eq('id', existing.id);
+                            if (await salvarEnderecoInstalacao(project.endereco_condominio!)) {
+                              toast({ title: 'Endereço confirmado' });
                             }
-                            toast({ title: 'Endereço confirmado' });
                           }}>
                             <Check className="w-4 h-4 mr-1" />
                             Usar este endereço
@@ -1779,16 +1789,10 @@ export default function ImplantacaoExecucao() {
                               toast({ title: 'Erro', description: 'Preencha o endereço.', variant: 'destructive' });
                               return;
                             }
-                            const { data: existing } = await supabase
-                              .from('customer_portfolio')
-                              .select('id')
-                              .eq('project_id', id)
-                              .maybeSingle();
-                            if (existing) {
-                              await supabase.from('customer_portfolio').update({ endereco: enderecoInstalacao.trim() }).eq('id', existing.id);
+                            if (await salvarEnderecoInstalacao(enderecoInstalacao.trim())) {
+                              setEditingEndereco(false);
+                              toast({ title: 'Endereço salvo' });
                             }
-                            setEditingEndereco(false);
-                            toast({ title: 'Endereço salvo' });
                           }}>
                             <Check className="w-4 h-4 mr-1" />
                             Salvar

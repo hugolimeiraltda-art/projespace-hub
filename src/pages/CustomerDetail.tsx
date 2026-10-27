@@ -27,6 +27,7 @@ import { ImplantacaoHistoricoPPE } from '@/components/ImplantacaoHistoricoPPE';
 import { DocumentacaoRede } from '@/components/DocumentacaoRede';
 import { TapVendaResumo } from '@/components/TapVendaResumo';
 import { OperacaoAssistidaResumo } from '@/components/OperacaoAssistidaResumo';
+import { HistoricoImplantacao } from '@/components/HistoricoImplantacao';
 import { EngineeringDeliverablesView } from '@/components/EngineeringDeliverablesView';
 import { parseRedePlanilha, isPlanilhaRede } from '@/lib/redeImport';
 
@@ -883,6 +884,7 @@ export default function CustomerDetail() {
 
         {/* Resumo do Projeto (TAP + Venda) */}
         {projectId && <OperacaoAssistidaResumo projectId={projectId} />}
+        {projectId && <HistoricoImplantacao projectId={projectId} />}
         {!isPPE && projectId && <TapVendaResumo projectId={projectId} />}
 
         {/* Devolução do Projeto (Engenharia) */}

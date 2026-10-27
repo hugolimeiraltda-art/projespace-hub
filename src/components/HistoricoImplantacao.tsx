@@ -2,9 +2,11 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { History, ChevronDown, CheckCircle2, MessageSquare, ArrowRightLeft, Headphones, Radio } from 'lucide-react';
+import { History, ChevronDown, CheckCircle2, MessageSquare, ArrowRightLeft, Headphones, Radio, FileText, Image as ImageIcon, ClipboardCheck, Download } from 'lucide-react';
+import { useAttachmentUrl } from '@/hooks/useAttachmentUrl';
 
 interface Props { projectId: string }
 
@@ -46,15 +48,29 @@ const ICONS = { etapa: CheckCircle2, status: ArrowRightLeft, comentario: Message
 export function HistoricoImplantacao({ projectId }: Props) {
   const [eventos, setEventos] = useState<Evento[]>([]);
   const [open, setOpen] = useState(false);
+  const [docsOpen, setDocsOpen] = useState(false);
+  const [arquivos, setArquivos] = useState<Array<{ nome: string; url: string; grupo: string; data?: string }>>([]);
+  const [checklists, setChecklists] = useState<any[]>([]);
+  const { openAttachment } = useAttachmentUrl();
+  const isImg = (n: string) => /\.(jpe?g|png|webp|gif|heic)(\?|$)/i.test(n);
 
   useEffect(() => {
     (async () => {
-      const [etRes, stRes, cmRes, nocRes] = await Promise.all([
+      const [etRes, stRes, cmRes, nocRes, paRes, sfRes, ckRes] = await Promise.all([
         supabase.from('implantacao_etapas').select('*').eq('project_id', projectId).maybeSingle(),
         supabase.from('project_status_history').select('from_status, to_status, reason, changed_by_user_name, created_at').eq('project_id', projectId),
         supabase.from('project_comments').select('texto, user_name, created_at').eq('project_id', projectId),
         supabase.from('implantacao_noc_chamados').select('chamado_numero, transicao_noc, opened_by_name, created_at').eq('project_id', projectId),
+        supabase.from('project_attachments').select('nome_arquivo, tipo, arquivo_url, created_at').eq('project_id', projectId),
+        supabase.from('sale_form_attachments').select('nome_arquivo, secao, arquivo_url, created_at').eq('project_id', projectId),
+        supabase.from('implantacao_checklists').select('id, tipo, dados, fotos, observacoes, created_by_name, external_submitted_at, external_submitted_by_name, created_at, updated_at').eq('project_id', projectId),
       ]);
+      const arqs: Array<{ nome: string; url: string; grupo: string; data?: string }> = [];
+      paRes.data?.forEach((a: any) => a.arquivo_url && arqs.push({ nome: a.nome_arquivo, url: a.arquivo_url, grupo: a.tipo || 'Projeto', data: a.created_at }));
+      sfRes.data?.forEach((a: any) => a.arquivo_url && arqs.push({ nome: a.nome_arquivo, url: a.arquivo_url, grupo: a.secao || 'Venda', data: a.created_at }));
+      arqs.sort((a, b) => (b.data || '').localeCompare(a.data || ''));
+      setArquivos(arqs);
+      setChecklists(ckRes.data || []);
       const list: Evento[] = [];
       const et: any = etRes.data;
       if (et) {
@@ -117,6 +133,80 @@ export function HistoricoImplantacao({ projectId }: Props) {
                 })}
               </ol>
             )}
+          </CardContent>
+        </CollapsibleContent>
+      </Collapsible>
+      <Collapsible open={docsOpen} onOpenChange={setDocsOpen}>
+        <CollapsibleTrigger asChild>
+          <CardHeader className="cursor-pointer border-t">
+            <CardTitle className="text-base flex items-center justify-between">
+              <span className="flex items-center gap-2"><FileText className="w-4 h-4 text-primary" /> Documentos, Checklists e Fotos ({arquivos.length + checklists.length})</span>
+              <ChevronDown className={`w-4 h-4 transition-transform ${docsOpen ? 'rotate-180' : ''}`} />
+            </CardTitle>
+          </CardHeader>
+        </CollapsibleTrigger>
+        <CollapsibleContent>
+          <CardContent className="space-y-6">
+            <div>
+              <p className="text-sm font-semibold mb-2">Checklists</p>
+              {checklists.length === 0 ? <p className="text-sm text-muted-foreground">Nenhum checklist.</p> : (
+                <div className="space-y-2">
+                  {checklists.map((c) => {
+                    const items: any[] = c.dados?.items || [];
+                    return (
+                      <details key={c.id} className="rounded-md border p-3">
+                        <summary className="cursor-pointer text-sm font-medium flex items-center gap-2">
+                          <ClipboardCheck className="w-4 h-4 text-primary" />
+                          Checklist {c.tipo} · {items.filter((i) => i.resposta || i.checked).length}/{items.length} itens
+                          <span className="text-xs text-muted-foreground font-normal">
+                            {c.external_submitted_at ? `enviado por ${c.external_submitted_by_name || 'técnico'} em ${fmt(c.external_submitted_at)}` : c.created_by_name ? `por ${c.created_by_name} · ${fmt(c.updated_at || c.created_at)}` : fmt(c.updated_at || c.created_at)}
+                          </span>
+                        </summary>
+                        <ul className="mt-3 space-y-1 text-sm">
+                          {items.map((it, idx) => {
+                            const r = it.resposta ?? (it.checked ? 'sim' : null);
+                            return (
+                              <li key={it.id || idx} className="flex justify-between gap-3 border-b border-border/50 pb-1">
+                                <span>{it.label}{it.observacao ? <span className="block text-xs text-muted-foreground">Obs.: {it.observacao}</span> : null}</span>
+                                <span className={`shrink-0 text-xs font-semibold ${r === 'sim' ? 'text-primary' : r === 'nao' ? 'text-destructive' : 'text-muted-foreground'}`}>{r === 'sim' ? 'Sim' : r === 'nao' ? 'Não' : '—'}</span>
+                              </li>
+                            );
+                          })}
+                        </ul>
+                        {c.observacoes && <p className="mt-2 text-sm text-muted-foreground whitespace-pre-wrap">Observações: {c.observacoes}</p>}
+                        {c.fotos?.length > 0 && (
+                          <div className="mt-3 grid grid-cols-3 sm:grid-cols-5 gap-2">
+                            {c.fotos.map((f: string, k: number) => (
+                              <a key={k} href={f} target="_blank" rel="noreferrer"><img src={f} alt={`Foto ${k + 1}`} className="h-20 w-full object-cover rounded border" /></a>
+                            ))}
+                          </div>
+                        )}
+                      </details>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+            <div>
+              <p className="text-sm font-semibold mb-2">Documentos e fotos</p>
+              {arquivos.length === 0 ? <p className="text-sm text-muted-foreground">Nenhum arquivo.</p> : (
+                <ul className="divide-y rounded-md border">
+                  {arquivos.map((a, i) => {
+                    const Ico = isImg(a.nome) ? ImageIcon : FileText;
+                    return (
+                      <li key={i} className="flex items-center justify-between gap-3 p-2">
+                        <span className="flex items-center gap-2 min-w-0 text-sm">
+                          <Ico className="w-4 h-4 text-primary shrink-0" />
+                          <span className="truncate">{a.nome}</span>
+                          <span className="text-xs text-muted-foreground shrink-0">{a.grupo}{a.data ? ' · ' + fmt(a.data) : ''}</span>
+                        </span>
+                        <Button size="sm" variant="outline" onClick={(e) => openAttachment(a.url, e, a.nome)}><Download className="w-3 h-3 mr-1" />Abrir</Button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </div>
           </CardContent>
         </CollapsibleContent>
       </Collapsible>

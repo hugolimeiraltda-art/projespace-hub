@@ -13,6 +13,7 @@ export interface ImplantacaoEtapasData {
   confirmacao_ativacao_financeira_at: string | null;
   operacao_assistida_inicio: string | null;
   operacao_assistida_fim: string | null;
+  operacao_assistida_encerrada_at?: string | null;
   agendamento_visita_startup_data: string | null;
   ppe_execucao_base_data: string | null;
   ppe_observacao_instalacao?: string | null;

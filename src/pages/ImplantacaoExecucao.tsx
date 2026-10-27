@@ -233,6 +233,27 @@ export default function ImplantacaoExecucao() {
   const [criandoPendencia, setCriandoPendencia] = useState(false);
   const [enderecoInstalacao, setEnderecoInstalacao] = useState('');
   const [editingEndereco, setEditingEndereco] = useState(false);
+
+  // Saves the installation address on the customer record linked to this project.
+  // Reports a clear error instead of silently doing nothing.
+  const salvarEnderecoInstalacao = async (valor: string | null): Promise<boolean> => {
+    const { data: rows, error } = await supabase
+      .from('customer_portfolio')
+      .update({ endereco: valor })
+      .eq('project_id', id!)
+      .select('id');
+    if (error || !rows || rows.length === 0) {
+      toast({
+        title: 'Endereço não salvo',
+        description: error
+          ? error.message
+          : 'Salve primeiro as Informações do Contrato (etapa 2) ou peça a alguém da Implantação/Projetos para salvar.',
+        variant: 'destructive',
+      });
+      return false;
+    }
+    return true;
+  };
   const [usarEnderecoOrigem, setUsarEnderecoOrigem] = useState(false);
   const [pendenciaDeptVisitaTexto, setPendenciaDeptVisitaTexto] = useState('');
   const [pendenciaClienteVisitaTexto, setPendenciaClienteVisitaTexto] = useState('');
@@ -1554,6 +1575,13 @@ export default function ImplantacaoExecucao() {
                                 toast({
                                   title: 'Salvo',
                                   description: 'Informações do contrato atualizadas.',
+                                });
+                                setContratoInfo((prev) => ({
+                                  ...prev,
+                                  mensalidade: prev.mensalidade?.trim() ? formatBRLInput(prev.mensalidade) : '',
+                                  taxa_instalacao: prev.taxa_instalacao?.trim() ? formatBRLInput(prev.taxa_instalacao) : '',
+                                }));
+                                ({
                                 });
                                 setEditingContrato(false);
                               } catch (error) {

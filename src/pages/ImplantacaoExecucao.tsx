@@ -1581,8 +1581,6 @@ export default function ImplantacaoExecucao() {
                                   mensalidade: prev.mensalidade?.trim() ? formatBRLInput(prev.mensalidade) : '',
                                   taxa_instalacao: prev.taxa_instalacao?.trim() ? formatBRLInput(prev.taxa_instalacao) : '',
                                 }));
-                                ({
-                                });
                                 setEditingContrato(false);
                               } catch (error) {
                                 console.error('Error saving contrato info:', error);

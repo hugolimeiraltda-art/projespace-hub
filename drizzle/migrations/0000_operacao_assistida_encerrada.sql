@@ -1,0 +1,2 @@
+ALTER TABLE public.implantacao_etapas ADD COLUMN IF NOT EXISTS operacao_assistida_encerrada_at timestamptz;
+ALTER TABLE public.implantacao_etapas ADD COLUMN IF NOT EXISTS operacao_assistida_encerrada_por text;

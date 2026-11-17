@@ -119,6 +119,19 @@ const handler = async (req: Request): Promise<Response> => {
     const isAdministrativo = roleData?.role === "administrativo";
     const isSucessoCliente = roleData?.role === "sucesso_cliente";
 
+    const { data: blockScope } = await supabaseAdmin
+      .from("user_data_scopes")
+      .select("scope_key")
+      .eq("user_id", requestingUser.id)
+      .eq("scope_key", "sem_gestao_usuarios")
+      .maybeSingle();
+    if (blockScope) {
+      return new Response(
+        JSON.stringify({ error: "Seu perfil não tem permissão para gerenciar usuários" }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     if (!roleData || (!isAdmin && !isGerenteComercial && !isAdministrativo && !isSucessoCliente)) {
       console.error("Permission denied for role:", roleData?.role);
       return new Response(

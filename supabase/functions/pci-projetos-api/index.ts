@@ -69,7 +69,7 @@ serve(async (req) => {
     let portfolioQuery = supabase
       .from("customer_portfolio")
       .select(
-        "id, contrato, razao_social, filial, empresa, unidades, mensalidade, data_ativacao, data_termino, endereco, contato_nome, contato_telefone, status_implantacao, telefonia_funcionamento, project_id, updated_at, tipo_carteira"
+        "id, contrato, alarme_codigo, razao_social, filial, empresa, unidades, mensalidade, data_ativacao, data_termino, endereco, contato_nome, contato_telefone, status_implantacao, telefonia_funcionamento, project_id, updated_at, tipo_carteira"
       )
       .eq("tipo_carteira", "PCI")
       .not("contrato", "like", "TEMP-%");
@@ -148,6 +148,7 @@ serve(async (req) => {
 
       return {
         contrato: c.contrato,
+        alarme_codigo: c.alarme_codigo ?? null,
         condominio: c.razao_social,
         filial: c.filial,
         empresa: c.empresa,

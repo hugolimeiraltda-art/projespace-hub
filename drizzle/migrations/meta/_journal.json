@@ -15,6 +15,13 @@
       "when": 1795479511615,
       "tag": "0001_restrict_tautology_select_policies",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1795479875751,
+      "tag": "0002_restrict_remaining_policies_to_staff",
+      "breakpoints": true
     }
   ]
 }

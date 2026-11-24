@@ -86,10 +86,10 @@ export function EapObra({ projectId, mode }: { projectId: string; mode: Mode }) 
   const load = useCallback(async () => {
     const [{ data }, { data: proj }] = await Promise.all([
       supabase.from('implantacao_eap_ambientes').select('*').eq('project_id', projectId).order('ordem'),
-      supabase.from('projects').select('observacoes_gerais').eq('id', projectId).maybeSingle(),
+      supabase.from('projects').select('observacoes').eq('id', projectId).maybeSingle(),
     ]);
     setAmbientes((data as any) || []);
-    setSessaoId(proj?.observacoes_gerais?.match(/\[PROJETO_IA:([^\]]+)\]/)?.[1] || null);
+    setSessaoId(proj?.observacoes?.match(/\[PROJETO_IA:([^\]]+)\]/)?.[1] || null);
     setLoading(false);
   }, [projectId]);
 

@@ -53,6 +53,7 @@ serve(async (req) => {
 
     const url = new URL(req.url);
     const contrato = url.searchParams.get("contrato");
+    const alarmeCodigo = url.searchParams.get("alarme_codigo");
     const projectId = url.searchParams.get("project_id");
     const updatedSince = url.searchParams.get("updated_since");
     const limit = Math.min(Number(url.searchParams.get("limit") || 100) || 100, 500);
@@ -75,6 +76,7 @@ serve(async (req) => {
       .not("contrato", "like", "TEMP-%");
 
     if (contrato) portfolioQuery = portfolioQuery.eq("contrato", contrato);
+    if (alarmeCodigo) portfolioQuery = portfolioQuery.eq("alarme_codigo", alarmeCodigo);
     if (projectId) portfolioQuery = portfolioQuery.eq("project_id", projectId);
     if (updatedSince) portfolioQuery = portfolioQuery.gte("updated_at", updatedSince);
 

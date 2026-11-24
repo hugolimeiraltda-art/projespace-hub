@@ -886,7 +886,7 @@ export default function CustomerDetail() {
         {/* Resumo do Projeto (TAP + Venda) */}
         {projectId && <OperacaoAssistidaResumo projectId={projectId} />}
         {projectId && <HistoricoImplantacao projectId={projectId} />}
-        {projectId && <EapObra projectId={projectId} mode="leitura" />}
+        {projectId && <EapObra projectId={projectId} mode={canEdit ? "backoffice" : "leitura"} titled />}
         {!isPPE && projectId && <TapVendaResumo projectId={projectId} />}
 
         {/* Devolução do Projeto (Engenharia) */}

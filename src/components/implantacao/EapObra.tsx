@@ -76,7 +76,7 @@ function Fotos({ paths }: { paths: string[] }) {
   );
 }
 
-export function EapObra({ projectId, mode }: { projectId: string; mode: Mode }) {
+export function EapObra({ projectId, mode, titled }: { projectId: string; mode: Mode; titled?: boolean }) {
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [ambientes, setAmbientes] = useState<Ambiente[]>([]);
@@ -303,10 +303,10 @@ export function EapObra({ projectId, mode }: { projectId: string; mode: Mode }) 
     </div>
   );
 
-  if (mode === 'leitura') {
+  if (mode === 'leitura' || titled) {
     return (
       <Card>
-        <CardHeader><CardTitle className="text-base">Antes e Depois por Ambiente ({feitos}/{ambientes.length} concluídos)</CardTitle></CardHeader>
+        <CardHeader><CardTitle className="text-base">EAP da Obra · Antes e Depois por Ambiente ({feitos}/{ambientes.length} concluídos)</CardTitle></CardHeader>
         <CardContent>{body}</CardContent>
       </Card>
     );

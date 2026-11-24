@@ -21,6 +21,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
 import { SectionFileUpload } from '@/components/SectionFileUpload';
+import { EapObra } from '@/components/implantacao/EapObra';
 import {
   ArrowLeft,
   Check,
@@ -2601,6 +2602,13 @@ export default function ImplantacaoExecucao() {
                       </Button>
                     </div>
                   </div>
+                  {id && (
+                    <div className="px-4 pb-2">
+                      <p className="text-sm font-medium mb-1">EAP Oficial da Obra (ambientes e equipamentos)</p>
+                      <p className="text-xs text-muted-foreground mb-2">Ajuste ambientes e equipamentos. É essa lista que o instalador usa na etapa 5.1.</p>
+                      <EapObra projectId={id} mode="backoffice" />
+                    </div>
+                  )}
                   <div className="flex items-center justify-between py-2 px-4 hover:bg-muted/50 rounded-md">
                     <div className="flex items-center gap-3">
                       <Checkbox 
@@ -2908,6 +2916,12 @@ export default function ImplantacaoExecucao() {
                       {etapas.laudo_instalador_at && <span className="text-xs text-muted-foreground">{format(parseISO(etapas.laudo_instalador_at), "dd/MM/yyyy", { locale: ptBR })}</span>}
                     </div>
                     <div className="ml-8"><SectionFileUpload projectId={id || null} secao="implantacao_laudo_instalador" /></div>
+                    {id && (
+                      <div className="ml-8 mt-3">
+                        <p className="text-sm font-medium mb-2">Checklist por ambiente (antes e depois)</p>
+                        <EapObra projectId={id} mode="execucao" />
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </CollapsibleContent>

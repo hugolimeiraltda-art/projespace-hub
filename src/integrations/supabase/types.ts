@@ -1010,6 +1010,65 @@ export type Database = {
           },
         ]
       }
+      implantacao_eap_ambientes: {
+        Row: {
+          concluido: boolean
+          concluido_at: string | null
+          concluido_por: string | null
+          created_at: string
+          descricao: string | null
+          equipamentos: Json
+          fotos_antes: string[]
+          fotos_depois: string[]
+          id: string
+          nome: string
+          ordem: number
+          project_id: string
+          tipo: string | null
+          updated_at: string
+        }
+        Insert: {
+          concluido?: boolean
+          concluido_at?: string | null
+          concluido_por?: string | null
+          created_at?: string
+          descricao?: string | null
+          equipamentos?: Json
+          fotos_antes?: string[]
+          fotos_depois?: string[]
+          id?: string
+          nome?: string
+          ordem?: number
+          project_id: string
+          tipo?: string | null
+          updated_at?: string
+        }
+        Update: {
+          concluido?: boolean
+          concluido_at?: string | null
+          concluido_por?: string | null
+          created_at?: string
+          descricao?: string | null
+          equipamentos?: Json
+          fotos_antes?: string[]
+          fotos_depois?: string[]
+          id?: string
+          nome?: string
+          ordem?: number
+          project_id?: string
+          tipo?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "implantacao_eap_ambientes_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       implantacao_etapas: {
         Row: {
           agendamento_visita_comercial: boolean | null

@@ -1,4 +1,5 @@
 import { formatBRLInput, parseBRLNumber } from '@/lib/currency';
+import { EapObra } from '@/components/implantacao/EapObra';
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Layout } from '@/components/Layout';
@@ -885,6 +886,7 @@ export default function CustomerDetail() {
         {/* Resumo do Projeto (TAP + Venda) */}
         {projectId && <OperacaoAssistidaResumo projectId={projectId} />}
         {projectId && <HistoricoImplantacao projectId={projectId} />}
+        {projectId && <EapObra projectId={projectId} mode="leitura" />}
         {!isPPE && projectId && <TapVendaResumo projectId={projectId} />}
 
         {/* Devolução do Projeto (Engenharia) */}

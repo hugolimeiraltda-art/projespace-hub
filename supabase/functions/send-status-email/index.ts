@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.89.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -58,10 +59,35 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { "Content-Type": "application/json", ...corsHeaders } });
+    }
+    const userClient = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_ANON_KEY")!, { global: { headers: { Authorization: authHeader } } });
+    const { data: claimsData, error: claimsErr } = await userClient.auth.getClaims(authHeader.replace("Bearer ", ""));
+    const callerId = claimsData?.claims?.sub;
+    if (claimsErr || !callerId) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { "Content-Type": "application/json", ...corsHeaders } });
+    }
+    const { data: isStaff } = await userClient.rpc("is_staff", { _user_id: callerId });
+    if (isStaff !== true) {
+      return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403, headers: { "Content-Type": "application/json", ...corsHeaders } });
+    }
+
     const { 
-      vendedor_email, vendedor_nome, projeto_nome, projeto_id,
+      vendedor_email: _ignoredEmail, vendedor_nome, projeto_nome, projeto_id,
       old_status, new_status, new_status_label, changed_by, comment
     }: StatusEmailRequest = await req.json();
+
+    if (typeof projeto_id !== "string" || !/^[0-9a-f-]{36}$/i.test(projeto_id)) {
+      return new Response(JSON.stringify({ error: "projeto_id inválido" }), { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } });
+    }
+    // Recipient comes from the project record the caller can see, never from the request
+    const { data: proj } = await userClient.from("projects").select("vendedor_email").eq("id", projeto_id).maybeSingle();
+    const vendedor_email = proj?.vendedor_email as string | undefined;
+    if (!vendedor_email) {
+      return new Response(JSON.stringify({ error: "Projeto não encontrado" }), { status: 404, headers: { "Content-Type": "application/json", ...corsHeaders } });
+    }
 
     console.log(`Sending status change email to ${vendedor_email} for project ${projeto_nome}`);
     console.log(`Status changed from ${old_status} to ${new_status}`);

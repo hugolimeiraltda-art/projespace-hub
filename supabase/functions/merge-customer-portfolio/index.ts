@@ -92,6 +92,18 @@ serve(async (req) => {
 
     const body = parsedBody.data;
 
+    // Caller must be allowed to view the project under their own access rules
+    const callerClient = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!, {
+      global: { headers: { Authorization: authHeader } },
+      auth: { autoRefreshToken: false, persistSession: false },
+    });
+    const { data: canView } = await callerClient.rpc("can_view_project", { _project_id: body.projectId });
+    if (canView !== true) {
+      return new Response(JSON.stringify({ error: "Você não tem permissão para este projeto." }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+    const isAdmin = roleData.role === "admin";
+    const { data: ppeScope } = await supabaseAdmin.from("user_data_scopes").select("id").eq("user_id", user.id).eq("scope_key", "ppe_only").maybeSingle();
+
     // Derive tipo_carteira from project so updates align with PPE/PCI prefix rules
     const { data: projectData } = await supabaseAdmin
       .from("projects")
@@ -99,6 +111,9 @@ serve(async (req) => {
       .eq("id", body.projectId)
       .maybeSingle();
     const tipoCarteira = projectData?.tipo_implantacao === "PPE" ? "PPE" : "PCI";
+    if (ppeScope && tipoCarteira !== "PPE") {
+      return new Response(JSON.stringify({ error: "Você só pode alterar clientes PPE." }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
 
     const normalizedPayload = {
       contrato: body.contrato,
@@ -117,9 +132,12 @@ serve(async (req) => {
 
     const { data: matches, error: fetchError } = await supabaseAdmin
       .from("customer_portfolio")
-      .select("id, project_id, contrato, razao_social, endereco")
+      .select("id, project_id, contrato, razao_social, endereco, tipo_carteira")
       .or(`project_id.eq.${body.projectId},contrato.eq.${body.contrato}`)
       .order("created_at", { ascending: true });
+    if (ppeScope && (matches ?? []).some((r: any) => r.tipo_carteira && r.tipo_carteira !== "PPE")) {
+      return new Response(JSON.stringify({ error: "Você só pode alterar clientes PPE." }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
 
     if (fetchError) {
       throw fetchError;
@@ -130,6 +148,9 @@ serve(async (req) => {
     const contractRow = rows.find((row) => row.contrato === body.contrato) ?? null;
 
     if (projectRow && contractRow && projectRow.id !== contractRow.id) {
+      if (!isAdmin) {
+        return new Response(JSON.stringify({ error: "Só administradores podem unificar contratos duplicados." }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
       const { error: updateError } = await supabaseAdmin
         .from("customer_portfolio")
         .update({
@@ -158,6 +179,12 @@ serve(async (req) => {
       });
     }
 
+    if (contractRow && contractRow.project_id && contractRow.project_id !== body.projectId) {
+      const { data: canViewOther } = await callerClient.rpc("can_view_project", { _project_id: contractRow.project_id });
+      if (canViewOther !== true && !isAdmin) {
+        return new Response(JSON.stringify({ error: "Este contrato pertence a outro projeto." }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+    }
     if (contractRow) {
       const { error: updateError } = await supabaseAdmin
         .from("customer_portfolio")

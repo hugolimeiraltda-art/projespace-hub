@@ -58,6 +58,11 @@ serve(async (req) => {
       });
     }
 
+    const { data: canView } = await userClient.rpc("can_view_project", { _project_id: project_id });
+    if (canView !== true) {
+      return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
     // Check idempotency - existing chamado?
     const { data: existingChamado } = await supabase
       .from("implantacao_noc_chamados")

@@ -118,7 +118,7 @@ export default function VendedorChat() {
     try {
       const resp = await fetch(CHAT_URL, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token ?? ""}` },
         body: JSON.stringify({
           sessao_id: sessaoId,
           messages: isInitial ? [{ role: 'user', content: text }] : newMessages.map(m => ({ role: m.role, content: m.content })),
@@ -242,7 +242,7 @@ export default function VendedorChat() {
     try {
       const resp = await fetch(CHAT_URL, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token ?? ""}` },
         body: JSON.stringify({ sessao_id: sessaoId, messages, action: 'gerar_proposta' }),
       });
       if (!resp.ok) {
@@ -275,7 +275,7 @@ export default function VendedorChat() {
 
       const resp = await fetch(PDF_URL, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token ?? ""}` },
         body: JSON.stringify({ sessao_id: sessaoId }),
       });
 
@@ -300,7 +300,7 @@ export default function VendedorChat() {
       if (!html) {
         const resp = await fetch(PDF_URL, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` },
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token ?? ""}` },
           body: JSON.stringify({ sessao_id: sessaoId }),
         });
         if (resp.ok) {
@@ -312,7 +312,7 @@ export default function VendedorChat() {
 
       const resp = await fetch(EMAIL_URL, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token ?? ""}` },
         body: JSON.stringify({ sessao_id: sessaoId, html_content: html }),
       });
 

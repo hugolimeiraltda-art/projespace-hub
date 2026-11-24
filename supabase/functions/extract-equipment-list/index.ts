@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.89.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -30,7 +31,27 @@ serve(async (req) => {
   }
 
   try {
-    const { fileUrls } = await req.json();
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+    const SB_URL = Deno.env.get("SUPABASE_URL")!;
+    const userClient = createClient(SB_URL, Deno.env.get("SUPABASE_ANON_KEY")!, { global: { headers: { Authorization: authHeader } } });
+    const { data: claimsData, error: claimsErr } = await userClient.auth.getClaims(authHeader.replace("Bearer ", ""));
+    const callerId = claimsData?.claims?.sub;
+    if (claimsErr || !callerId) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+    const { data: isStaff } = await userClient.rpc("is_staff", { _user_id: callerId });
+    if (isStaff !== true) {
+      return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    const body = await req.json();
+    const storagePrefix = new URL(SB_URL).origin + "/storage/v1/";
+    const fileUrls = Array.isArray(body?.fileUrls)
+      ? body.fileUrls.filter((u: unknown) => typeof u === "string" && u.startsWith(storagePrefix)).slice(0, 10)
+      : [];
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 

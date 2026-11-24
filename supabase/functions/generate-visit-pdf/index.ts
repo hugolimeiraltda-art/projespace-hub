@@ -31,6 +31,11 @@ serve(async (req) => {
       return new Response(JSON.stringify({ error: "Invalid sessao_id" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
+    const { data: allowedSess } = await authClient.from("orcamento_sessoes").select("id").eq("id", sessao_id).maybeSingle();
+    if (!allowedSess) {
+      return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
     // Fetch session data

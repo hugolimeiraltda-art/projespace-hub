@@ -44,6 +44,12 @@ serve(async (req) => {
     const { sessao_id, email_destino, html_content } = await req.json();
     if (!sessao_id) throw new Error("sessao_id is required");
 
+    const { data: allowedSess } = await authClient.from("orcamento_sessoes").select("id").eq("id", sessao_id).maybeSingle();
+    if (!allowedSess) {
+      return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+    if (typeof html_content !== "string" || html_content.length > 500000) throw new Error("Conteúdo inválido");
+
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
     const { data: sessao } = await supabase
@@ -54,7 +60,10 @@ serve(async (req) => {
 
     if (!sessao) throw new Error("Sessão não encontrada");
 
-    let targetEmail = email_destino;
+    // Recipient is always the session's seller or the signed-in caller; arbitrary addresses are not allowed
+    const callerEmail = (claimsData.claims as any).email as string | undefined;
+    let targetEmail: string | undefined;
+    if (email_destino && callerEmail && String(email_destino).toLowerCase() === callerEmail.toLowerCase()) targetEmail = callerEmail;
     if (!targetEmail && sessao.vendedor_id) {
       const { data: profile } = await supabase
         .from("profiles")

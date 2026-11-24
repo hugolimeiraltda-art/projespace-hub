@@ -564,7 +564,28 @@ serve(async (req) => {
   }
 
   try {
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+    const userClient = createClient(SUPABASE_URL, Deno.env.get("SUPABASE_ANON_KEY")!, { global: { headers: { Authorization: authHeader } } });
+    const { data: claimsData, error: claimsErr } = await userClient.auth.getClaims(authHeader.replace("Bearer ", ""));
+    if (claimsErr || !claimsData?.claims?.sub) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
     const { token, sessao_id, messages, action, itens_editados } = await req.json();
+    // Authorize: caller must be able to see this session under their own access rules
+    {
+      let q = userClient.from("orcamento_sessoes").select("id");
+      if (sessao_id) q = q.eq("id", sessao_id);
+      else if (token) q = q.eq("token", token);
+      else q = q.eq("id", "00000000-0000-0000-0000-000000000000");
+      const { data: allowed } = await q.maybeSingle();
+      if (!allowed) {
+        return new Response(JSON.stringify({ error: "Sem permissão para esta sessão." }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+    }
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 

@@ -110,6 +110,48 @@ serve(async (req) => {
       : { data: [] as any[] };
 
 
+    // --- EAP oficial da obra (ambientes, equipamentos, fotos antes/depois) ---
+    const { data: eapRows } = projectIds.length
+      ? await supabase
+          .from("implantacao_eap_ambientes")
+          .select("id, project_id, ordem, nome, tipo, descricao, equipamentos, fotos_antes, fotos_depois, concluido, concluido_at, concluido_por, updated_at")
+          .in("project_id", projectIds)
+          .order("ordem", { ascending: true })
+      : { data: [] as any[] };
+
+    const signFoto = async (f: string): Promise<string | null> => {
+      if (!f) return null;
+      if (f.startsWith("http")) return f;
+      const bucket = f.startsWith("orc:") ? "orcamento-midias" : "project-attachments";
+      const { data: s } = await supabase.storage
+        .from(bucket)
+        .createSignedUrl(f.replace(/^orc:/, ""), 60 * 60 * 24 * 7);
+      return s?.signedUrl || null;
+    };
+    const signAll = async (arr: any) =>
+      (await Promise.all((Array.isArray(arr) ? arr : []).map(signFoto))).filter(Boolean);
+
+    const eapByProj = new Map<string, any[]>();
+    for (const a of eapRows || []) {
+      const amb = {
+        id: a.id,
+        ordem: a.ordem,
+        nome: a.nome,
+        tipo: a.tipo,
+        descricao: a.descricao,
+        concluido: !!a.concluido,
+        concluido_em: a.concluido_at,
+        concluido_por: a.concluido_por,
+        equipamentos: Array.isArray(a.equipamentos) ? a.equipamentos : [],
+        fotos_antes: await signAll(a.fotos_antes),
+        fotos_depois: await signAll(a.fotos_depois),
+        updated_at: a.updated_at,
+      };
+      const list = eapByProj.get(a.project_id) || [];
+      list.push(amb);
+      eapByProj.set(a.project_id, list);
+    }
+
     // --- Engineering attachments ---
     const { data: attachments } = projectIds.length
       ? await supabase
@@ -214,6 +256,14 @@ serve(async (req) => {
           lista_atividades: anexos.filter((a: any) => a.tipo === "LISTA_ATIVIDADES"),
         },
         anexos_engenharia: anexos,
+        eap_obra: (() => {
+          const ambs = (c.project_id && eapByProj.get(c.project_id)) || [];
+          return {
+            total_ambientes: ambs.length,
+            ambientes_concluidos: ambs.filter((a: any) => a.concluido).length,
+            ambientes: ambs,
+          };
+        })(),
         updated_at: c.updated_at,
 
       };

@@ -11,6 +11,7 @@ import { Layout } from '@/components/Layout';
 import { StatusBadge } from '@/components/StatusBadge';
 import { EngineeringTimeline } from '@/components/EngineeringTimeline';
 import { EngineeringDeliverables } from '@/components/EngineeringDeliverables';
+import { EapObra } from '@/components/implantacao/EapObra';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
@@ -1022,6 +1023,9 @@ export default function ProjectDetail() {
               addComment={addComment}
               updateProject={updateProject}
             />
+
+            {/* EAP do projeto - gerada/editada pelo projetista, segue para implantação, cliente e EixoNoc */}
+            <EapObra projectId={project.id} mode={canChangeStatus ? 'backoffice' : 'leitura'} titled />
 
             {/* Comments */}
             <Card className="shadow-card">

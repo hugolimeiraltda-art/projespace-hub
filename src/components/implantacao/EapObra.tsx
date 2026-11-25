@@ -6,7 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Plus, Trash2, Download, Camera, ImageIcon } from 'lucide-react';
+import { Loader2, Plus, Trash2, Download, Camera, ImageIcon, Sparkles } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
 
 type Equip = { nome: string; qtd?: number; instalado?: boolean };
 type Ambiente = {
@@ -78,6 +79,7 @@ function Fotos({ paths }: { paths: string[] }) {
 
 export function EapObra({ projectId, mode, titled }: { projectId: string; mode: Mode; titled?: boolean }) {
   const { toast } = useToast();
+  const [descKey, setDescKey] = useState(0);
   const [loading, setLoading] = useState(true);
   const [ambientes, setAmbientes] = useState<Ambiente[]>([]);
   const [busy, setBusy] = useState<string | null>(null);
@@ -166,6 +168,24 @@ export function EapObra({ projectId, mode, titled }: { projectId: string; mode: 
     }
     await save(a.id, { [campo]: [...a[campo], ...novos] } as any);
     setBusy(null);
+  };
+
+  const gerarFuncionamento = async (a: Ambiente) => {
+    if (a.equipamentos.length === 0) {
+      toast({ title: 'Adicione os equipamentos primeiro', variant: 'destructive' });
+      return;
+    }
+    setBusy(a.id + 'ia');
+    const { data, error } = await supabase.functions.invoke('eap-funcionamento', {
+      body: { nome: a.nome, equipamentos: a.equipamentos.map((e) => e.nome) },
+    });
+    setBusy(null);
+    if (error || !data?.texto) {
+      toast({ title: 'Não foi possível gerar', description: data?.error || error?.message, variant: 'destructive' });
+      return;
+    }
+    await save(a.id, { descricao: data.texto });
+    setDescKey((k) => k + 1);
   };
 
   const toggleConcluido = async (a: Ambiente, v: boolean) => {
@@ -258,6 +278,31 @@ export function EapObra({ projectId, mode, titled }: { projectId: string; mode: 
               <Button size="sm" variant="ghost" onClick={() => save(a.id, { equipamentos: [...a.equipamentos, { nome: '1x Novo equipamento', instalado: false }] })}>
                 <Plus className="h-4 w-4 mr-1" />Equipamento
               </Button>
+            )}
+          </div>
+
+          <div className="space-y-1">
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-xs font-medium text-muted-foreground">Funcionamento</p>
+              {editavel && (
+                <Button size="sm" variant="ghost" className="h-7" onClick={() => gerarFuncionamento(a)} disabled={busy === a.id + 'ia'}>
+                  {busy === a.id + 'ia' ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : <Sparkles className="h-3.5 w-3.5 mr-1" />}
+                  Gerar com IA
+                </Button>
+              )}
+            </div>
+            {editavel ? (
+              <Textarea
+                key={a.id + descKey}
+                defaultValue={a.descricao || ''}
+                placeholder="Como o ambiente funciona com os equipamentos instalados"
+                className="text-sm min-h-[70px]"
+                onBlur={(e) => e.target.value !== (a.descricao || '') && save(a.id, { descricao: e.target.value || null })}
+              />
+            ) : a.descricao ? (
+              <p className="text-sm whitespace-pre-wrap">{a.descricao}</p>
+            ) : (
+              <p className="text-xs text-muted-foreground italic">Sem descrição</p>
             )}
           </div>
 

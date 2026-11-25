@@ -89,7 +89,7 @@ serve(async (req) => {
             model: "google/gemini-2.5-flash-lite",
             messages: [
               { role: "system", content: `Extraia um resumo estruturado da visita técnica a partir do histórico de conversa. Formate em markdown com seções: Informações Gerais, Acesso de Pedestres, Acesso de Veículos, CFTV, Perímetro, Interfonia, Infraestrutura. Inclua apenas dados mencionados. Seja conciso.` },
-              ...mensagens.map((m: any) => ({ role: m.role, content: m.content })),
+              ...mensagens.filter((m: any) => m && typeof m.content === "string").map((m: any) => ({ role: m.role === "assistant" ? "assistant" : "user", content: m.content })),
               { role: "user", content: "Gere o resumo estruturado da visita." },
             ],
           }),

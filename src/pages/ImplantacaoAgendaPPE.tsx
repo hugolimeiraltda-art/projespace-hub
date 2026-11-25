@@ -209,6 +209,7 @@ export default function ImplantacaoAgendaPPE() {
     ? 'bg-orange-500/15 text-orange-700 dark:text-orange-400 border-orange-500/40 hover:bg-orange-500/25'
     : 'bg-blue-500/15 text-blue-700 dark:text-blue-400 border-blue-500/40 hover:bg-blue-500/25';
 
+  const csvSafe = (v: unknown) => { const s = String(v ?? ''); return /^[=+\-@\t\r]/.test(s) ? `'${s}` : s; };
   const handleExportCsv = () => {
     const rows = [
       ['Data', 'Tipo', 'Contrato', 'Cliente', 'Cidade', 'UF', 'Instalador'],
@@ -224,7 +225,7 @@ export default function ImplantacaoAgendaPPE() {
           e.instaladorNome,
         ]),
     ];
-    const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(';')).join('\n');
+    const csv = rows.map(r => r.map(v => `"${csvSafe(v).replace(/"/g, '""')}"`).join(';')).join('\n');
     const blob = new Blob([`\ufeff${csv}`], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');

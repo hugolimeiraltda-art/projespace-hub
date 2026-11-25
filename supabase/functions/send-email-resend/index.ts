@@ -24,6 +24,14 @@ function escapeHtml(text: string): string {
   return text.replace(/[&<>"']/g, m => map[m]);
 }
 
+function sanitizeHtml(html: string): string {
+  return String(html || "")
+    .replace(/<\s*(script|iframe|object|embed|form|base|meta|link)[^>]*>[\s\S]*?<\s*\/\s*\1\s*>/gi, "")
+    .replace(/<\s*(script|iframe|object|embed|form|base|meta|link)[^>]*\/?>/gi, "")
+    .replace(/\son[a-z]+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, "")
+    .replace(/(href|src)\s*=\s*("|')\s*(javascript|vbscript|data):[^"']*\2/gi, '$1="#"');
+}
+
 function buildBaseHtml(bodyContent: string): string {
   return `<!DOCTYPE html>
 <html>
@@ -93,7 +101,7 @@ const TEMPLATES: Record<string, (v: Record<string, string>) => { subject: string
     html: buildBaseHtml(`
       <p style="color:#374151;font-size:16px;">Olá <strong>${escapeHtml(v.nome || 'Usuário')}</strong>,</p>
       <p style="color:#374151;font-size:16px;">O relatório de visita técnica do cliente <strong>${escapeHtml(v.cliente || '')}</strong> foi gerado.</p>
-      ${v.conteudo_relatorio || ''}
+      ${sanitizeHtml(v.conteudo_relatorio || '')}
     `),
   }),
   chamado_manutencao: (v) => ({
@@ -299,6 +307,30 @@ serve(async (req) => {
     const body = await req.json();
     const { action } = body;
 
+    // Only team members (with a role) may send; recipients must be team members
+    const callerId = claimsData.claims.sub as string;
+    const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+    const { data: callerRole } = await admin.from("user_roles").select("role").eq("user_id", callerId).maybeSingle();
+    if (!callerRole) {
+      return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+    const isAdminCaller = callerRole.role === "admin";
+    if (action === "send" || action === "send_test") {
+      const to = String(body.to || "").trim().toLowerCase();
+      if (!/^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/.test(to)) {
+        return new Response(JSON.stringify({ error: "Destinatário inválido" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      const { data: recip } = await admin.from("profiles").select("id").ilike("email", to).maybeSingle();
+      if (!recip) {
+        return new Response(JSON.stringify({ error: "O destinatário precisa ser um usuário cadastrado no sistema" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      if (action === "send_test" && !isAdminCaller) {
+        return new Response(JSON.stringify({ error: "Somente administradores podem enviar testes" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      body.to = to;
+      if (typeof body.subject === "string") body.subject = body.subject.replace(/[\r\n]+/g, " ").slice(0, 200);
+    }
+
     if (action === "check_config") {
       return new Response(
         JSON.stringify({ smtp_configured: smtpConfigured, resend_configured: resendConfigured }),
@@ -327,7 +359,7 @@ serve(async (req) => {
       };
 
       const { subject, html } = templateFn(testVars);
-      const result = await sendEmail(to, `[TESTE] ${subject}`, html);
+      const result = await sendEmail(body.to, `[TESTE] ${subject}`, html);
       return new Response(
         JSON.stringify({ success: true, provider: result.provider }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -341,7 +373,7 @@ serve(async (req) => {
       if (templateFn) {
         const { subject, html } = templateFn(variables || {});
         const customSubject = body.subject || subject;
-        const result = await sendEmail(to, customSubject, html);
+        const result = await sendEmail(body.to, customSubject, html);
         return new Response(
           JSON.stringify({ success: true, provider: result.provider }),
           { headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -349,7 +381,7 @@ serve(async (req) => {
       }
 
       if (body.html && body.subject) {
-        const result = await sendEmail(to, body.subject, body.html);
+        const result = await sendEmail(body.to, body.subject, sanitizeHtml(String(body.html)));
         return new Response(
           JSON.stringify({ success: true, provider: result.provider }),
           { headers: { ...corsHeaders, "Content-Type": "application/json" } }

@@ -50,6 +50,13 @@
       "when": 1795634477876,
       "tag": "0006_eap_auto_sync_eixonoc",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1795642793124,
+      "tag": "0007_restrict_scope_filiais_functions",
+      "breakpoints": true
     }
   ]
 }

@@ -158,6 +158,16 @@ Deno.serve(async (req) => {
       delete updateData.id;
       delete updateData.created_at;
 
+      // Whitelist: only existing, editable columns of the record
+      const { data: existingRow } = await supabase.from('customer_portfolio').select('*').eq('id', customer_id).maybeSingle();
+      if (!existingRow) {
+        return new Response(JSON.stringify({ error: 'Customer not found' }), { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+      const PROTECTED = new Set(['id', 'created_at', 'updated_at', 'project_id', 'created_by']);
+      for (const k of Object.keys(updateData)) {
+        if (PROTECTED.has(k) || !(k in existingRow)) delete updateData[k];
+      }
+
       const { data, error } = await supabase
         .from('customer_portfolio')
         .update(updateData)

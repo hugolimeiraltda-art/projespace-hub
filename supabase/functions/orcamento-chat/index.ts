@@ -743,7 +743,7 @@ ${fotoListStr}
           model: "google/gemini-2.5-flash",
           messages: [
             { role: "system", content: structuredPrompt },
-            ...(allMsgs || []).map((m: any) => ({ role: m.role, content: m.content })),
+            ...(allMsgs || []).filter((m: any) => m && typeof m.content === "string").map((m: any) => ({ role: m.role === "assistant" ? "assistant" : "user", content: m.content })),
             { role: "user", content: "Agora gere a proposta comercial completa baseada em tudo que coletamos na visita. Inclua o bloco JSON estruturado ao final." },
           ],
         }),
@@ -928,7 +928,7 @@ ${fotoListStr}
           model: "google/gemini-2.5-flash",
           messages: [
             { role: "system", content: finalPrompt },
-            ...(allMsgs || []).map((m: any) => ({ role: m.role, content: m.content })),
+            ...(allMsgs || []).filter((m: any) => m && typeof m.content === "string").map((m: any) => ({ role: m.role === "assistant" ? "assistant" : "user", content: m.content })),
             { role: "user", content: "Gere a proposta comercial FINAL usando EXATAMENTE os itens aprovados na pré-proposta. Inclua o bloco JSON ao final." },
           ],
         }),
@@ -1037,8 +1037,9 @@ ${fotoListStr}
       .map((m: any) => (
         m?.role === "assistant"
           ? { ...m, content: removeEngineeringValidationBlock(m.content || "") }
-          : m
+          : { role: "user", content: typeof m?.content === "string" ? m.content : "" }
       ))
+      .map((m: any) => ({ role: m.role === "assistant" ? "assistant" : "user", content: String(m.content || "") }))
       .filter((m: any) => (m?.content || "").trim().length > 0);
 
     const requestBody = JSON.stringify({

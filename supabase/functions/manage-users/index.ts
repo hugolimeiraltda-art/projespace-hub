@@ -272,6 +272,18 @@ const handler = async (req: Request): Promise<Response> => {
       case "reset_password": {
         const { userId, newPassword } = body;
 
+        if (!isAdmin) {
+          const { data: targetRole } = await supabaseAdmin
+            .from("user_roles").select("role").eq("user_id", userId).maybeSingle();
+          const tr = targetRole?.role;
+          if (isGerenteComercial && tr !== "vendedor") {
+            return new Response(JSON.stringify({ error: "Gerentes comerciais só podem redefinir senha de vendedores" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+          }
+          if (tr === "admin") {
+            return new Response(JSON.stringify({ error: "Você não pode redefinir a senha de um administrador" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+          }
+        }
+
         const { error: resetError } = await supabaseAdmin.auth.admin.updateUserById(
           userId,
           { password: newPassword }

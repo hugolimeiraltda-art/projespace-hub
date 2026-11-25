@@ -60,7 +60,7 @@ serve(async (req) => {
     ] = await Promise.all([
       supabase.from("orcamento_produtos").select("id_produto, codigo, nome, categoria, subgrupo, unidade, preco_unitario, valor_minimo, valor_locacao, valor_minimo_locacao, valor_instalacao, descricao, adicional, qtd_max").eq("ativo", true).order("categoria").order("nome"),
       supabase.from("orcamento_kits").select("id_kit, codigo, nome, categoria, preco_kit, valor_minimo, valor_locacao, valor_minimo_locacao, valor_instalacao, descricao, descricao_uso, palavras_chave, regras_condicionais, orcamento_kit_itens(quantidade, orcamento_produtos(codigo, nome, preco_unitario))").eq("ativo", true).order("categoria").order("nome"),
-      supabase.from("customer_portfolio").select("razao_social, contrato, unidades, mensalidade, taxa_ativacao, cameras, portoes, portas, cancelas, catracas, totem_simples, totem_duplo, faciais_hik, faciais_avicam, dvr_nvr, tipo, sistema, filial, praca, status_implantacao, data_ativacao").order("created_at", { ascending: false }).limit(50),
+      authClient.from("customer_portfolio").select("razao_social, contrato, unidades, mensalidade, taxa_ativacao, cameras, portoes, portas, cancelas, catracas, totem_simples, totem_duplo, faciais_hik, faciais_avicam, dvr_nvr, tipo, sistema, filial, praca, status_implantacao, data_ativacao").order("created_at", { ascending: false }).limit(50),
       supabase.from("orcamento_regras_precificacao").select("*"),
       supabase.from("orcamento_sessoes").select("id, nome_cliente, vendedor_nome, status, proposta_gerada_at, created_at, endereco_condominio").order("created_at", { ascending: false }).limit(15),
       supabase.from("orcamento_mensagens").select("role, content, created_at, sessao_id").order("created_at", { ascending: false }).limit(50),
@@ -190,7 +190,7 @@ ${JSON.stringify((recentMensagens || []).slice(0, 30).map((m: any) => ({ role: m
         model: "google/gemini-3-flash-preview",
         messages: [
           { role: "system", content: systemPrompt },
-          ...messages,
+          ...messages.filter((m: any) => m && typeof m.content === "string").map((m: any) => ({ role: m.role === "assistant" ? "assistant" : "user", content: m.content })),
         ],
         stream: true,
       }),

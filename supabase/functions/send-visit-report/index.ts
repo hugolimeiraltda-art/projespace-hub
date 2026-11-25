@@ -11,6 +11,14 @@ const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 const RESEND_FROM_EMAIL = Deno.env.get("RESEND_FROM_EMAIL") || "Emive Visitas <noreply@eixopci.com.br>";
 
+function sanitizeHtml(html: string): string {
+  return String(html || "")
+    .replace(/<\s*(script|iframe|object|embed|form|base|meta|link)[^>]*>[\s\S]*?<\s*\/\s*\1\s*>/gi, "")
+    .replace(/<\s*(script|iframe|object|embed|form|base|meta|link)[^>]*\/?>/gi, "")
+    .replace(/\son[a-z]+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, "")
+    .replace(/(href|src)\s*=\s*("|')\s*(javascript|vbscript|data):[^"']*\2/gi, '$1="#"');
+}
+
 async function sendViaResend(to: string, subject: string, html: string) {
   if (!RESEND_API_KEY) throw new Error("RESEND_API_KEY not configured");
   const res = await fetch("https://api.resend.com/emails", {
@@ -60,6 +68,15 @@ serve(async (req) => {
 
     if (!sessao) throw new Error("Sessão não encontrada");
 
+    // Only the session's seller or privileged staff may send this report
+    const callerId = (claimsData.claims as any).sub as string;
+    if (sessao.vendedor_id !== callerId) {
+      const { data: roleRow } = await supabase.from("user_roles").select("role").eq("user_id", callerId).maybeSingle();
+      if (!roleRow || !["admin", "projetos", "gerente_comercial"].includes(roleRow.role)) {
+        return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+    }
+
     // Recipient is always the session's seller or the signed-in caller; arbitrary addresses are not allowed
     const callerEmail = (claimsData.claims as any).email as string | undefined;
     let targetEmail: string | undefined;
@@ -78,7 +95,7 @@ serve(async (req) => {
     await sendViaResend(
       targetEmail,
       `Relatório de Visita Técnica - ${sessao.nome_cliente}`,
-      html_content
+      sanitizeHtml(html_content)
     );
 
     await supabase

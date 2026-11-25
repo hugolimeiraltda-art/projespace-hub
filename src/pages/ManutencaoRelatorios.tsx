@@ -147,6 +147,7 @@ export default function ManutencaoRelatorios() {
   const mediaVisitasMes = mesesPeriodo > 0 ? Math.round(totalVisitas / mesesPeriodo * 10) / 10 : 0;
 
   // Export to CSV
+  const csvSafe = (v: unknown) => { const s = String(v ?? ''); return /^[=+\-@\t\r]/.test(s) ? `'${s}` : s; };
   const exportCSV = () => {
     const headers = ['Cliente', 'Contrato', 'Praça', 'Técnico', 'Data Agendada', 'Data Conclusão', 'Status'];
     const rows = filteredChamados.map(c => [
@@ -158,7 +159,7 @@ export default function ManutencaoRelatorios() {
       c.data_conclusao || '',
       c.status,
     ]);
-    const csv = [headers.join(';'), ...rows.map(r => r.join(';'))].join('\n');
+    const csv = [headers.join(';'), ...rows.map(r => r.map(v => `"${csvSafe(v).replace(/"/g, '""')}"`).join(';'))].join('\n');
     const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');

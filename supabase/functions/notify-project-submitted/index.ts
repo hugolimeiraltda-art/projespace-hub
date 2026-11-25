@@ -83,6 +83,17 @@ const handler = async (req: Request): Promise<Response> => {
     const vendedorEmail = body.vendedorEmail || '';
     const { cidade, estado, is_resubmission } = body;
 
+    if (!projectId || typeof projectId !== "string") {
+      return new Response(JSON.stringify({ error: "projectId obrigatório" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+    {
+      const userClient = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_ANON_KEY")!, { global: { headers: { Authorization: req.headers.get("Authorization")! } } });
+      const { data: canView } = await userClient.rpc("can_view_project", { _project_id: projectId });
+      if (!canView) {
+        return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+    }
+
     console.log("notify-project-submitted:", projectId, is_resubmission ? "(resubmission)" : "");
 
     const { data: projetosRoles, error: rolesError } = await supabaseAdmin

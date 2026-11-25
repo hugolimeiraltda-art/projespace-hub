@@ -43,6 +43,13 @@
       "when": 1795557760317,
       "tag": "0005_lock_profile_filial",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1795634477876,
+      "tag": "0006_eap_auto_sync_eixonoc",
+      "breakpoints": true
     }
   ]
 }

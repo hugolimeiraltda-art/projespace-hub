@@ -46,13 +46,15 @@ export default function VendedorHome() {
     setIsLoading(true);
 
     const thirtyDaysAgo = subDays(new Date(), 30).toISOString();
-    const { data: sessoesData } = await supabase
+    const canSeeAll = ['admin', 'projetos', 'gerente_comercial'].includes(user.role as string);
+    let q = supabase
       .from('orcamento_sessoes')
       .select('*')
-      .eq('vendedor_id', user.id)
       .neq('status', 'projeto_aberto')
       .gte('created_at', thirtyDaysAgo)
       .order('created_at', { ascending: false });
+    if (!canSeeAll) q = q.eq('vendedor_id', user.id);
+    const { data: sessoesData } = await q;
 
     if (sessoesData) setSessoes(sessoesData as Sessao[]);
     setIsLoading(false);

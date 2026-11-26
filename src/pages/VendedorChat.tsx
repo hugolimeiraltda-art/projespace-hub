@@ -69,12 +69,13 @@ export default function VendedorChat() {
     if (!user || !sessaoId) return;
 
     (async () => {
-      const { data: sessaoData } = await supabase
+      const canSeeAll = ['admin', 'projetos', 'gerente_comercial'].includes(user.role as string);
+      let sq = supabase
         .from('orcamento_sessoes')
         .select('id, vendedor_id, status, proposta_gerada')
-        .eq('id', sessaoId)
-        .eq('vendedor_id', user.id)
-        .single();
+        .eq('id', sessaoId);
+      if (!canSeeAll) sq = sq.eq('vendedor_id', user.id);
+      const { data: sessaoData } = await sq.single();
 
       if (!sessaoData) {
         setSessionValid(false);

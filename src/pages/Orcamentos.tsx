@@ -85,7 +85,7 @@ export default function Orcamentos() {
     setIsLoading(false);
   };
 
-  useEffect(() => { fetchData(); }, []);
+  useEffect(() => { if (user) fetchData(); }, [user?.id, user?.role]);
 
   useEffect(() => {
     if (isMobile) {

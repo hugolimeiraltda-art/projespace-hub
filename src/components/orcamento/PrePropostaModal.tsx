@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { catalogoEmpresa, kitDisponivel, somaPrecosKit, type EmpresaCatalogo } from '@/lib/catalog-company';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -25,6 +26,7 @@ export type PrePropostaItem = {
 };
 
 export type PrePropostaData = {
+  empresa?: EmpresaCatalogo;
   kits: PrePropostaItem[];
   avulsos: PrePropostaItem[];
   aproveitados: PrePropostaItem[];
@@ -82,15 +84,18 @@ export default function PrePropostaModal({ open, onClose, initialData, onConfirm
   }, [open, initialData]);
 
   const loadCatalog = async () => {
-    if (catalog.length > 0) return;
     setLoadingCatalog(true);
-    const [{ data: produtos }, { data: kits }] = await Promise.all([
-      supabase.from('orcamento_produtos').select('id, nome, codigo, id_produto, valor_locacao, valor_instalacao, categoria').eq('ativo', true),
-      supabase.from('orcamento_kits').select('id, nome, codigo, id_kit, valor_locacao, valor_instalacao, categoria').eq('ativo', true),
+    const empresa = initialData.empresa || 'emive';
+    const [{ data: produtos }, { data: kits }, { data: regras }] = await Promise.all([
+      supabase.from('orcamento_produtos').select('*').eq('ativo', true),
+      supabase.from('orcamento_kits').select('*, orcamento_kit_itens(quantidade, orcamento_produtos(*))').eq('ativo', true),
+      supabase.from('orcamento_regras_precificacao').select('campo, percentual'),
     ]);
+    const regraMap = Object.fromEntries((regras || []).map(r => [r.campo, Number(r.percentual)]));
+    const kitsValidos = (kits || []).filter(k => kitDisponivel(k, k.orcamento_kit_itens.map(i => i.orcamento_produtos || { ativo: false }), empresa)).map(k => ({ ...k, ...somaPrecosKit(k.orcamento_kit_itens.map(i => ({ quantidade: i.quantidade, produto: i.orcamento_produtos || undefined }))) }));
     const items: CatalogItem[] = [
-      ...(produtos || []).map(p => ({ ...p, type: 'produto' as const, valor_locacao: p.valor_locacao || 0, valor_instalacao: p.valor_instalacao || 0 })),
-      ...(kits || []).map(k => ({ ...k, type: 'kit' as const, id_kit: k.id_kit, valor_locacao: k.valor_locacao || 0, valor_instalacao: k.valor_instalacao || 0 })),
+      ...catalogoEmpresa(produtos || [], empresa, regraMap).map(p => ({ ...p, codigo: p.codigo || undefined, id_produto: p.id_produto ?? undefined, type: 'produto' as const })),
+      ...catalogoEmpresa(kitsValidos, empresa, regraMap).map(k => ({ ...k, codigo: k.codigo || undefined, id_kit: k.id_kit ?? undefined, type: 'kit' as const })),
     ];
     setCatalog(items);
     setLoadingCatalog(false);

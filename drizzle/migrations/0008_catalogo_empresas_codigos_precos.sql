@@ -1,0 +1,8 @@
+ALTER TABLE public.orcamento_produtos ADD COLUMN codigo_srv text, ADD COLUMN disponibilidade text NOT NULL DEFAULT 'ambas', ADD COLUMN valor_venda_graber numeric, ADD COLUMN valor_locacao_graber numeric;
+ALTER TABLE public.orcamento_kits ADD COLUMN codigo_srv text, ADD COLUMN disponibilidade text NOT NULL DEFAULT 'ambas', ADD COLUMN valor_venda_graber numeric, ADD COLUMN valor_locacao_graber numeric;
+ALTER TABLE public.orcamento_produtos ADD CONSTRAINT produtos_disponibilidade_empresa CHECK (disponibilidade IN ('ambas','emive','graber')), ADD CONSTRAINT produtos_precos_graber_validos CHECK ((valor_venda_graber IS NULL OR valor_venda_graber >= 0) AND (valor_locacao_graber IS NULL OR valor_locacao_graber >= 0));
+ALTER TABLE public.orcamento_kits ADD CONSTRAINT kits_disponibilidade_empresa CHECK (disponibilidade IN ('ambas','emive','graber')), ADD CONSTRAINT kits_precos_graber_validos CHECK ((valor_venda_graber IS NULL OR valor_venda_graber >= 0) AND (valor_locacao_graber IS NULL OR valor_locacao_graber >= 0));
+COMMENT ON COLUMN public.orcamento_produtos.valor_minimo IS 'DEPRECATED: commercial prices are determined by proposal pricing rules';
+COMMENT ON COLUMN public.orcamento_produtos.valor_minimo_locacao IS 'DEPRECATED: commercial prices are determined by proposal pricing rules';
+COMMENT ON COLUMN public.orcamento_kits.valor_minimo IS 'DEPRECATED: commercial prices are determined by proposal pricing rules';
+COMMENT ON COLUMN public.orcamento_kits.valor_minimo_locacao IS 'DEPRECATED: commercial prices are determined by proposal pricing rules';

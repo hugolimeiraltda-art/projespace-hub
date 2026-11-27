@@ -58,8 +58,8 @@ serve(async (req) => {
       { count: totalMidias },
       { count: propostasGeradas },
     ] = await Promise.all([
-      supabase.from("orcamento_produtos").select("id_produto, codigo, nome, categoria, subgrupo, unidade, preco_unitario, valor_minimo, valor_locacao, valor_minimo_locacao, valor_instalacao, descricao, adicional, qtd_max").eq("ativo", true).order("categoria").order("nome"),
-      supabase.from("orcamento_kits").select("id_kit, codigo, nome, categoria, preco_kit, valor_minimo, valor_locacao, valor_minimo_locacao, valor_instalacao, descricao, descricao_uso, palavras_chave, regras_condicionais, orcamento_kit_itens(quantidade, orcamento_produtos(codigo, nome, preco_unitario))").eq("ativo", true).order("categoria").order("nome"),
+      supabase.from("orcamento_produtos").select("id_produto, codigo, codigo_srv, disponibilidade, valor_venda_graber, valor_locacao_graber, nome, categoria, subgrupo, unidade, preco_unitario, valor_locacao, valor_instalacao, descricao, adicional, qtd_max").eq("ativo", true).order("categoria").order("nome"),
+      supabase.from("orcamento_kits").select("id_kit, codigo, codigo_srv, disponibilidade, valor_venda_graber, valor_locacao_graber, nome, categoria, preco_kit, valor_locacao, valor_instalacao, descricao, descricao_uso, palavras_chave, regras_condicionais, orcamento_kit_itens(quantidade, orcamento_produtos(codigo, codigo_srv, nome, preco_unitario, valor_venda_graber, valor_locacao_graber, disponibilidade))").eq("ativo", true).order("categoria").order("nome"),
       authClient.from("customer_portfolio").select("razao_social, contrato, unidades, mensalidade, taxa_ativacao, cameras, portoes, portas, cancelas, catracas, totem_simples, totem_duplo, faciais_hik, faciais_avicam, dvr_nvr, tipo, sistema, filial, praca, status_implantacao, data_ativacao").order("created_at", { ascending: false }).limit(50),
       supabase.from("orcamento_regras_precificacao").select("*"),
       supabase.from("orcamento_sessoes").select("id, nome_cliente, vendedor_nome, status, proposta_gerada_at, created_at, endereco_condominio").order("created_at", { ascending: false }).limit(15),
@@ -142,11 +142,12 @@ Poste com até 4 câmeras + vídeo analítico + gravação nuvem 7 dias + IA (de
 
 ## CATÁLOGO COMPLETO DE PRODUTOS (${(produtos || []).length} ativos):
 
-${JSON.stringify((produtos || []).map((p: any) => ({ codigo: p.codigo, nome: p.nome, categoria: p.categoria, subgrupo: p.subgrupo, preco: p.preco_unitario, minimo: p.valor_minimo, locacao: p.valor_locacao, min_locacao: p.valor_minimo_locacao, instalacao: p.valor_instalacao, unidade: p.unidade, descricao: p.descricao, adicional: p.adicional, qtd_max: p.qtd_max })), null, 2)}
+Identificadores: ID SB = Salesboom, COD SK = Sankhya/Emive, COD SRV = Service/Graber. Graber atende SPO; Emive atende as demais praças. Respeite a disponibilidade. Preço Graber nulo significa pendente, nunca copie o preço Emive. Mínimos fixos do catálogo foram descontinuados; use regras comerciais na proposta.
+${JSON.stringify((produtos || []).map((p: any) => ({ id_sb: p.id_produto, cod_sk: p.codigo, cod_srv: p.codigo_srv, disponibilidade: p.disponibilidade, venda_emive: p.preco_unitario, locacao_emive: p.valor_locacao, venda_graber: p.valor_venda_graber, locacao_graber: p.valor_locacao_graber, nome: p.nome, categoria: p.categoria, subgrupo: p.subgrupo, instalacao_emive: p.valor_instalacao, unidade: p.unidade, descricao: p.descricao, adicional: p.adicional, qtd_max: p.qtd_max })), null, 2)}
 
 ## KITS DE EQUIPAMENTOS (${(kits || []).length} ativos) — COM REGRAS DE USO:
 
-${JSON.stringify((kits || []).map((k: any) => ({ codigo: k.codigo, nome: k.nome, categoria: k.categoria, preco: k.preco_kit, minimo: k.valor_minimo, locacao: k.valor_locacao, instalacao: k.valor_instalacao, descricao: k.descricao, descricao_uso: k.descricao_uso, palavras_chave: k.palavras_chave, regras_condicionais: k.regras_condicionais, itens: (k.orcamento_kit_itens || []).map((i: any) => ({ produto: i.orcamento_produtos?.nome, codigo: i.orcamento_produtos?.codigo, qtd: i.quantidade, preco_un: i.orcamento_produtos?.preco_unitario })) })), null, 2)}
+${JSON.stringify((kits || []).map((k: any) => ({ id_sb: k.id_kit, cod_sk: k.codigo, cod_srv: k.codigo_srv, disponibilidade: k.disponibilidade, venda_emive: k.preco_kit, locacao_emive: k.valor_locacao, venda_graber: k.valor_venda_graber, locacao_graber: k.valor_locacao_graber, nome: k.nome, categoria: k.categoria, instalacao_emive: k.valor_instalacao, descricao: k.descricao, descricao_uso: k.descricao_uso, palavras_chave: k.palavras_chave, regras_condicionais: k.regras_condicionais, itens: (k.orcamento_kit_itens || []).map((i: any) => ({ produto: i.orcamento_produtos?.nome, cod_sk: i.orcamento_produtos?.codigo, cod_srv: i.orcamento_produtos?.codigo_srv, qtd: i.quantidade, venda_emive: i.orcamento_produtos?.preco_unitario, venda_graber: i.orcamento_produtos?.valor_venda_graber, disponibilidade: i.orcamento_produtos?.disponibilidade })) })), null, 2)}
 
 ## REGRAS DE PRECIFICAÇÃO:
 

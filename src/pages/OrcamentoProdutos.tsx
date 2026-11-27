@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { disponibilidadeLabel, disponivelPara, somaPrecosKit } from '@/lib/catalog-company';
 import { useMenuPermissions } from '@/hooks/useMenuPermissions';
 import { Layout } from '@/components/Layout';
 import { Button } from '@/components/ui/button';
@@ -89,13 +90,15 @@ interface Produto {
   categoria: string;
   subgrupo: string | null;
   codigo: string | null;
+  codigo_srv: string | null;
+  disponibilidade: string;
+  valor_venda_graber: number | null;
+  valor_locacao_graber: number | null;
   preco_unitario: number;
   unidade: string;
   qtd_max: number;
-  valor_minimo: number;
   valor_locacao: number;
   valor_instalacao: number;
-  valor_minimo_locacao: number;
   pontuacao: number;
   adicional: boolean;
   ativo: boolean;
@@ -105,14 +108,17 @@ interface Produto {
 
 interface Kit {
   id: string;
+  id_kit: number | null;
   nome: string;
   descricao: string | null;
   categoria: string;
   codigo: string | null;
+  codigo_srv: string | null;
+  disponibilidade: string;
+  valor_venda_graber: number | null;
+  valor_locacao_graber: number | null;
   preco_kit: number;
-  valor_minimo: number;
   valor_locacao: number;
-  valor_minimo_locacao: number;
   valor_instalacao: number;
   ativo: boolean;
   historico_alteracoes?: any[];
@@ -132,29 +138,33 @@ export default function OrcamentoProdutos() {
   const [filterGrupo, setFilterGrupo] = useState<string>('all');
   const [filterSubgrupo, setFilterSubgrupo] = useState<string>('all');
   const [filterAdicional, setFilterAdicional] = useState<string>('all');
+  const [filterDisponibilidade, setFilterDisponibilidade] = useState('all');
+  const [filterKitDisponibilidade, setFilterKitDisponibilidade] = useState('all');
   const [filterAtivo, setFilterAtivo] = useState<string>('all');
   const [sortField, setSortField] = useState<string>('nome');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
 
-  type ColKey = 'id_produto' | 'codigo' | 'nome' | 'grupo' | 'subgrupo' | 'unidade' | 'qtd_max' | 'valor_atual' | 'valor_minimo' | 'valor_locacao' | 'valor_min_locacao' | 'valor_instalacao' | 'pontuacao' | 'adicional' | 'ativo';
+  type ColKey = 'codigo_srv' | 'disponibilidade' | 'valor_venda_graber' | 'valor_locacao_graber' | 'id_produto' | 'codigo' | 'nome' | 'grupo' | 'subgrupo' | 'unidade' | 'qtd_max' | 'valor_atual' | 'valor_locacao' | 'valor_instalacao' | 'pontuacao' | 'adicional' | 'ativo';
   const ALL_COLUMNS: { key: ColKey; label: string }[] = [
-    { key: 'id_produto', label: 'Id' },
-    { key: 'codigo', label: 'Código' },
+    { key: 'id_produto', label: 'ID SB' },
+    { key: 'codigo', label: 'COD SK' },
+    { key: 'codigo_srv', label: 'COD SRV' },
+    { key: 'disponibilidade', label: 'Disponibilidade' },
+    { key: 'valor_venda_graber', label: 'Venda Graber' },
+    { key: 'valor_locacao_graber', label: 'Locação Graber' },
     { key: 'nome', label: 'Nome' },
     { key: 'grupo', label: 'Grupo' },
     { key: 'subgrupo', label: 'Subgrupo' },
     { key: 'unidade', label: 'Unidade' },
     { key: 'qtd_max', label: 'Qtd Máx' },
-    { key: 'valor_atual', label: 'Valor Atual' },
-    { key: 'valor_minimo', label: 'Valor Mínimo' },
-    { key: 'valor_locacao', label: 'Valor Locação' },
-    { key: 'valor_min_locacao', label: 'Valor Mín. Loc.' },
+    { key: 'valor_atual', label: 'Venda Emive' },
+    { key: 'valor_locacao', label: 'Locação Emive' },
     { key: 'valor_instalacao', label: 'Valor Instalação' },
     { key: 'pontuacao', label: 'Pontuação' },
     { key: 'adicional', label: 'Adicional' },
     { key: 'ativo', label: 'Ativo' },
   ];
-  const [visibleCols, setVisibleCols] = useState<Set<ColKey>>(new Set(['id_produto', 'codigo', 'nome', 'grupo', 'subgrupo', 'unidade', 'valor_atual', 'valor_minimo', 'valor_locacao', 'valor_min_locacao', 'valor_instalacao', 'pontuacao', 'adicional', 'ativo']));
+  const [visibleCols, setVisibleCols] = useState<Set<ColKey>>(new Set(['codigo_srv', 'disponibilidade', 'valor_venda_graber', 'valor_locacao_graber', 'id_produto', 'codigo', 'nome', 'grupo', 'subgrupo', 'unidade', 'valor_atual', 'valor_locacao', 'valor_instalacao', 'pontuacao', 'adicional', 'ativo']));
 
   // Kit filters & sorting (Excel-style per-column)
   const [kitColumnFilters, setKitColumnFilters] = useState<Record<string, string>>({});
@@ -184,9 +194,8 @@ export default function OrcamentoProdutos() {
   };
 
   const getKitTotals = (k: Kit) => {
-    const t = { atual: 0, minimo: 0, locacao: 0, minLocacao: 0, instalacao: 0 };
-    k.itens?.forEach(i => { if (i.produto) { t.atual += (i.produto.preco_unitario || 0) * i.quantidade; t.minimo += (i.produto.valor_minimo || 0) * i.quantidade; t.locacao += (i.produto.valor_locacao || 0) * i.quantidade; t.minLocacao += (i.produto.valor_minimo_locacao || 0) * i.quantidade; t.instalacao += (i.produto.valor_instalacao || 0) * i.quantidade; } });
-    return t;
+    const t = somaPrecosKit(k.itens || []);
+    return { atual: t.preco_kit, locacao: t.valor_locacao, instalacao: t.valor_instalacao, vendaGraber: t.valor_venda_graber, locacaoGraber: t.valor_locacao_graber };
   };
 
   const getKitUniqueValues = (col: string) => {
@@ -201,6 +210,7 @@ export default function OrcamentoProdutos() {
   const filteredKits = useMemo(() => {
     try {
       let result = [...kits];
+      if (filterKitDisponibilidade !== 'all') result = result.filter(k => k.disponibilidade === filterKitDisponibilidade);
 
       // Global search filter
       if (kitSearchTerm.trim()) {
@@ -209,6 +219,7 @@ export default function OrcamentoProdutos() {
           (k.nome || '').toLowerCase().includes(lower) ||
           ((k as any).id_kit?.toString() || '').includes(lower) ||
           (k.codigo || '').toLowerCase().includes(lower) ||
+          (k.codigo_srv || '').toLowerCase().includes(lower) ||
           catLabel(k.categoria || '').toLowerCase().includes(lower)
         );
       }
@@ -221,13 +232,16 @@ export default function OrcamentoProdutos() {
             const t = getKitTotals(k);
             switch (col) {
               case 'id_kit': return ((k as any).id_kit?.toString() || '').includes(lower);
+              case 'codigo': return (k.codigo || '').toLowerCase().includes(lower);
+              case 'codigo_srv': return (k.codigo_srv || '').toLowerCase().includes(lower);
+              case 'disponibilidade': return disponibilidadeLabel(k.disponibilidade).toLowerCase().includes(lower);
+              case 'vendaGraber': return formatBRL(t.vendaGraber ?? 0).includes(val);
+              case 'locacaoGraber': return formatBRL(t.locacaoGraber ?? 0).includes(val);
               case 'nome': return (k.nome || '').toLowerCase().includes(lower);
               case 'categoria': return catLabel(k.categoria || '').toLowerCase().includes(lower);
               case 'itens': return (k.itens?.length || 0).toString().includes(val);
               case 'atual': return t.atual.toLocaleString('pt-BR', { minimumFractionDigits: 2 }).includes(val);
-              case 'minimo': return t.minimo.toLocaleString('pt-BR', { minimumFractionDigits: 2 }).includes(val);
               case 'locacao': return t.locacao.toLocaleString('pt-BR', { minimumFractionDigits: 2 }).includes(val);
-              case 'minLocacao': return t.minLocacao.toLocaleString('pt-BR', { minimumFractionDigits: 2 }).includes(val);
               case 'instalacao': return t.instalacao.toLocaleString('pt-BR', { minimumFractionDigits: 2 }).includes(val);
               case 'ativo': return (k.ativo ? 'Ativo' : 'Inativo').toLowerCase().includes(lower);
               default: return true;
@@ -242,13 +256,16 @@ export default function OrcamentoProdutos() {
           const ta = getKitTotals(a), tb = getKitTotals(b);
           switch (kitSortField) {
             case 'id_kit': va = (a as any).id_kit || 0; vb = (b as any).id_kit || 0; break;
+            case 'codigo': va = a.codigo || ''; vb = b.codigo || ''; break;
+            case 'codigo_srv': va = a.codigo_srv || ''; vb = b.codigo_srv || ''; break;
+            case 'disponibilidade': va = a.disponibilidade; vb = b.disponibilidade; break;
+            case 'vendaGraber': va = ta.vendaGraber ?? -1; vb = tb.vendaGraber ?? -1; break;
+            case 'locacaoGraber': va = ta.locacaoGraber ?? -1; vb = tb.locacaoGraber ?? -1; break;
             case 'nome': va = (a.nome || '').toLowerCase(); vb = (b.nome || '').toLowerCase(); break;
             case 'categoria': va = a.categoria || ''; vb = b.categoria || ''; break;
             case 'itens': va = a.itens?.length || 0; vb = b.itens?.length || 0; break;
             case 'atual': va = ta.atual; vb = tb.atual; break;
-            case 'minimo': va = ta.minimo; vb = tb.minimo; break;
             case 'locacao': va = ta.locacao; vb = tb.locacao; break;
-            case 'minLocacao': va = ta.minLocacao; vb = tb.minLocacao; break;
             case 'instalacao': va = ta.instalacao; vb = tb.instalacao; break;
             case 'ativo': va = a.ativo ? 1 : 0; vb = b.ativo ? 1 : 0; break;
             default: va = (a.nome || '').toLowerCase(); vb = (b.nome || '').toLowerCase();
@@ -263,10 +280,10 @@ export default function OrcamentoProdutos() {
       console.error('Error filtering kits:', e);
       return kits;
     }
-  }, [kits, kitColumnFilters, kitSearchTerm, kitSortField, kitSortDir]);
+  }, [kits, filterKitDisponibilidade, kitColumnFilters, kitSearchTerm, kitSortField, kitSortDir]);
 
-  const hasKitFilters = Object.keys(kitColumnFilters).length > 0 || kitSearchTerm.trim() !== '';
-  const clearKitFilters = () => { setKitColumnFilters({}); setKitSearchTerm(''); };
+  const hasKitFilters = filterKitDisponibilidade !== 'all' || Object.keys(kitColumnFilters).length > 0 || kitSearchTerm.trim() !== '';
+  const clearKitFilters = () => { setKitColumnFilters({}); setKitSearchTerm(''); setFilterKitDisponibilidade('all'); };
 
   const renderKitColHeader = (col: string, label: string, align: 'left' | 'right' | 'center' = 'left') => {
     const hasFilter = !!kitColumnFilters[col];
@@ -328,9 +345,12 @@ export default function OrcamentoProdutos() {
       result = result.filter(p =>
         p.nome.toLowerCase().includes(term) ||
         (p.codigo && p.codigo.toLowerCase().includes(term)) ||
+        (p.codigo_srv || '').toLowerCase().includes(term) ||
+        String(p.id_produto ?? '').includes(term) ||
         (p.descricao && p.descricao.toLowerCase().includes(term))
       );
     }
+    if (filterDisponibilidade !== 'all') result = result.filter(p => p.disponibilidade === filterDisponibilidade);
     if (filterGrupo !== 'all') result = result.filter(p => p.categoria === filterGrupo);
     if (filterSubgrupo !== 'all') result = result.filter(p => p.subgrupo === filterSubgrupo);
     if (filterAdicional !== 'all') result = result.filter(p => filterAdicional === 'sim' ? p.adicional : !p.adicional);
@@ -341,15 +361,17 @@ export default function OrcamentoProdutos() {
       switch (sortField) {
         case 'id_produto': va = a.id_produto || 0; vb = b.id_produto || 0; break;
         case 'codigo': va = a.codigo || ''; vb = b.codigo || ''; break;
+        case 'codigo_srv': va = a.codigo_srv || ''; vb = b.codigo_srv || ''; break;
+        case 'disponibilidade': va = a.disponibilidade; vb = b.disponibilidade; break;
+        case 'valor_venda_graber': va = a.valor_venda_graber ?? -1; vb = b.valor_venda_graber ?? -1; break;
+        case 'valor_locacao_graber': va = a.valor_locacao_graber ?? -1; vb = b.valor_locacao_graber ?? -1; break;
         case 'nome': va = a.nome; vb = b.nome; break;
         case 'grupo': va = a.categoria; vb = b.categoria; break;
         case 'subgrupo': va = a.subgrupo || ''; vb = b.subgrupo || ''; break;
         case 'unidade': va = a.unidade || ''; vb = b.unidade || ''; break;
         case 'qtd_max': va = a.qtd_max || 0; vb = b.qtd_max || 0; break;
         case 'valor_atual': va = a.preco_unitario; vb = b.preco_unitario; break;
-        case 'valor_minimo': va = a.valor_minimo; vb = b.valor_minimo; break;
         case 'valor_locacao': va = a.valor_locacao || 0; vb = b.valor_locacao || 0; break;
-        case 'valor_min_locacao': va = a.valor_minimo_locacao || 0; vb = b.valor_minimo_locacao || 0; break;
         case 'valor_instalacao': va = a.valor_instalacao || 0; vb = b.valor_instalacao || 0; break;
         case 'pontuacao': va = a.pontuacao || 0; vb = b.pontuacao || 0; break;
         case 'adicional': va = a.adicional ? 1 : 0; vb = b.adicional ? 1 : 0; break;
@@ -362,50 +384,34 @@ export default function OrcamentoProdutos() {
       return 0;
     });
     return result;
-  }, [produtos, searchTerm, filterGrupo, filterSubgrupo, filterAdicional, filterAtivo, sortField, sortDir]);
+  }, [produtos, filterDisponibilidade, searchTerm, filterGrupo, filterSubgrupo, filterAdicional, filterAtivo, sortField, sortDir]);
 
-  const hasActiveFilters = searchTerm || filterGrupo !== 'all' || filterSubgrupo !== 'all' || filterAdicional !== 'all' || filterAtivo !== 'all';
-  const clearFilters = () => { setSearchTerm(''); setFilterGrupo('all'); setFilterSubgrupo('all'); setFilterAdicional('all'); setFilterAtivo('all'); };
+  const hasActiveFilters = filterDisponibilidade !== 'all' || searchTerm || filterGrupo !== 'all' || filterSubgrupo !== 'all' || filterAdicional !== 'all' || filterAtivo !== 'all';
+  const clearFilters = () => { setSearchTerm(''); setFilterDisponibilidade('all'); setFilterGrupo('all'); setFilterSubgrupo('all'); setFilterAdicional('all'); setFilterAtivo('all'); };
 
   const [showProdutoForm, setShowProdutoForm] = useState(false);
   const [editProduto, setEditProduto] = useState<Produto | null>(null);
-  const [pForm, setPForm] = useState({ nome: '', descricao: '', categoria: 'Smartportaria', subgrupo: '', codigo: '', id_produto: '', preco_unitario: '', unidade: 'un', qtd_max: '', valor_minimo: '', valor_locacao: '', valor_instalacao: '', valor_minimo_locacao: '', pontuacao: '', adicional: false });
+  const [pForm, setPForm] = useState({ nome: '', descricao: '', categoria: 'Smartportaria', subgrupo: '', codigo: '', codigo_srv: '', disponibilidade: 'ambas', valor_venda_graber: '', valor_locacao_graber: '', id_produto: '', preco_unitario: '', unidade: 'un', qtd_max: '', valor_locacao: '', valor_instalacao: '', pontuacao: '', adicional: false });
 
   // Kit form
   const [showKitForm, setShowKitForm] = useState(false);
   const [editKit, setEditKit] = useState<Kit | null>(null);
   const [viewKit, setViewKit] = useState<Kit | null>(null);
-  const [kForm, setKForm] = useState({ nome: '', descricao: '', categoria: 'Smartportaria', codigo: '', preco_kit: '', valor_minimo: '', valor_locacao: '', valor_minimo_locacao: '', valor_instalacao: '' });
+  const [kForm, setKForm] = useState({ nome: '', descricao: '', categoria: 'Smartportaria', codigo: '', codigo_srv: '', disponibilidade: 'ambas', valor_venda_graber: '', valor_locacao_graber: '', preco_kit: '', valor_locacao: '', valor_instalacao: '' });
+  const [kitIdSB, setKitIdSB] = useState('');
   const [kitItens, setKitItens] = useState<{ produto_id: string; quantidade: number }[]>([]);
 
   // Auto-calculate kit prices from products
   const recalcKitPrices = (itens: { produto_id: string; quantidade: number }[]) => {
-    let totalAtual = 0, totalMinimo = 0, totalLocacao = 0, totalMinLocacao = 0, totalInstalacao = 0;
-    itens.forEach(item => {
-      const prod = produtos.find(p => p.id === item.produto_id);
-      if (prod) {
-        totalAtual += (prod.preco_unitario || 0) * item.quantidade;
-        totalMinimo += (prod.valor_minimo || 0) * item.quantidade;
-        totalLocacao += (prod.valor_locacao || 0) * item.quantidade;
-        totalMinLocacao += (prod.valor_minimo_locacao || 0) * item.quantidade;
-        totalInstalacao += (prod.valor_instalacao || 0) * item.quantidade;
-      }
-    });
-    setKForm(prev => ({
-      ...prev,
-      preco_kit: formatBRL(totalAtual),
-      valor_minimo: formatBRL(totalMinimo),
-      valor_locacao: formatBRL(totalLocacao),
-      valor_minimo_locacao: formatBRL(totalMinLocacao),
-      valor_instalacao: formatBRL(totalInstalacao),
-    }));
+    const totals = somaPrecosKit(itens.map(i => ({ quantidade: i.quantidade, produto: produtos.find(p => p.id === i.produto_id) })));
+    setKForm(prev => ({ ...prev, preco_kit: formatBRL(totals.preco_kit), valor_locacao: formatBRL(totals.valor_locacao), valor_instalacao: formatBRL(totals.valor_instalacao), valor_venda_graber: totals.valor_venda_graber == null ? '' : formatBRL(totals.valor_venda_graber), valor_locacao_graber: totals.valor_locacao_graber == null ? '' : formatBRL(totals.valor_locacao_graber) }));
   };
 
   const [deleteTarget, setDeleteTarget] = useState<{ type: 'produto' | 'kit'; id: string } | null>(null);
 
   // Pricing rules from DB
   const [pricingRules, setPricingRules] = useState<Record<string, number>>({
-    valor_minimo: 90, valor_locacao: 3.57, valor_minimo_locacao: 90, valor_instalacao: 10,
+    valor_locacao: 3.57, valor_instalacao: 10,
   });
 
   const fetchAll = async () => {
@@ -452,11 +458,12 @@ export default function OrcamentoProdutos() {
     setPForm({
       nome: p.nome, descricao: p.descricao || '', categoria: p.categoria,
       subgrupo: p.subgrupo || '', codigo: p.codigo || '',
+      codigo_srv: p.codigo_srv || '', disponibilidade: p.disponibilidade, valor_venda_graber: p.valor_venda_graber == null ? '' : formatBRL(p.valor_venda_graber), valor_locacao_graber: p.valor_locacao_graber == null ? '' : formatBRL(p.valor_locacao_graber),
       id_produto: p.id_produto != null ? String(p.id_produto) : '',
       preco_unitario: formatBRL(p.preco_unitario), unidade: p.unidade,
-      qtd_max: String(p.qtd_max || ''), valor_minimo: formatBRL(p.valor_minimo || 0),
+      qtd_max: String(p.qtd_max || ''),
       valor_locacao: formatBRL(p.valor_locacao || 0),
-      valor_instalacao: formatBRL(p.valor_instalacao || 0), valor_minimo_locacao: formatBRL(p.valor_minimo_locacao || 0),
+      valor_instalacao: formatBRL(p.valor_instalacao || 0),
       pontuacao: String(p.pontuacao || ''),
       adicional: p.adicional || false,
     });
@@ -471,14 +478,17 @@ export default function OrcamentoProdutos() {
       categoria: pForm.categoria,
       subgrupo: pForm.subgrupo.trim() || null,
       codigo: pForm.codigo.trim() || null,
+      codigo_srv: pForm.codigo_srv.trim() || null, disponibilidade: pForm.disponibilidade,
+      valor_venda_graber: pForm.valor_venda_graber.trim() === '' ? null : Number(parseBRL(pForm.valor_venda_graber)),
+      valor_locacao_graber: pForm.valor_locacao_graber.trim() === '' ? null : Number(parseBRL(pForm.valor_locacao_graber)),
       id_produto: pForm.id_produto ? parseInt(pForm.id_produto) : null,
       preco_unitario: parseFloat(parseBRL(pForm.preco_unitario)) || 0,
       unidade: pForm.unidade,
       qtd_max: parseInt(pForm.qtd_max) || 0,
-      valor_minimo: parseFloat(parseBRL(pForm.valor_minimo)) || 0,
+
       valor_locacao: parseFloat(parseBRL(pForm.valor_locacao)) || 0,
       valor_instalacao: parseFloat(parseBRL(pForm.valor_instalacao)) || 0,
-      valor_minimo_locacao: parseFloat(parseBRL(pForm.valor_minimo_locacao)) || 0,
+
       pontuacao: parseFloat(pForm.pontuacao) || 0,
       adicional: pForm.adicional,
       updated_by: user?.id,
@@ -491,9 +501,9 @@ export default function OrcamentoProdutos() {
       const old = editProduto;
       if (payload.nome !== old.nome) changes.push(`Nome: "${old.nome}" → "${payload.nome}"`);
       if (payload.codigo !== old.codigo) changes.push(`Código: "${old.codigo || ''}" → "${payload.codigo || ''}"`);
+      for (const field of ['codigo_srv', 'disponibilidade', 'valor_venda_graber', 'valor_locacao_graber'] as const) { if (payload[field] !== old[field]) changes.push(`${field}: ${old[field] ?? 'Pendente'} → ${payload[field] ?? 'Pendente'}`); }
       if (payload.categoria !== old.categoria) changes.push(`Grupo: ${old.categoria} → ${payload.categoria}`);
       if (payload.preco_unitario !== old.preco_unitario) changes.push(`Valor Atual: ${formatBRL(old.preco_unitario)} → ${formatBRL(payload.preco_unitario)}`);
-      if (payload.valor_minimo !== old.valor_minimo) changes.push(`Valor Mínimo: ${formatBRL(old.valor_minimo)} → ${formatBRL(payload.valor_minimo)}`);
       if (payload.valor_locacao !== (old.valor_locacao || 0)) changes.push(`Valor Locação: ${formatBRL(old.valor_locacao || 0)} → ${formatBRL(payload.valor_locacao)}`);
       if (payload.valor_instalacao !== (old.valor_instalacao || 0)) changes.push(`Valor Instalação: ${formatBRL(old.valor_instalacao || 0)} → ${formatBRL(payload.valor_instalacao)}`);
       if (payload.pontuacao !== (old.pontuacao || 0)) changes.push(`Pontuação: ${old.pontuacao || 0} → ${payload.pontuacao}`);
@@ -530,10 +540,6 @@ export default function OrcamentoProdutos() {
         return;
       }
     }
-    // Recalculate kit prices if editing a product (price may have changed)
-    if (editProduto) {
-      await recalcAllKitPrices();
-    }
     setShowProdutoForm(false);
     setEditProduto(null);
     resetPForm();
@@ -541,46 +547,24 @@ export default function OrcamentoProdutos() {
     toast({ title: editProduto ? 'Produto atualizado' : 'Produto criado' });
   };
 
-  const resetPForm = () => setPForm({ nome: '', descricao: '', categoria: 'Smartportaria', subgrupo: '', codigo: '', id_produto: '', preco_unitario: '', unidade: 'un', qtd_max: '', valor_minimo: '', valor_locacao: '', valor_instalacao: '', valor_minimo_locacao: '', pontuacao: '', adicional: false });
-
-  // Recalculate all kit prices based on current product prices
-  const recalcAllKitPrices = async () => {
-    const { data: allKitItens } = await supabase.from('orcamento_kit_itens').select('kit_id, produto_id, quantidade');
-    const { data: allProdutos } = await supabase.from('orcamento_produtos').select('id, preco_unitario, valor_minimo, valor_locacao, valor_minimo_locacao, valor_instalacao');
-    if (!allKitItens || !allProdutos) return;
-
-    const prodMap = new Map(allProdutos.map(p => [p.id, p]));
-    const kitTotals = new Map<string, { preco_kit: number; valor_minimo: number; valor_locacao: number; valor_minimo_locacao: number; valor_instalacao: number }>();
-
-    allKitItens.forEach(item => {
-      const prod = prodMap.get(item.produto_id);
-      if (!prod) return;
-      const existing = kitTotals.get(item.kit_id) || { preco_kit: 0, valor_minimo: 0, valor_locacao: 0, valor_minimo_locacao: 0, valor_instalacao: 0 };
-      existing.preco_kit += (prod.preco_unitario || 0) * item.quantidade;
-      existing.valor_minimo += (prod.valor_minimo || 0) * item.quantidade;
-      existing.valor_locacao += (prod.valor_locacao || 0) * item.quantidade;
-      existing.valor_minimo_locacao += (prod.valor_minimo_locacao || 0) * item.quantidade;
-      existing.valor_instalacao += (prod.valor_instalacao || 0) * item.quantidade;
-      kitTotals.set(item.kit_id, existing);
-    });
-
-    for (const [kitId, totals] of kitTotals) {
-      await supabase.from('orcamento_kits').update(totals).eq('id', kitId);
-    }
-  };
+  const resetPForm = () => setPForm({ nome: '', descricao: '', categoria: 'Smartportaria', subgrupo: '', codigo: '', codigo_srv: '', disponibilidade: 'ambas', valor_venda_graber: '', valor_locacao_graber: '', id_produto: '', preco_unitario: '', unidade: 'un', qtd_max: '', valor_locacao: '', valor_instalacao: '', pontuacao: '', adicional: false });
 
   // ---- Kit CRUD ----
   const openKitEdit = (k: Kit) => {
     setEditKit(k);
+    setKitIdSB(k.id_kit == null ? '' : String(k.id_kit));
     const itens = k.itens?.map(i => ({ produto_id: i.produto_id, quantidade: i.quantidade })) || [];
-    setKForm({ nome: k.nome, descricao: k.descricao || '', categoria: k.categoria, codigo: (k as any).codigo || '', preco_kit: formatBRL(k.preco_kit), valor_minimo: formatBRL(k.valor_minimo || 0), valor_locacao: formatBRL(k.valor_locacao || 0), valor_minimo_locacao: formatBRL(k.valor_minimo_locacao || 0), valor_instalacao: formatBRL(k.valor_instalacao || 0) });
+    setKForm({ nome: k.nome, descricao: k.descricao || '', categoria: k.categoria, codigo: k.codigo || '', codigo_srv: k.codigo_srv || '', disponibilidade: k.disponibilidade, valor_venda_graber: k.valor_venda_graber == null ? '' : formatBRL(k.valor_venda_graber), valor_locacao_graber: k.valor_locacao_graber == null ? '' : formatBRL(k.valor_locacao_graber), preco_kit: formatBRL(k.preco_kit), valor_locacao: formatBRL(k.valor_locacao || 0), valor_instalacao: formatBRL(k.valor_instalacao || 0) });
     setKitItens(itens);
     setShowKitForm(true);
   };
 
   const saveKit = async () => {
     if (!kForm.nome.trim()) { toast({ title: 'Informe o nome', variant: 'destructive' }); return; }
-    const payload = { nome: kForm.nome.trim(), descricao: kForm.descricao.trim() || null, categoria: kForm.categoria, codigo: kForm.codigo.trim() || null, preco_kit: parseFloat(parseBRL(kForm.preco_kit)) || 0, valor_minimo: parseFloat(parseBRL(kForm.valor_minimo)) || 0, valor_locacao: parseFloat(parseBRL(kForm.valor_locacao)) || 0, valor_minimo_locacao: parseFloat(parseBRL(kForm.valor_minimo_locacao)) || 0, valor_instalacao: parseFloat(parseBRL(kForm.valor_instalacao)) || 0 };
+    const empresas = kForm.disponibilidade === 'ambas' ? ['emive', 'graber'] as const : [kForm.disponibilidade as 'emive' | 'graber'];
+    if (kitItens.some(i => i.produto_id && empresas.some(e => !disponivelPara(produtos.find(p => p.id === i.produto_id) || {}, e)))) { toast({ title: 'Disponibilidade incompatível', description: 'Os produtos devem estar disponíveis em todas as empresas do kit.', variant: 'destructive' }); return; }
+    const totals = somaPrecosKit(kitItens.filter(i => i.produto_id).map(i => ({ quantidade: i.quantidade, produto: produtos.find(p => p.id === i.produto_id) })));
+    const payload = { ...totals, id_kit: kitIdSB ? Number(kitIdSB) : null, nome: kForm.nome.trim(), descricao: kForm.descricao.trim() || null, categoria: kForm.categoria, codigo: kForm.codigo.trim() || null, codigo_srv: kForm.codigo_srv.trim() || null, disponibilidade: kForm.disponibilidade };
 
     let kitId = editKit?.id;
     if (editKit) {
@@ -589,11 +573,10 @@ export default function OrcamentoProdutos() {
       if (editKit.nome !== payload.nome) changes.push(`Nome: "${editKit.nome}" → "${payload.nome}"`);
       if (editKit.descricao !== payload.descricao) changes.push(`Descrição alterada`);
       if (editKit.categoria !== payload.categoria) changes.push(`Categoria: "${editKit.categoria}" → "${payload.categoria}"`);
+      for (const field of ['codigo_srv', 'disponibilidade', 'valor_venda_graber', 'valor_locacao_graber'] as const) { if (payload[field] !== editKit[field]) changes.push(`${field}: ${editKit[field] ?? 'Pendente'} → ${payload[field] ?? 'Pendente'}`); }
       if (editKit.codigo !== payload.codigo) changes.push(`Código: "${editKit.codigo || ''}" → "${payload.codigo || ''}"`);
       if (Number(editKit.preco_kit) !== payload.preco_kit) changes.push(`Preço Kit: ${Number(editKit.preco_kit)} → ${payload.preco_kit}`);
-      if (Number(editKit.valor_minimo) !== payload.valor_minimo) changes.push(`Val. Mínimo: ${Number(editKit.valor_minimo)} → ${payload.valor_minimo}`);
       if (Number(editKit.valor_locacao) !== payload.valor_locacao) changes.push(`Val. Locação: ${Number(editKit.valor_locacao)} → ${payload.valor_locacao}`);
-      if (Number(editKit.valor_minimo_locacao) !== payload.valor_minimo_locacao) changes.push(`Mín. Locação: ${Number(editKit.valor_minimo_locacao)} → ${payload.valor_minimo_locacao}`);
       if (Number(editKit.valor_instalacao) !== payload.valor_instalacao) changes.push(`Instalação: ${Number(editKit.valor_instalacao)} → ${payload.valor_instalacao}`);
 
       // Check items changes
@@ -618,22 +601,26 @@ export default function OrcamentoProdutos() {
         (payload as any).historico_alteracoes = [...historico, entry];
       }
 
-      await supabase.from('orcamento_kits').update(payload).eq('id', editKit.id);
-      await supabase.from('orcamento_kit_itens').delete().eq('kit_id', editKit.id);
+      const { error } = await supabase.from('orcamento_kits').update(payload).eq('id', editKit.id);
+      if (error) { toast({ title: 'Erro ao salvar kit', description: error.message, variant: 'destructive' }); return; }
+      const { error: removeError } = await supabase.from('orcamento_kit_itens').delete().eq('kit_id', editKit.id);
+      if (removeError) { toast({ title: 'Erro ao atualizar composição', description: removeError.message, variant: 'destructive' }); return; }
     } else {
-      const { data } = await supabase.from('orcamento_kits').insert(payload).select('id').single();
+      const { data, error } = await supabase.from('orcamento_kits').insert(payload).select('id').single();
+      if (error) { toast({ title: 'Erro ao criar kit', description: error.message, variant: 'destructive' }); return; }
       kitId = data?.id;
     }
 
     if (kitId && kitItens.length > 0) {
-      await supabase.from('orcamento_kit_itens').insert(
-        kitItens.filter(i => i.produto_id).map(i => ({ kit_id: kitId!, produto_id: i.produto_id, quantidade: i.quantidade }))
+      const { error } = await supabase.from('orcamento_kit_itens').insert(
+        kitItens.filter(i => i.produto_id).map(i => ({ kit_id: kitId, produto_id: i.produto_id, quantidade: i.quantidade }))
       );
+      if (error) { toast({ title: 'Erro ao salvar produtos do kit', description: error.message, variant: 'destructive' }); return; }
     }
 
     setShowKitForm(false);
     setEditKit(null);
-    setKForm({ nome: '', descricao: '', categoria: 'Smartportaria', codigo: '', preco_kit: '', valor_minimo: '', valor_locacao: '', valor_minimo_locacao: '', valor_instalacao: '' });
+    setKForm({ nome: '', descricao: '', categoria: 'Smartportaria', codigo: '', codigo_srv: '', disponibilidade: 'ambas', valor_venda_graber: '', valor_locacao_graber: '', preco_kit: '', valor_locacao: '', valor_instalacao: '' });
     setKitItens([]);
     fetchAll();
     toast({ title: editKit ? 'Kit atualizado' : 'Kit criado' });
@@ -724,6 +711,10 @@ export default function OrcamentoProdutos() {
                 </SelectContent>
               </Select>
 
+              <Select value={filterDisponibilidade} onValueChange={setFilterDisponibilidade}>
+                <SelectTrigger className="w-[180px]" aria-label="Disponibilidade"><SelectValue /></SelectTrigger>
+                <SelectContent><SelectItem value="all">Todas as empresas</SelectItem>{['ambas', 'emive', 'graber'].map(v => <SelectItem key={v} value={v}>{disponibilidadeLabel(v)}</SelectItem>)}</SelectContent>
+              </Select>
               {/* Column selector */}
               <Popover>
                 <PopoverTrigger asChild>
@@ -767,20 +758,22 @@ export default function OrcamentoProdutos() {
               </CardContent></Card>
             ) : (
               <div className="border rounded-lg overflow-x-auto">
-                <table className="w-full text-sm">
+                <table className="w-full min-w-[1500px] text-sm">
                   <thead>
                     <tr className="border-b bg-muted/50">
-                      {visibleCols.has('id_produto') && <th className="px-3 py-2 text-left cursor-pointer hover:bg-muted" onClick={() => toggleSort('id_produto')}><div className="flex items-center gap-1">Id {sortField === 'id_produto' ? (sortDir === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />) : <ArrowUpDown className="h-3 w-3 opacity-30" />}</div></th>}
-                      {visibleCols.has('codigo') && <th className="px-3 py-2 text-left cursor-pointer hover:bg-muted" onClick={() => toggleSort('codigo')}><div className="flex items-center gap-1">Código {sortField === 'codigo' ? (sortDir === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />) : <ArrowUpDown className="h-3 w-3 opacity-30" />}</div></th>}
+                      {visibleCols.has('id_produto') && <th className="px-3 py-2 text-left cursor-pointer hover:bg-muted" onClick={() => toggleSort('id_produto')}><div className="flex items-center gap-1">ID SB {sortField === 'id_produto' ? (sortDir === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />) : <ArrowUpDown className="h-3 w-3 opacity-30" />}</div></th>}
+                      {visibleCols.has('codigo') && <th className="px-3 py-2 text-left cursor-pointer hover:bg-muted" onClick={() => toggleSort('codigo')}><div className="flex items-center gap-1">COD SK {sortField === 'codigo' ? (sortDir === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />) : <ArrowUpDown className="h-3 w-3 opacity-30" />}</div></th>}
+                      {visibleCols.has('codigo_srv') && <th className="px-3 py-2 text-left whitespace-nowrap"><Button variant="ghost" size="sm" onClick={() => toggleSort('codigo_srv')}>COD SRV<ArrowUpDown className="ml-1 h-3 w-3" /></Button></th>}
+                      {visibleCols.has('disponibilidade') && <th className="px-3 py-2 text-left whitespace-nowrap"><Button variant="ghost" size="sm" onClick={() => toggleSort('disponibilidade')}>Disponibilidade<ArrowUpDown className="ml-1 h-3 w-3" /></Button></th>}
+                      {visibleCols.has('valor_venda_graber') && <th className="px-3 py-2 text-left whitespace-nowrap"><Button variant="ghost" size="sm" onClick={() => toggleSort('valor_venda_graber')}>Venda Graber<ArrowUpDown className="ml-1 h-3 w-3" /></Button></th>}
+                      {visibleCols.has('valor_locacao_graber') && <th className="px-3 py-2 text-left whitespace-nowrap"><Button variant="ghost" size="sm" onClick={() => toggleSort('valor_locacao_graber')}>Locação Graber<ArrowUpDown className="ml-1 h-3 w-3" /></Button></th>}
                       {visibleCols.has('nome') && <th className="px-3 py-2 text-left cursor-pointer hover:bg-muted" onClick={() => toggleSort('nome')}><div className="flex items-center gap-1">Nome {sortField === 'nome' ? (sortDir === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />) : <ArrowUpDown className="h-3 w-3 opacity-30" />}</div></th>}
                       {visibleCols.has('grupo') && <th className="px-3 py-2 text-left cursor-pointer hover:bg-muted" onClick={() => toggleSort('grupo')}><div className="flex items-center gap-1">Grupo {sortField === 'grupo' ? (sortDir === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />) : <ArrowUpDown className="h-3 w-3 opacity-30" />}</div></th>}
                       {visibleCols.has('subgrupo') && <th className="px-3 py-2 text-left cursor-pointer hover:bg-muted" onClick={() => toggleSort('subgrupo')}><div className="flex items-center gap-1">Subgrupo {sortField === 'subgrupo' ? (sortDir === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />) : <ArrowUpDown className="h-3 w-3 opacity-30" />}</div></th>}
                       {visibleCols.has('unidade') && <th className="px-3 py-2 text-left cursor-pointer hover:bg-muted" onClick={() => toggleSort('unidade')}><div className="flex items-center gap-1">Unidade {sortField === 'unidade' ? (sortDir === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />) : <ArrowUpDown className="h-3 w-3 opacity-30" />}</div></th>}
                       {visibleCols.has('qtd_max') && <th className="px-3 py-2 text-right cursor-pointer hover:bg-muted" onClick={() => toggleSort('qtd_max')}><div className="flex items-center justify-end gap-1">Qtd Máx {sortField === 'qtd_max' ? (sortDir === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />) : <ArrowUpDown className="h-3 w-3 opacity-30" />}</div></th>}
-                      {visibleCols.has('valor_atual') && <th className="px-3 py-2 text-right cursor-pointer hover:bg-muted" onClick={() => toggleSort('valor_atual')}><div className="flex items-center justify-end gap-1">Valor Atual {sortField === 'valor_atual' ? (sortDir === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />) : <ArrowUpDown className="h-3 w-3 opacity-30" />}</div></th>}
-                      {visibleCols.has('valor_minimo') && <th className="px-3 py-2 text-right cursor-pointer hover:bg-muted" onClick={() => toggleSort('valor_minimo')}><div className="flex items-center justify-end gap-1">Val. Mín {sortField === 'valor_minimo' ? (sortDir === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />) : <ArrowUpDown className="h-3 w-3 opacity-30" />}</div></th>}
-                      {visibleCols.has('valor_locacao') && <th className="px-3 py-2 text-right cursor-pointer hover:bg-muted" onClick={() => toggleSort('valor_locacao')}><div className="flex items-center justify-end gap-1">Val. Loc. {sortField === 'valor_locacao' ? (sortDir === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />) : <ArrowUpDown className="h-3 w-3 opacity-30" />}</div></th>}
-                      {visibleCols.has('valor_min_locacao') && <th className="px-3 py-2 text-right cursor-pointer hover:bg-muted" onClick={() => toggleSort('valor_min_locacao')}><div className="flex items-center justify-end gap-1">Mín. Loc. {sortField === 'valor_min_locacao' ? (sortDir === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />) : <ArrowUpDown className="h-3 w-3 opacity-30" />}</div></th>}
+                      {visibleCols.has('valor_atual') && <th className="px-3 py-2 text-right cursor-pointer hover:bg-muted" onClick={() => toggleSort('valor_atual')}><div className="flex items-center justify-end gap-1">Venda Emive {sortField === 'valor_atual' ? (sortDir === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />) : <ArrowUpDown className="h-3 w-3 opacity-30" />}</div></th>}
+                      {visibleCols.has('valor_locacao') && <th className="px-3 py-2 text-right cursor-pointer hover:bg-muted" onClick={() => toggleSort('valor_locacao')}><div className="flex items-center justify-end gap-1">Locação Emive {sortField === 'valor_locacao' ? (sortDir === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />) : <ArrowUpDown className="h-3 w-3 opacity-30" />}</div></th>}
                       {visibleCols.has('valor_instalacao') && <th className="px-3 py-2 text-right cursor-pointer hover:bg-muted" onClick={() => toggleSort('valor_instalacao')}><div className="flex items-center justify-end gap-1">Instalação {sortField === 'valor_instalacao' ? (sortDir === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />) : <ArrowUpDown className="h-3 w-3 opacity-30" />}</div></th>}
                       {visibleCols.has('pontuacao') && <th className="px-3 py-2 text-right cursor-pointer hover:bg-muted" onClick={() => toggleSort('pontuacao')}><div className="flex items-center justify-end gap-1">Pontuação {sortField === 'pontuacao' ? (sortDir === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />) : <ArrowUpDown className="h-3 w-3 opacity-30" />}</div></th>}
                       {visibleCols.has('adicional') && <th className="px-3 py-2 text-center cursor-pointer hover:bg-muted" onClick={() => toggleSort('adicional')}><div className="flex items-center justify-center gap-1">Adic. {sortField === 'adicional' ? (sortDir === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />) : <ArrowUpDown className="h-3 w-3 opacity-30" />}</div></th>}
@@ -793,22 +786,24 @@ export default function OrcamentoProdutos() {
                       <tr key={p.id} className={`border-b hover:bg-muted/30 ${!p.ativo ? 'opacity-50' : ''}`}>
                         {visibleCols.has('id_produto') && <td className="px-3 py-2 font-mono text-xs text-muted-foreground">{p.id_produto ?? '-'}</td>}
                         {visibleCols.has('codigo') && <td className="px-3 py-2 font-mono text-xs text-muted-foreground">{p.codigo || '-'}</td>}
+                        {visibleCols.has('codigo_srv') && <td className="px-3 py-2 font-mono text-xs">{p.codigo_srv || '—'}</td>}
+                        {visibleCols.has('disponibilidade') && <td className="px-3 py-2"><Badge variant="outline">{disponibilidadeLabel(p.disponibilidade)}</Badge></td>}
+                        {visibleCols.has('valor_venda_graber') && <td className="px-3 py-2 text-right whitespace-nowrap">{p.valor_venda_graber == null ? <span className="text-muted-foreground">Pendente</span> : `R$ ${formatBRL(p.valor_venda_graber) || '0,00'}`}</td>}
+                        {visibleCols.has('valor_locacao_graber') && <td className="px-3 py-2 text-right whitespace-nowrap">{p.valor_locacao_graber == null ? <span className="text-muted-foreground">Pendente</span> : `R$ ${formatBRL(p.valor_locacao_graber) || '0,00'}`}</td>}
                         {visibleCols.has('nome') && <td className="px-3 py-2 font-medium text-foreground max-w-[300px] truncate">{p.nome}</td>}
                         {visibleCols.has('grupo') && <td className="px-3 py-2"><Badge variant="outline" className="text-xs">{catLabel(p.categoria)}</Badge></td>}
                         {visibleCols.has('subgrupo') && <td className="px-3 py-2">{p.subgrupo ? <Badge variant="outline" className="text-xs">{subLabel(p.subgrupo)}</Badge> : '-'}</td>}
                         {visibleCols.has('unidade') && <td className="px-3 py-2 text-xs">{unLabel(p.unidade)}</td>}
                         {visibleCols.has('qtd_max') && <td className="px-3 py-2 text-right text-xs">{p.qtd_max}</td>}
                         {visibleCols.has('valor_atual') && <td className="px-3 py-2 text-right text-xs font-medium">R$ {p.preco_unitario.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>}
-                        {visibleCols.has('valor_minimo') && <td className="px-3 py-2 text-right text-xs">R$ {p.valor_minimo.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>}
                         {visibleCols.has('valor_locacao') && <td className="px-3 py-2 text-right text-xs">R$ {(p.valor_locacao || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>}
-                        {visibleCols.has('valor_min_locacao') && <td className="px-3 py-2 text-right text-xs">R$ {p.valor_minimo_locacao.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>}
                         {visibleCols.has('valor_instalacao') && <td className="px-3 py-2 text-right text-xs">R$ {p.valor_instalacao.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>}
                         {visibleCols.has('pontuacao') && <td className="px-3 py-2 text-right text-xs font-medium">{(p.pontuacao || 0).toLocaleString('pt-BR', { minimumFractionDigits: 0 })}</td>}
                         {visibleCols.has('adicional') && <td className="px-3 py-2 text-center">{p.adicional ? <Badge className="text-xs bg-primary/20 text-primary">Sim</Badge> : <span className="text-xs text-muted-foreground">Não</span>}</td>}
                         {visibleCols.has('ativo') && <td className="px-3 py-2 text-center"><Switch checked={p.ativo} onCheckedChange={v => toggleAtivo('produto', p.id, v)} /></td>}
                         <td className="px-3 py-2 text-right">
                           <div className="flex items-center justify-end gap-1">
-                            <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => openProdutoEdit(p)}><Pencil className="h-3 w-3" /></Button>
+                            <Button size="icon" variant="ghost" className="h-7 w-7" aria-label={`Editar produto ${p.nome}`} onClick={() => openProdutoEdit(p)}><Pencil className="h-3 w-3" /></Button>
                             <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => setDeleteTarget({ type: 'produto', id: p.id })}><Trash2 className="h-3 w-3" /></Button>
                           </div>
                         </td>
@@ -831,6 +826,10 @@ export default function OrcamentoProdutos() {
                   className="w-full"
                 />
               </div>
+              <Select value={filterKitDisponibilidade} onValueChange={setFilterKitDisponibilidade}>
+                <SelectTrigger className="w-[180px]" aria-label="Disponibilidade"><SelectValue /></SelectTrigger>
+                <SelectContent><SelectItem value="all">Todas as empresas</SelectItem>{['ambas', 'emive', 'graber'].map(v => <SelectItem key={v} value={v}>{disponibilidadeLabel(v)}</SelectItem>)}</SelectContent>
+              </Select>
               {hasKitFilters && (
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="text-sm text-muted-foreground">Filtros:</span>
@@ -844,7 +843,7 @@ export default function OrcamentoProdutos() {
                 </div>
               )}
               <div className={!hasKitFilters ? 'ml-auto' : ''}>
-                <Button onClick={() => { setEditKit(null); setKForm({ nome: '', descricao: '', categoria: 'Smartportaria', codigo: '', preco_kit: '', valor_minimo: '', valor_locacao: '', valor_minimo_locacao: '', valor_instalacao: '' }); setKitItens([]); setShowKitForm(true); }}>
+                <Button onClick={() => { setEditKit(null); setKitIdSB(''); setKForm({ nome: '', descricao: '', categoria: 'Smartportaria', codigo: '', codigo_srv: '', disponibilidade: 'ambas', valor_venda_graber: '', valor_locacao_graber: '', preco_kit: '', valor_locacao: '', valor_instalacao: '' }); setKitItens([]); setShowKitForm(true); }}>
                   <Plus className="mr-2 h-4 w-4" />Novo Kit
                 </Button>
               </div>
@@ -862,17 +861,20 @@ export default function OrcamentoProdutos() {
               <Card><CardContent className="py-12 text-center text-muted-foreground">{kits.length === 0 ? 'Nenhum kit cadastrado.' : 'Nenhum kit encontrado com os filtros aplicados.'}</CardContent></Card>
             ) : (
               <div className="border rounded-lg overflow-x-auto">
-                <table className="w-full text-sm">
+                <table className="w-full min-w-[1500px] text-sm">
                   <thead>
                     <tr className="border-b bg-muted/50">
-                      <th className="px-3 py-2 text-center w-16">{renderKitColHeader('id_kit', 'ID')}</th>
-                      <th className="px-3 py-2 text-left">{renderKitColHeader('nome', 'Kit')}</th>
+                      <th className="px-3 py-2 text-center w-16">{renderKitColHeader('id_kit', 'ID SB')}</th>
+                      <th className="px-3 py-2 text-left">{renderKitColHeader('codigo', 'COD SK')}</th>
+                      <th className="px-3 py-2 text-left">{renderKitColHeader('codigo_srv', 'COD SRV')}</th>
+                      <th className="px-3 py-2 text-left">{renderKitColHeader('disponibilidade', 'Disponibilidade')}</th>
+                      <th className="px-3 py-2 text-right">{renderKitColHeader('vendaGraber', 'Venda Graber')}</th>
+                      <th className="px-3 py-2 text-right">{renderKitColHeader('locacaoGraber', 'Locação Graber')}</th>
+                      <th className="px-3 py-2 text-left min-w-[280px]">{renderKitColHeader('nome', 'Kit')}</th>
                       <th className="px-3 py-2 text-left">{renderKitColHeader('categoria', 'Categoria')}</th>
                       <th className="px-3 py-2 text-center">{renderKitColHeader('itens', 'Itens', 'center')}</th>
-                      <th className="px-3 py-2 text-right">{renderKitColHeader('atual', 'Val. Atual', 'right')}</th>
-                      <th className="px-3 py-2 text-right">{renderKitColHeader('minimo', 'Val. Mínimo', 'right')}</th>
-                      <th className="px-3 py-2 text-right">{renderKitColHeader('locacao', 'Val. Locação', 'right')}</th>
-                      <th className="px-3 py-2 text-right">{renderKitColHeader('minLocacao', 'Mín. Locação', 'right')}</th>
+                      <th className="px-3 py-2 text-right">{renderKitColHeader('atual', 'Venda Emive', 'right')}</th>
+                      <th className="px-3 py-2 text-right">{renderKitColHeader('locacao', 'Locação Emive', 'right')}</th>
                       <th className="px-3 py-2 text-right">{renderKitColHeader('instalacao', 'Instalação', 'right')}</th>
                       <th className="px-3 py-2 text-center">{renderKitColHeader('ativo', 'Ativo', 'center')}</th>
                       <th className="px-3 py-2 text-right">Ações</th>
@@ -880,35 +882,29 @@ export default function OrcamentoProdutos() {
                   </thead>
                   <tbody>
                     {filteredKits.map(k => {
-                      const totals = { atual: 0, minimo: 0, locacao: 0, minLocacao: 0, instalacao: 0 };
-                      k.itens?.forEach(i => {
-                        if (i.produto) {
-                          totals.atual += (i.produto.preco_unitario || 0) * i.quantidade;
-                          totals.minimo += (i.produto.valor_minimo || 0) * i.quantidade;
-                          totals.locacao += (i.produto.valor_locacao || 0) * i.quantidade;
-                          totals.minLocacao += (i.produto.valor_minimo_locacao || 0) * i.quantidade;
-                          totals.instalacao += (i.produto.valor_instalacao || 0) * i.quantidade;
-                        }
-                      });
+                      const totals = getKitTotals(k);
                       return (
                         <tr key={k.id} className={`border-b hover:bg-muted/30 cursor-pointer ${!k.ativo ? 'opacity-50' : ''}`} onClick={() => setViewKit(k)}>
                           <td className="px-3 py-2 text-center">
                             <span className="text-xs font-mono text-muted-foreground">{(k as any).id_kit ? `#${(k as any).id_kit}` : '—'}</span>
                           </td>
-                          <td className="px-3 py-2">
+                          <td className="px-3 py-2 font-mono text-xs">{k.codigo || '—'}</td>
+                          <td className="px-3 py-2 font-mono text-xs">{k.codigo_srv || '—'}</td>
+                          <td className="px-3 py-2"><Badge variant="outline">{disponibilidadeLabel(k.disponibilidade)}</Badge></td>
+                          <td className="px-3 py-2 text-right whitespace-nowrap">{totals.vendaGraber == null ? 'Pendente' : `R$ ${formatBRL(totals.vendaGraber) || '0,00'}`}</td>
+                          <td className="px-3 py-2 text-right whitespace-nowrap">{totals.locacaoGraber == null ? 'Pendente' : `R$ ${formatBRL(totals.locacaoGraber) || '0,00'}`}</td>
+                          <td className="px-3 py-2 min-w-[280px]">
                             <span className="font-medium text-foreground">{k.nome}</span>
                           </td>
                           <td className="px-3 py-2"><Badge variant="outline" className="text-xs">{catLabel(k.categoria)}</Badge></td>
                           <td className="px-3 py-2 text-center text-xs">{k.itens?.length || 0}</td>
                           <td className="px-3 py-2 text-right text-xs font-medium">R$ {totals.atual.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
-                          <td className="px-3 py-2 text-right text-xs">R$ {totals.minimo.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
                           <td className="px-3 py-2 text-right text-xs">R$ {totals.locacao.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
-                          <td className="px-3 py-2 text-right text-xs">R$ {totals.minLocacao.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
                           <td className="px-3 py-2 text-right text-xs">R$ {totals.instalacao.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
                           <td className="px-3 py-2 text-center" onClick={e => e.stopPropagation()}><Switch checked={k.ativo} onCheckedChange={v => toggleAtivo('kit', k.id, v)} /></td>
                           <td className="px-3 py-2 text-right" onClick={e => e.stopPropagation()}>
                             <div className="flex items-center justify-end gap-1">
-                              <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => openKitEdit(k)}><Pencil className="h-3 w-3" /></Button>
+                              <Button size="icon" variant="ghost" className="h-7 w-7" aria-label={`Editar kit ${k.nome}`} onClick={() => openKitEdit(k)}><Pencil className="h-3 w-3" /></Button>
                               <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => setDeleteTarget({ type: 'kit', id: k.id })}><Trash2 className="h-3 w-3" /></Button>
                             </div>
                           </td>
@@ -928,13 +924,19 @@ export default function OrcamentoProdutos() {
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle>{editProduto ? 'Editar Produto' : 'Novo Produto'}</DialogTitle></DialogHeader>
           <div className="space-y-4">
-            <div className="grid grid-cols-3 gap-4">
-              <div><Label>Nome *</Label><Input value={pForm.nome} onChange={e => setPForm(p => ({ ...p, nome: e.target.value }))} /></div>
-              <div><Label>Id</Label><Input type="number" value={pForm.id_produto} onChange={e => setPForm(p => ({ ...p, id_produto: e.target.value }))} placeholder="Ex: 3246" /></div>
-              <div><Label>Código</Label><Input value={pForm.codigo} onChange={e => setPForm(p => ({ ...p, codigo: e.target.value }))} placeholder="Ex: 8500" /></div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div><Label>Nome *</Label><Input aria-label="Nome do produto" value={pForm.nome} onChange={e => setPForm(p => ({ ...p, nome: e.target.value }))} /></div>
+              <div><Label>ID SB</Label><Input type="number" value={pForm.id_produto} onChange={e => setPForm(p => ({ ...p, id_produto: e.target.value }))} placeholder="Ex: 3246" /></div>
+              <div><Label>COD SK</Label><Input value={pForm.codigo} onChange={e => setPForm(p => ({ ...p, codigo: e.target.value }))} placeholder="Ex: 8500" /></div>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div><Label htmlFor="pForm-srv">COD SRV</Label><Input id="pForm-srv" value={pForm.codigo_srv} onChange={e => setPForm(p => ({ ...p, codigo_srv: e.target.value }))} /></div>
+              <div><Label>Disponibilidade</Label><Select value={pForm.disponibilidade} onValueChange={v => setPForm(p => ({ ...p, disponibilidade: v }))}><SelectTrigger aria-label="Disponibilidade do cadastro"><SelectValue /></SelectTrigger><SelectContent>{['ambas','emive','graber'].map(v => <SelectItem key={v} value={v}>{disponibilidadeLabel(v)}</SelectItem>)}</SelectContent></Select></div>
+              <div><Label htmlFor="pForm-valor_venda_graber">Preço Venda Graber (R$)</Label><Input id="pForm-valor_venda_graber" inputMode="decimal" value={pForm.valor_venda_graber} onChange={e => setPForm(p => ({ ...p, valor_venda_graber: e.target.value }))} onBlur={e => { const raw = parseBRL(e.target.value); setPForm(p => ({ ...p, valor_venda_graber: raw === '' ? '' : formatBRL(Number(raw)) || '0,00' })); }} placeholder="Pendente" /></div>
+              <div><Label htmlFor="pForm-valor_locacao_graber">Preço Locação Graber (R$)</Label><Input id="pForm-valor_locacao_graber" inputMode="decimal" value={pForm.valor_locacao_graber} onChange={e => setPForm(p => ({ ...p, valor_locacao_graber: e.target.value }))} onBlur={e => { const raw = parseBRL(e.target.value); setPForm(p => ({ ...p, valor_locacao_graber: raw === '' ? '' : formatBRL(Number(raw)) || '0,00' })); }} placeholder="Pendente" /></div>
             </div>
             <div><Label>Descrição</Label><Textarea value={pForm.descricao} onChange={e => setPForm(p => ({ ...p, descricao: e.target.value }))} rows={2} /></div>
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
                 <Label>Grupo</Label>
                 <Select value={pForm.categoria} onValueChange={v => setPForm(p => ({ ...p, categoria: v }))}>
@@ -963,7 +965,7 @@ export default function OrcamentoProdutos() {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div><Label>Qtd Máxima</Label><Input type="number" value={pForm.qtd_max} onChange={e => setPForm(p => ({ ...p, qtd_max: e.target.value }))} /></div>
-              <div><Label>Valor Atual (R$)</Label><Input
+              <div><Label>Preço Venda Emive (R$)</Label><Input
                 value={pForm.preco_unitario}
                 onChange={e => setPForm(p => ({ ...p, preco_unitario: e.target.value }))}
                 onBlur={e => {
@@ -972,17 +974,15 @@ export default function OrcamentoProdutos() {
                   if (!isNaN(val) && val > 0) {
                     const isServico = pForm.subgrupo === 'Serviço';
                     if (isServico) {
-                      const svcMinPct = pricingRules.servico_valor_minimo ?? pricingRules.valor_minimo;
                       const svcLocPct = pricingRules.servico_valor_locacao ?? pricingRules.valor_locacao;
-                      const svcMinLocPct = pricingRules.servico_valor_minimo_locacao ?? pricingRules.valor_minimo_locacao;
                       const svcInstPct = pricingRules.servico_valor_instalacao ?? pricingRules.valor_instalacao;
                       const svcLocacao = val * (svcLocPct / 100);
                       setPForm(p => ({
                         ...p,
                         preco_unitario: formatBRL(val),
-                        valor_minimo: formatBRL(val * (svcMinPct / 100)),
+
                         valor_locacao: formatBRL(svcLocacao),
-                        valor_minimo_locacao: formatBRL(svcLocacao * (svcMinLocPct / 100)),
+
                         valor_instalacao: formatBRL(val * (svcInstPct / 100)),
                       }));
                     } else {
@@ -990,9 +990,9 @@ export default function OrcamentoProdutos() {
                       setPForm(p => ({
                         ...p,
                         preco_unitario: formatBRL(val),
-                        valor_minimo: formatBRL(val * (pricingRules.valor_minimo / 100)),
+
                         valor_locacao: formatBRL(locacao),
-                        valor_minimo_locacao: formatBRL(locacao * (pricingRules.valor_minimo_locacao / 100)),
+
                         valor_instalacao: formatBRL(val * (pricingRules.valor_instalacao / 100)),
                       }));
                     }
@@ -1002,15 +1002,13 @@ export default function OrcamentoProdutos() {
               /></div>
             </div>
             <div className="grid grid-cols-2 gap-4">
-              <div><Label>Valor Mínimo (R$)</Label><Input value={pForm.valor_minimo} onChange={e => setPForm(p => ({ ...p, valor_minimo: e.target.value }))} onBlur={e => { const v = parseFloat(parseBRL(e.target.value)); if (!isNaN(v)) setPForm(p => ({ ...p, valor_minimo: formatBRL(v) })); }} placeholder="0,00" /></div>
-              <div><Label>Valor Locação (R$)</Label><Input value={pForm.valor_locacao} onChange={e => setPForm(p => ({ ...p, valor_locacao: e.target.value }))} onBlur={e => { const v = parseFloat(parseBRL(e.target.value)); if (!isNaN(v)) setPForm(p => ({ ...p, valor_locacao: formatBRL(v) })); }} placeholder="0,00" /></div>
+              <div><Label>Preço Locação Emive (R$)</Label><Input value={pForm.valor_locacao} onChange={e => setPForm(p => ({ ...p, valor_locacao: e.target.value }))} onBlur={e => { const v = parseFloat(parseBRL(e.target.value)); if (!isNaN(v)) setPForm(p => ({ ...p, valor_locacao: formatBRL(v) })); }} placeholder="0,00" /></div>
             </div>
             <div className="grid grid-cols-2 gap-4">
-              <div><Label>Valor Mín. Locação (R$)</Label><Input value={pForm.valor_minimo_locacao} onChange={e => setPForm(p => ({ ...p, valor_minimo_locacao: e.target.value }))} onBlur={e => { const v = parseFloat(parseBRL(e.target.value)); if (!isNaN(v)) setPForm(p => ({ ...p, valor_minimo_locacao: formatBRL(v) })); }} placeholder="0,00" /></div>
               <div>
                 <Label>Valor Instalação (R$)</Label>
                 <Input value={pForm.valor_instalacao} onChange={e => setPForm(p => ({ ...p, valor_instalacao: e.target.value }))} onBlur={e => { const v = parseFloat(parseBRL(e.target.value)); if (!isNaN(v)) setPForm(p => ({ ...p, valor_instalacao: formatBRL(v) })); }} placeholder={pForm.subgrupo === 'Serviço' ? '0,00 (Serviço)' : '0,00'} />
-                
+
               </div>
               <div>
                 <Label>Pontuação</Label>
@@ -1047,9 +1045,10 @@ export default function OrcamentoProdutos() {
         <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle>{editKit ? 'Editar Kit' : 'Novo Kit'}</DialogTitle></DialogHeader>
           <div className="space-y-4">
+            <div><Label htmlFor="kit-id-sb">ID SB</Label><Input id="kit-id-sb" type="number" value={kitIdSB} onChange={e => setKitIdSB(e.target.value)} /></div>
             <div className="grid grid-cols-4 gap-4">
               <div className="col-span-2"><Label>Nome *</Label><Input value={kForm.nome} onChange={e => setKForm(k => ({ ...k, nome: e.target.value }))} /></div>
-              <div><Label>ID do Kit</Label><Input value={kForm.codigo} onChange={e => setKForm(k => ({ ...k, codigo: e.target.value }))} placeholder="Ex: KIT-001" /></div>
+              <div><Label>COD SK</Label><Input aria-label="COD SK" value={kForm.codigo} onChange={e => setKForm(k => ({ ...k, codigo: e.target.value }))} placeholder="Ex: KIT-001" /></div>
               <div>
                 <Label>Categoria</Label>
                 <Select value={kForm.categoria} onValueChange={v => setKForm(k => ({ ...k, categoria: v }))}>
@@ -1057,6 +1056,12 @@ export default function OrcamentoProdutos() {
                   <SelectContent>{GRUPOS.map(c => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div><Label htmlFor="kForm-srv">COD SRV</Label><Input id="kForm-srv" value={kForm.codigo_srv} onChange={e => setKForm(p => ({ ...p, codigo_srv: e.target.value }))} /></div>
+              <div><Label>Disponibilidade</Label><Select value={kForm.disponibilidade} onValueChange={v => setKForm(p => ({ ...p, disponibilidade: v }))}><SelectTrigger aria-label="Disponibilidade do cadastro"><SelectValue /></SelectTrigger><SelectContent>{['ambas','emive','graber'].map(v => <SelectItem key={v} value={v}>{disponibilidadeLabel(v)}</SelectItem>)}</SelectContent></Select></div>
+              <div><Label>Preço Venda Graber (R$)</Label><Input readOnly value={kForm.valor_venda_graber} placeholder="Pendente" /></div>
+              <div><Label>Preço Locação Graber (R$)</Label><Input readOnly value={kForm.valor_locacao_graber} placeholder="Pendente" /></div>
             </div>
             <div><Label>Descrição</Label><Textarea value={kForm.descricao} onChange={e => setKForm(k => ({ ...k, descricao: e.target.value }))} rows={2} /></div>
 
@@ -1069,10 +1074,8 @@ export default function OrcamentoProdutos() {
                       <th className="px-2 py-2 text-left">Produto</th>
                       <th className="px-2 py-2 text-center w-16">Qtd</th>
                       <th className="px-2 py-2 text-right">Val. Atual</th>
-                      <th className="px-2 py-2 text-right">Val. Mínimo</th>
                       <th className="px-2 py-2 text-right">Val. Locação</th>
-                      <th className="px-2 py-2 text-right">Mín. Locação</th>
-                      <th className="px-2 py-2 text-right">Instalação</th>
+                      <th className="px-2 py-2 text-right">Instalação Emive</th><th className="px-2 py-2 text-right">Venda Graber</th><th className="px-2 py-2 text-right">Locação Graber</th>
                       <th className="px-2 py-2 w-10"></th>
                     </tr>
                   </thead>
@@ -1091,10 +1094,10 @@ export default function OrcamentoProdutos() {
                             <Input type="number" min="1" className="w-16 h-8 text-xs text-center" value={item.quantidade} onChange={e => { const updated = kitItens.map((it, i) => i === idx ? { ...it, quantidade: parseInt(e.target.value) || 1 } : it); setKitItens(updated); recalcKitPrices(updated); }} />
                           </td>
                           <td className="px-2 py-1.5 text-right text-xs">R$ {((prod?.preco_unitario || 0) * item.quantidade).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
-                          <td className="px-2 py-1.5 text-right text-xs">R$ {((prod?.valor_minimo || 0) * item.quantidade).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
                           <td className="px-2 py-1.5 text-right text-xs">R$ {((prod?.valor_locacao || 0) * item.quantidade).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
-                          <td className="px-2 py-1.5 text-right text-xs">R$ {((prod?.valor_minimo_locacao || 0) * item.quantidade).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
                           <td className="px-2 py-1.5 text-right text-xs">R$ {((prod?.valor_instalacao || 0) * item.quantidade).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                          <td className="px-2 py-1.5 text-right text-xs">{prod?.valor_venda_graber == null ? 'Pendente' : `R$ ${formatBRL(prod.valor_venda_graber * item.quantidade) || '0,00'}`}</td>
+                          <td className="px-2 py-1.5 text-right text-xs">{prod?.valor_locacao_graber == null ? 'Pendente' : `R$ ${formatBRL(prod.valor_locacao_graber * item.quantidade) || '0,00'}`}</td>
                           <td className="px-2 py-1.5 text-center">
                             <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => { const updated = kitItens.filter((_, i) => i !== idx); setKitItens(updated); recalcKitPrices(updated); }}><Trash2 className="h-3 w-3" /></Button>
                           </td>
@@ -1106,11 +1109,9 @@ export default function OrcamentoProdutos() {
                     <tr className="bg-muted/30 font-semibold text-xs">
                       <td className="px-2 py-2" colSpan={2}>Total do Kit</td>
                       <td className="px-2 py-2 text-right">{kForm.preco_kit ? `R$ ${kForm.preco_kit}` : 'R$ 0,00'}</td>
-                      <td className="px-2 py-2 text-right">{kForm.valor_minimo ? `R$ ${kForm.valor_minimo}` : 'R$ 0,00'}</td>
                       <td className="px-2 py-2 text-right">{kForm.valor_locacao ? `R$ ${kForm.valor_locacao}` : 'R$ 0,00'}</td>
-                      <td className="px-2 py-2 text-right">{kForm.valor_minimo_locacao ? `R$ ${kForm.valor_minimo_locacao}` : 'R$ 0,00'}</td>
                       <td className="px-2 py-2 text-right">{kForm.valor_instalacao ? `R$ ${kForm.valor_instalacao}` : 'R$ 0,00'}</td>
-                      <td></td>
+                      <td className="px-2 py-2 text-right">{kForm.valor_venda_graber || 'Pendente'}</td><td className="px-2 py-2 text-right">{kForm.valor_locacao_graber || 'Pendente'}</td><td></td>
                     </tr>
                   </tfoot>
                 </table>
@@ -1129,16 +1130,7 @@ export default function OrcamentoProdutos() {
       <Dialog open={!!viewKit} onOpenChange={v => { if (!v) setViewKit(null); }}>
         <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
           {viewKit && (() => {
-            const totals = { atual: 0, minimo: 0, locacao: 0, minLocacao: 0, instalacao: 0 };
-            viewKit.itens?.forEach(i => {
-              if (i.produto) {
-                totals.atual += (i.produto.preco_unitario || 0) * i.quantidade;
-                totals.minimo += (i.produto.valor_minimo || 0) * i.quantidade;
-                totals.locacao += (i.produto.valor_locacao || 0) * i.quantidade;
-                totals.minLocacao += (i.produto.valor_minimo_locacao || 0) * i.quantidade;
-                totals.instalacao += (i.produto.valor_instalacao || 0) * i.quantidade;
-              }
-            });
+            const totals = getKitTotals(viewKit);
             return (
               <>
                 <DialogHeader>
@@ -1150,26 +1142,22 @@ export default function OrcamentoProdutos() {
                       <Switch checked={viewKit.ativo} onCheckedChange={v => { toggleAtivo('kit', viewKit.id, v); setViewKit({ ...viewKit, ativo: v }); }} />
                       <Button size="icon" variant="ghost" title="Exportar para Excel" onClick={() => {
                         const rows = (viewKit.itens || []).map(i => ({
-                          'Código': i.produto?.codigo || '',
+                          'COD SK': i.produto?.codigo || '', 'COD SRV': i.produto?.codigo_srv || '', 'ID SB': i.produto?.id_produto ?? '', 'Disponibilidade': disponibilidadeLabel(i.produto?.disponibilidade || ''),
+                          'Venda Graber Total': i.produto?.valor_venda_graber == null ? 'Pendente' : i.produto.valor_venda_graber * i.quantidade,
+                          'Locação Graber Total': i.produto?.valor_locacao_graber == null ? 'Pendente' : i.produto.valor_locacao_graber * i.quantidade,
                           'Produto': i.produto?.nome || 'Produto removido',
                           'Qtd': i.quantidade,
                           'Val. Atual Unit.': i.produto?.preco_unitario || 0,
                           'Val. Atual Total': (i.produto?.preco_unitario || 0) * i.quantidade,
-                          'Val. Mínimo Unit.': i.produto?.valor_minimo || 0,
-                          'Val. Mínimo Total': (i.produto?.valor_minimo || 0) * i.quantidade,
                           'Val. Locação Unit.': i.produto?.valor_locacao || 0,
                           'Val. Locação Total': (i.produto?.valor_locacao || 0) * i.quantidade,
-                          'Mín. Locação Unit.': i.produto?.valor_minimo_locacao || 0,
-                          'Mín. Locação Total': (i.produto?.valor_minimo_locacao || 0) * i.quantidade,
                           'Instalação Unit.': i.produto?.valor_instalacao || 0,
                           'Instalação Total': (i.produto?.valor_instalacao || 0) * i.quantidade,
                         }));
                         rows.push({
-                          'Código': '', 'Produto': 'TOTAL DO KIT', 'Qtd': '' as any,
+                          'COD SK': '', 'COD SRV': '', 'ID SB': '', 'Disponibilidade': '', 'Venda Graber Total': totals.vendaGraber ?? 'Pendente', 'Locação Graber Total': totals.locacaoGraber ?? 'Pendente', 'Produto': 'TOTAL DO KIT', 'Qtd': '' as any,
                           'Val. Atual Unit.': '' as any, 'Val. Atual Total': totals.atual,
-                          'Val. Mínimo Unit.': '' as any, 'Val. Mínimo Total': totals.minimo,
                           'Val. Locação Unit.': '' as any, 'Val. Locação Total': totals.locacao,
-                          'Mín. Locação Unit.': '' as any, 'Mín. Locação Total': totals.minLocacao,
                           'Instalação Unit.': '' as any, 'Instalação Total': totals.instalacao,
                         });
                         const ws = XLSX.utils.json_to_sheet(rows);
@@ -1185,7 +1173,7 @@ export default function OrcamentoProdutos() {
                   </DialogTitle>
                 </DialogHeader>
                 {viewKit.descricao && <p className="text-sm text-muted-foreground">{viewKit.descricao}</p>}
-                
+
                 {viewKit.itens && viewKit.itens.length > 0 && (
                   <div className="border rounded-lg overflow-x-auto">
                     <table className="w-full text-sm">
@@ -1195,10 +1183,8 @@ export default function OrcamentoProdutos() {
                           <th className="px-3 py-2 text-left">Produto</th>
                           <th className="px-3 py-2 text-center">Qtd</th>
                           <th className="px-3 py-2 text-right">Val. Atual</th>
-                          <th className="px-3 py-2 text-right">Val. Mínimo</th>
                           <th className="px-3 py-2 text-right">Val. Locação</th>
-                          <th className="px-3 py-2 text-right">Mín. Locação</th>
-                          <th className="px-3 py-2 text-right">Instalação</th>
+                          <th className="px-3 py-2 text-right">Instalação Emive</th><th className="px-3 py-2 text-right">Venda Graber</th><th className="px-3 py-2 text-right">Locação Graber</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -1208,10 +1194,10 @@ export default function OrcamentoProdutos() {
                             <td className="px-3 py-2 text-foreground">{i.produto?.nome || 'Produto removido'}</td>
                             <td className="px-3 py-2 text-center">{i.quantidade}</td>
                             <td className="px-3 py-2 text-right">R$ {((i.produto?.preco_unitario || 0) * i.quantidade).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
-                            <td className="px-3 py-2 text-right">R$ {((i.produto?.valor_minimo || 0) * i.quantidade).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
                             <td className="px-3 py-2 text-right">R$ {((i.produto?.valor_locacao || 0) * i.quantidade).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
-                            <td className="px-3 py-2 text-right">R$ {((i.produto?.valor_minimo_locacao || 0) * i.quantidade).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
                             <td className="px-3 py-2 text-right">R$ {((i.produto?.valor_instalacao || 0) * i.quantidade).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                            <td className="px-3 py-2 text-right">{i.produto?.valor_venda_graber == null ? 'Pendente' : `R$ ${formatBRL(i.produto.valor_venda_graber * i.quantidade) || '0,00'}`}</td>
+                            <td className="px-3 py-2 text-right">{i.produto?.valor_locacao_graber == null ? 'Pendente' : `R$ ${formatBRL(i.produto.valor_locacao_graber * i.quantidade) || '0,00'}`}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -1219,10 +1205,9 @@ export default function OrcamentoProdutos() {
                         <tr className="bg-muted/30 font-semibold">
                           <td className="px-3 py-2" colSpan={3}>Total do Kit</td>
                           <td className="px-3 py-2 text-right">R$ {totals.atual.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
-                          <td className="px-3 py-2 text-right">R$ {totals.minimo.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
                           <td className="px-3 py-2 text-right">R$ {totals.locacao.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
-                          <td className="px-3 py-2 text-right">R$ {totals.minLocacao.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
                           <td className="px-3 py-2 text-right">R$ {totals.instalacao.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                          <td className="px-3 py-2 text-right">{totals.vendaGraber == null ? 'Pendente' : `R$ ${formatBRL(totals.vendaGraber) || '0,00'}`}</td><td className="px-3 py-2 text-right">{totals.locacaoGraber == null ? 'Pendente' : `R$ ${formatBRL(totals.locacaoGraber) || '0,00'}`}</td>
                         </tr>
                       </tfoot>
                     </table>

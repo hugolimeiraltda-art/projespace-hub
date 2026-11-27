@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -35,6 +36,7 @@ export default function VendedorHome() {
   const [newEmail, setNewEmail] = useState('');
   const [newTelefone, setNewTelefone] = useState('');
   const [newEndereco, setNewEndereco] = useState('');
+  const [newFilial, setNewFilial] = useState(user?.filial || '');
   const [creating, setCreating] = useState(false);
 
   useEffect(() => {
@@ -65,6 +67,7 @@ export default function VendedorHome() {
       toast({ title: 'Informe o nome do condomínio', variant: 'destructive' });
       return;
     }
+    if (!newFilial) { toast({ title: 'Selecione a praça do orçamento', variant: 'destructive' }); return; }
     setCreating(true);
 
     const { data, error } = await supabase.from('orcamento_sessoes').insert({
@@ -72,6 +75,7 @@ export default function VendedorHome() {
       email_cliente: newEmail.trim() || null,
       telefone_cliente: newTelefone.trim() || null,
       endereco_condominio: newEndereco.trim() || null,
+      filial: newFilial,
       created_by: user.id,
       created_by_name: user.nome,
       vendedor_id: user.id,
@@ -139,6 +143,7 @@ export default function VendedorHome() {
                   <Label>Endereço</Label>
                   <Input value={newEndereco} onChange={e => setNewEndereco(e.target.value)} placeholder="Rua, número, bairro, cidade" />
                 </div>
+                <div><Label>Praça / Empresa *</Label><Select value={newFilial} onValueChange={setNewFilial}><SelectTrigger aria-label="Praça do orçamento"><SelectValue placeholder="Selecione a praça" /></SelectTrigger><SelectContent><SelectItem value="SPO">SPO — Graber</SelectItem><SelectItem value="BHZ">BHZ — Emive</SelectItem><SelectItem value="VIX">VIX — Emive</SelectItem><SelectItem value="RJO">RJO — Emive</SelectItem></SelectContent></Select></div>
                 <div>
                   <Label>Email do Cliente</Label>
                   <Input value={newEmail} onChange={e => setNewEmail(e.target.value)} placeholder="sindico@email.com" type="email" />

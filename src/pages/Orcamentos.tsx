@@ -40,6 +40,7 @@ interface Sessao {
 interface Vendedor {
   id: string;
   nome: string;
+  filial?: string | null;
 }
 
 export default function Orcamentos() {
@@ -57,6 +58,7 @@ export default function Orcamentos() {
   const [newTelefone, setNewTelefone] = useState('');
   const [newVendedorId, setNewVendedorId] = useState('');
   const [newEndereco, setNewEndereco] = useState('');
+  const [newFilial, setNewFilial] = useState(user?.filial || '');
   const [creating, setCreating] = useState(false);
   
   const [deleteId, setDeleteId] = useState<string | null>(null);
@@ -79,7 +81,7 @@ export default function Orcamentos() {
 
     if (canSeeAll && rolesData && rolesData.length > 0) {
       const userIds = rolesData.map((r: any) => r.user_id);
-      const { data: profilesData } = await supabase.from('profiles').select('id, nome').in('id', userIds);
+      const { data: profilesData } = await supabase.from('profiles').select('id, nome, filial').in('id', userIds);
       if (profilesData) setVendedores(profilesData as Vendedor[]);
     }
     setIsLoading(false);
@@ -95,10 +97,12 @@ export default function Orcamentos() {
 
 
   const handleCreate = async () => {
+    if (!user) return;
     if (!newNome.trim()) { toast({ title: 'Informe o nome do cliente', variant: 'destructive' }); return; }
-    const vendedorId = isAdmin ? newVendedorId : user!.id;
-    const vendedorNome = isAdmin ? vendedores.find(v => v.id === newVendedorId)?.nome || null : user!.nome;
+    const vendedorId = isAdmin ? newVendedorId : user.id;
+    const vendedorNome = isAdmin ? vendedores.find(v => v.id === newVendedorId)?.nome || null : user.nome;
     if (isAdmin && !newVendedorId) { toast({ title: 'Selecione o vendedor', variant: 'destructive' }); return; }
+    if (!newFilial) { toast({ title: 'Selecione a praça do orçamento', variant: 'destructive' }); return; }
     setCreating(true);
 
     const { error } = await supabase.from('orcamento_sessoes').insert({
@@ -106,8 +110,9 @@ export default function Orcamentos() {
       email_cliente: newEmail.trim() || null,
       telefone_cliente: newTelefone.trim() || null,
       endereco_condominio: newEndereco.trim() || null,
-      created_by: user!.id,
-      created_by_name: user!.nome,
+      filial: newFilial,
+      created_by: user.id,
+      created_by_name: user.nome,
       vendedor_id: vendedorId,
       vendedor_nome: vendedorNome,
     });
@@ -191,10 +196,11 @@ export default function Orcamentos() {
                     <Label>Endereço do Condomínio</Label>
                     <Input value={newEndereco} onChange={e => setNewEndereco(e.target.value)} placeholder="Rua, número, bairro, cidade - UF" />
                   </div>
+                  <div><Label>Praça / Empresa *</Label><Select value={newFilial} onValueChange={setNewFilial}><SelectTrigger aria-label="Praça do orçamento"><SelectValue placeholder="Selecione a praça" /></SelectTrigger><SelectContent><SelectItem value="SPO">SPO — Graber</SelectItem><SelectItem value="BHZ">BHZ — Emive</SelectItem><SelectItem value="VIX">VIX — Emive</SelectItem><SelectItem value="RJO">RJO — Emive</SelectItem></SelectContent></Select></div>
                   {isAdmin && (
                     <div>
                       <Label>Vendedor Responsável *</Label>
-                      <Select value={newVendedorId} onValueChange={setNewVendedorId}>
+                      <Select value={newVendedorId} onValueChange={id => { setNewVendedorId(id); setNewFilial(vendedores.find(v => v.id === id)?.filial || ''); }}>
                         <SelectTrigger><SelectValue placeholder="Selecione o vendedor" /></SelectTrigger>
                         <SelectContent>
                           {vendedores.map(v => <SelectItem key={v.id} value={v.id}>{v.nome}</SelectItem>)}

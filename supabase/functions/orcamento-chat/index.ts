@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.89.0";
+import { empresaPorFilial, catalogoEmpresa, kitDisponivel, somaPrecosKit, itemNoCatalogo } from '../_shared/catalog-company.ts';
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -185,8 +186,8 @@ async function checkEngineeringTriggers(supabase: any, sessaoId: string, itens: 
   return { encaminhado: true, gatilhos };
 }
 
-async function fetchContextData(supabase: any) {
-  const [{ data: projects }, { data: portfolio }, { data: produtos }, { data: kits }, { data: feedbacks }] = await Promise.all([
+async function fetchContextData(supabase: any, filial: string) {
+  const [{ data: projects }, { data: portfolio }, { data: produtos }, { data: kits }, { data: feedbacks }, { data: regras }] = await Promise.all([
     supabase.from("projects").select(`
       cliente_condominio_nome, cliente_cidade, cliente_estado, numero_unidades,
       sale_forms (
@@ -205,8 +206,20 @@ async function fetchContextData(supabase: any) {
     supabase.from("orcamento_produtos").select("*").eq("ativo", true).order("categoria").order("nome"),
     supabase.from("orcamento_kits").select("*, descricao_uso, palavras_chave, regras_condicionais, orcamento_kit_itens(*, orcamento_produtos(*))").eq("ativo", true).order("categoria").order("nome"),
     supabase.from("orcamento_proposta_feedbacks").select("acertos, erros, sugestoes, proposta_adequada, nota_precisao").order("created_at", { ascending: false }).limit(20),
+    supabase.from('orcamento_regras_precificacao').select('campo, percentual'),
   ]);
-  return { projects: projects || [], portfolio: portfolio || [], produtos: produtos || [], kits: kits || [], feedbacks: feedbacks || [] };
+  const empresa = empresaPorFilial(filial);
+  const regraMap = Object.fromEntries((regras || []).map((r: any) => [r.campo, Number(r.percentual)]));
+  const produtosEmpresa = catalogoEmpresa(produtos || [], empresa, regraMap);
+  const kitsEmpresa = catalogoEmpresa((kits || []).filter((k: any) => {
+    const components = (k.orcamento_kit_itens || []).map((i: any) => i.orcamento_produtos || { ativo: false });
+    return kitDisponivel(k, components, empresa) && components.every((p: any) => catalogoEmpresa([p], empresa, regraMap).length > 0);
+  }).map((k: any) => ({
+    ...k,
+    ...somaPrecosKit((k.orcamento_kit_itens || []).map((i: any) => ({ quantidade: i.quantidade, produto: i.orcamento_produtos }))),
+    orcamento_kit_itens: (k.orcamento_kit_itens || []).map((i: any) => ({ ...i, orcamento_produtos: catalogoEmpresa([i.orcamento_produtos], empresa, regraMap)[0] })),
+  })), empresa, regraMap);
+  return { empresa, regras: regras || [], projects: projects || [], portfolio: portfolio || [], produtos: produtosEmpresa, kits: kitsEmpresa, feedbacks: feedbacks || [] };
 }
 
 function buildVisitSystemPrompt(ctx: any, sessao: any) {
@@ -369,19 +382,21 @@ Poste exclusivo com até 4 câmeras com vídeo analítico conectadas à Central 
 
 ## CATÁLOGO DE PRODUTOS E KITS (use para dimensionar e precificar):
 
-**Legenda dos campos:** nome=nome do produto/kit, preco_venda=preço de venda unitário, valor_locacao=valor da mensalidade/locação mensal, valor_minimo=preço mínimo de venda, valor_minimo_locacao=mínimo de locação, valor_instalacao=taxa de instalação/conexão, categoria=tipo de equipamento, unidade=unidade de medida
+**Empresa desta proposta: ${ctx.empresa === 'graber' ? 'Graber (Service / COD SRV)' : 'Emive (Sankhya / COD SK)'}.** Todos os preços e códigos abaixo são exclusivos desta empresa. Não use preços de outra empresa, nem estime preços ausentes a partir da carteira. Itens ausentes ou com preço pendente ficam sob consulta. Não existem mínimos fixos no catálogo; condições comerciais dependem das regras cadastradas e da validação comercial.
+**Legenda dos campos:** nome=nome do produto/kit, preco_venda=preço base de venda, valor_locacao=mensalidade base, valor_instalacao=taxa de instalação/conexão, categoria=tipo de equipamento, unidade=unidade de medida.
 
 **Produtos:**
-${JSON.stringify(ctx.produtos.map((p: any) => ({ id: p.id_produto, codigo: p.codigo, nome: p.nome, categoria: p.categoria, unidade: p.unidade, preco_venda: p.preco_unitario, valor_minimo: p.valor_minimo, valor_locacao: p.valor_locacao, valor_minimo_locacao: p.valor_minimo_locacao, valor_instalacao: p.valor_instalacao })))}
+${JSON.stringify(ctx.produtos.map((p: any) => ({ id_sb: p.id_produto, codigo: p.codigo, nome: p.nome, categoria: p.categoria, unidade: p.unidade, preco_venda: p.preco_unitario, valor_locacao: p.valor_locacao, valor_instalacao: p.valor_instalacao })))}
 
 **Kits (PRIORIZE kits sobre produtos avulsos):**
-${JSON.stringify(ctx.kits.map((k: any) => ({ id_kit: k.id_kit, codigo: k.codigo, nome: k.nome, categoria: k.categoria, preco_venda: k.preco_kit, valor_minimo: k.valor_minimo, valor_locacao: k.valor_locacao, valor_minimo_locacao: k.valor_minimo_locacao, valor_instalacao: k.valor_instalacao, quando_usar: k.descricao_uso || null, palavras_chave: k.palavras_chave || [], regras: k.regras_condicionais || [], itens: (k.orcamento_kit_itens || []).map((i: any) => ({ nome: i.orcamento_produtos?.nome, qtd: i.quantidade })) })))}
+${JSON.stringify(ctx.kits.map((k: any) => ({ id_kit: k.id_kit, codigo: k.codigo, nome: k.nome, categoria: k.categoria, preco_venda: k.preco_kit, valor_locacao: k.valor_locacao, valor_instalacao: k.valor_instalacao, quando_usar: k.descricao_uso || null, palavras_chave: k.palavras_chave || [], regras: k.regras_condicionais || [], itens: (k.orcamento_kit_itens || []).map((i: any) => ({ nome: i.orcamento_produtos?.nome, qtd: i.quantidade })) })))}
 
 ## REFERÊNCIAS DE PREÇOS DA CARTEIRA:
 ${JSON.stringify(ctx.portfolio.slice(0, 5).map((c: any) => ({ r: c.razao_social, u: c.unidades, m: c.mensalidade, t: c.taxa_ativacao })))}
 
 ## REGRAS CRÍTICAS DE PRODUTOS E KITS:
-- **VOCÊ TEM ACESSO COMPLETO A TODOS OS VALORES DO CATÁLOGO**, incluindo: preço de venda (preco_venda), valor de locação/mensalidade (valor_locacao), valor mínimo de locação (valor_minimo_locacao), taxa de instalação (valor_instalacao) e preço mínimo de venda (valor_minimo). Quando o vendedor perguntar sobre qualquer um desses valores, RESPONDA usando os dados do catálogo acima.
+- **USE OS PREÇOS BASE DA EMPRESA ACIMA**: venda, locação e instalação. Aplique somente condições comerciais das regras cadastradas, sem inventar mínimos fixos.
+${JSON.stringify(ctx.regras)}
 - **VALOR DE LOCAÇÃO = MENSALIDADE MENSAL.** Quando o vendedor perguntar "qual a mensalidade?", "qual o valor de locação?", "quanto custa por mês?", responda com o campo valor_locacao do produto ou kit.
 - **VOCÊ SÓ PODE REFERENCIAR PRODUTOS E KITS QUE EXISTEM NO CATÁLOGO ACIMA.** Nunca invente nomes de produtos, marcas ou modelos que não estejam listados.
 - **NUNCA cite marcas, modelos ou nomes de equipamentos que não constem na lista de produtos ou kits fornecida.** Se não souber o nome exato, use apenas a descrição genérica (ex: "kit portão pivotante" se existir no catálogo).
@@ -536,14 +551,16 @@ Baseado no histórico da visita técnica com o vendedor, gere uma PROPOSTA COMER
 4. A coluna "Descrição" deve ter o NOME EXATO do produto/kit como aparece no catálogo, em MAIÚSCULAS
 5. A mensalidade estimada vai no campo "MONITORAMENTO 24 HORAS COM UNIDADE VOLANTE"
 6. A taxa de instalação/ativação vai no campo "TAXA DE CONEXÃO"
-7. Use a carteira de clientes como referência para estimar mensalidade e taxa quando necessário
+7. Use os preços da empresa desta sessão; não estime preços pendentes pela carteira ou por outra empresa.
 8. Se não tiver dados suficientes para precificar, coloque "Sob consulta"
 
 ## CATÁLOGO DE PRODUTOS (use nomes exatamente como aparecem aqui):
-${JSON.stringify(ctx.produtos.map((p: any) => ({ id: p.id_produto, codigo: p.codigo, nome: p.nome, categoria: p.categoria, unidade: p.unidade, preco_atual: p.preco_unitario, preco_minimo: p.valor_minimo, locacao: p.valor_locacao, instalacao: p.valor_instalacao })), null, 2)}
+Empresa: ${ctx.empresa}. Os preços abaixo são bases desta empresa. Mínimos fixos foram descontinuados; aplique apenas regras cadastradas e ajustes comerciais aprovados.
+Regras comerciais: ${JSON.stringify(ctx.regras)}
+${JSON.stringify(ctx.produtos.map((p: any) => ({ id_sb: p.id_produto, codigo: p.codigo, nome: p.nome, categoria: p.categoria, unidade: p.unidade, preco_atual: p.preco_unitario, locacao: p.valor_locacao, instalacao: p.valor_instalacao })), null, 2)}
 
 ## CATÁLOGO DE KITS (priorize kits sobre produtos avulsos):
-${JSON.stringify(ctx.kits.map((k: any) => ({ id_kit: k.id_kit, codigo: k.codigo, nome: k.nome, categoria: k.categoria, preco_total: k.preco_kit, minimo_total: k.valor_minimo, locacao_total: k.valor_locacao, instalacao_total: k.valor_instalacao, quando_usar: k.descricao_uso || null, palavras_chave: k.palavras_chave || [], regras: k.regras_condicionais || [], itens: (k.orcamento_kit_itens || []).map((i: any) => ({ produto: i.orcamento_produtos?.nome, qtd: i.quantidade })) })), null, 2)}
+${JSON.stringify(ctx.kits.map((k: any) => ({ id_kit: k.id_kit, codigo: k.codigo, nome: k.nome, categoria: k.categoria, preco_total: k.preco_kit, locacao_total: k.valor_locacao, instalacao_total: k.valor_instalacao, quando_usar: k.descricao_uso || null, palavras_chave: k.palavras_chave || [], regras: k.regras_condicionais || [], itens: (k.orcamento_kit_itens || []).map((i: any) => ({ produto: i.orcamento_produtos?.nome, qtd: i.quantidade })) })), null, 2)}
 
 ## CARTEIRA DE CLIENTES (referência de preços mensalidade/taxa):
 ${JSON.stringify(ctx.portfolio.slice(0, 15).map((c: any) => ({ razao: c.razao_social, unidades: c.unidades, mensalidade: c.mensalidade, taxa: c.taxa_ativacao, cameras: c.cameras, portoes: c.portoes, portas: c.portas, tipo: c.tipo })), null, 2)}
@@ -615,7 +632,13 @@ serve(async (req) => {
       });
     }
 
-    const ctx = await fetchContextData(supabase);
+    let filial = sessao.filial;
+    if (!filial) {
+      const { data: vendedor } = await supabase.from('profiles').select('filial').eq('id', sessao.vendedor_id || sessao.created_by).maybeSingle();
+      filial = vendedor?.filial;
+    }
+    if (!filial) return new Response(JSON.stringify({ error: 'A praça deste orçamento não foi definida. Selecione a praça antes de gerar a proposta.' }), { status: 422, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    const ctx = await fetchContextData(supabase, filial);
 
     // Generate proposal
     if (action === "gerar_proposta") {
@@ -765,7 +788,7 @@ ${fotoListStr}
       const jsonMatch = fullContent.match(JSON_BLOCK_REGEX);
       if (jsonMatch) {
         try {
-          itensEstruturados = JSON.parse(jsonMatch[1].trim());
+          itensEstruturados = { ...JSON.parse(jsonMatch[1].trim()), empresa: ctx.empresa };
           proposta = fullContent.replace(JSON_BLOCK_REPLACE_REGEX, '').trim();
         } catch (e) {
           console.error("Failed to parse structured items JSON:", e);
@@ -773,6 +796,13 @@ ${fotoListStr}
       }
 
       // Expand kits into individual items for Excel
+      if (itensEstruturados) {
+        const invalidos = [
+          ...(itensEstruturados.kits || []).filter((i: any) => !itemNoCatalogo(i, ctx.kits)),
+          ...(itensEstruturados.avulsos || []).filter((i: any) => !itemNoCatalogo(i, ctx.produtos)),
+        ];
+        if (invalidos.length) return new Response(JSON.stringify({ error: 'A proposta contém itens indisponíveis ou sem preço para esta empresa. Revise o catálogo antes de gerar.', itens: invalidos.map((i: any) => i.nome) }), { status: 422, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
       let itensExpandidos: any[] = [];
       if (itensEstruturados) {
         // Expand kit items
@@ -875,6 +905,11 @@ ${fotoListStr}
 
     // Generate final proposal from edited pre-proposal items
     if (action === "gerar_proposta_final") {
+      const invalidos = [
+        ...(itens_editados?.kits || []).filter((i: any) => !itemNoCatalogo(i, ctx.kits)),
+        ...(itens_editados?.avulsos || []).filter((i: any) => !itemNoCatalogo(i, ctx.produtos)),
+      ];
+      if (invalidos.length) return new Response(JSON.stringify({ error: 'Há itens indisponíveis ou sem preço para a empresa desta proposta. Atualize a pré-proposta antes de confirmar.' }), { status: 422, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
       // itens_editados already destructured from req.json above
       const { data: allMsgs } = await supabase
         .from("orcamento_mensagens").select("role, content")
@@ -945,14 +980,14 @@ ${fotoListStr}
       const fullContent = data.choices?.[0]?.message?.content || "Não foi possível gerar a proposta.";
 
       // Extract JSON block
-      let itensFinais = itens_editados; // fallback to edited items
+      let itensFinais = { ...itens_editados, empresa: ctx.empresa }; // preserve the session company
       let proposta = fullContent;
       const jsonMatch = fullContent.match(JSON_BLOCK_REGEX);
       if (jsonMatch) {
         try {
           const parsed = JSON.parse(jsonMatch[1].trim());
           // Merge: keep edited commercial values but add ambientes from AI
-          itensFinais = { ...itens_editados, ambientes: parsed.ambientes || itens_editados.ambientes };
+          itensFinais = { ...itens_editados, empresa: ctx.empresa, ambientes: parsed.ambientes || itens_editados.ambientes };
           proposta = fullContent.replace(JSON_BLOCK_REPLACE_REGEX, '').trim();
         } catch (e) {
           console.error("Failed to parse final JSON:", e);

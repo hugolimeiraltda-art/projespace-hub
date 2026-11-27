@@ -127,9 +127,7 @@ export default function OrcamentoRegras() {
         const va = Number(p.preco_unitario);
         const locacao = va * locPct;
         await supabase.from('orcamento_produtos').update({
-          valor_minimo: parseFloat((va * minPct).toFixed(2)),
           valor_locacao: parseFloat(locacao.toFixed(2)),
-          valor_minimo_locacao: parseFloat((locacao * minLocPct).toFixed(2)),
           valor_instalacao: parseFloat((va * instPct).toFixed(2)),
           updated_at: new Date().toISOString(),
         }).eq('id', p.id);

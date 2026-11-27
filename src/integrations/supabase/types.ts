@@ -2299,9 +2299,11 @@ export type Database = {
           ativo: boolean
           categoria: string
           codigo: string | null
+          codigo_srv: string | null
           created_at: string
           descricao: string | null
           descricao_uso: string | null
+          disponibilidade: string
           historico_alteracoes: Json | null
           id: string
           id_kit: number | null
@@ -2313,16 +2315,20 @@ export type Database = {
           updated_at: string
           valor_instalacao: number | null
           valor_locacao: number | null
+          valor_locacao_graber: number | null
           valor_minimo: number | null
           valor_minimo_locacao: number | null
+          valor_venda_graber: number | null
         }
         Insert: {
           ativo?: boolean
           categoria: string
           codigo?: string | null
+          codigo_srv?: string | null
           created_at?: string
           descricao?: string | null
           descricao_uso?: string | null
+          disponibilidade?: string
           historico_alteracoes?: Json | null
           id?: string
           id_kit?: number | null
@@ -2334,16 +2340,20 @@ export type Database = {
           updated_at?: string
           valor_instalacao?: number | null
           valor_locacao?: number | null
+          valor_locacao_graber?: number | null
           valor_minimo?: number | null
           valor_minimo_locacao?: number | null
+          valor_venda_graber?: number | null
         }
         Update: {
           ativo?: boolean
           categoria?: string
           codigo?: string | null
+          codigo_srv?: string | null
           created_at?: string
           descricao?: string | null
           descricao_uso?: string | null
+          disponibilidade?: string
           historico_alteracoes?: Json | null
           id?: string
           id_kit?: number | null
@@ -2355,8 +2365,10 @@ export type Database = {
           updated_at?: string
           valor_instalacao?: number | null
           valor_locacao?: number | null
+          valor_locacao_graber?: number | null
           valor_minimo?: number | null
           valor_minimo_locacao?: number | null
+          valor_venda_graber?: number | null
         }
         Relationships: []
       }
@@ -2449,8 +2461,10 @@ export type Database = {
           ativo: boolean
           categoria: string
           codigo: string | null
+          codigo_srv: string | null
           created_at: string
           descricao: string | null
+          disponibilidade: string
           historico_alteracoes: Json | null
           id: string
           id_produto: number | null
@@ -2465,16 +2479,20 @@ export type Database = {
           updated_by_name: string | null
           valor_instalacao: number | null
           valor_locacao: number | null
+          valor_locacao_graber: number | null
           valor_minimo: number | null
           valor_minimo_locacao: number | null
+          valor_venda_graber: number | null
         }
         Insert: {
           adicional?: boolean | null
           ativo?: boolean
           categoria: string
           codigo?: string | null
+          codigo_srv?: string | null
           created_at?: string
           descricao?: string | null
+          disponibilidade?: string
           historico_alteracoes?: Json | null
           id?: string
           id_produto?: number | null
@@ -2489,16 +2507,20 @@ export type Database = {
           updated_by_name?: string | null
           valor_instalacao?: number | null
           valor_locacao?: number | null
+          valor_locacao_graber?: number | null
           valor_minimo?: number | null
           valor_minimo_locacao?: number | null
+          valor_venda_graber?: number | null
         }
         Update: {
           adicional?: boolean | null
           ativo?: boolean
           categoria?: string
           codigo?: string | null
+          codigo_srv?: string | null
           created_at?: string
           descricao?: string | null
+          disponibilidade?: string
           historico_alteracoes?: Json | null
           id?: string
           id_produto?: number | null
@@ -2513,8 +2535,10 @@ export type Database = {
           updated_by_name?: string | null
           valor_instalacao?: number | null
           valor_locacao?: number | null
+          valor_locacao_graber?: number | null
           valor_minimo?: number | null
           valor_minimo_locacao?: number | null
+          valor_venda_graber?: number | null
         }
         Relationships: []
       }
@@ -2645,6 +2669,7 @@ export type Database = {
           email_cliente: string | null
           encaminhado_engenharia: boolean | null
           endereco_condominio: string | null
+          filial: string | null
           id: string
           nome_cliente: string
           proposta_gerada: string | null
@@ -2663,6 +2688,7 @@ export type Database = {
           email_cliente?: string | null
           encaminhado_engenharia?: boolean | null
           endereco_condominio?: string | null
+          filial?: string | null
           id?: string
           nome_cliente: string
           proposta_gerada?: string | null
@@ -2681,6 +2707,7 @@ export type Database = {
           email_cliente?: string | null
           encaminhado_engenharia?: boolean | null
           endereco_condominio?: string | null
+          filial?: string | null
           id?: string
           nome_cliente?: string
           proposta_gerada?: string | null
@@ -3957,6 +3984,10 @@ export type Database = {
         Returns: boolean
       }
       is_staff: { Args: { _user_id: string }; Returns: boolean }
+      recalcular_kit_precos_empresa: {
+        Args: { _kit_id: string }
+        Returns: undefined
+      }
       sync_estoque_alertas: { Args: never; Returns: undefined }
     }
     Enums: {

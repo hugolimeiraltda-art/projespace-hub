@@ -1,4 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
+import { empresaPorFilial, catalogoEmpresa, kitDisponivel, somaPrecosKit, type EmpresaCatalogo } from '@/lib/catalog-company';
 import { Layout } from '@/components/Layout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,13 +18,13 @@ import autoTable from 'jspdf-autotable';
 
 type Produto = {
   id: string; nome: string; codigo: string | null; categoria: string;
-  preco_unitario: number; valor_minimo: number; valor_locacao: number;
-  valor_minimo_locacao: number; valor_instalacao: number;
+  preco_unitario: number; valor_locacao: number;
+  valor_instalacao: number;
 };
 type Kit = {
   id: string; nome: string; codigo: string | null; categoria: string;
-  preco_kit: number; valor_minimo: number; valor_locacao: number;
-  valor_minimo_locacao: number; valor_instalacao: number;
+  preco_kit: number; valor_locacao: number;
+  valor_instalacao: number;
   itens?: { produto_id: string; quantidade: number; produto?: Produto }[];
 };
 type LinhaKit = { kit_id: string; qtd: number };
@@ -33,6 +35,8 @@ const fmtBRL = (v: number) => (v || 0).toLocaleString('pt-BR', { style: 'currenc
 
 export default function OrcamentoManual() {
   const { toast } = useToast();
+  const { user } = useAuth();
+  const [empresa, setEmpresa] = useState<EmpresaCatalogo>(empresaPorFilial(user?.filial));
   const [produtos, setProdutos] = useState<Produto[]>([]);
   const [kits, setKits] = useState<Kit[]>([]);
   const [loading, setLoading] = useState(true);
@@ -48,24 +52,31 @@ export default function OrcamentoManual() {
   const [filtroProd, setFiltroProd] = useState('');
 
   useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
     (async () => {
-      const [{ data: prods }, { data: ks }] = await Promise.all([
-        supabase.from('orcamento_produtos').select('id,nome,codigo,categoria,preco_unitario,valor_minimo,valor_locacao,valor_minimo_locacao,valor_instalacao').eq('ativo', true).order('nome'),
-        supabase.from('orcamento_kits').select('id,nome,codigo,categoria,preco_kit,valor_minimo,valor_locacao,valor_minimo_locacao,valor_instalacao').eq('ativo', true).order('nome'),
+      const [{ data: prods }, { data: ks }, { data: regras }] = await Promise.all([
+        supabase.from('orcamento_produtos').select('*').eq('ativo', true).order('nome'),
+        supabase.from('orcamento_kits').select('*').eq('ativo', true).order('nome'),
+        supabase.from('orcamento_regras_precificacao').select('campo, percentual'),
       ]);
-      const produtosList = (prods as any) || [];
-      const kitsList = (ks as any) || [];
+      const regraMap = Object.fromEntries((regras || []).map(r => [r.campo, Number(r.percentual)]));
+      const produtosList = catalogoEmpresa(prods || [], empresa, regraMap);
+      let kitsList = (ks || []) as any[];
       if (kitsList.length) {
         const { data: itens } = await supabase.from('orcamento_kit_itens').select('kit_id, produto_id, quantidade').in('kit_id', kitsList.map((k: any) => k.id));
         kitsList.forEach((k: Kit) => {
           k.itens = (itens || []).filter((i: any) => i.kit_id === k.id).map((i: any) => ({ ...i, produto: produtosList.find((p: Produto) => p.id === i.produto_id) }));
         });
       }
+      kitsList = kitsList.filter(k => kitDisponivel(k, (k.itens || []).map((i: any) => i.produto || { ativo: false }), empresa)).map(k => ({ ...k, ...somaPrecosKit((k.itens || []).map((i: any) => ({ quantidade: i.quantidade, produto: (prods || []).find(p => p.id === i.produto_id) }))) }));
+      if (cancelled) return;
       setProdutos(produtosList);
-      setKits(kitsList);
+      setKits(catalogoEmpresa(kitsList, empresa, regraMap));
       setLoading(false);
     })();
-  }, []);
+    return () => { cancelled = true; };
+  }, [empresa]);
 
   const kitsFiltrados = useMemo(() => kits.filter(k => !filtroKit || k.nome.toLowerCase().includes(filtroKit.toLowerCase()) || (k.codigo || '').toLowerCase().includes(filtroKit.toLowerCase())), [kits, filtroKit]);
   const produtosFiltrados = useMemo(() => produtos.filter(p => !filtroProd || p.nome.toLowerCase().includes(filtroProd.toLowerCase()) || (p.codigo || '').toLowerCase().includes(filtroProd.toLowerCase())), [produtos, filtroProd]);
@@ -89,8 +100,8 @@ export default function OrcamentoManual() {
       const kit = kits.find(k => k.id === lk.kit_id); if (!kit) return;
       rows.push({
         tipo: 'KIT', origem: kit.nome, codigo: kit.codigo || '', nome: kit.nome, qtd: lk.qtd,
-        preco_unitario: kit.preco_kit, valor_minimo: kit.valor_minimo,
-        valor_locacao: kit.valor_locacao, valor_minimo_locacao: kit.valor_minimo_locacao,
+        preco_unitario: kit.preco_kit,
+        valor_locacao: kit.valor_locacao,
         valor_instalacao: kit.valor_instalacao,
       });
       (kit.itens || []).forEach(it => {
@@ -98,8 +109,8 @@ export default function OrcamentoManual() {
         const q = it.quantidade * lk.qtd;
         rows.push({
           tipo: 'KIT-ITEM', origem: kit.nome, codigo: it.produto.codigo || '', nome: '  ↳ ' + it.produto.nome, qtd: q,
-          preco_unitario: it.produto.preco_unitario, valor_minimo: it.produto.valor_minimo,
-          valor_locacao: it.produto.valor_locacao, valor_minimo_locacao: it.produto.valor_minimo_locacao,
+          preco_unitario: it.produto.preco_unitario,
+          valor_locacao: it.produto.valor_locacao,
           valor_instalacao: it.produto.valor_instalacao, isItem: true,
         });
       });
@@ -108,16 +119,16 @@ export default function OrcamentoManual() {
       const p = produtos.find(x => x.id === lp.produto_id); if (!p) return;
       rows.push({
         tipo: 'PRODUTO', origem: 'Avulso', codigo: p.codigo || '', nome: p.nome, qtd: lp.qtd,
-        preco_unitario: p.preco_unitario, valor_minimo: p.valor_minimo,
-        valor_locacao: p.valor_locacao, valor_minimo_locacao: p.valor_minimo_locacao,
+        preco_unitario: p.preco_unitario,
+        valor_locacao: p.valor_locacao,
         valor_instalacao: p.valor_instalacao,
       });
     });
     linhasServ.forEach(ls => {
       rows.push({
         tipo: 'SERVIÇO', origem: 'Serviço', codigo: '', nome: ls.descricao || '(serviço)', qtd: ls.qtd,
-        preco_unitario: ls.valor_unit, valor_minimo: ls.valor_unit,
-        valor_locacao: 0, valor_minimo_locacao: 0, valor_instalacao: ls.valor_unit,
+        preco_unitario: ls.valor_unit,
+        valor_locacao: 0, valor_instalacao: ls.valor_unit,
       });
     });
     return rows;
@@ -128,11 +139,9 @@ export default function OrcamentoManual() {
     const rows = linhasComputadas.filter(r => r.tipo !== 'KIT-ITEM');
     return rows.reduce((acc, r) => ({
       atual: acc.atual + r.preco_unitario * r.qtd,
-      minimo: acc.minimo + r.valor_minimo * r.qtd,
       locacao: acc.locacao + r.valor_locacao * r.qtd,
-      minLocacao: acc.minLocacao + r.valor_minimo_locacao * r.qtd,
       instalacao: acc.instalacao + r.valor_instalacao * r.qtd,
-    }), { atual: 0, minimo: 0, locacao: 0, minLocacao: 0, instalacao: 0 });
+    }), { atual: 0, locacao: 0, instalacao: 0 });
   }, [linhasComputadas]);
 
   const exportExcel = () => {
@@ -140,17 +149,13 @@ export default function OrcamentoManual() {
     const rows = linhasComputadas.map(r => ({
       'Tipo': r.tipo, 'Origem': r.origem, 'Código': r.codigo, 'Descrição': r.nome.replace(/^\s+↳\s/, ''), 'Qtd': r.qtd,
       'Val. Atual Unit.': r.preco_unitario, 'Val. Atual Total': r.preco_unitario * r.qtd,
-      'Val. Mínimo Unit.': r.valor_minimo, 'Val. Mínimo Total': r.valor_minimo * r.qtd,
       'Locação Unit.': r.valor_locacao, 'Locação Total': r.valor_locacao * r.qtd,
-      'Mín. Locação Unit.': r.valor_minimo_locacao, 'Mín. Locação Total': r.valor_minimo_locacao * r.qtd,
       'Instalação Unit.': r.valor_instalacao, 'Instalação Total': r.valor_instalacao * r.qtd,
     }));
     rows.push({
       'Tipo': '', 'Origem': '', 'Código': '', 'Descrição': 'TOTAL', 'Qtd': '' as any,
       'Val. Atual Unit.': '' as any, 'Val. Atual Total': totais.atual,
-      'Val. Mínimo Unit.': '' as any, 'Val. Mínimo Total': totais.minimo,
       'Locação Unit.': '' as any, 'Locação Total': totais.locacao,
-      'Mín. Locação Unit.': '' as any, 'Mín. Locação Total': totais.minLocacao,
       'Instalação Unit.': '' as any, 'Instalação Total': totais.instalacao,
     });
     const ws = XLSX.utils.json_to_sheet(rows);
@@ -171,14 +176,12 @@ export default function OrcamentoManual() {
 
     autoTable(doc, {
       startY: 90, styles: { fontSize: 7, cellPadding: 3 }, headStyles: { fillColor: [60, 60, 60] },
-      head: [['Tipo', 'Código', 'Descrição', 'Qtd', 'Atual', 'Mínimo', 'Locação', 'Mín.Loc.', 'Instalação']],
+      head: [['Tipo', 'Código', 'Descrição', 'Qtd', 'Venda', 'Locação', 'Instalação']],
       body: linhasComputadas.map(r => [
-        r.tipo === 'KIT-ITEM' ? '' : r.tipo, r.codigo, r.nome, r.qtd,
-        fmtBRL(r.preco_unitario * r.qtd), fmtBRL(r.valor_minimo * r.qtd),
-        fmtBRL(r.valor_locacao * r.qtd), fmtBRL(r.valor_minimo_locacao * r.qtd),
+        r.tipo === 'KIT-ITEM' ? '' : r.tipo, r.codigo, r.nome, r.qtd, fmtBRL(r.preco_unitario * r.qtd), fmtBRL(r.valor_locacao * r.qtd),
         fmtBRL(r.valor_instalacao * r.qtd),
       ]),
-      foot: [['', '', 'TOTAL', '', fmtBRL(totais.atual), fmtBRL(totais.minimo), fmtBRL(totais.locacao), fmtBRL(totais.minLocacao), fmtBRL(totais.instalacao)]],
+      foot: [['', '', 'TOTAL', '', fmtBRL(totais.atual), fmtBRL(totais.locacao), fmtBRL(totais.instalacao)]],
       footStyles: { fillColor: [230, 230, 230], textColor: 20, fontStyle: 'bold' },
     });
 
@@ -208,11 +211,13 @@ export default function OrcamentoManual() {
 
         <Card>
           <CardContent className="p-4 grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div><Label>Empresa</Label><Select value={empresa} onValueChange={v => { setLoading(true); setProdutos([]); setKits([]); setEmpresa(v as EmpresaCatalogo); setLinhasKits([]); setLinhasProds([]); }}><SelectTrigger aria-label="Empresa do orçamento"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="emive">Emive — COD SK</SelectItem><SelectItem value="graber">Graber — COD SRV</SelectItem></SelectContent></Select></div>
             <div><Label>Cliente / Identificação</Label><Input value={cliente} onChange={e => setCliente(e.target.value)} placeholder="Nome do cliente ou referência" /></div>
             <div><Label>Observações</Label><Input value={obs} onChange={e => setObs(e.target.value)} placeholder="Notas opcionais" /></div>
           </CardContent>
         </Card>
 
+        {!loading && empresa === 'graber' && produtos.length === 0 && <p className="text-sm text-muted-foreground">Preços Graber pendentes de cadastro.</p>}
         <Tabs defaultValue="kits">
           <TabsList>
             <TabsTrigger value="kits">Adicionar Kits</TabsTrigger>
@@ -317,9 +322,7 @@ export default function OrcamentoManual() {
                   <th className="px-2 py-2 text-left">Descrição</th>
                   <th className="px-2 py-2 text-center">Qtd</th>
                   <th className="px-2 py-2 text-right">Val. Atual</th>
-                  <th className="px-2 py-2 text-right">Val. Mínimo</th>
                   <th className="px-2 py-2 text-right">Locação</th>
-                  <th className="px-2 py-2 text-right">Mín. Locação</th>
                   <th className="px-2 py-2 text-right">Instalação</th>
                 </tr>
               </thead>
@@ -331,14 +334,12 @@ export default function OrcamentoManual() {
                     <td className="px-2 py-1.5">{r.nome}</td>
                     <td className="px-2 py-1.5 text-center">{r.qtd}</td>
                     <td className="px-2 py-1.5 text-right">{fmtBRL(r.preco_unitario * r.qtd)}</td>
-                    <td className="px-2 py-1.5 text-right">{fmtBRL(r.valor_minimo * r.qtd)}</td>
                     <td className="px-2 py-1.5 text-right">{fmtBRL(r.valor_locacao * r.qtd)}</td>
-                    <td className="px-2 py-1.5 text-right">{fmtBRL(r.valor_minimo_locacao * r.qtd)}</td>
                     <td className="px-2 py-1.5 text-right">{fmtBRL(r.valor_instalacao * r.qtd)}</td>
                   </tr>
                 ))}
                 {linhasComputadas.length === 0 && (
-                  <tr><td colSpan={9} className="p-6 text-center text-muted-foreground text-sm">Adicione kits, produtos ou serviços para montar o orçamento.</td></tr>
+                  <tr><td colSpan={7} className="p-6 text-center text-muted-foreground text-sm">Adicione kits, produtos ou serviços para montar o orçamento.</td></tr>
                 )}
               </tbody>
               {linhasComputadas.length > 0 && (
@@ -346,9 +347,7 @@ export default function OrcamentoManual() {
                   <tr className="border-t bg-muted/50 font-semibold">
                     <td className="px-2 py-2" colSpan={4}>TOTAL</td>
                     <td className="px-2 py-2 text-right">{fmtBRL(totais.atual)}</td>
-                    <td className="px-2 py-2 text-right">{fmtBRL(totais.minimo)}</td>
                     <td className="px-2 py-2 text-right">{fmtBRL(totais.locacao)}</td>
-                    <td className="px-2 py-2 text-right">{fmtBRL(totais.minLocacao)}</td>
                     <td className="px-2 py-2 text-right">{fmtBRL(totais.instalacao)}</td>
                   </tr>
                 </tfoot>

@@ -4,3 +4,4 @@
 - Preserve deprecated minimum-price columns for deployed-client compatibility, but new application code must not consume them.
 - Recalculate kit bases with database triggers after component price or quantity changes; every editing path must keep company totals synchronized.
 - Store the proposal branch on its session rather than taking it from the viewer; shared sessions must retain their original company's catalog.
+- Keep the services listing separate from equipment and kits, reusing catalog navigation access; no service pricing or proposal calculations are implied by this display-only page.

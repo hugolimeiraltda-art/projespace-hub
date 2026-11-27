@@ -133,6 +133,7 @@ const ALL_NAV_ITEMS: NavItem[] = [
       { path: '/orcamentos/manual', label: 'Orçamento Manual', icon: Calculator, menuKey: 'orcamentos/manual' },
       { path: '/orcamentos/propostas', label: 'Propostas Geradas', icon: FileText, menuKey: 'orcamentos/propostas' },
       { path: '/orcamentos/produtos', label: 'Produtos e Kits', icon: Boxes, menuKey: 'orcamentos/produtos' },
+      { path: '/orcamentos/servicos', label: 'Serviços', icon: HeadphonesIcon, menuKey: 'orcamentos/produtos' },
       { path: '/orcamentos/regras', label: 'Regras de Preço', icon: Percent, menuKey: 'orcamentos/regras' },
       { path: '/orcamentos/kit-regras', label: 'Regras de Kits (IA)', icon: BookOpen, menuKey: 'orcamentos/kit-regras' },
     ],

@@ -749,7 +749,7 @@ export default function OrcamentoProdutos() {
               </CardContent></Card>
             ) : (
               <div className="border rounded-lg overflow-x-auto">
-                <table className="w-full min-w-[1300px] text-sm">
+                <table className="w-full min-w-[1500px] text-sm">
                   <thead>
                     <tr className="border-b bg-muted/50">
                       {visibleCols.has('id_produto') && <th className="px-3 py-2 text-left cursor-pointer hover:bg-muted" onClick={() => toggleSort('id_produto')}><div className="flex items-center gap-1">ID SB {sortField === 'id_produto' ? (sortDir === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />) : <ArrowUpDown className="h-3 w-3 opacity-30" />}</div></th>}
@@ -811,7 +811,7 @@ export default function OrcamentoProdutos() {
             <div className="flex items-center gap-3 flex-wrap justify-between">
               <div className="flex items-center gap-2 flex-1 min-w-[200px] max-w-sm">
                 <Input
-                  placeholder="Pesquisar kit por nome, ID ou código..."
+                  placeholder="Pesquisar kit por nome ou ID..."
                   value={kitSearchTerm}
                   onChange={e => setKitSearchTerm(e.target.value)}
                   className="w-full"

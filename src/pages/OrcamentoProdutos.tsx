@@ -112,8 +112,6 @@ interface Kit {
   nome: string;
   descricao: string | null;
   categoria: string;
-  codigo: string | null;
-  codigo_srv: string | null;
   disponibilidade: string;
   valor_venda_graber: number | null;
   valor_locacao_graber: number | null;
@@ -218,8 +216,6 @@ export default function OrcamentoProdutos() {
         result = result.filter(k =>
           (k.nome || '').toLowerCase().includes(lower) ||
           ((k as any).id_kit?.toString() || '').includes(lower) ||
-          (k.codigo || '').toLowerCase().includes(lower) ||
-          (k.codigo_srv || '').toLowerCase().includes(lower) ||
           catLabel(k.categoria || '').toLowerCase().includes(lower)
         );
       }
@@ -232,8 +228,6 @@ export default function OrcamentoProdutos() {
             const t = getKitTotals(k);
             switch (col) {
               case 'id_kit': return ((k as any).id_kit?.toString() || '').includes(lower);
-              case 'codigo': return (k.codigo || '').toLowerCase().includes(lower);
-              case 'codigo_srv': return (k.codigo_srv || '').toLowerCase().includes(lower);
               case 'disponibilidade': return disponibilidadeLabel(k.disponibilidade).toLowerCase().includes(lower);
               case 'vendaGraber': return formatBRL(t.vendaGraber ?? 0).includes(val);
               case 'locacaoGraber': return formatBRL(t.locacaoGraber ?? 0).includes(val);
@@ -256,8 +250,6 @@ export default function OrcamentoProdutos() {
           const ta = getKitTotals(a), tb = getKitTotals(b);
           switch (kitSortField) {
             case 'id_kit': va = (a as any).id_kit || 0; vb = (b as any).id_kit || 0; break;
-            case 'codigo': va = a.codigo || ''; vb = b.codigo || ''; break;
-            case 'codigo_srv': va = a.codigo_srv || ''; vb = b.codigo_srv || ''; break;
             case 'disponibilidade': va = a.disponibilidade; vb = b.disponibilidade; break;
             case 'vendaGraber': va = ta.vendaGraber ?? -1; vb = tb.vendaGraber ?? -1; break;
             case 'locacaoGraber': va = ta.locacaoGraber ?? -1; vb = tb.locacaoGraber ?? -1; break;
@@ -397,7 +389,7 @@ export default function OrcamentoProdutos() {
   const [showKitForm, setShowKitForm] = useState(false);
   const [editKit, setEditKit] = useState<Kit | null>(null);
   const [viewKit, setViewKit] = useState<Kit | null>(null);
-  const [kForm, setKForm] = useState({ nome: '', descricao: '', categoria: 'Smartportaria', codigo: '', codigo_srv: '', disponibilidade: 'ambas', valor_venda_graber: '', valor_locacao_graber: '', preco_kit: '', valor_locacao: '', valor_instalacao: '' });
+  const [kForm, setKForm] = useState({ nome: '', descricao: '', categoria: 'Smartportaria', disponibilidade: 'ambas', valor_venda_graber: '', valor_locacao_graber: '', preco_kit: '', valor_locacao: '', valor_instalacao: '' });
   const [kitIdSB, setKitIdSB] = useState('');
   const [kitItens, setKitItens] = useState<{ produto_id: string; quantidade: number }[]>([]);
 
@@ -554,7 +546,7 @@ export default function OrcamentoProdutos() {
     setEditKit(k);
     setKitIdSB(k.id_kit == null ? '' : String(k.id_kit));
     const itens = k.itens?.map(i => ({ produto_id: i.produto_id, quantidade: i.quantidade })) || [];
-    setKForm({ nome: k.nome, descricao: k.descricao || '', categoria: k.categoria, codigo: k.codigo || '', codigo_srv: k.codigo_srv || '', disponibilidade: k.disponibilidade, valor_venda_graber: k.valor_venda_graber == null ? '' : formatBRL(k.valor_venda_graber), valor_locacao_graber: k.valor_locacao_graber == null ? '' : formatBRL(k.valor_locacao_graber), preco_kit: formatBRL(k.preco_kit), valor_locacao: formatBRL(k.valor_locacao || 0), valor_instalacao: formatBRL(k.valor_instalacao || 0) });
+    setKForm({ nome: k.nome, descricao: k.descricao || '', categoria: k.categoria, disponibilidade: k.disponibilidade, valor_venda_graber: k.valor_venda_graber == null ? '' : formatBRL(k.valor_venda_graber), valor_locacao_graber: k.valor_locacao_graber == null ? '' : formatBRL(k.valor_locacao_graber), preco_kit: formatBRL(k.preco_kit), valor_locacao: formatBRL(k.valor_locacao || 0), valor_instalacao: formatBRL(k.valor_instalacao || 0) });
     setKitItens(itens);
     setShowKitForm(true);
   };
@@ -564,7 +556,7 @@ export default function OrcamentoProdutos() {
     const empresas = kForm.disponibilidade === 'ambas' ? ['emive', 'graber'] as const : [kForm.disponibilidade as 'emive' | 'graber'];
     if (kitItens.some(i => i.produto_id && empresas.some(e => !disponivelPara(produtos.find(p => p.id === i.produto_id) || {}, e)))) { toast({ title: 'Disponibilidade incompatível', description: 'Os produtos devem estar disponíveis em todas as empresas do kit.', variant: 'destructive' }); return; }
     const totals = somaPrecosKit(kitItens.filter(i => i.produto_id).map(i => ({ quantidade: i.quantidade, produto: produtos.find(p => p.id === i.produto_id) })));
-    const payload = { ...totals, id_kit: kitIdSB ? Number(kitIdSB) : null, nome: kForm.nome.trim(), descricao: kForm.descricao.trim() || null, categoria: kForm.categoria, codigo: kForm.codigo.trim() || null, codigo_srv: kForm.codigo_srv.trim() || null, disponibilidade: kForm.disponibilidade };
+    const payload = { ...totals, id_kit: kitIdSB ? Number(kitIdSB) : null, nome: kForm.nome.trim(), descricao: kForm.descricao.trim() || null, categoria: kForm.categoria, disponibilidade: kForm.disponibilidade };
 
     let kitId = editKit?.id;
     if (editKit) {
@@ -573,8 +565,7 @@ export default function OrcamentoProdutos() {
       if (editKit.nome !== payload.nome) changes.push(`Nome: "${editKit.nome}" → "${payload.nome}"`);
       if (editKit.descricao !== payload.descricao) changes.push(`Descrição alterada`);
       if (editKit.categoria !== payload.categoria) changes.push(`Categoria: "${editKit.categoria}" → "${payload.categoria}"`);
-      for (const field of ['codigo_srv', 'disponibilidade', 'valor_venda_graber', 'valor_locacao_graber'] as const) { if (payload[field] !== editKit[field]) changes.push(`${field}: ${editKit[field] ?? 'Pendente'} → ${payload[field] ?? 'Pendente'}`); }
-      if (editKit.codigo !== payload.codigo) changes.push(`Código: "${editKit.codigo || ''}" → "${payload.codigo || ''}"`);
+      for (const field of ['disponibilidade', 'valor_venda_graber', 'valor_locacao_graber'] as const) { if (payload[field] !== editKit[field]) changes.push(`${field}: ${editKit[field] ?? 'Pendente'} → ${payload[field] ?? 'Pendente'}`); }
       if (Number(editKit.preco_kit) !== payload.preco_kit) changes.push(`Preço Kit: ${Number(editKit.preco_kit)} → ${payload.preco_kit}`);
       if (Number(editKit.valor_locacao) !== payload.valor_locacao) changes.push(`Val. Locação: ${Number(editKit.valor_locacao)} → ${payload.valor_locacao}`);
       if (Number(editKit.valor_instalacao) !== payload.valor_instalacao) changes.push(`Instalação: ${Number(editKit.valor_instalacao)} → ${payload.valor_instalacao}`);
@@ -620,7 +611,7 @@ export default function OrcamentoProdutos() {
 
     setShowKitForm(false);
     setEditKit(null);
-    setKForm({ nome: '', descricao: '', categoria: 'Smartportaria', codigo: '', codigo_srv: '', disponibilidade: 'ambas', valor_venda_graber: '', valor_locacao_graber: '', preco_kit: '', valor_locacao: '', valor_instalacao: '' });
+    setKForm({ nome: '', descricao: '', categoria: 'Smartportaria', disponibilidade: 'ambas', valor_venda_graber: '', valor_locacao_graber: '', preco_kit: '', valor_locacao: '', valor_instalacao: '' });
     setKitItens([]);
     fetchAll();
     toast({ title: editKit ? 'Kit atualizado' : 'Kit criado' });
@@ -758,7 +749,7 @@ export default function OrcamentoProdutos() {
               </CardContent></Card>
             ) : (
               <div className="border rounded-lg overflow-x-auto">
-                <table className="w-full min-w-[1500px] text-sm">
+                <table className="w-full min-w-[1300px] text-sm">
                   <thead>
                     <tr className="border-b bg-muted/50">
                       {visibleCols.has('id_produto') && <th className="px-3 py-2 text-left cursor-pointer hover:bg-muted" onClick={() => toggleSort('id_produto')}><div className="flex items-center gap-1">ID SB {sortField === 'id_produto' ? (sortDir === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />) : <ArrowUpDown className="h-3 w-3 opacity-30" />}</div></th>}
@@ -843,7 +834,7 @@ export default function OrcamentoProdutos() {
                 </div>
               )}
               <div className={!hasKitFilters ? 'ml-auto' : ''}>
-                <Button onClick={() => { setEditKit(null); setKitIdSB(''); setKForm({ nome: '', descricao: '', categoria: 'Smartportaria', codigo: '', codigo_srv: '', disponibilidade: 'ambas', valor_venda_graber: '', valor_locacao_graber: '', preco_kit: '', valor_locacao: '', valor_instalacao: '' }); setKitItens([]); setShowKitForm(true); }}>
+                <Button onClick={() => { setEditKit(null); setKitIdSB(''); setKForm({ nome: '', descricao: '', categoria: 'Smartportaria', disponibilidade: 'ambas', valor_venda_graber: '', valor_locacao_graber: '', preco_kit: '', valor_locacao: '', valor_instalacao: '' }); setKitItens([]); setShowKitForm(true); }}>
                   <Plus className="mr-2 h-4 w-4" />Novo Kit
                 </Button>
               </div>
@@ -861,12 +852,10 @@ export default function OrcamentoProdutos() {
               <Card><CardContent className="py-12 text-center text-muted-foreground">{kits.length === 0 ? 'Nenhum kit cadastrado.' : 'Nenhum kit encontrado com os filtros aplicados.'}</CardContent></Card>
             ) : (
               <div className="border rounded-lg overflow-x-auto">
-                <table className="w-full min-w-[1500px] text-sm">
+                <table className="w-full min-w-[1300px] text-sm">
                   <thead>
                     <tr className="border-b bg-muted/50">
-                      <th className="px-3 py-2 text-center w-16">{renderKitColHeader('id_kit', 'ID SB')}</th>
-                      <th className="px-3 py-2 text-left">{renderKitColHeader('codigo', 'COD SK')}</th>
-                      <th className="px-3 py-2 text-left">{renderKitColHeader('codigo_srv', 'COD SRV')}</th>
+                      <th className="px-3 py-2 text-center w-16">{renderKitColHeader('id_kit', 'ID')}</th>
                       <th className="px-3 py-2 text-left">{renderKitColHeader('disponibilidade', 'Disponibilidade')}</th>
                       <th className="px-3 py-2 text-right">{renderKitColHeader('vendaGraber', 'Venda Graber')}</th>
                       <th className="px-3 py-2 text-right">{renderKitColHeader('locacaoGraber', 'Locação Graber')}</th>
@@ -888,8 +877,6 @@ export default function OrcamentoProdutos() {
                           <td className="px-3 py-2 text-center">
                             <span className="text-xs font-mono text-muted-foreground">{(k as any).id_kit ? `#${(k as any).id_kit}` : '—'}</span>
                           </td>
-                          <td className="px-3 py-2 font-mono text-xs">{k.codigo || '—'}</td>
-                          <td className="px-3 py-2 font-mono text-xs">{k.codigo_srv || '—'}</td>
                           <td className="px-3 py-2"><Badge variant="outline">{disponibilidadeLabel(k.disponibilidade)}</Badge></td>
                           <td className="px-3 py-2 text-right whitespace-nowrap">{totals.vendaGraber == null ? 'Pendente' : `R$ ${formatBRL(totals.vendaGraber) || '0,00'}`}</td>
                           <td className="px-3 py-2 text-right whitespace-nowrap">{totals.locacaoGraber == null ? 'Pendente' : `R$ ${formatBRL(totals.locacaoGraber) || '0,00'}`}</td>
@@ -1045,10 +1032,9 @@ export default function OrcamentoProdutos() {
         <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle>{editKit ? 'Editar Kit' : 'Novo Kit'}</DialogTitle></DialogHeader>
           <div className="space-y-4">
-            <div><Label htmlFor="kit-id-sb">ID SB</Label><Input id="kit-id-sb" type="number" value={kitIdSB} onChange={e => setKitIdSB(e.target.value)} /></div>
-            <div className="grid grid-cols-4 gap-4">
-              <div className="col-span-2"><Label>Nome *</Label><Input value={kForm.nome} onChange={e => setKForm(k => ({ ...k, nome: e.target.value }))} /></div>
-              <div><Label>COD SK</Label><Input aria-label="COD SK" value={kForm.codigo} onChange={e => setKForm(k => ({ ...k, codigo: e.target.value }))} placeholder="Ex: KIT-001" /></div>
+            <div><Label htmlFor="kit-id-sb">ID</Label><Input id="kit-id-sb" type="number" value={kitIdSB} onChange={e => setKitIdSB(e.target.value)} /></div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="sm:col-span-2"><Label>Nome *</Label><Input value={kForm.nome} onChange={e => setKForm(k => ({ ...k, nome: e.target.value }))} /></div>
               <div>
                 <Label>Categoria</Label>
                 <Select value={kForm.categoria} onValueChange={v => setKForm(k => ({ ...k, categoria: v }))}>
@@ -1058,7 +1044,6 @@ export default function OrcamentoProdutos() {
               </div>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div><Label htmlFor="kForm-srv">COD SRV</Label><Input id="kForm-srv" value={kForm.codigo_srv} onChange={e => setKForm(p => ({ ...p, codigo_srv: e.target.value }))} /></div>
               <div><Label>Disponibilidade</Label><Select value={kForm.disponibilidade} onValueChange={v => setKForm(p => ({ ...p, disponibilidade: v }))}><SelectTrigger aria-label="Disponibilidade do cadastro"><SelectValue /></SelectTrigger><SelectContent>{['ambas','emive','graber'].map(v => <SelectItem key={v} value={v}>{disponibilidadeLabel(v)}</SelectItem>)}</SelectContent></Select></div>
               <div><Label>Preço Venda Graber (R$)</Label><Input readOnly value={kForm.valor_venda_graber} placeholder="Pendente" /></div>
               <div><Label>Preço Locação Graber (R$)</Label><Input readOnly value={kForm.valor_locacao_graber} placeholder="Pendente" /></div>
